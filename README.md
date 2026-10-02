@@ -20,8 +20,8 @@ Acesse http://localhost:3000.
 | `bun run dev`       | Servidor de desenvolvimento        |
 | `bun run build`     | Build de produção                  |
 | `bun run start`     | Servidor de produção               |
-| `bun run lint`      | ESLint                             |
-| `bun run lint:fix`  | ESLint com correção automática     |
+| `bun run lint`      | Oxlint                             |
+| `bun run lint:fix`  | Oxlint com correção automática     |
 | `bun run format`    | Prettier                           |
 | `bun run typecheck` | Checagem de tipos (`tsc --noEmit`) |
 
