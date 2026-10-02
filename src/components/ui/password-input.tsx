@@ -1,6 +1,6 @@
 'use client';
 
-import { EyeIcon, EyeOffIcon } from 'lucide-react';
+import { ArrowBigUpIcon, EyeIcon, EyeOffIcon } from 'lucide-react';
 import { useState, type ComponentProps, type KeyboardEvent } from 'react';
 import { Button } from './button';
 import { FloatingLabelInput } from './floating-label-input';
@@ -49,8 +49,17 @@ function PasswordInput({ onKeyDown, onKeyUp, onBlur, ...props }: PasswordInputPr
           </Button>
         }
       />
-      <p aria-live="polite" className="px-1 text-sm font-medium text-warning empty:hidden">
-        {capsLockOn ? 'Caps Lock tá ativado.' : null}
+      {/* O ícone é o mesmo símbolo da tecla: reconhecível sem ler. O leitor de tela lê só o texto. */}
+      <p
+        aria-live="polite"
+        className="flex items-center gap-1.5 px-1 text-sm font-medium text-warning empty:hidden"
+      >
+        {capsLockOn ? (
+          <>
+            <ArrowBigUpIcon aria-hidden="true" className="size-4 shrink-0" />
+            Caps Lock tá ativado.
+          </>
+        ) : null}
       </p>
     </div>
   );

@@ -1,6 +1,7 @@
 'use client';
 
 import { getInputProps, type FieldMetadata } from '@conform-to/react';
+import { KeyRoundIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Field } from '@/components/ui/field';
 import { PasswordInput } from '@/components/ui/password-input';
@@ -35,7 +36,11 @@ export function PasswordField({ meta, label, autoComplete, hint, below }: Passwo
         aria-describedby={describedBy}
       />
       {hint ? (
-        <p id={hintId} className="px-1 text-sm text-pretty text-muted-foreground">
+        <p
+          id={hintId}
+          className="flex items-start gap-1.5 px-1 text-sm text-pretty text-muted-foreground"
+        >
+          <KeyRoundIcon aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
           {hint}
         </p>
       ) : null}
