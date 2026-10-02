@@ -1,0 +1,131 @@
+import { expect, test, type Page } from '@playwright/test';
+import { database, PASSWORD, studentEmail } from './support/students';
+
+async function login(page: Page, email: string, password: string) {
+  await page.getByLabel('Email da compra').fill(email);
+  await page.getByLabel('Senha', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Entrar' }).click();
+}
+
+const alert = (page: Page) => page.locator('[data-slot="alert"]');
+
+test.beforeEach(async ({ page }) => {
+  await page.goto('/entrar');
+});
+
+test('mostra a tela de login sem cadastro público', async ({ page }) => {
+  await expect(page).toHaveTitle('Entrar | Loja Pronta Prime');
+  await expect(page.getByRole('heading', { name: 'Sua loja na Shopee começa aqui' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Esqueci ou não recebi a senha' })).toBeVisible();
+  await expect(page.getByText(/criar conta/i)).toHaveCount(0);
+});
+
+test('valida no navegador e foca o primeiro campo com erro', async ({ page }) => {
+  await page.getByRole('button', { name: 'Entrar' }).click();
+  await expect(page.getByText('Digite o email que você usou na compra')).toBeVisible();
+  await expect(page.getByText('Digite sua senha')).toBeVisible();
+  await expect(page.getByLabel('Email da compra')).toBeFocused();
+
+  await page.getByLabel('Email da compra').fill('aluna@email');
+  await page.getByLabel('Senha', { exact: true }).fill('1234');
+  await page.getByRole('button', { name: 'Entrar' }).click();
+  await expect(page.getByText('Digite um email válido')).toBeVisible();
+  await expect(page.getByText('Senha precisa ter no mínimo 8 caracteres')).toBeVisible();
+});
+
+test('sugere a correção de email digitado errado', async ({ page }) => {
+  const email = page.getByLabel('Email da compra');
+  await email.fill('aluna@gmial.com');
+  await email.blur();
+  await page.getByRole('button', { name: /Você quis dizer aluna@gmail\.com/ }).click();
+  await expect(email).toHaveValue('aluna@gmail.com');
+});
+
+test('senha errada mostra o erro e mantém o email digitado', async ({ page }) => {
+  await login(page, studentEmail('aluna'), 'senha-errada-1');
+  await expect(alert(page)).toContainText('Email ou senha incorretos');
+  await expect(page.getByLabel('Email da compra')).toHaveValue(studentEmail('aluna'));
+});
+
+test('email inexistente recebe a mesma mensagem de senha errada', async ({ page }) => {
+  await login(page, studentEmail('ninguem'), PASSWORD);
+  await expect(alert(page)).toContainText('Email ou senha incorretos');
+});
+
+test('conta com email não confirmado', async ({ page }) => {
+  await login(page, studentEmail('naoconfirmada'), PASSWORD);
+  await expect(alert(page)).toContainText('Confirme seu email primeiro');
+});
+
+test('conta desativada', async ({ page }) => {
+  await login(page, studentEmail('desativada'), PASSWORD);
+  await expect(alert(page)).toContainText('Sua conta foi desativada');
+});
+
+test('a senha nunca volta nas respostas do servidor', async ({ page }) => {
+  const secret = 'senha-que-nao-pode-vazar-9';
+  const actionResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' && new URL(response.url()).pathname === '/entrar',
+  );
+  await login(page, studentEmail('aluna'), secret);
+  const body = await (await actionResponse).text();
+  await expect(alert(page)).toBeVisible();
+  expect(body).not.toContain(secret);
+});
+
+test('login certo cria a sessão em cookie httpOnly', async ({ page, context }) => {
+  await login(page, studentEmail('aluna'), PASSWORD);
+  await expect
+    .poll(async () => (await context.cookies()).find((c) => c.name.endsWith('session_token')))
+    .toMatchObject({ httpOnly: true, sameSite: 'Lax' });
+});
+
+test('mostra o aviso de sessão expirada vindo de outra tela', async ({ page }) => {
+  await page.goto('/entrar?motivo=sessao-expirada');
+  await expect(alert(page)).toContainText('Sessão inválida ou expirada');
+});
+
+test('destino pós-login só aceita caminhos internos', async ({ page }) => {
+  const nextInput = page.locator('input[name="next"]');
+  await page.goto('/entrar?next=%2Fpainel%3Faba%3D1');
+  await expect(nextInput).toHaveValue('/painel?aba=1');
+  // Inclui caminhos que só viram "//evil.com" depois de normalizados (. e ..).
+  const unsafePaths = [
+    '//evil.com',
+    '/\\evil.com',
+    'https://evil.com',
+    '/.//evil.com',
+    '/..//evil.com',
+    '/a/..//evil.com',
+    '/%2e//evil.com',
+  ];
+  for (const unsafe of unsafePaths) {
+    await page.goto(`/entrar?next=${encodeURIComponent(unsafe)}`);
+    await expect(nextInput).toHaveCount(0);
+  }
+});
+
+test('bloqueia depois de 5 tentativas em 1 minuto', async ({ page }) => {
+  const email = studentEmail(`limite-${Date.now()}`);
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    await login(page, email, `tentativa-${attempt}-xx`);
+    await expect(alert(page)).toContainText('Email ou senha incorretos');
+  }
+  await login(page, email, 'tentativa-6-xx');
+  await expect(alert(page)).toContainText('Aguarde 1 minuto pra tentar novamente');
+
+  // A contagem fica no Postgres (vale entre reinícios e vários servidores), não só em memória.
+  const { rows } = await database().query<{ blocked: number }>(
+    `select count(*)::int as blocked from rate_limits
+      where key like 'auth:loginPerEmail:%' and points >= 6 and expire > now()`,
+  );
+  expect(rows[0]?.blocked).toBeGreaterThan(0);
+});
+
+test('a dica da senha temporária é lida junto com o campo de senha', async ({ page }) => {
+  await page.goto('/entrar');
+  await expect(page.getByLabel('Senha', { exact: true })).toHaveAccessibleDescription(
+    /senha temporária/,
+  );
+});
