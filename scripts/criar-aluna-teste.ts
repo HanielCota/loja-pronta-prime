@@ -3,8 +3,16 @@
  * Em produção, as contas nascem da integração com a Hotmart (docs/INTEGRACAO-HOTMART.md).
  *
  *   bun run dev:aluna <email> <senha> [--nao-confirmada] [--desativada] [--primeiro-acesso]
+ *                     [--so-sll | --so-loja-pronta | --sem-produto] [--fase=<1 a 7>]
+ *
+ * Produtos: sem opção, a aluna tem os dois (e vê a tela de escolha de área).
+ * Fase: em que fase está a loja dela na Loja Pronta (sem opção, a primeira).
  */
+import type { ProductId } from '@/config/products';
+import { STORE_PHASES } from '@/config/store-phases';
 import { auth } from '@/server/auth/auth';
+import { db } from '@/server/db';
+import { stores, studentProducts } from '@/server/db/schema';
 
 if (process.env.NODE_ENV === 'production') {
   console.error('Esse script é só pra desenvolvimento.');
@@ -15,9 +23,12 @@ const args = process.argv.slice(2);
 const flags = new Set(args.filter((arg) => arg.startsWith('--')));
 const [email, password] = args.filter((arg) => !arg.startsWith('--'));
 
-if (!email || !password) {
+const phaseFlag = args.find((arg) => arg.startsWith('--fase='));
+const phase = phaseFlag ? Number(phaseFlag.slice('--fase='.length)) : 1;
+
+if (!email || !password || !Number.isInteger(phase) || phase < 1 || phase > STORE_PHASES.length) {
   console.error(
-    'Uso: bun run dev:aluna <email> <senha> [--nao-confirmada] [--desativada] [--primeiro-acesso]',
+    'Uso: bun run dev:aluna <email> <senha> [--nao-confirmada] [--desativada] [--primeiro-acesso] [--so-sll | --so-loja-pronta | --sem-produto] [--fase=<1 a 7>]',
   );
   process.exit(1);
 }
@@ -37,5 +48,22 @@ const { user } = await auth.api.createUser({
   },
 });
 
-console.info(`Aluna de teste criada (${user.id}).`);
+const products: ProductId[] = flags.has('--sem-produto')
+  ? []
+  : flags.has('--so-sll')
+    ? ['sll']
+    : flags.has('--so-loja-pronta')
+      ? ['loja-pronta']
+      : ['sll', 'loja-pronta'];
+if (products.length) {
+  await db
+    .insert(studentProducts)
+    .values(products.map((product) => ({ userId: user.id, product })));
+}
+
+if (products.includes('loja-pronta')) {
+  await db.insert(stores).values({ userId: user.id, phase });
+}
+
+console.info(`Aluna de teste criada (${user.id}), produtos: ${products.join(', ') || 'nenhum'}.`);
 process.exit(0);
