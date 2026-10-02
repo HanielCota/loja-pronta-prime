@@ -24,6 +24,12 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
   await expect(page.getByRole('heading', { name: /Pra onde vamos/ })).toBeVisible();
   // Sem barra do topo: na tela, só os produtos.
   await expect(page.getByRole('banner')).toHaveCount(0);
+  // Leitor de tela: cada produto é um título, o link se chama pelo que faz e o resto do cartão
+  // (incluindo qual é o recomendado) vem como descrição.
+  await expect(page.getByRole('heading', { level: 2, name: 'Loja Pronta' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Entrar, Loja Pronta' })).toHaveAccessibleDescription(
+    /^Recomendado agora\. Serviço · a gente faz Fase 1 de 7 · Conversa inicial A gente conhece/,
+  );
   // A Loja Pronta vem primeiro.
   await expect(page.getByRole('main').getByRole('link').first()).toContainText('Loja Pronta');
   // O bloco da Loja Pronta mostra a fase da loja.
@@ -50,11 +56,11 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
   await page.goto('/');
   await expect(async () => {
     await page.reload();
-    await expect(page.getByRole('link', { name: /Loja Pronta.*Continuar/ })).toBeVisible({
+    await expect(page.getByRole('link', { name: /^Continuar, Loja Pronta$/ })).toBeVisible({
       timeout: 1000,
     });
   }).toPass();
-  await expect(page.getByRole('link', { name: /Sistema Loja Lucrativa.*Entrar/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Entrar, Sistema Loja Lucrativa/ })).toBeVisible();
   // Quem volta é recebida com "Continue de onde parou".
   await expect(page.getByText('Continue de onde parou.')).toBeVisible();
 
