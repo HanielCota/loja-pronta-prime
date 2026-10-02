@@ -132,7 +132,7 @@ Frames are written straight to CSS variables and SVG attributes, so the animatio
 | Auth          | Better Auth (email and password, cookie sessions, admin plugin)             |
 | Database      | PostgreSQL 17 · Drizzle ORM                                                 |
 | Forms         | Conform + Zod 4, with the same schema in the browser and on the server      |
-| Rate limiting | rate-limiter-flexible, with counters stored in Postgres                     |
+| Rate limiting | Atomic per-minute counters in Postgres, with an in-memory fallback          |
 | UI            | Tailwind CSS 4 · shadcn/ui (Radix) · lucide-react · Manrope and Inconsolata |
 | Quality       | TypeScript (strict) · Oxlint · Prettier                                     |
 | Tests         | Playwright (desktop and mobile) · axe-core                                  |
