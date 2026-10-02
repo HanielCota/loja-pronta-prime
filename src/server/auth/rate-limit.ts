@@ -8,29 +8,30 @@ const WINDOW_SECONDS = 60;
 
 export type RateLimitScope = keyof typeof RATE_LIMITS_PER_MINUTE;
 
-type Limiters = Record<RateLimitScope, RateLimiterDrizzle>;
-
-function createLimiters(): Limiters {
-  const entries = Object.entries(RATE_LIMITS_PER_MINUTE).map(([scope, points]) => {
-    const options = { keyPrefix: `auth:${scope}`, points, duration: WINDOW_SECONDS };
-    const limiter = new RateLimiterDrizzle({
-      ...options,
-      storeClient: db,
-      schema: rateLimits,
-      // Se o banco falhar, segue protegendo com um limite em memória em vez de liberar tudo.
-      insuranceLimiter: new RateLimiterMemory(options),
-    });
-    return [scope, limiter] as const;
+function createLimiter(scope: RateLimitScope): RateLimiterDrizzle {
+  const options = {
+    keyPrefix: `auth:${scope}`,
+    points: RATE_LIMITS_PER_MINUTE[scope],
+    duration: WINDOW_SECONDS,
+  };
+  return new RateLimiterDrizzle({
+    ...options,
+    storeClient: db,
+    schema: rateLimits,
+    // Se o banco falhar, segue protegendo com um limite em memória em vez de liberar tudo.
+    insuranceLimiter: new RateLimiterMemory(options),
   });
-  return Object.fromEntries(entries) as Limiters;
 }
 
-// Criados no primeiro uso (o build nunca toca no banco) e reaproveitados entre recargas do dev.
-const globalForLimiters = globalThis as unknown as { authRateLimiters?: Limiters };
+// Criados no primeiro uso de cada escopo (o build nunca toca no banco) e reaproveitados entre
+// recargas do dev. Por escopo: um limite novo funciona sem reiniciar o servidor.
+const globalForLimiters = globalThis as unknown as {
+  authRateLimiters?: Partial<Record<RateLimitScope, RateLimiterDrizzle>>;
+};
 
-function getLimiters(): Limiters {
-  globalForLimiters.authRateLimiters ??= createLimiters();
-  return globalForLimiters.authRateLimiters;
+function getLimiter(scope: RateLimitScope): RateLimiterDrizzle {
+  const limiters = (globalForLimiters.authRateLimiters ??= {});
+  return (limiters[scope] ??= createLimiter(scope));
 }
 
 /**
@@ -42,7 +43,7 @@ export async function consumeAttempt(scope: RateLimitScope, identity: string): P
   const key = createHash('sha256').update(identity).digest('base64url');
 
   try {
-    await getLimiters()[scope].consume(key);
+    await getLimiter(scope).consume(key);
     return true;
   } catch (error) {
     if (error instanceof RateLimiterRes) return false;

@@ -24,6 +24,11 @@ export const recoverSchema = z.object({
   email: emailSchema,
 });
 
+export const firstPasswordSchema = z.object({
+  password,
+  next: z.string().optional(),
+});
+
 export const resetPasswordSchema = z.object({
   password,
   token: z.string({ error: VALIDATION_MESSAGES.resetLinkMissing }),

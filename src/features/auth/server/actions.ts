@@ -1,6 +1,5 @@
 'use server';
 
-import type { Submission, SubmissionResult } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod/v4';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -9,23 +8,14 @@ import { consumeAttempt } from '@/server/auth/rate-limit';
 import { reportAuthError } from '@/server/auth/report-error';
 import { getClientIp } from '@/server/request/client-ip';
 import { ENHANCED_SUBMIT_FIELD } from '../enhanced-submit';
-import type { AuthErrorCode } from '../error-codes';
 import { loginSchema, recoverSchema, resetPasswordSchema } from '../schemas';
 import { toAuthErrorCode } from './better-auth-errors';
 import { resolvePostLoginPath } from './post-login';
+import { HIDDEN_FIELDS, reject, type FormResult } from './submission';
 
-// A senha nunca volta pro navegador na resposta da action.
-const HIDDEN_FIELDS = ['password'];
-
-type FormResult = SubmissionResult<string[]> | undefined;
 export type LoginResult = { submission?: FormResult; redirectTo?: string } | undefined;
 export type RecoverResult = { submission?: FormResult; sentTo?: string } | undefined;
 export type ResetResult = { submission?: FormResult; completed?: boolean } | undefined;
-
-/** Resposta de recusa: o código vira a mensagem da tela; a senha nunca volta. */
-function reject(submission: Pick<Submission<unknown>, 'reply'>, code: AuthErrorCode): FormResult {
-  return submission.reply({ formErrors: [code], hideFields: HIDDEN_FIELDS });
-}
 
 /** Login: limite por conta (email) e, quando o IP é conhecido, por IP. */
 async function canAttemptLogin(email: string): Promise<boolean> {
@@ -47,19 +37,22 @@ export async function login(_state: LoginResult, formData: FormData): Promise<Lo
     return { submission: reject(submission, 'rate_limited') };
   }
 
+  let mustChangePassword: boolean;
   try {
-    await auth.api.signInEmail({
+    const { user } = await auth.api.signInEmail({
       // callbackURL: pra onde volta o link de confirmação de email, se ele for enviado.
       body: { email, password, callbackURL: '/entrar' },
       headers: await headers(),
     });
+    // Conta com senha temporária (ou sem a marca): primeiro cria a própria senha.
+    mustChangePassword = user.mustChangePassword !== false;
   } catch (error) {
     const code = toAuthErrorCode(error);
     if (code === 'unknown') reportAuthError('login', error);
     return { submission: reject(submission, code) };
   }
 
-  const destination = resolvePostLoginPath(next);
+  const destination = resolvePostLoginPath(next, { mustChangePassword });
   // Com JavaScript: a tela comemora e depois navega. Sem: redireciona direto.
   if (formData.get(ENHANCED_SUBMIT_FIELD)) return { redirectTo: destination };
   redirect(destination);

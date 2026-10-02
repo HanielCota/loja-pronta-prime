@@ -3,7 +3,15 @@ import { Pool } from 'pg';
 /** Senha de todas as alunas criadas pelos testes. */
 export const PASSWORD = 'senha-teste-123';
 
-export type StudentKind = 'aluna' | 'naoconfirmada' | 'desativada' | 'redefinir' | 'comemora';
+export type StudentKind =
+  | 'aluna'
+  | 'naoconfirmada'
+  | 'desativada'
+  | 'redefinir'
+  | 'comemora'
+  | 'primeiroacesso'
+  | 'primeiroacessosenha'
+  | 'primeiroacessoreset';
 
 /** Id desta execução, definido no global-setup: cada execução usa alunas próprias. */
 export function runId(): string {

@@ -1,4 +1,4 @@
-export type AuthPath = '/entrar' | '/recuperar-senha';
+export type AuthPath = '/entrar' | '/recuperar-senha' | '/primeiro-acesso';
 
 /**
  * Monta o link entre as telas de acesso mantendo o destino pós-login.

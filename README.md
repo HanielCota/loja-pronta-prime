@@ -25,7 +25,7 @@
 
 ## ✨ Highlights
 
-- 🔐 **No public sign-up.** Buying the course creates the account. Students sign in with their purchase email and a temporary password.
+- 🔐 **No public sign-up.** Buying the course creates the account. Students sign in with their purchase email and a temporary password, and on their first sign-in they create a password of their own.
 - ☁️ **A mascot that pays attention.** It follows the cursor, reads along as you type, covers its eyes while you type your password, and celebrates when you get in.
 - 🛡️ **Secure by default.** Server-side auth, cookie sessions, per-email and per-IP rate limits, and no passwords or emails in logs.
 - ♿ **Accessible.** WCAG 2.2 AA, checked by axe on every test run. Works with screen readers and the keyboard, and respects reduced motion.
@@ -183,7 +183,8 @@ bun install
 cp .env.example .env.local          # then fill in BETTER_AUTH_SECRET
 bun run db:up                       # Postgres 17 in Docker (port 5433)
 bun run db:migrate                  # create the tables
-bun run dev:aluna ana@test.com my-password-123   # create a test student
+bun run dev:aluna ana@test.com my-password-123   # create a test student (add --primeiro-acesso to
+                                                 # try the first-sign-in flow)
 bun run dev                         # http://localhost:3000
 ```
 
@@ -211,27 +212,27 @@ bun -e "console.log(crypto.randomUUID() + crypto.randomUUID())"
 
 ## 📜 Scripts
 
-| Script                | What it does                                                                  |
-| --------------------- | ----------------------------------------------------------------------------- |
-| `bun run dev`         | Development server                                                            |
-| `bun run build`       | Production build                                                              |
-| `bun run start`       | Production server                                                             |
-| `bun run lint`        | Oxlint (`lint:fix` to fix automatically)                                      |
-| `bun run format`      | Prettier                                                                      |
-| `bun run typecheck`   | `tsc --noEmit`                                                                |
-| `bun run db:up`       | Start the development Postgres (`db:down` to stop it)                         |
-| `bun run db:generate` | Generate a migration from the Drizzle schema                                  |
-| `bun run db:migrate`  | Apply migrations                                                              |
-| `bun run db:studio`   | Open Drizzle Studio                                                           |
-| `bun run auth:schema` | Regenerate the Better Auth tables schema                                      |
-| `bun run dev:aluna`   | Create a test student: `<email> <password> [--nao-confirmada] [--desativada]` |
-| `bun run test:e2e`    | End-to-end tests (`test:e2e:ui` for the visual runner)                        |
+| Script                | What it does                                                                                      |
+| --------------------- | ------------------------------------------------------------------------------------------------- |
+| `bun run dev`         | Development server                                                                                |
+| `bun run build`       | Production build                                                                                  |
+| `bun run start`       | Production server                                                                                 |
+| `bun run lint`        | Oxlint (`lint:fix` to fix automatically)                                                          |
+| `bun run format`      | Prettier                                                                                          |
+| `bun run typecheck`   | `tsc --noEmit`                                                                                    |
+| `bun run db:up`       | Start the development Postgres (`db:down` to stop it)                                             |
+| `bun run db:generate` | Generate a migration from the Drizzle schema                                                      |
+| `bun run db:migrate`  | Apply migrations                                                                                  |
+| `bun run db:studio`   | Open Drizzle Studio                                                                               |
+| `bun run auth:schema` | Regenerate the Better Auth tables schema                                                          |
+| `bun run dev:aluna`   | Create a test student: `<email> <password> [--nao-confirmada] [--desativada] [--primeiro-acesso]` |
+| `bun run test:e2e`    | End-to-end tests (`test:e2e:ui` for the visual runner)                                            |
 
 ## 🧪 Testing
 
 The end-to-end suite runs against the real app and database, on desktop Chrome and on a Pixel 7. It covers:
 
-- **Login, recovery and reset flows**, including open-redirect attempts and rate limits stored in the database.
+- **Login, first sign-in, recovery and reset flows**, including open-redirect attempts and rate limits stored in the database.
 - **Security:** Better Auth's HTTP sign-in and reset endpoints stay disabled.
 - **The mascot's reactions**, including reduced motion.
 - **Layout** on phones, phones in landscape and 320px screens.

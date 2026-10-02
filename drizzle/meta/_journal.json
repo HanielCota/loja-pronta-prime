@@ -15,6 +15,13 @@
       "when": 1790951246386,
       "tag": "0001_careless_millenium_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790965248060,
+      "tag": "0002_careless_tempest",
+      "breakpoints": true
     }
   ]
 }

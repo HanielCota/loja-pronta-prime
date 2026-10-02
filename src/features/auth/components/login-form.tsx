@@ -1,9 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { celebrateMascot } from '@/components/brand/mascot';
 import { Button } from '@/components/ui/button';
 import { getAuthErrorCode, type AuthErrorCode } from '../error-codes';
 import { authHref } from '../links';
@@ -11,12 +8,10 @@ import { rememberEmail, useRestoreRememberedEmail } from '../remembered-email';
 import { loginSchema } from '../schemas';
 import { login } from '../server/actions';
 import { useAuthForm } from '../use-auth-form';
+import { useCelebrateRedirect } from '../use-celebrate-redirect';
 import { AuthErrorAlert } from './auth-error-alert';
 import { EmailField } from './email-field';
 import { PasswordField } from './password-field';
-
-/** Tempo pro mascote comemorar antes de mudar de tela. */
-const CELEBRATION_MS = 900;
 
 type LoginFormProps = {
   next?: string;
@@ -27,19 +22,12 @@ type LoginFormProps = {
 export function LoginForm({ next, initialError }: LoginFormProps) {
   const { state, form, fields, pending, responseKey, formProps } = useAuthForm(loginSchema, login);
   const redirectTo = state?.redirectTo;
-  const router = useRouter();
+  // Login certo: o mascote comemora e só então a tela muda.
+  useCelebrateRedirect(redirectTo);
 
   useRestoreRememberedEmail((email) => form.update({ name: fields.email.name, value: email }));
 
   const errorCode = state ? getAuthErrorCode(form.errors) : initialError;
-
-  // Login certo: o mascote comemora e só então a tela muda.
-  useEffect(() => {
-    if (!redirectTo) return;
-    celebrateMascot();
-    const timer = window.setTimeout(() => router.replace(redirectTo), CELEBRATION_MS);
-    return () => window.clearTimeout(timer);
-  }, [redirectTo, router]);
 
   return (
     <form {...formProps} className="flex flex-col gap-5">
