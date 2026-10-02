@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
 import { LiveRegion } from '@/components/ui/live-region';
 import { cn } from '@/lib/utils';
-import { loadStrengthChecker, toStrength, type StrengthScore } from '../password-strength';
+import type { StrengthScore } from '../password-strength';
+import { usePasswordStrength } from '../use-password-strength';
 
 /** Cores com contraste AA no texto (sobre branco); a barra é só reforço visual. */
 const LEVELS: Record<StrengthScore, { label: string; bar: string; text: string }> = {
@@ -29,36 +29,8 @@ export function PasswordStrengthMeter({
   userInputs = [],
   showTip = true,
 }: PasswordStrengthMeterProps) {
-  const [check, setCheck] = useState<Awaited<ReturnType<typeof loadStrengthChecker>>>();
-  // Além do valor inteiro, as partes dele: "ana.souza@gmail.com" também vira "ana.souza",
-  // "ana" e "souza" (o zxcvbn não junta as partes sozinho).
-  const inputsKey = userInputs
-    .flatMap((value) => [value, value.split('@')[0] ?? '', ...value.split(/[@.\s_+-]+/)])
-    .filter((part) => part.length >= 3)
-    .join('\n');
-
-  // Só baixa os dicionários quando a pessoa começa a digitar: quem abre a tela e não cria a
-  // senha (ou usa o gerenciador de senhas) não paga esse download.
-  const hasPassword = password.length > 0;
-  useEffect(() => {
-    if (!hasPassword || check) return;
-    let active = true;
-    loadStrengthChecker()
-      .then((loaded) => {
-        if (active) setCheck(() => loaded);
-      })
-      // Sem os dicionários o medidor só não aparece; a senha continua sendo validada normalmente.
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [hasPassword, check]);
-
-  const strength = useMemo(
-    () =>
-      check && password ? toStrength(check(password, inputsKey.split('\n')), password) : undefined,
-    [check, password, inputsKey],
-  );
+  // Calculada fora da linha principal (Web Worker): a digitação nunca trava.
+  const strength = usePasswordStrength(password, userInputs);
   const level = strength ? LEVELS[strength.score] : undefined;
   const filled = strength ? Math.max(1, strength.score) : 0;
 
