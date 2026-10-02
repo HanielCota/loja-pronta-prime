@@ -37,6 +37,10 @@ test('login com erros (campos e servidor) sem problemas de acessibilidade', asyn
   await page.getByRole('button', { name: 'Entrar' }).click();
   const alert = page.locator('[data-error-code]');
   await expect(alert).toBeVisible();
+  // O alerta entra com fade: mede o contraste depois da animação, com o texto já opaco.
+  await alert.evaluate((el) =>
+    Promise.all(el.getAnimations().map((animation) => animation.finished)),
+  );
   // O formulário aponta pro alerta (aria-describedby com id que existe).
   await expect(page.locator('form')).toHaveAccessibleDescription(/.+/);
   await expectNoViolations(page);
