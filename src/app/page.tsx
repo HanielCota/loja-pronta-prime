@@ -56,6 +56,7 @@ export default async function HomePage() {
   };
   // A Loja Pronta parada esperando por ela vem antes de tudo: leva o botão cheio, e o texto de
   // cima aponta pra ela (em vez de "Continue de onde parou", que podia apontar pro outro produto).
+  // Com a loja nas mãos da equipe, o botão cheio vai pro SLL.
   let primary: ProductId | undefined;
   if (products.includes('loja-pronta')) {
     const phase = await getStorePhase(user.id);
@@ -66,6 +67,8 @@ export default async function HomePage() {
       detail: current?.detail,
     };
     if (current?.needsStudent) primary = 'loja-pronta';
+    // A loja está com a equipe: nada a fazer lá agora, então o destaque vai pro curso.
+    else if (products.includes('sll')) primary = 'sll';
   }
 
   // Sem o cartão em volta: os produtos são os cartões, com o espaço da tela toda.
@@ -78,9 +81,11 @@ export default async function HomePage() {
           description={
             primary === 'loja-pronta'
               ? 'Sua loja está esperando por você.'
-              : lastArea
-                ? 'Continue de onde parou.'
-                : 'Escolha por onde começar.'
+              : primary === 'sll'
+                ? 'Sua loja está com a nossa equipe. Enquanto isso, que tal o curso?'
+                : lastArea
+                  ? 'Continue de onde parou.'
+                  : 'Escolha por onde começar.'
           }
         />
       </div>

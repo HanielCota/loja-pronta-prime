@@ -9,6 +9,7 @@ import { PRODUCTS } from '../catalog';
 import { firstName } from '../names';
 import { SllPath } from './sll-path';
 import { StoreJourney } from './store-journey';
+import type { ConversationStatus } from './store-next-step';
 
 type ProductAreaProps = {
   product: ProductId;
@@ -17,8 +18,9 @@ type ProductAreaProps = {
   firstVisit: boolean;
   /** Tem os dois produtos: a página leva de volta pra escolha. */
   hasChoice: boolean;
-  /** Fase da loja (só na Loja Pronta). */
+  /** Fase da loja e situação da conversa inicial (só na Loja Pronta). */
   storePhase?: number;
+  conversation?: ConversationStatus;
 };
 
 /**
@@ -31,6 +33,7 @@ export function ProductArea({
   firstVisit,
   hasChoice,
   storePhase,
+  conversation,
 }: ProductAreaProps) {
   const { welcome, summary, title: productTitle } = PRODUCTS[product];
   const name = firstName(user.name);
@@ -54,7 +57,11 @@ export function ProductArea({
           title={title}
           description={summary}
         />
-        {product === 'loja-pronta' ? <StoreJourney phase={storePhase ?? 1} /> : <SllPath />}
+        {product === 'loja-pronta' ? (
+          <StoreJourney phase={storePhase ?? 1} conversation={conversation ?? 'nao-comecou'} />
+        ) : (
+          <SllPath />
+        )}
       </BrandCard>
       <SignOutButton />
     </PageShell>
