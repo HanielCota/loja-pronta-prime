@@ -30,6 +30,10 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
   await expect(page.getByRole('link', { name: /Loja Pronta/ })).toContainText(
     'Fase 1 de 7 · Conversa inicial',
   );
+  // E o que acontece agora, no lugar do resumo do produto.
+  await expect(page.getByRole('link', { name: /Loja Pronta/ })).toContainText(
+    'A gente conhece o seu perfil',
+  );
   await expectNoA11yViolations(page);
 
   await page.getByRole('link', { name: /Sistema Loja Lucrativa/ }).click();
@@ -51,6 +55,8 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
     });
   }).toPass();
   await expect(page.getByRole('link', { name: /Sistema Loja Lucrativa.*Entrar/ })).toBeVisible();
+  // Quem volta é recebida com "Continue de onde parou".
+  await expect(page.getByText('Continue de onde parou.')).toBeVisible();
 
   // Na mesma sessão, a saudação não muda; num login seguinte, ela é recebida de volta.
   await page.goto('/sll');
