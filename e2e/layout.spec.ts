@@ -47,3 +47,28 @@ test('visual sem padrões do navegador nos campos', async ({ page }) => {
   expect(parseFloat(style.size)).toBeGreaterThanOrEqual(16);
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#f5f5f7');
 });
+
+test('celular deitado: email e senha aparecem sem rolar', async ({ page }) => {
+  await page.setViewportSize({ width: 667, height: 375 });
+  await page.goto('/entrar');
+  for (const field of [
+    page.getByLabel('Email da compra'),
+    page.getByLabel('Senha', { exact: true }),
+  ]) {
+    const box = await field.boundingBox();
+    expect(box && box.y + box.height).toBeLessThanOrEqual(375);
+  }
+});
+
+test('email longo desce inteiro pra linha de baixo, sem quebrar no meio à toa', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto('/entrar');
+  await page.getByLabel('Email da compra').fill('maria.silva@gmial.com');
+  await page.getByLabel('Senha', { exact: true }).focus();
+  const email = page.getByRole('button', { name: /Você quis dizer/ }).locator('strong');
+  // Uma linha só: o email inteiro cabe na linha de baixo.
+  const lines = await email.evaluate((el) => el.getClientRects().length);
+  expect(lines).toBe(1);
+});

@@ -3,6 +3,9 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 
+/* Telas baixas (celular deitado): layout compacto pra os campos aparecerem sem rolar. */
+@custom-variant short (@media (max-height: 32rem));
+
 /*
  * Tokens de design Loja Pronta Prime, estilo Apple, no formato do shadcn/ui.
  * Use pelas classes geradas: bg-primary, text-muted-foreground, rounded-card, text-body...

@@ -63,7 +63,7 @@ export function EmailField({ meta, onSuggestionAccept }: EmailFieldProps) {
             onClick={() => onSuggestionAccept(suggestion)}
           >
             <span>
-              Você quis dizer <strong className="font-semibold break-all">{suggestion}</strong>?
+              Você quis dizer <strong className="font-semibold wrap-anywhere">{suggestion}</strong>?
             </span>
           </Button>
         ) : null}

@@ -11,7 +11,7 @@ type LogoProps = {
 export function Logo({ className, expression }: LogoProps) {
   return (
     <div className={cn('flex flex-col items-center', className)}>
-      <Mascot className="size-33 shrink-0" expression={expression} />
+      <Mascot className="size-33 shrink-0 short:size-20" expression={expression} />
       {/* Sem o nome na tela; leitores de tela ainda anunciam a marca. */}
       <span className="sr-only">Loja Pronta Prime</span>
     </div>
