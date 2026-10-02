@@ -41,7 +41,12 @@ export function ResetPasswordForm({ token }: { token: string }) {
           meta={fields.password}
           label="Senha nova"
           autoComplete="new-password"
-          meter={<PasswordStrengthMeter password={fields.password.value ?? ''} />}
+          meter={
+            <PasswordStrengthMeter
+              password={fields.password.value ?? ''}
+              showTip={!fields.password.errors?.length}
+            />
+          }
         />
 
         <Button type="submit" loading={pending} loadingText="Salvando…">
