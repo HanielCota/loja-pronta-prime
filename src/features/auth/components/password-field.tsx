@@ -13,11 +13,20 @@ type PasswordFieldProps = {
   autoComplete: 'current-password' | 'new-password';
   /** Dica curta embaixo do campo (lida pelo leitor de tela junto com o campo). */
   hint?: string;
+  /** Colado no campo, antes da dica: ex.: a força da senha enquanto ela é criada. */
+  meter?: ReactNode;
   /** Conteúdo logo abaixo do campo, ex.: link "Esqueci minha senha". */
   below?: ReactNode;
 };
 
-export function PasswordField({ meta, label, autoComplete, hint, below }: PasswordFieldProps) {
+export function PasswordField({
+  meta,
+  label,
+  autoComplete,
+  hint,
+  meter,
+  below,
+}: PasswordFieldProps) {
   const { key, type: _type, ...inputProps } = getInputProps(meta, { type: 'password' });
   const hintId = `${meta.id}-dica`;
   // Junta a dica com a mensagem de erro (quando houver) que o Conform já liga ao campo.
@@ -35,6 +44,7 @@ export function PasswordField({ meta, label, autoComplete, hint, below }: Passwo
         autoComplete={autoComplete}
         aria-describedby={describedBy}
       />
+      {meter}
       {hint ? (
         <p
           id={hintId}

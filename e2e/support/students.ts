@@ -12,7 +12,8 @@ export type StudentKind =
   | 'primeiroacesso'
   | 'primeiroacessosenha'
   | 'primeiroacessoreset'
-  | 'inicio';
+  | 'inicio'
+  | 'forcasenha';
 
 /** Id desta execução, definido no global-setup: cada execução usa alunas próprias. */
 export function runId(): string {
