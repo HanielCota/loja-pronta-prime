@@ -226,6 +226,7 @@ bun -e "console.log(crypto.randomUUID() + crypto.randomUUID())"
 | `bun run db:studio`   | Open Drizzle Studio                                                                                                                                                                                           |
 | `bun run auth:schema` | Regenerate the Better Auth tables schema                                                                                                                                                                      |
 | `bun run dev:aluna`   | Create a test student: `<email> <password> [--nao-confirmada] [--desativada] [--primeiro-acesso] [--so-sll \| --so-loja-pronta \| --sem-produto] [--fase=<1-7>]` (both products and store phase 1 by default) |
+| `bun run test`        | Unit tests (Bun's built-in runner, `*.test.ts` under `src/`)                                                                                                                                                  |
 | `bun run test:e2e`    | End-to-end tests (`test:e2e:ui` for the visual runner)                                                                                                                                                        |
 
 ## 🧪 Testing
@@ -233,12 +234,15 @@ bun -e "console.log(crypto.randomUUID() + crypto.randomUUID())"
 The end-to-end suite runs against the real app and database, on desktop Chrome and on a Pixel 7. It covers:
 
 - **Login, first sign-in, recovery and reset flows**, including open-redirect attempts and rate limits stored in the database.
+- **The area chooser and both product areas**, including the Loja Pronta first conversation: every question type, resuming, editing from the review, keyboard use and the flow with JavaScript turned off.
 - **Security:** Better Auth's HTTP sign-in and reset endpoints stay disabled.
 - **The mascot's reactions**, including reduced motion.
 - **Layout** on phones, phones in landscape and 320px screens.
 - **Accessibility:** WCAG 2.2 AA checks with axe, keyboard order and focus visibility.
 
 Test students are created before each run and removed after it.
+
+Pure rules (like the conversation's answer validation) also have unit tests, which run in milliseconds and need no database: `bun run test`.
 
 ```bash
 bun x playwright install chromium   # first time only
@@ -277,6 +281,8 @@ src/
 ├─ features/
 │  ├─ auth/              Access screens: components, schemas and messages
 │  │  └─ server/         Server Actions and server-side rules
+│  ├─ onboarding/        Loja Pronta first conversation (questions, review, WhatsApp)
+│  │  └─ server/         Answers storage and Server Actions
 │  └─ products/          Area chooser and product areas (SLL, Loja Pronta)
 │     └─ server/         Which products each student has, page access rules
 ├─ config/               Access rules and validated environment (Zod)
@@ -289,7 +295,7 @@ src/
 
 - **Branches:** one per change (`type/short-description`), merged into `main` through a pull request.
 - **Commits:** atomic, in English, following [Conventional Commits](https://www.conventionalcommits.org) (`feat(auth): …`, `fix(ui): …`, `test(e2e): …`). Each commit passes `typecheck` and `lint` on its own.
-- **Before opening a PR:** run `bun run lint`, `bun run typecheck` and `bun run test:e2e`.
+- **Before opening a PR:** run `bun run lint`, `bun run typecheck`, `bun run test` and `bun run test:e2e`.
 - **Package manager:** use only `bun` and `bun x`, never npm, npx, yarn or pnpm.
 
 ## 📚 Documentation
