@@ -9,8 +9,6 @@ export const metadata: Metadata = {
 
 /** Área do produto: só pra quem tem o produto (os outros voltam pro início). */
 export default async function Page() {
-  const { session, products, firstVisit } = await requireProduct('sll');
-  return (
-    <ProductArea product="sll" products={products} user={session.user} firstVisit={firstVisit} />
-  );
+  const { session, firstVisit } = await requireProduct('sll');
+  return <ProductArea product="sll" user={session.user} firstVisit={firstVisit} />;
 }

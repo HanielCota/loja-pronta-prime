@@ -3,9 +3,9 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { BrandCard } from '@/components/brand/brand-card';
 import { CardHeading } from '@/components/brand/card-heading';
+import { PageShell } from '@/components/brand/page-shell';
 import { Button } from '@/components/ui/button';
 import { PRODUCTS } from '@/features/products/catalog';
-import { MemberShell } from '@/features/products/components/member-shell';
 import { ProductChooser } from '@/features/products/components/product-chooser';
 import { firstName } from '@/features/products/names';
 import { requireStudent } from '@/features/products/server/access';
@@ -16,8 +16,7 @@ export const metadata: Metadata = {
 
 /**
  * Início de quem já entrou (e já criou a própria senha). Com os dois produtos, ela escolhe a
- * área; com um só, entra direto nele; sem nenhum, explica o que fazer. Na escolha não há barra
- * do topo, só os produtos; sem produto, a barra fica (é por ela que dá pra sair da conta).
+ * área; com um só, entra direto nele; sem nenhum, explica o que fazer.
  */
 export default async function HomePage() {
   const { session, products, lastArea } = await requireStudent('/');
@@ -28,15 +27,13 @@ export default async function HomePage() {
   const name = firstName(user.name);
 
   return (
-    <MemberShell
-      header={products.length > 0 ? undefined : { products, name: user.name, email: user.email }}
-    >
+    <PageShell>
       <BrandCard expression="happy" compact>
         {products.length > 0 ? (
           <>
             <CardHeading
               title={name ? `Oi, ${name}! Pra onde vamos?` : 'Pra onde vamos?'}
-              description="Escolha por onde começar. Dá pra trocar depois."
+              description="Escolha por onde começar."
             />
             <ProductChooser products={products} lastArea={lastArea} />
           </>
@@ -55,6 +52,6 @@ export default async function HomePage() {
           </>
         )}
       </BrandCard>
-    </MemberShell>
+    </PageShell>
   );
 }

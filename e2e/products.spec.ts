@@ -19,13 +19,10 @@ test('depois de criar a senha no primeiro acesso, escolhe entre a Loja Pronta e 
   await expect(page.getByRole('link', { name: /Loja Pronta/ }).first()).toBeVisible();
 });
 
-test('com os dois produtos: escolhe uma área e troca pra outra pela barra', async ({
-  page,
-  context,
-}) => {
+test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, context }) => {
   await signIn(page, studentEmail('doisprodutos'), PASSWORD);
   await expect(page.getByRole('heading', { name: /Pra onde vamos/ })).toBeVisible();
-  // Na escolha, só os produtos: sem barra do topo.
+  // Sem barra do topo: na tela, só os produtos.
   await expect(page.getByRole('banner')).toHaveCount(0);
   await expectNoA11yViolations(page);
 
@@ -34,18 +31,13 @@ test('com os dois produtos: escolhe uma área e troca pra outra pela barra', asy
   await expect(page.getByRole('heading', { name: SLL })).toBeVisible();
   await expectNoA11yViolations(page);
 
-  // A barra do topo troca de área e marca a atual.
-  const areas = page.getByRole('navigation', { name: 'Áreas' });
-  await expect(areas.getByRole('link', { name: 'SLL' })).toHaveAttribute('aria-current', 'page');
-  await areas.getByRole('link', { name: 'Loja Pronta' }).click();
-  await expect(page).toHaveURL(/\/loja-pronta$/);
+  await page.goto('/loja-pronta');
   await expect(page.getByRole('heading', { name: LOJA_PRONTA })).toBeVisible();
   await expectNoA11yViolations(page);
 
   // De volta ao início, a última área aberta aparece como "Continuar". A visita é registrada
   // logo depois da resposta, então confere recarregando.
-  await areas.getByRole('link', { name: 'Início' }).click();
-  await expect(page).toHaveURL(/\/$/);
+  await page.goto('/');
   await expect(async () => {
     await page.reload();
     await expect(page.getByRole('link', { name: /Loja Pronta.*Continuar/ })).toBeVisible({
@@ -63,13 +55,10 @@ test('com os dois produtos: escolhe uma área e troca pra outra pela barra', asy
   await expect(page.getByRole('heading', { name: /Bom te ver de novo/ })).toBeVisible();
 });
 
-test('com um produto só: entra direto nele, sem tela de escolha nem troca de área', async ({
-  page,
-}) => {
+test('com um produto só: entra direto nele, sem tela de escolha', async ({ page }) => {
   await signIn(page, studentEmail('sosll'), PASSWORD);
   await expect(page).toHaveURL(/\/sll$/);
   await expect(page.getByRole('heading', { name: SLL })).toBeVisible();
-  await expect(page.getByRole('navigation', { name: 'Áreas' })).toHaveCount(0);
 
   // A área do produto que ela não tem leva de volta (e o início manda pro produto dela).
   await page.goto('/loja-pronta');
@@ -88,9 +77,6 @@ test('sem nenhum produto: avisa que o acesso ainda não foi liberado', async ({ 
   await expect(
     page.getByRole('heading', { name: 'Seu acesso ainda não foi liberado' }),
   ).toBeVisible();
-
-  await page.getByRole('button', { name: 'Conta' }).click();
-  await expect(page.getByRole('button', { name: 'Sair da conta' })).toBeVisible();
 
   await page.goto('/sll');
   await expect(page).toHaveURL(/\/$/);
