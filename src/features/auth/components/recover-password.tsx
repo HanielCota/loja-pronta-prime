@@ -88,8 +88,8 @@ function ResetLinkSent({
   return (
     <>
       <AuthStatus icon={<MailIcon aria-hidden="true" />} title="Confere seu email">
-        Se <strong className="font-semibold break-all text-foreground">{email}</strong> tiver uma
-        conta com a gente, o link chega em alguns minutos. Ele vale por{' '}
+        Se <strong className="font-semibold wrap-anywhere text-foreground">{email}</strong> tiver
+        uma conta com a gente, o link chega em alguns minutos. Ele vale por{' '}
         {formatHours(RESET_LINK_TTL_HOURS)}.
       </AuthStatus>
       <div className="flex flex-col gap-4">
