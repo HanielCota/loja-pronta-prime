@@ -19,7 +19,8 @@
   --card: #ffffff;
 
   --primary: #0071e3;
-  --primary-hover: #0077ed;
+  /* Mais escuro no hover (não mais claro): o texto branco precisa de 4,5:1 também com o mouse em cima. */
+  --primary-hover: #0068d6;
   --primary-soft: #e8f2fd;
   --primary-foreground: #ffffff;
   /* Azul mais escuro pra texto de link (contraste 5,6:1 no branco). */
