@@ -15,6 +15,8 @@ const STUDENTS: Student[] = [
   { kind: 'desativada', emailVerified: true, banned: true },
   { kind: 'redefinir', emailVerified: true, banned: false },
   { kind: 'comemora', emailVerified: true, banned: false },
+  // Própria dos testes do início (cada email tem limite de 5 logins por minuto).
+  { kind: 'inicio', emailVerified: true, banned: false },
   // Com senha temporária: no login, vão pro primeiro acesso.
   { kind: 'primeiroacesso', emailVerified: true, banned: false, temporaryPassword: true },
   { kind: 'primeiroacessosenha', emailVerified: true, banned: false, temporaryPassword: true },
