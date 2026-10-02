@@ -20,14 +20,14 @@ export function AuthStatus({ icon, title, children }: AuthStatusProps) {
   }, []);
 
   return (
-    <div className="mb-8 flex flex-col items-center gap-3 text-center">
+    <div className="mb-8 flex flex-col items-center gap-3 text-center short:mb-4">
       <span className="grid size-14 place-items-center rounded-full bg-primary-soft text-primary [&_svg]:size-7">
         {icon}
       </span>
       <h1
         ref={headingRef}
         tabIndex={-1}
-        className="text-title font-semibold text-balance outline-none sm:text-title-lg"
+        className="text-title font-semibold text-balance outline-none sm:text-title-lg short:text-title"
       >
         {title}
       </h1>
