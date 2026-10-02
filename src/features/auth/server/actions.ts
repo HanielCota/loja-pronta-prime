@@ -37,19 +37,22 @@ export async function login(_state: LoginResult, formData: FormData): Promise<Lo
     return { submission: reject(submission, 'rate_limited') };
   }
 
+  let mustChangePassword: boolean;
   try {
-    await auth.api.signInEmail({
+    const { user } = await auth.api.signInEmail({
       // callbackURL: pra onde volta o link de confirmação de email, se ele for enviado.
       body: { email, password, callbackURL: '/entrar' },
       headers: await headers(),
     });
+    // Conta com senha temporária (ou sem a marca): primeiro cria a própria senha.
+    mustChangePassword = user.mustChangePassword !== false;
   } catch (error) {
     const code = toAuthErrorCode(error);
     if (code === 'unknown') reportAuthError('login', error);
     return { submission: reject(submission, code) };
   }
 
-  const destination = resolvePostLoginPath(next);
+  const destination = resolvePostLoginPath(next, { mustChangePassword });
   // Com JavaScript: a tela comemora e depois navega. Sem: redireciona direto.
   if (formData.get(ENHANCED_SUBMIT_FIELD)) return { redirectTo: destination };
   redirect(destination);

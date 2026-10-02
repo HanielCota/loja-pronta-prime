@@ -51,6 +51,10 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, AuthMessage> = {
     title: 'Esse link expirou ou já foi usado',
     hint: `Cada link vale por ${formatHours(RESET_LINK_TTL_HOURS)} e funciona uma vez só. Pede um novo, é rapidinho.`,
   },
+  same_password: {
+    title: 'Escolha uma senha diferente da temporária',
+    hint: 'A temporária foi enviada por email. A senha nova precisa ser só sua.',
+  },
   unknown: {
     title: 'Não foi possível entrar',
     hint: 'Pode ser a sua internet. Tenta de novo em alguns segundos.',
