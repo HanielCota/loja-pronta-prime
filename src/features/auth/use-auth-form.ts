@@ -1,0 +1,56 @@
+import { getFormProps, useForm, type SubmissionResult } from '@conform-to/react';
+import { getZodConstraint, parseWithZod } from '@conform-to/zod/v4';
+import { useActionState, useState } from 'react';
+import type { z } from 'zod';
+import { submitWithoutReset } from './enhanced-submit';
+
+/**
+ * Validação "gentil" em todos os formulários de acesso: o erro aparece ao sair do campo
+ * (ou ao enviar) e some enquanto a aluna corrige.
+ */
+const AUTH_FORM_OPTIONS = {
+  shouldValidate: 'onBlur',
+  shouldRevalidate: 'onInput',
+} as const;
+
+type ActionState = { submission?: SubmissionResult<string[]> } | undefined;
+
+/**
+ * Liga um formulário de acesso à sua Server Action: a mesma validação (schema) no navegador e
+ * no servidor, o resultado do servidor de volta nos campos e o envio sem apagar o que foi digitado.
+ */
+export function useAuthForm<Schema extends z.ZodObject, State extends ActionState>(
+  schema: Schema,
+  serverAction: (state: State, formData: FormData) => Promise<State>,
+) {
+  const [state, action, pending] = useActionState(serverAction, undefined as Awaited<State>);
+  const [form, fields] = useForm({
+    ...AUTH_FORM_OPTIONS,
+    lastResult: state?.submission,
+    constraint: getZodConstraint(schema),
+    onValidate: ({ formData }) => parseWithZod(formData, { schema }),
+  });
+  const responseKey = useResponseKey(state);
+
+  const formProps = {
+    ...getFormProps(form),
+    action,
+    onSubmit: submitWithoutReset(form.onSubmit, action),
+  };
+
+  return { state, form, fields, pending, responseKey, formProps };
+}
+
+/**
+ * Número que muda a cada resposta do servidor. Usado como `key` do alerta de erro: assim ele
+ * é recriado mesmo quando o erro se repete, e o leitor de tela (e o mascote) reagem de novo.
+ */
+function useResponseKey(response: unknown): number {
+  const [lastResponse, setLastResponse] = useState(response);
+  const [key, setKey] = useState(0);
+  if (response !== lastResponse) {
+    setLastResponse(response);
+    setKey((current) => current + 1);
+  }
+  return key;
+}
