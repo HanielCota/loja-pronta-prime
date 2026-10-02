@@ -1,15 +1,25 @@
 import { headers } from 'next/headers';
+import { env } from '@/config/env';
 
 /**
- * IP de quem fez a requisição, como visto pelo proxy da hospedagem.
+ * IP de quem fez a requisição, como visto pelo proxy mais externo em que confiamos.
  *
- * Usa a ÚLTIMA entrada do X-Forwarded-For: é a que o proxy acrescenta. As anteriores vêm do
- * próprio cliente e podem ser inventadas a cada tentativa. Se houver mais de um proxy na
- * frente do sistema, ajuste aqui. Sem proxy, o próprio Next preenche o cabeçalho com o endereço
- * da conexão, então o IP é o de quem se conectou direto.
+ * Cada proxy acrescenta ao fim do X-Forwarded-For o endereço de quem falou com ele. Com N proxies
+ * confiáveis (TRUSTED_PROXY_HOPS), o IP do cliente é a N-ésima entrada a partir do fim; as
+ * anteriores vêm do próprio cliente e podem ser inventadas a cada tentativa.
+ *
+ * Sem proxy (0), não há em quem confiar: o Next só preenche o cabeçalho quando ele não vem na
+ * requisição, então um valor enviado pelo cliente passaria direto. Nesse caso o IP fica
+ * desconhecido e só valem os limites por conta.
  */
 export async function getClientIp(): Promise<string | undefined> {
+  const hops = env.TRUSTED_PROXY_HOPS;
+  if (hops === 0) return undefined;
   const requestHeaders = await headers();
-  const forwardedFor = requestHeaders.get('x-forwarded-for')?.split(',').at(-1)?.trim();
-  return forwardedFor || requestHeaders.get('x-real-ip')?.trim() || undefined;
+  const chain = requestHeaders
+    .get('x-forwarded-for')
+    ?.split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  return chain?.at(-hops) || undefined;
 }

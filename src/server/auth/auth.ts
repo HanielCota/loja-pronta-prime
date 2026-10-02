@@ -35,10 +35,12 @@ export const auth = betterAuth({
     resetPasswordTokenExpiresIn: RESET_LINK_TTL_HOURS * ONE_HOUR,
     revokeSessionsOnPasswordReset: true,
     // Quem redefine pelo link do email já escolheu a própria senha: não precisa trocar de novo.
+    // E abrir o link prova que a caixa de email é dela: o email fica confirmado (sem isso, o
+    // login seguinte pediria mais uma confirmação por email).
     onPasswordReset: async ({ user }) => {
       await db
         .update(schema.user)
-        .set({ mustChangePassword: false })
+        .set({ mustChangePassword: false, emailVerified: true })
         .where(eq(schema.user.id, user.id));
     },
     sendResetPassword: async ({ user, url }) => {
@@ -90,6 +92,14 @@ export const auth = betterAuth({
     '/reset-password',
     '/send-verification-email',
     '/change-password',
+    // Nada na plataforma usa estas: fechadas até existir uma tela (e regras) pra elas. Sem isso,
+    // uma aluna logada trocaria o próprio nome (que aparece na saudação) pela API.
+    '/update-user',
+    '/change-email',
+    '/delete-user',
+    '/revoke-session',
+    '/revoke-sessions',
+    '/revoke-other-sessions',
   ],
   rateLimit: {
     enabled: true,
