@@ -15,7 +15,13 @@ export type StudentKind =
   | 'inicio'
   | 'forcasenha'
   | 'primeiroacessoabas'
-  | 'bloqueadadepois';
+  | 'bloqueadadepois'
+  | 'sosll'
+  | 'semproduto'
+  | 'lojafase3'
+  | 'voltaarea'
+  | 'doisprodutos'
+  | 'primeiroacessoescolha';
 
 /** Id desta execução, definido no global-setup: cada execução usa alunas próprias. */
 export function runId(): string {

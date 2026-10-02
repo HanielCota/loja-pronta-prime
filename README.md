@@ -212,21 +212,21 @@ bun -e "console.log(crypto.randomUUID() + crypto.randomUUID())"
 
 ## 📜 Scripts
 
-| Script                | What it does                                                                                      |
-| --------------------- | ------------------------------------------------------------------------------------------------- |
-| `bun run dev`         | Development server                                                                                |
-| `bun run build`       | Production build                                                                                  |
-| `bun run start`       | Production server                                                                                 |
-| `bun run lint`        | Oxlint (`lint:fix` to fix automatically)                                                          |
-| `bun run format`      | Prettier                                                                                          |
-| `bun run typecheck`   | `tsc --noEmit`                                                                                    |
-| `bun run db:up`       | Start the development Postgres (`db:down` to stop it)                                             |
-| `bun run db:generate` | Generate a migration from the Drizzle schema                                                      |
-| `bun run db:migrate`  | Apply migrations                                                                                  |
-| `bun run db:studio`   | Open Drizzle Studio                                                                               |
-| `bun run auth:schema` | Regenerate the Better Auth tables schema                                                          |
-| `bun run dev:aluna`   | Create a test student: `<email> <password> [--nao-confirmada] [--desativada] [--primeiro-acesso]` |
-| `bun run test:e2e`    | End-to-end tests (`test:e2e:ui` for the visual runner)                                            |
+| Script                | What it does                                                                                                                                                                                                  |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bun run dev`         | Development server                                                                                                                                                                                            |
+| `bun run build`       | Production build                                                                                                                                                                                              |
+| `bun run start`       | Production server                                                                                                                                                                                             |
+| `bun run lint`        | Oxlint (`lint:fix` to fix automatically)                                                                                                                                                                      |
+| `bun run format`      | Prettier                                                                                                                                                                                                      |
+| `bun run typecheck`   | `tsc --noEmit`                                                                                                                                                                                                |
+| `bun run db:up`       | Start the development Postgres (`db:down` to stop it)                                                                                                                                                         |
+| `bun run db:generate` | Generate a migration from the Drizzle schema                                                                                                                                                                  |
+| `bun run db:migrate`  | Apply migrations                                                                                                                                                                                              |
+| `bun run db:studio`   | Open Drizzle Studio                                                                                                                                                                                           |
+| `bun run auth:schema` | Regenerate the Better Auth tables schema                                                                                                                                                                      |
+| `bun run dev:aluna`   | Create a test student: `<email> <password> [--nao-confirmada] [--desativada] [--primeiro-acesso] [--so-sll \| --so-loja-pronta \| --sem-produto] [--fase=<1-7>]` (both products and store phase 1 by default) |
+| `bun run test:e2e`    | End-to-end tests (`test:e2e:ui` for the visual runner)                                                                                                                                                        |
 
 ## 🧪 Testing
 
@@ -275,8 +275,10 @@ src/
 │  │  └─ mascot/         Mascot: rendering, behavior and signals (events.ts)
 │  └─ ui/                shadcn/ui components adapted to the theme
 ├─ features/
-│  └─ auth/              Access screens: components, schemas and messages
-│     └─ server/         Server Actions and server-side rules
+│  ├─ auth/              Access screens: components, schemas and messages
+│  │  └─ server/         Server Actions and server-side rules
+│  └─ products/          Area chooser and product areas (SLL, Loja Pronta)
+│     └─ server/         Which products each student has, page access rules
 ├─ config/               Access rules and validated environment (Zod)
 ├─ lib/                  Utilities (cn, search params)
 ├─ server/               Server infrastructure: auth, database, request

@@ -36,12 +36,18 @@ export const CHEEKS = [
   { cx: 218, cy: 348, rx: 30, ry: 16 },
   { cx: 376, cy: 320, rx: 26, ry: 15 },
 ] as const;
-/** "Zzz" saindo do topo da cabeça quando ele dorme. */
+/**
+ * "Zzz" quando ele dorme: três Z maiúsculos crescendo na diagonal, à direita da cabeça e fora
+ * da silhueta (a cabeça vai até x≈382 entre y=100 e 160; o topo começa em y=32). x e y são a
+ * base de cada letra; o último passa um pouco da borda da arte, de propósito.
+ */
 export const SLEEP_Z = [
-  { x: 372, y: 190, size: 84, delay: 0 },
-  { x: 412, y: 136, size: 106, delay: 0.8 },
-  { x: 456, y: 72, size: 132, delay: 1.6 },
+  { x: 398, y: 152, size: 64, delay: 0 },
+  { x: 438, y: 98, size: 84, delay: 0.5 },
+  { x: 486, y: 34, size: 108, delay: 1 },
 ] as const;
+/** Cor dos Z: o cinza secundário da interface (aparece bem sobre o cartão branco). */
+export const SLEEP_Z_COLOR = '#6e6e73';
 /**
  * A área do olho (onde a pupila anda e a pálpebra desce) é um pouco maior que o branco medido,
  * pra pálpebra cobrir também a borda suavizada da arte enquanto fecha.

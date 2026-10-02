@@ -15,6 +15,7 @@ import {
   INK,
   MOUTH,
   SLEEP_Z,
+  SLEEP_Z_COLOR,
   imageSet,
   mascotBase,
   mascotClosedEyes,
@@ -218,12 +219,13 @@ export function Mascot({
             y={z.y}
             fontSize={z.size}
             fontWeight={800}
-            fill="#48484a"
-            // Só anima enquanto ele dorme (e recomeça a cada cochilo); termina em 4s, contando o atraso.
-            className="[transform-box:fill-box] motion-safe:group-data-[expression=asleep]/mascot:animate-[mascot-zzz_2.4s_ease-out_both]"
+            fill={SLEEP_Z_COLOR}
+            // Só anima enquanto ele dorme (e recomeça a cada cochilo); termina em ~2,2s, contando
+            // o atraso, e fica parado. Cresce a partir da própria base (canto de baixo à esquerda).
+            className="[transform-origin:left_bottom] [transform-box:fill-box] motion-safe:group-data-[expression=asleep]/mascot:animate-[mascot-zzz_1.2s_cubic-bezier(0.22,1,0.36,1)_both]"
             style={{ animationDelay: `${z.delay}s` }}
           >
-            z
+            Z
           </text>
         ))}
       </svg>

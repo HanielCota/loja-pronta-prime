@@ -77,20 +77,21 @@
 }
 
 /*
- * "Zzz" do mascote dormindo: sobe uma vez e fica parado (em unidades do desenho de 512px).
- * Sem repetir: movimento automático com mais de 5s precisaria de um botão de pausa (WCAG 2.2.2).
+ * "Zzz" do mascote dormindo: cada Z surge crescendo e subindo um pouco, e fica parado (em unidades
+ * do desenho de 512px). Sem repetir: movimento automático com mais de 5s precisaria de um botão
+ * de pausa (WCAG 2.2.2).
  */
 @keyframes mascot-zzz {
   0% {
     opacity: 0;
-    transform: translate(0, 0) scale(0.7);
+    transform: translate(-10px, 14px) scale(0.4);
   }
-  40% {
+  60% {
     opacity: 1;
   }
   100% {
     opacity: 1;
-    transform: translate(12px, -30px) scale(1);
+    transform: translate(0, 0) scale(1);
   }
 }
 
