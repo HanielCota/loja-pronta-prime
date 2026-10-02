@@ -5,7 +5,8 @@ import { headers } from 'next/headers';
  *
  * Usa a ÚLTIMA entrada do X-Forwarded-For: é a que o proxy acrescenta. As anteriores vêm do
  * próprio cliente e podem ser inventadas a cada tentativa. Se houver mais de um proxy na
- * frente do sistema, ajuste aqui. Sem proxy, o IP é desconhecido (undefined).
+ * frente do sistema, ajuste aqui. Sem proxy, o próprio Next preenche o cabeçalho com o endereço
+ * da conexão, então o IP é o de quem se conectou direto.
  */
 export async function getClientIp(): Promise<string | undefined> {
   const requestHeaders = await headers();

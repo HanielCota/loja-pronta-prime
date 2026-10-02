@@ -28,7 +28,7 @@ export function PasswordField({
   below,
 }: PasswordFieldProps) {
   const { key, type: _type, ...inputProps } = getInputProps(meta, { type: 'password' });
-  const hintId = `${meta.id}-dica`;
+  const hintId = `${meta.id}-hint`;
   // Um só texto de apoio embaixo do campo: a dica, ou o erro no lugar dela enquanto ele existir.
   const showHint = Boolean(hint) && !meta.errors?.length;
   // O Conform já liga o erro ao campo; a dica entra quando é ela que está na tela.

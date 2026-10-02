@@ -1,6 +1,6 @@
 import { getFormProps, useForm, type SubmissionResult } from '@conform-to/react';
 import { getZodConstraint, parseWithZod } from '@conform-to/zod/v4';
-import { useActionState, useState } from 'react';
+import { useActionState, useMemo, useState } from 'react';
 import type { z } from 'zod';
 import { submitWithoutReset } from './enhanced-submit';
 
@@ -13,21 +13,22 @@ const AUTH_FORM_OPTIONS = {
   shouldRevalidate: 'onInput',
 } as const;
 
-type ActionState = { submission?: SubmissionResult<string[]> } | undefined;
+type ActionResult = { submission?: SubmissionResult<string[]> };
 
 /**
  * Liga um formulário de acesso à sua Server Action: a mesma validação (schema) no navegador e
  * no servidor, o resultado do servidor de volta nos campos e o envio sem apagar o que foi digitado.
  */
-export function useAuthForm<Schema extends z.ZodObject, State extends ActionState>(
+export function useAuthForm<Schema extends z.ZodObject, Result extends ActionResult>(
   schema: Schema,
-  serverAction: (state: State, formData: FormData) => Promise<State>,
+  serverAction: (state: Result | undefined, formData: FormData) => Promise<Result | undefined>,
 ) {
-  const [state, action, pending] = useActionState(serverAction, undefined as Awaited<State>);
+  const [state, action, pending] = useActionState(serverAction, undefined);
+  const constraint = useMemo(() => getZodConstraint(schema), [schema]);
   const [form, fields] = useForm({
     ...AUTH_FORM_OPTIONS,
     lastResult: state?.submission,
-    constraint: getZodConstraint(schema),
+    constraint,
     onValidate: ({ formData }) => parseWithZod(formData, { schema }),
   });
   const responseKey = useResponseKey(state);
