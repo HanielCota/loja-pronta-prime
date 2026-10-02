@@ -29,9 +29,11 @@ export function PasswordField({
 }: PasswordFieldProps) {
   const { key, type: _type, ...inputProps } = getInputProps(meta, { type: 'password' });
   const hintId = `${meta.id}-dica`;
-  // Junta a dica com a mensagem de erro (quando houver) que o Conform já liga ao campo.
+  // Um só texto de apoio embaixo do campo: a dica, ou o erro no lugar dela enquanto ele existir.
+  const showHint = Boolean(hint) && !meta.errors?.length;
+  // O Conform já liga o erro ao campo; a dica entra quando é ela que está na tela.
   const describedBy =
-    [hint ? hintId : undefined, inputProps['aria-describedby']].filter(Boolean).join(' ') ||
+    [showHint ? hintId : undefined, inputProps['aria-describedby']].filter(Boolean).join(' ') ||
     undefined;
 
   return (
@@ -45,7 +47,8 @@ export function PasswordField({
         aria-describedby={describedBy}
       />
       {meter}
-      {hint ? (
+      <FieldErrorMessage id={meta.errorId} errors={meta.errors} />
+      {showHint ? (
         <p
           id={hintId}
           className="flex items-start gap-1.5 px-1 text-sm text-pretty text-muted-foreground"
@@ -54,7 +57,6 @@ export function PasswordField({
           {hint}
         </p>
       ) : null}
-      <FieldErrorMessage id={meta.errorId} errors={meta.errors} />
       {below}
     </Field>
   );

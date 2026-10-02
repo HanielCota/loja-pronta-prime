@@ -45,7 +45,11 @@ export function FirstAccessForm({ email, next }: FirstAccessFormProps) {
           autoComplete="new-password"
           hint="Dica: uma frase curta, tipo “minha loja vai bombar”, é fácil de lembrar e difícil de adivinhar."
           meter={
-            <PasswordStrengthMeter password={fields.password.value ?? ''} userInputs={[email]} />
+            <PasswordStrengthMeter
+              password={fields.password.value ?? ''}
+              userInputs={[email]}
+              showTip={!fields.password.errors?.length}
+            />
           }
         />
 

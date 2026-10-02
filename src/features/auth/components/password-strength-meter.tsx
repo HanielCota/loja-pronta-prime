@@ -18,10 +18,16 @@ type PasswordStrengthMeterProps = {
   password: string;
   /** Dados da pessoa (ex.: email): senha parecida com eles cai de nível. */
   userInputs?: string[];
+  /** Esconde a dica quando o campo já mostra um erro (pra não repetir a mesma coisa). */
+  showTip?: boolean;
 };
 
 /** "Temperatura" da senha enquanto a pessoa cria: barra, nível em texto e dica. */
-export function PasswordStrengthMeter({ password, userInputs = [] }: PasswordStrengthMeterProps) {
+export function PasswordStrengthMeter({
+  password,
+  userInputs = [],
+  showTip = true,
+}: PasswordStrengthMeterProps) {
   const [check, setCheck] = useState<Awaited<ReturnType<typeof loadStrengthChecker>>>();
   // Além do valor inteiro, as partes dele: "ana.souza@gmail.com" também vira "ana.souza",
   // "ana" e "souza" (o zxcvbn não junta as partes sozinho).
@@ -66,7 +72,9 @@ export function PasswordStrengthMeter({ password, userInputs = [] }: PasswordStr
           </div>
           <p className="text-sm text-muted-foreground">
             Força da senha: <span className={cn('font-semibold', level.text)}>{level.label}</span>
-            {strength.tip ? <span className="block text-pretty">{strength.tip}</span> : null}
+            {showTip && strength.tip ? (
+              <span className="block text-pretty">{strength.tip}</span>
+            ) : null}
           </p>
         </>
       ) : null}
