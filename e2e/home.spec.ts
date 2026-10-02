@@ -25,10 +25,8 @@ test('logada, abrir o login leva direto pro início', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /Pra onde vamos/ })).toBeVisible();
 });
 
-// Sem barra do topo, por enquanto não há botão de sair na área da aluna.
-test.fixme('sair encerra a sessão e volta pro login', async ({ page, context }) => {
+test('sair encerra a sessão e volta pro login', async ({ page, context }) => {
   await signIn(page);
-  await page.getByRole('button', { name: 'Conta' }).click();
   await page.getByRole('button', { name: 'Sair da conta' }).click();
   await expect(page).toHaveURL(/\/entrar$/);
   await expect

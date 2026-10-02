@@ -5,10 +5,15 @@ import { BrandCard } from '@/components/brand/brand-card';
 import { CardHeading } from '@/components/brand/card-heading';
 import { PageShell } from '@/components/brand/page-shell';
 import { Button } from '@/components/ui/button';
+import { STORE_PHASES } from '@/config/store-phases';
+import { SignOutButton } from '@/features/auth/components/sign-out-button';
 import { PRODUCTS } from '@/features/products/catalog';
-import { ProductChooser } from '@/features/products/components/product-chooser';
+import {
+  ProductChooser,
+  type ProductProgress,
+} from '@/features/products/components/product-chooser';
 import { firstName } from '@/features/products/names';
-import { requireStudent } from '@/features/products/server/access';
+import { getStorePhase, requireStudent } from '@/features/products/server/access';
 
 export const metadata: Metadata = {
   title: 'Início',
@@ -16,7 +21,8 @@ export const metadata: Metadata = {
 
 /**
  * Início de quem já entrou (e já criou a própria senha). Com os dois produtos, ela escolhe a
- * área; com um só, entra direto nele; sem nenhum, explica o que fazer.
+ * área (cada bloco mostra onde ela parou); com um só, entra direto nele; sem nenhum, explica o
+ * que fazer. Abaixo do cartão, o sair.
  */
 export default async function HomePage() {
   const { session, products, lastArea } = await requireStudent('/');
@@ -25,6 +31,9 @@ export default async function HomePage() {
 
   const { user } = session;
   const name = firstName(user.name);
+  const progress = products.includes('loja-pronta')
+    ? { 'loja-pronta': storeProgress(await getStorePhase(user.id)) }
+    : undefined;
 
   return (
     <PageShell>
@@ -35,7 +44,7 @@ export default async function HomePage() {
               title={name ? `Oi, ${name}! Pra onde vamos?` : 'Pra onde vamos?'}
               description="Escolha por onde começar."
             />
-            <ProductChooser products={products} lastArea={lastArea} />
+            <ProductChooser products={products} lastArea={lastArea} progress={progress} />
           </>
         ) : (
           <>
@@ -52,6 +61,16 @@ export default async function HomePage() {
           </>
         )}
       </BrandCard>
+      <SignOutButton />
     </PageShell>
   );
+}
+
+function storeProgress(phase: number): ProductProgress {
+  const total = STORE_PHASES.length;
+  return {
+    step: phase,
+    total,
+    label: `Fase ${phase} de ${total} · ${STORE_PHASES[phase - 1]?.title}`,
+  };
 }

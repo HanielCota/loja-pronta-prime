@@ -2,6 +2,7 @@ import { BrandCard } from '@/components/brand/brand-card';
 import { CardHeading } from '@/components/brand/card-heading';
 import { PageShell } from '@/components/brand/page-shell';
 import type { ProductId } from '@/config/products';
+import { SignOutButton } from '@/features/auth/components/sign-out-button';
 import { PRODUCTS } from '../catalog';
 import { firstName } from '../names';
 import { SllPath } from './sll-path';
@@ -28,6 +29,7 @@ export function ProductArea({ product, user, firstVisit, storePhase }: ProductAr
         <CardHeading title={title} description={summary} />
         {product === 'loja-pronta' ? <StoreJourney phase={storePhase ?? 1} /> : <SllPath />}
       </BrandCard>
+      <SignOutButton />
     </PageShell>
   );
 }

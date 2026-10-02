@@ -24,6 +24,10 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
   await expect(page.getByRole('heading', { name: /Pra onde vamos/ })).toBeVisible();
   // Sem barra do topo: na tela, só os produtos.
   await expect(page.getByRole('banner')).toHaveCount(0);
+  // O bloco da Loja Pronta mostra a fase da loja.
+  await expect(page.getByRole('link', { name: /Loja Pronta/ })).toContainText(
+    'Fase 1 de 7 · Conversa inicial',
+  );
   await expectNoA11yViolations(page);
 
   await page.getByRole('link', { name: /Sistema Loja Lucrativa/ }).click();
@@ -59,6 +63,8 @@ test('com um produto só: entra direto nele, sem tela de escolha', async ({ page
   await signIn(page, studentEmail('sosll'), PASSWORD);
   await expect(page).toHaveURL(/\/sll$/);
   await expect(page.getByRole('heading', { name: SLL })).toBeVisible();
+  // Ela nunca passa pela escolha: o sair fica na própria área.
+  await expect(page.getByRole('button', { name: 'Sair da conta' })).toBeVisible();
 
   // A área do produto que ela não tem leva de volta (e o início manda pro produto dela).
   await page.goto('/loja-pronta');
