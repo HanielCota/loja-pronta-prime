@@ -5,6 +5,9 @@ import { cn } from '@/lib/utils';
 import { PRODUCTS } from '../catalog';
 import { ProductIcon } from './product-icon';
 
+/** Ordem na escolha: a Loja Pronta vem primeiro (a fase 1 dela depende da aluna). */
+const ORDER: ProductId[] = ['loja-pronta', 'sll'];
+
 /** Onde ela está num produto: a etapa atual de quantas, e isso por escrito ("Fase 3 de 7 · …"). */
 export type ProductProgress = { step: number; total: number; label: string };
 
@@ -24,7 +27,7 @@ type ProductChooserProps = {
 export function ProductChooser({ products, lastArea, progress }: ProductChooserProps) {
   return (
     <ul className="grid gap-3 sm:grid-cols-2">
-      {products.map((product) => {
+      {ORDER.filter((product) => products.includes(product)).map((product) => {
         const { title, tag, pitch, path } = PRODUCTS[product];
         const isLast = product === lastArea;
         const status = progress?.[product];
@@ -35,18 +38,20 @@ export function ProductChooser({ products, lastArea, progress }: ProductChooserP
               className="group/product flex flex-1 gap-4 rounded-2xl border border-border p-4 text-left transition-[background-color,transform] duration-100 ease-out outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid active:scale-[0.98] motion-reduce:active:scale-100 sm:flex-col sm:p-5"
             >
               <ProductIcon product={product} />
-              <span className="flex flex-1 flex-col gap-1">
-                <span className="text-xs font-semibold tracking-wide text-primary uppercase">
+              <span className="flex flex-1 flex-col gap-1.5">
+                <span className="text-sm font-semibold tracking-wide text-primary uppercase">
                   {tag}
                 </span>
-                <span className="text-body font-semibold text-foreground">{title}</span>
-                <span className="text-sm text-pretty text-muted-foreground">{pitch}</span>
+                <span className="text-xl font-semibold tracking-tight text-foreground">
+                  {title}
+                </span>
+                <span className="text-body text-pretty text-muted-foreground">{pitch}</span>
                 {status ? <ProgressLine {...status} /> : null}
-                <span className="mt-auto inline-flex items-center gap-1 self-end pt-2 text-sm font-semibold text-primary">
+                <span className="mt-auto inline-flex items-center gap-1 self-end pt-3 text-body font-semibold text-primary">
                   {isLast ? 'Continuar' : 'Entrar'}
                   <ArrowRightIcon
                     aria-hidden="true"
-                    className="size-4 transition-transform duration-150 ease-out group-hover/product:translate-x-0.5 motion-reduce:transition-none"
+                    className="size-5 transition-transform duration-150 ease-out group-hover/product:translate-x-0.5 motion-reduce:transition-none"
                   />
                 </span>
               </span>
@@ -66,11 +71,11 @@ function ProgressLine({ step, total, label }: ProductProgress) {
         {Array.from({ length: total }, (_, index) => (
           <span
             key={index}
-            className={cn('h-1 flex-1 rounded-full', index < step ? 'bg-primary' : 'bg-border')}
+            className={cn('h-1.5 flex-1 rounded-full', index < step ? 'bg-primary' : 'bg-border')}
           />
         ))}
       </span>
-      <span className="text-sm font-medium text-foreground">{label}</span>
+      <span className="text-body font-medium text-foreground">{label}</span>
     </span>
   );
 }

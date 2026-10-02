@@ -24,6 +24,8 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
   await expect(page.getByRole('heading', { name: /Pra onde vamos/ })).toBeVisible();
   // Sem barra do topo: na tela, só os produtos.
   await expect(page.getByRole('banner')).toHaveCount(0);
+  // A Loja Pronta vem primeiro.
+  await expect(page.getByRole('main').getByRole('link').first()).toContainText('Loja Pronta');
   // O bloco da Loja Pronta mostra a fase da loja.
   await expect(page.getByRole('link', { name: /Loja Pronta/ })).toContainText(
     'Fase 1 de 7 · Conversa inicial',
