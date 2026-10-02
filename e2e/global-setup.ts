@@ -21,6 +21,7 @@ const STUDENTS: Student[] = [
   { kind: 'primeiroacesso', emailVerified: true, banned: false, temporaryPassword: true },
   { kind: 'primeiroacessosenha', emailVerified: true, banned: false, temporaryPassword: true },
   { kind: 'primeiroacessoreset', emailVerified: true, banned: false, temporaryPassword: true },
+  { kind: 'forcasenha', emailVerified: true, banned: false, temporaryPassword: true },
 ];
 
 /** Cria as alunas desta execução pela mesma API que a integração com a Hotmart vai usar. */

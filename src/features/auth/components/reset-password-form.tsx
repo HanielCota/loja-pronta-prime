@@ -14,6 +14,7 @@ import { useAuthForm } from '../use-auth-form';
 import { AuthErrorAlert } from './auth-error-alert';
 import { AuthStatus } from './auth-status';
 import { PasswordField } from './password-field';
+import { PasswordStrengthMeter } from './password-strength-meter';
 
 export function ResetPasswordForm({ token }: { token: string }) {
   const { state, form, fields, pending, responseKey, formProps } = useAuthForm(
@@ -36,7 +37,12 @@ export function ResetPasswordForm({ token }: { token: string }) {
         {errorCode === 'reset_link_invalid' ? <RequestNewLink /> : null}
         <input type="hidden" name="token" value={token} />
 
-        <PasswordField meta={fields.password} label="Senha nova" autoComplete="new-password" />
+        <PasswordField
+          meta={fields.password}
+          label="Senha nova"
+          autoComplete="new-password"
+          meter={<PasswordStrengthMeter password={fields.password.value ?? ''} />}
+        />
 
         <Button type="submit" loading={pending} loadingText="Salvando…">
           Salvar senha

@@ -10,6 +10,7 @@ import { useAuthForm } from '../use-auth-form';
 import { useCelebrateRedirect } from '../use-celebrate-redirect';
 import { AuthErrorAlert } from './auth-error-alert';
 import { PasswordField } from './password-field';
+import { PasswordStrengthMeter } from './password-strength-meter';
 
 type FirstAccessFormProps = {
   /** Email da conta: vai num campo escondido pro gerenciador de senhas salvar o par certo. */
@@ -43,6 +44,9 @@ export function FirstAccessForm({ email, next }: FirstAccessFormProps) {
           label="Senha nova"
           autoComplete="new-password"
           hint="Dica: uma frase curta, tipo “minha loja vai bombar”, é fácil de lembrar e difícil de adivinhar."
+          meter={
+            <PasswordStrengthMeter password={fields.password.value ?? ''} userInputs={[email]} />
+          }
         />
 
         <Button type="submit" loading={pending || Boolean(redirectTo)} loadingText="Salvando…">
