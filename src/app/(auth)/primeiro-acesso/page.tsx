@@ -1,12 +1,11 @@
 import type { Metadata } from 'next';
-import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { BrandCard } from '@/components/brand/brand-card';
 import { FirstAccessForm } from '@/features/auth/components/first-access-form';
 import { sanitizeRedirect } from '@/features/auth/redirect';
 import { resolvePostLoginPath } from '@/features/auth/server/post-login';
+import { getActiveSession, needsFirstPassword } from '@/features/auth/server/session';
 import { getParam, type SearchParams } from '@/lib/search-params';
-import { auth } from '@/server/auth/auth';
 
 export const metadata: Metadata = {
   title: 'Primeiro acesso',
@@ -21,7 +20,7 @@ export default async function FirstAccessPage({
 }) {
   const params = await searchParams;
   const next = sanitizeRedirect(getParam(params.next));
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getActiveSession();
 
   // Sem sessão: volta pro login, avisando o motivo e mantendo o destino.
   if (!session) {
@@ -30,7 +29,7 @@ export default async function FirstAccessPage({
     );
   }
   // Já criou a senha: segue pro destino.
-  if (session.user.mustChangePassword === false) redirect(resolvePostLoginPath(next));
+  if (!needsFirstPassword(session.user)) redirect(resolvePostLoginPath(next));
 
   return (
     <BrandCard>

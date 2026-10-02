@@ -11,6 +11,7 @@ import { ENHANCED_SUBMIT_FIELD } from '../enhanced-submit';
 import { loginSchema, recoverSchema, resetPasswordSchema } from '../schemas';
 import { toAuthErrorCode } from './better-auth-errors';
 import { resolvePostLoginPath } from './post-login';
+import { needsFirstPassword } from './session';
 import { HIDDEN_FIELDS, reject, type FormResult } from './submission';
 
 export type LoginResult = { submission?: FormResult; redirectTo?: string } | undefined;
@@ -45,7 +46,7 @@ export async function login(_state: LoginResult, formData: FormData): Promise<Lo
       headers: await headers(),
     });
     // Conta com senha temporária (ou sem a marca): primeiro cria a própria senha.
-    mustChangePassword = user.mustChangePassword !== false;
+    mustChangePassword = needsFirstPassword(user);
   } catch (error) {
     const code = toAuthErrorCode(error);
     if (code === 'unknown') reportAuthError('login', error);

@@ -1,11 +1,10 @@
 import type { Metadata } from 'next';
-import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { BrandCard } from '@/components/brand/brand-card';
 import { CardHeading } from '@/components/brand/card-heading';
 import { PageShell } from '@/components/brand/page-shell';
 import { SignOutButton } from '@/features/auth/components/sign-out-button';
-import { auth } from '@/server/auth/auth';
+import { getActiveSession, needsFirstPassword } from '@/features/auth/server/session';
 
 export const metadata: Metadata = {
   title: 'Início',
@@ -16,9 +15,9 @@ export const metadata: Metadata = {
  * por enquanto esta tela confirma o acesso e permite sair, em vez de mandar de volta pro login.
  */
 export default async function HomePage() {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getActiveSession();
   if (!session) redirect('/entrar');
-  if (session.user.mustChangePassword !== false) redirect('/primeiro-acesso');
+  if (needsFirstPassword(session.user)) redirect('/primeiro-acesso');
 
   const firstName = session.user.name.trim().split(/\s+/)[0];
 
