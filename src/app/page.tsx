@@ -1,43 +1,57 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { BrandCard } from '@/components/brand/brand-card';
 import { CardHeading } from '@/components/brand/card-heading';
-import { PageShell } from '@/components/brand/page-shell';
-import { SignOutButton } from '@/features/auth/components/sign-out-button';
-import { getActiveSession, needsFirstPassword } from '@/features/auth/server/session';
+import { Button } from '@/components/ui/button';
+import { PRODUCTS } from '@/features/products/catalog';
+import { MemberShell } from '@/features/products/components/member-shell';
+import { ProductChooser } from '@/features/products/components/product-chooser';
+import { firstName } from '@/features/products/names';
+import { requireStudent } from '@/features/products/server/access';
 
 export const metadata: Metadata = {
   title: 'Início',
 };
 
 /**
- * Início de quem já entrou. A área da aluna (aulas, ferramentas, a loja) ainda não existe:
- * por enquanto esta tela confirma o acesso e permite sair, em vez de mandar de volta pro login.
+ * Início de quem já entrou (e já criou a própria senha). Com os dois produtos, ela escolhe a
+ * área; com um só, entra direto nele; sem nenhum, explica o que fazer.
  */
 export default async function HomePage() {
-  const session = await getActiveSession();
-  if (!session) redirect('/entrar');
-  if (needsFirstPassword(session.user)) redirect('/primeiro-acesso');
+  const { session, products, lastArea } = await requireStudent('/');
+  const [onlyProduct] = products;
+  if (products.length === 1 && onlyProduct) redirect(PRODUCTS[onlyProduct].path);
 
-  const firstName = session.user.name.trim().split(/\s+/)[0];
+  const { user } = session;
+  const name = firstName(user.name);
 
   return (
-    <PageShell>
-      <BrandCard expression="happy">
-        <CardHeading
-          title={firstName ? `Você entrou, ${firstName}!` : 'Você entrou!'}
-          description="Sua área de aluna está sendo preparada. Em breve, aqui vão estar suas aulas, as ferramentas e o acompanhamento da sua loja."
-        />
-        <div className="flex flex-col gap-4">
-          <p className="rounded-2xl bg-muted px-4 py-3 text-center text-sm text-muted-foreground">
-            Conta:{' '}
-            <strong className="font-semibold wrap-anywhere text-foreground">
-              {session.user.email}
-            </strong>
-          </p>
-          <SignOutButton />
-        </div>
+    <MemberShell products={products} name={user.name} email={user.email}>
+      <BrandCard expression="happy" compact>
+        {products.length > 0 ? (
+          <>
+            <CardHeading
+              title={name ? `Oi, ${name}! Pra onde vamos?` : 'Pra onde vamos?'}
+              description="Escolha por onde começar. Dá pra trocar depois."
+            />
+            <ProductChooser products={products} lastArea={lastArea} />
+          </>
+        ) : (
+          <>
+            <CardHeading
+              title="Seu acesso ainda não foi liberado"
+              description="Se você acabou de comprar, a liberação leva alguns minutos. Se já faz tempo, fala com o suporte."
+            />
+            {/* Link comum (recarrega a página): funciona sem JavaScript. */}
+            <Button asChild>
+              <Link href="/" prefetch={false}>
+                Verificar de novo
+              </Link>
+            </Button>
+          </>
+        )}
       </BrandCard>
-    </PageShell>
+    </MemberShell>
   );
 }

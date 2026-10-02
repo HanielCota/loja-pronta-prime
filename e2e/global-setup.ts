@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import type { ProductId } from '@/config/products';
 import { auth } from '@/server/auth/auth';
 import { database, PASSWORD, studentEmail, type StudentKind } from './support/students';
 
@@ -7,6 +8,10 @@ type Student = {
   emailVerified: boolean;
   banned: boolean;
   temporaryPassword?: boolean;
+  /** Produtos liberados (padrão: os dois). */
+  products?: ProductId[];
+  /** Fase da loja na Loja Pronta (sem valor, nenhuma loja cadastrada: conta como a primeira). */
+  storePhase?: number;
 };
 
 const STUDENTS: Student[] = [
@@ -25,6 +30,19 @@ const STUDENTS: Student[] = [
   { kind: 'primeiroacessoabas', emailVerified: true, banned: false, temporaryPassword: true },
   // Bloqueada no banco depois de entrar (como um reembolso faria).
   { kind: 'bloqueadadepois', emailVerified: true, banned: false },
+  // Produtos: só um (entra direto na área) e nenhum (aviso de acesso não liberado).
+  { kind: 'sosll', emailVerified: true, banned: false, products: ['sll'] },
+  { kind: 'semproduto', emailVerified: true, banned: false, products: [] },
+  { kind: 'doisprodutos', emailVerified: true, banned: false },
+  { kind: 'voltaarea', emailVerified: true, banned: false },
+  {
+    kind: 'lojafase3',
+    emailVerified: true,
+    banned: false,
+    products: ['loja-pronta'],
+    storePhase: 3,
+  },
+  { kind: 'primeiroacessoescolha', emailVerified: true, banned: false, temporaryPassword: true },
 ];
 
 /** Cria as alunas desta execução pela mesma API que a integração com a Hotmart vai usar. */
@@ -35,7 +53,7 @@ export default async function globalSetup() {
   await database().query('delete from rate_limits');
 
   for (const student of STUDENTS) {
-    await auth.api.createUser({
+    const { user } = await auth.api.createUser({
       body: {
         email: studentEmail(student.kind),
         password: PASSWORD,
@@ -48,5 +66,17 @@ export default async function globalSetup() {
         },
       },
     });
+    for (const product of student.products ?? ['sll', 'loja-pronta']) {
+      await database().query('insert into student_products (user_id, product) values ($1, $2)', [
+        user.id,
+        product,
+      ]);
+    }
+    if (student.storePhase) {
+      await database().query('insert into stores (user_id, phase) values ($1, $2)', [
+        user.id,
+        student.storePhase,
+      ]);
+    }
   }
 }
