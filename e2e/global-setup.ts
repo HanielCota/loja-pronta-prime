@@ -49,6 +49,13 @@ const STUDENTS: Student[] = [
   { kind: 'conversateclado', emailVerified: true, banned: false, products: ['loja-pronta'] },
   { kind: 'conversasemjs', emailVerified: true, banned: false, products: ['loja-pronta'] },
   { kind: 'conversasemloja', emailVerified: true, banned: false, products: ['sll'] },
+  // Correções de acesso (e2e/auth-hardening.spec.ts).
+  { kind: 'travadaip', emailVerified: true, banned: false },
+  { kind: 'loginsemjs', emailVerified: true, banned: false },
+  { kind: 'primeiroacessosair', emailVerified: true, banned: false, temporaryPassword: true },
+  { kind: 'redefinirnaoconfirmada', emailVerified: false, banned: false },
+  { kind: 'falharede', emailVerified: true, banned: false },
+  { kind: 'apinome', emailVerified: true, banned: false },
 ];
 
 /** Cria as alunas desta execução pela mesma API que a integração com a Hotmart vai usar. */

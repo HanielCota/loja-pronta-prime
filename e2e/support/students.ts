@@ -26,7 +26,13 @@ export type StudentKind =
   | 'conversaretoma'
   | 'conversateclado'
   | 'conversasemjs'
-  | 'conversasemloja';
+  | 'conversasemloja'
+  | 'travadaip'
+  | 'loginsemjs'
+  | 'primeiroacessosair'
+  | 'redefinirnaoconfirmada'
+  | 'falharede'
+  | 'apinome';
 
 /** Id desta execução, definido no global-setup: cada execução usa alunas próprias. */
 export function runId(): string {

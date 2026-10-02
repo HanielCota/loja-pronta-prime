@@ -46,5 +46,7 @@ test('conta bloqueada depois de entrar perde o acesso na hora', async ({ page })
   // Bloqueio feito direto no banco (sem a API do plugin admin, que encerraria as sessões).
   await database().query(`update "user" set banned = true where email = $1`, [email]);
   await page.goto('/');
-  await expect(page).toHaveURL(/\/entrar$/);
+  // Vai pro login, que explica o motivo (em vez de só pedir pra entrar de novo).
+  await expect(page).toHaveURL(/\/entrar\?motivo=conta-desativada$/);
+  await expect(page.locator('[data-error-code="account_disabled"]')).toBeVisible();
 });
