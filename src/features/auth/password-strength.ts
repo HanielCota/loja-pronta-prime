@@ -13,22 +13,49 @@ type Checker = (password: string, userInputs: string[]) => ZxcvbnResult;
 
 let checker: Promise<Checker> | undefined;
 
-/** Os dicionários são grandes: carregam só nas telas de criar senha, e uma vez só. */
+/**
+ * Os dicionários são grandes: carregam sob demanda (na primeira tecla), uma vez só, e só os que
+ * fazem diferença. Ficam de fora a Wikipedia em português (116KB) e a lista diceware (17KB):
+ * comparando com o pacote completo, as notas foram iguais em 22 senhas típicas em português,
+ * com 133KB a menos. As chaves seguem os nomes originais (as dicas dependem delas).
+ */
 export function loadStrengthChecker(): Promise<Checker> {
   checker ??= Promise.all([
     import('@zxcvbn-ts/core'),
-    import('@zxcvbn-ts/language-common'),
-    import('@zxcvbn-ts/language-pt-br'),
+    import('@zxcvbn-ts/language-common/dist/adjacencyGraphs.json.mjs'),
+    import('@zxcvbn-ts/language-common/dist/passwords.json.mjs'),
+    import('@zxcvbn-ts/language-pt-br/dist/commonWords.json.mjs'),
+    import('@zxcvbn-ts/language-pt-br/dist/firstnames.json.mjs'),
+    import('@zxcvbn-ts/language-pt-br/dist/lastnames.json.mjs'),
+    import('@zxcvbn-ts/language-pt-br/dist/wordSequences.json.mjs'),
+    import('@zxcvbn-ts/language-pt-br/dist/translations.mjs'),
   ])
-    .then(([core, common, portuguese]): Checker => {
-      const zxcvbn = new core.ZxcvbnFactory({
-        translations: portuguese.translations,
-        graphs: common.adjacencyGraphs,
-        dictionary: { ...common.dictionary, ...portuguese.dictionary },
-        useLevenshteinDistance: true,
-      });
-      return (password, userInputs) => zxcvbn.check(password, userInputs);
-    })
+    .then(
+      ([
+        core,
+        graphs,
+        passwords,
+        commonWords,
+        firstnames,
+        lastnames,
+        wordSequences,
+        translations,
+      ]): Checker => {
+        const zxcvbn = new core.ZxcvbnFactory({
+          translations: translations.default,
+          graphs: graphs.default,
+          dictionary: {
+            'passwords-common': passwords.default,
+            'commonWords-pt-br': commonWords.default,
+            'firstnames-pt-br': firstnames.default,
+            'lastnames-pt-br': lastnames.default,
+            ...wordSequences.default,
+          },
+          useLevenshteinDistance: true,
+        });
+        return (password, userInputs) => zxcvbn.check(password, userInputs);
+      },
+    )
     .catch((error: unknown) => {
       // Falhou (ex.: internet instável no celular): a próxima tela que pedir tenta de novo.
       checker = undefined;

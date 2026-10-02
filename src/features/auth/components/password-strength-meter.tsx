@@ -37,7 +37,11 @@ export function PasswordStrengthMeter({
     .filter((part) => part.length >= 3)
     .join('\n');
 
+  // Só baixa os dicionários quando a pessoa começa a digitar: quem abre a tela e não cria a
+  // senha (ou usa o gerenciador de senhas) não paga esse download.
+  const hasPassword = password.length > 0;
   useEffect(() => {
+    if (!hasPassword || check) return;
     let active = true;
     loadStrengthChecker()
       .then((loaded) => {
@@ -48,7 +52,7 @@ export function PasswordStrengthMeter({
     return () => {
       active = false;
     };
-  }, []);
+  }, [hasPassword, check]);
 
   const strength = useMemo(
     () =>
