@@ -2,7 +2,7 @@
  * Cria uma aluna de TESTE no banco de desenvolvimento.
  * Em produção, as contas nascem da integração com a Hotmart (docs/INTEGRACAO-HOTMART.md).
  *
- *   bun run dev:aluna <email> <senha> [--nao-confirmada] [--desativada]
+ *   bun run dev:aluna <email> <senha> [--nao-confirmada] [--desativada] [--primeiro-acesso]
  */
 import { auth } from '@/server/auth/auth';
 
@@ -16,7 +16,9 @@ const flags = new Set(args.filter((arg) => arg.startsWith('--')));
 const [email, password] = args.filter((arg) => !arg.startsWith('--'));
 
 if (!email || !password) {
-  console.error('Uso: bun run dev:aluna <email> <senha> [--nao-confirmada] [--desativada]');
+  console.error(
+    'Uso: bun run dev:aluna <email> <senha> [--nao-confirmada] [--desativada] [--primeiro-acesso]',
+  );
   process.exit(1);
 }
 
@@ -29,6 +31,8 @@ const { user } = await auth.api.createUser({
     data: {
       emailVerified: !flags.has('--nao-confirmada'),
       banned: flags.has('--desativada'),
+      // Sem a flag, a senha informada já vale como definitiva (não pede pra trocar no login).
+      mustChangePassword: flags.has('--primeiro-acesso'),
     },
   },
 });

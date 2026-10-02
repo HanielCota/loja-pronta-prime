@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { nextCookies } from 'better-auth/next-js';
+import { eq } from 'drizzle-orm';
 import { admin } from 'better-auth/plugins';
 import {
   PASSWORD_MAX_LENGTH,
@@ -33,6 +34,13 @@ export const auth = betterAuth({
     maxPasswordLength: PASSWORD_MAX_LENGTH,
     resetPasswordTokenExpiresIn: RESET_LINK_TTL_HOURS * ONE_HOUR,
     revokeSessionsOnPasswordReset: true,
+    // Quem redefine pelo link do email já escolheu a própria senha: não precisa trocar de novo.
+    onPasswordReset: async ({ user }) => {
+      await db
+        .update(schema.user)
+        .set({ mustChangePassword: false })
+        .where(eq(schema.user.id, user.id));
+    },
     sendResetPassword: async ({ user, url }) => {
       // Sem await: o tempo de resposta não pode denunciar se o email existe.
       void sendPasswordResetEmail({ to: user.email, url }).catch((error: unknown) =>
@@ -50,6 +58,17 @@ export const auth = betterAuth({
       void sendVerificationEmail({ to: user.email, url }).catch((error: unknown) =>
         reportAuthError('envio do email de confirmação', error),
       );
+    },
+  },
+
+  user: {
+    additionalFields: {
+      /**
+       * Toda conta nasce com senha temporária (enviada por email pela integração com a Hotmart),
+       * então começa marcada: no primeiro login a aluna cria a própria senha (/primeiro-acesso).
+       * `input: false`: ninguém altera isso por requisição; só o servidor.
+       */
+      mustChangePassword: { type: 'boolean', required: false, defaultValue: true, input: false },
     },
   },
 
