@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { nextFrames } from './support/auth';
 import { PASSWORD, studentEmail } from './support/students';
 
 const mascot = (page: Page) => page.locator('[data-slot="mascot"]');
@@ -196,7 +197,7 @@ test('não quebra com o preenchimento automático do navegador', async ({ page }
       input.dispatchEvent(new Event('keyup', { bubbles: true }));
     });
   }
-  await page.waitForTimeout(300);
+  await nextFrames(page);
   expect(errors).toEqual([]);
 });
 
@@ -239,7 +240,7 @@ test('arrastar pra fora do mascote cancela o toque sem rir', async ({ page }) =>
   await page.mouse.down();
   await page.mouse.move(box.x + box.width + 80, box.y + box.height / 2, { steps: 5 });
   await page.mouse.up();
-  await page.waitForTimeout(300);
+  await nextFrames(page);
   await expect(mascot(page)).not.toHaveAttribute('data-expression', 'happy');
 });
 

@@ -44,7 +44,9 @@ function RecoverPasswordFlow({
     requestPasswordReset,
   );
 
-  useRestoreRememberedEmail((email) => form.update({ name: fields.email.name, value: email }));
+  useRestoreRememberedEmail(fields.email.id, (email) =>
+    form.update({ name: fields.email.name, value: email }),
+  );
 
   if (state?.sentTo) {
     return <ResetLinkSent email={state.sentTo} next={next} onUseAnotherEmail={onRestart} />;

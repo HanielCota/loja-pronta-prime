@@ -3,6 +3,7 @@
 import { parseWithZod } from '@conform-to/zod/v4';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { after } from 'next/server';
 import { auth } from '@/server/auth/auth';
 import { consumeAttempt } from '@/server/auth/rate-limit';
 import { reportAuthError } from '@/server/auth/report-error';
@@ -11,6 +12,7 @@ import { ENHANCED_SUBMIT_FIELD } from '../enhanced-submit';
 import { loginSchema, recoverSchema, resetPasswordSchema } from '../schemas';
 import { toAuthErrorCode } from './better-auth-errors';
 import { resolvePostLoginPath } from './post-login';
+import { needsFirstPassword } from './session';
 import { HIDDEN_FIELDS, reject, type FormResult } from './submission';
 
 export type LoginResult = { submission?: FormResult; redirectTo?: string } | undefined;
@@ -45,7 +47,7 @@ export async function login(_state: LoginResult, formData: FormData): Promise<Lo
       headers: await headers(),
     });
     // Conta com senha temporária (ou sem a marca): primeiro cria a própria senha.
-    mustChangePassword = user.mustChangePassword !== false;
+    mustChangePassword = needsFirstPassword(user);
   } catch (error) {
     const code = toAuthErrorCode(error);
     if (code === 'unknown') reportAuthError('login', error);
@@ -68,19 +70,25 @@ export async function requestPasswordReset(
   const { email } = submission.value;
 
   // Por email: ninguém consegue encher a caixa de entrada de outra pessoa com links.
-  if (!(await consumeAttempt('recoverPerEmail', email))) {
-    return { submission: reject(submission, 'rate_limited') };
-  }
+  // Por IP: ninguém dispara links pra uma lista inteira de emails.
+  const ip = await getClientIp();
+  const byEmail = await consumeAttempt('recoverPerEmail', email);
+  const byIp = ip ? await consumeAttempt('recoverPerIp', ip) : true;
+  if (!byEmail || !byIp) return { submission: reject(submission, 'rate_limited') };
 
-  try {
-    await auth.api.requestPasswordReset({
-      body: { email, redirectTo: '/redefinir-senha' },
-      headers: await headers(),
-    });
-  } catch (error) {
-    // A resposta continua igual: um erro aqui não pode revelar se o email tem conta.
-    reportAuthError('recuperação de senha', error);
-  }
+  // Depois da resposta: com conta, o Better Auth grava o token no banco; sem conta, só consulta.
+  // Respondendo antes, o tempo de resposta é o mesmo nos dois casos e não revela se o email existe.
+  const requestHeaders = await headers();
+  after(async () => {
+    try {
+      await auth.api.requestPasswordReset({
+        body: { email, redirectTo: '/redefinir-senha' },
+        headers: requestHeaders,
+      });
+    } catch (error) {
+      reportAuthError('recuperação de senha', error);
+    }
+  });
 
   return { sentTo: email };
 }

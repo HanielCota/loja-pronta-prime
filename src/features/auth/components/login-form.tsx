@@ -25,7 +25,9 @@ export function LoginForm({ next, initialError }: LoginFormProps) {
   // Login certo: o mascote comemora e só então a tela muda.
   useCelebrateRedirect(redirectTo);
 
-  useRestoreRememberedEmail((email) => form.update({ name: fields.email.name, value: email }));
+  useRestoreRememberedEmail(fields.email.id, (email) =>
+    form.update({ name: fields.email.name, value: email }),
+  );
 
   const errorCode = state ? getAuthErrorCode(form.errors) : initialError;
 

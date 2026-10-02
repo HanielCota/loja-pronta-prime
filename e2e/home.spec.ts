@@ -1,12 +1,9 @@
-import { AxeBuilder } from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { PASSWORD, studentEmail } from './support/students';
+import { expectNoA11yViolations, signIn as submitSignIn } from './support/auth';
+import { database, PASSWORD, studentEmail } from './support/students';
 
 async function signIn(page: Page) {
-  await page.goto('/entrar');
-  await page.getByLabel('Email da compra').fill(studentEmail('inicio'));
-  await page.getByLabel('Senha', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Entrar' }).click();
+  await submitSignIn(page, studentEmail('inicio'), PASSWORD);
   await expect(page.getByRole('heading', { name: /Você entrou/ })).toBeVisible();
 }
 
@@ -20,10 +17,7 @@ test('depois de entrar, mostra o início em vez de voltar pro login', async ({ p
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByText(studentEmail('inicio'))).toBeVisible();
 
-  const { violations } = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
-    .analyze();
-  expect(violations.map((v) => v.id)).toEqual([]);
+  await expectNoA11yViolations(page);
 });
 
 test('logada, abrir o login leva direto pro início', async ({ page }) => {
@@ -42,6 +36,17 @@ test('sair encerra a sessão e volta pro login', async ({ page, context }) => {
     .toBe(false);
 
   // A sessão acabou de verdade: o início volta a pedir login.
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/entrar$/);
+});
+
+test('conta bloqueada depois de entrar perde o acesso na hora', async ({ page }) => {
+  const email = studentEmail('bloqueadadepois');
+  await submitSignIn(page, email, PASSWORD);
+  await expect(page.getByRole('heading', { name: /Você entrou/ })).toBeVisible();
+
+  // Bloqueio feito direto no banco (sem a API do plugin admin, que encerraria as sessões).
+  await database().query(`update "user" set banned = true where email = $1`, [email]);
   await page.goto('/');
   await expect(page).toHaveURL(/\/entrar$/);
 });

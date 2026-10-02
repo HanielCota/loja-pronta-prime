@@ -8,7 +8,7 @@ import { PASSWORD_MIN_LENGTH } from '@/config/auth';
  */
 
 export type StrengthScore = 0 | 1 | 2 | 3 | 4;
-export type PasswordStrength = { score: StrengthScore; tip?: string };
+type PasswordStrength = { score: StrengthScore; tip?: string };
 type Checker = (password: string, userInputs: string[]) => ZxcvbnResult;
 
 let checker: Promise<Checker> | undefined;
@@ -19,15 +19,21 @@ export function loadStrengthChecker(): Promise<Checker> {
     import('@zxcvbn-ts/core'),
     import('@zxcvbn-ts/language-common'),
     import('@zxcvbn-ts/language-pt-br'),
-  ]).then(([core, common, portuguese]) => {
-    const zxcvbn = new core.ZxcvbnFactory({
-      translations: portuguese.translations,
-      graphs: common.adjacencyGraphs,
-      dictionary: { ...common.dictionary, ...portuguese.dictionary },
-      useLevenshteinDistance: true,
+  ])
+    .then(([core, common, portuguese]): Checker => {
+      const zxcvbn = new core.ZxcvbnFactory({
+        translations: portuguese.translations,
+        graphs: common.adjacencyGraphs,
+        dictionary: { ...common.dictionary, ...portuguese.dictionary },
+        useLevenshteinDistance: true,
+      });
+      return (password, userInputs) => zxcvbn.check(password, userInputs);
+    })
+    .catch((error: unknown) => {
+      // Falhou (ex.: internet instável no celular): a próxima tela que pedir tenta de novo.
+      checker = undefined;
+      throw error;
     });
-    return (password, userInputs) => zxcvbn.check(password, userInputs);
-  });
   return checker;
 }
 

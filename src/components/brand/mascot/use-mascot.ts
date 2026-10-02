@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 import { BOUNCE, JUMP, NOD, PRESS, SHAKE, blinkMotion } from './body-motions';
 import { onMascotSignal, type MascotSignal } from './events';
 import { EXPRESSIONS, toFaceState, type Expression, type FaceState } from './face';
@@ -26,6 +26,8 @@ const WAKING_MS = 1000;
 /** Sem nenhuma interação: fica com sono aos 7s e dorme aos 10s. */
 const SLEEPY_AFTER_MS = 7_000;
 const ASLEEP_AFTER_SLEEPY_MS = 3_000;
+/** Intervalo mínimo entre "zerar o relógio do sono" (o mouse dispara dezenas de eventos por segundo). */
+const IDLE_RESET_THROTTLE_MS = 500;
 
 /**
  * O comportamento do mascote: junta o que acontece na tela (mouse, foco, digitação, avisos do
@@ -40,6 +42,16 @@ export function useMascot(
   faceRef: RefObject<HTMLDivElement | null>,
   baseExpression: Expression,
 ) {
+  // Lida por referência: mudar a expressão de repouso não desmonta tudo (sono, erro, olhar);
+  // só pede um recálculo.
+  const baseRef = useRef(baseExpression);
+  const updateRef = useRef<(() => void) | undefined>(undefined);
+
+  useEffect(() => {
+    baseRef.current = baseExpression;
+    updateRef.current?.();
+  }, [baseExpression]);
+
   useEffect(() => {
     const root = rootRef.current;
     const face = faceRef.current;
@@ -51,9 +63,9 @@ export function useMascot(
 
     let pointer: { x: number; y: number } | null = null;
     let attention: { element: Element; until: number } | null = null;
-    let current: Expression = baseExpression;
+    let current: Expression = baseRef.current;
     let gazeTarget: Gaze = IDLE;
-    let faceTarget: FaceState = toFaceState(EXPRESSIONS[baseExpression]);
+    let faceTarget: FaceState = toFaceState(EXPRESSIONS[baseRef.current]);
     const gaze: Gaze = { ...IDLE };
     const gazeVelocity: Gaze = { x: 0, y: 0 };
     const faceState: FaceState = { ...faceTarget };
@@ -67,6 +79,11 @@ export function useMascot(
     let reasonTimer = 0;
     let idleTimer = 0;
     let pressAnimation: Animation | undefined;
+    /** Toque em andamento (separado da animação: com movimento reduzido não há animação). */
+    let pressed = false;
+    /** Atualização agendada pro próximo quadro (vários eventos no mesmo quadro viram uma). */
+    let queuedUpdate = 0;
+    let lastIdleReset = 0;
     /** Até quando as pálpebras se movem devagar (adormecendo ou acordando). */
     let slowLidsUntil = 0;
     /** Depois de desmontado, atualizações atrasadas (timers) não fazem mais nada. */
@@ -125,7 +142,7 @@ export function useMascot(
     /** Recalcula expressão e olhar e anima até eles (ou pula direto, com movimento reduzido). */
     function update() {
       if (disposed) return;
-      current = reasons.current(baseExpression);
+      current = reasons.current(baseRef.current);
       root!.dataset.expression = current;
       scheduleReasonExpiry();
       gazeTarget = gazeFor(face!, currentAttention(), pointer);
@@ -144,6 +161,18 @@ export function useMascot(
         lastTime = performance.now();
         frame = requestAnimationFrame(step);
       }
+    }
+
+    /**
+     * Pra eventos frequentes (mouse, seleção, rolagem): recalcula uma vez por quadro, em vez de
+     * medir a tela a cada evento.
+     */
+    function requestUpdate() {
+      if (disposed || queuedUpdate) return;
+      queuedUpdate = requestAnimationFrame(() => {
+        queuedUpdate = 0;
+        update();
+      });
     }
 
     /** Movimento do corpo inteiro; desligado com movimento reduzido. */
@@ -176,7 +205,10 @@ export function useMascot(
     function lookAtFor(element: Element) {
       attention = { element, until: performance.now() + ATTENTION_MS };
       window.clearTimeout(attentionTimer);
-      attentionTimer = window.setTimeout(update, ATTENTION_MS);
+      attentionTimer = window.setTimeout(() => {
+        attention = null;
+        update();
+      }, ATTENTION_MS + 16);
     }
 
     function onSignal(signal: MascotSignal) {
@@ -221,6 +253,9 @@ export function useMascot(
         slowLidsUntil = performance.now() + SLOW_LIDS_MS;
         setReason('wake', 'sleepy', WAKING_MS);
       }
+      const now = performance.now();
+      if (now - lastIdleReset < IDLE_RESET_THROTTLE_MS) return;
+      lastIdleReset = now;
       resetIdleTimer();
     }
 
@@ -230,13 +265,18 @@ export function useMascot(
       onActivity();
       if (event.pointerType !== 'mouse') return;
       pointer = { x: event.clientX, y: event.clientY };
-      update();
+      requestUpdate();
+    };
+    // Rolar muda a posição de tudo na tela: o olhar precisa acompanhar.
+    const onScroll = () => {
+      onActivity();
+      requestUpdate();
     };
     // O foco só muda depois do focusout; espera o próximo ciclo pra ler o elemento ativo.
     const onFocusChange = (event: FocusEvent) => {
       onActivity();
       if (event.type === 'focusout') clearReason('capsLock');
-      window.setTimeout(update, 0);
+      requestUpdate();
     };
     const onInput = (event: Event) => {
       onActivity();
@@ -256,22 +296,26 @@ export function useMascot(
     };
 
     // Tocar no mascote: encolhe no toque e ri ao soltar em cima dele (arrastar pra fora desfaz).
-    const onPress = () => {
+    const onPress = (event: PointerEvent) => {
+      if (!event.isPrimary || event.button !== 0) return;
+      pressAnimation?.cancel();
+      pressed = true;
       pressAnimation = move(PRESS);
     };
     const onCancelPress = () => {
+      pressed = false;
       pressAnimation?.cancel();
       pressAnimation = undefined;
     };
     const onRelease = () => {
-      if (!pressAnimation) return;
+      if (!pressed) return;
       onCancelPress();
       setReason('tap', 'happy', TAP_MS);
       move(BOUNCE);
     };
 
     // O campo de senha troca de tipo ao "Mostrar senha": os olhos precisam acompanhar.
-    const typeObserver = new MutationObserver(update);
+    const typeObserver = new MutationObserver(requestUpdate);
     typeObserver.observe(document.body, {
       subtree: true,
       attributes: true,
@@ -281,14 +325,14 @@ export function useMascot(
     const stopSignals = onMascotSignal(onSignal);
     window.addEventListener('pointermove', onPointerMove, { passive: true });
     window.addEventListener('pointerdown', onActivity, { passive: true });
-    window.addEventListener('scroll', onActivity, { passive: true, capture: true });
-    window.addEventListener('resize', update);
+    window.addEventListener('scroll', onScroll, { passive: true, capture: true });
+    window.addEventListener('resize', requestUpdate);
     document.addEventListener('focusin', onFocusChange);
     document.addEventListener('focusout', onFocusChange);
     document.addEventListener('input', onInput);
     document.addEventListener('keydown', onKey);
     document.addEventListener('keyup', onKey);
-    document.addEventListener('selectionchange', update);
+    document.addEventListener('selectionchange', requestUpdate);
     root.addEventListener('pointerdown', onPress);
     root.addEventListener('pointerup', onRelease);
     root.addEventListener('pointerleave', onCancelPress);
@@ -296,10 +340,13 @@ export function useMascot(
     blinkTimer = window.setTimeout(blink, 2000);
     resetIdleTimer();
     update();
+    updateRef.current = update;
 
     return () => {
       disposed = true;
+      updateRef.current = undefined;
       cancelAnimationFrame(frame);
+      cancelAnimationFrame(queuedUpdate);
       for (const timer of [blinkTimer, attentionTimer, reasonTimer, idleTimer]) {
         window.clearTimeout(timer);
       }
@@ -307,18 +354,18 @@ export function useMascot(
       stopSignals();
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerdown', onActivity);
-      window.removeEventListener('scroll', onActivity, { capture: true });
-      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', onScroll, { capture: true });
+      window.removeEventListener('resize', requestUpdate);
       document.removeEventListener('focusin', onFocusChange);
       document.removeEventListener('focusout', onFocusChange);
       document.removeEventListener('input', onInput);
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('keyup', onKey);
-      document.removeEventListener('selectionchange', update);
+      document.removeEventListener('selectionchange', requestUpdate);
       root.removeEventListener('pointerdown', onPress);
       root.removeEventListener('pointerup', onRelease);
       root.removeEventListener('pointerleave', onCancelPress);
       root.removeEventListener('pointercancel', onCancelPress);
     };
-  }, [rootRef, faceRef, baseExpression]);
+  }, [rootRef, faceRef]);
 }

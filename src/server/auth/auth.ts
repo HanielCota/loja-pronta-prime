@@ -74,7 +74,10 @@ export const auth = betterAuth({
 
   session: {
     expiresIn: 30 * ONE_DAY,
-    updateAge: ONE_DAY,
+    // A sessão só é lida nas páginas (componentes de servidor), que não conseguem regravar o
+    // cookie: renovar só no banco deixaria banco e cookie com validades diferentes. Sem
+    // renovação, os dois concordam: 30 dias a partir do login.
+    disableSessionRefresh: true,
   },
 
   // As telas usam Server Actions (com limite próprio por email, em rate-limit.ts). As mesmas

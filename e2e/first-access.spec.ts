@@ -1,16 +1,12 @@
-import { AxeBuilder } from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { expectNoA11yViolations, signIn } from './support/auth';
 import { database, latestResetToken, PASSWORD, studentEmail } from './support/students';
 
 const NEW_PASSWORD = 'minha loja vai bombar';
 const DESTINATION = '/destino-depois-do-login';
 
-async function login(page: Page, email: string, password: string) {
-  await page.goto(`/entrar?next=${encodeURIComponent(DESTINATION)}`);
-  await page.getByLabel('Email da compra').fill(email);
-  await page.getByLabel('Senha', { exact: true }).fill(password);
-  await page.getByRole('button', { name: 'Entrar' }).click();
-}
+const login = (page: Page, email: string, password: string) =>
+  signIn(page, email, password, DESTINATION);
 
 async function mustChangePassword(email: string) {
   const { rows } = await database().query<{ must_change_password: boolean | null }>(
@@ -28,10 +24,7 @@ test('senha temporária: cria a própria senha no primeiro acesso e segue pro de
 
   await expect(page).toHaveURL(/\/primeiro-acesso\?next=%2Fdestino-depois-do-login$/);
   await expect(page.getByRole('heading', { name: 'Crie sua senha' })).toBeVisible();
-  const { violations } = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
-    .analyze();
-  expect(violations.map((v) => v.id)).toEqual([]);
+  await expectNoA11yViolations(page);
 
   await page.getByLabel('Senha nova').fill(NEW_PASSWORD);
   await page.getByRole('button', { name: 'Salvar e entrar' }).click();
@@ -87,4 +80,35 @@ test('criar a senha pelo link de "Esqueci a senha" também conta como primeiro a
 
   await login(page, email, NEW_PASSWORD);
   await expect(page).toHaveURL(new RegExp(`${DESTINATION}$`));
+});
+
+test('depois de criada a senha, o formulário do primeiro acesso não troca mais a senha', async ({
+  browser,
+}) => {
+  const email = studentEmail('primeiroacessoabas');
+  const context = await browser.newContext();
+  const first = await context.newPage();
+  await login(first, email, PASSWORD);
+  await expect(first).toHaveURL(/\/primeiro-acesso/);
+  // Segunda aba com o formulário aberto (mesma sessão): é como reenviar a action depois.
+  const second = await context.newPage();
+  await second.goto(`/primeiro-acesso?next=${encodeURIComponent(DESTINATION)}`);
+  await expect(second.getByLabel('Senha nova')).toBeVisible();
+
+  await first.getByLabel('Senha nova').fill(NEW_PASSWORD);
+  await first.getByRole('button', { name: 'Salvar e entrar' }).click();
+  await expect(first).toHaveURL(new RegExp(`${DESTINATION}$`));
+
+  await second.getByLabel('Senha nova').fill('outra senha que nao vale');
+  await second.getByRole('button', { name: 'Salvar e entrar' }).click();
+  await expect(second).toHaveURL(new RegExp(`${DESTINATION}$`));
+  await context.close();
+
+  // Vale a primeira senha criada, não a da segunda aba.
+  const fresh = await browser.newPage();
+  await login(fresh, email, 'outra senha que nao vale');
+  await expect(fresh.locator('[data-error-code="invalid_credentials"]')).toBeVisible();
+  await login(fresh, email, NEW_PASSWORD);
+  await expect(fresh).toHaveURL(new RegExp(`${DESTINATION}$`));
+  await fresh.close();
 });

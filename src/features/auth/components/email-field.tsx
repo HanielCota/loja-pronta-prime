@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type InputEvent } from 'react';
 import { nodMascot, setMascotDoubt } from '@/components/brand/mascot';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
+import { LiveRegion } from '@/components/ui/live-region';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { suggestEmail } from '../email-suggestion';
 import { emailSchema } from '../schemas';
@@ -52,22 +53,20 @@ export function EmailField({ meta, onSuggestionAccept }: EmailFieldProps) {
         onInput={onInput}
       />
       <FieldErrorMessage id={meta.errorId} errors={meta.errors} />
-      {/* Região sempre presente: o leitor de tela anuncia a sugestão quando ela aparece. */}
-      <div aria-live="polite" className="empty:hidden">
-        {suggestion ? (
-          <Button
-            type="button"
-            variant="link"
-            size="inline"
-            className="justify-start px-1 text-left text-sm font-normal whitespace-normal"
-            onClick={() => onSuggestionAccept(suggestion)}
-          >
-            <span>
-              Você quis dizer <strong className="font-semibold wrap-anywhere">{suggestion}</strong>?
-            </span>
-          </Button>
-        ) : null}
-      </div>
+      {suggestion ? (
+        <Button
+          type="button"
+          variant="link"
+          size="inline"
+          className="justify-start px-1 text-left text-sm font-normal whitespace-normal"
+          onClick={() => onSuggestionAccept(suggestion)}
+        >
+          <span>
+            Você quis dizer <strong className="font-semibold wrap-anywhere">{suggestion}</strong>?
+          </span>
+        </Button>
+      ) : null}
+      <LiveRegion>{suggestion ? `Você quis dizer ${suggestion}?` : null}</LiveRegion>
     </Field>
   );
 }

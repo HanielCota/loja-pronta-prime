@@ -6,7 +6,7 @@ import { Spinner } from './spinner';
 
 // Resposta no instante do toque (active), não só ao soltar: encolhe levemente em 100ms.
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap outline-none select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid disabled:pointer-events-none disabled:opacity-60 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5",
+  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap outline-none select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid disabled:pointer-events-none disabled:opacity-60 aria-disabled:opacity-60 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5",
   {
     variants: {
       variant: {
@@ -46,6 +46,7 @@ function Button({
   loading = false,
   loadingText,
   disabled,
+  onClick,
   children,
   ...props
 }: ButtonProps) {
@@ -57,8 +58,15 @@ function Button({
       data-variant={variant}
       data-size={size}
       className={cn(buttonVariants({ variant, size, className }))}
-      disabled={disabled || loading}
+      // Carregando: indisponível só pra tecnologia assistiva. `disabled` tiraria o foco de quem usa
+      // teclado; cancelar o clique bloqueia o reenvio, inclusive pelo Enter num campo (o
+      // navegador envia o formulário "clicando" no botão principal).
+      disabled={disabled}
+      aria-disabled={loading || undefined}
       aria-busy={loading || undefined}
+      onClick={
+        loading ? (event: React.MouseEvent<HTMLButtonElement>) => event.preventDefault() : onClick
+      }
       {...props}
     >
       {loading ? (
