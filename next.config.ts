@@ -14,7 +14,10 @@ const nextConfig: NextConfig = {
   // dinamicamente, e o empacotador do Next não resolve esse import.
   serverExternalPackages: ['rate-limiter-flexible'],
 
-  // images: { remotePatterns: [] },
+  images: {
+    // 100: qualidade máxima pro mascote (a arte é pequena na tela; o padrão 75 borra os detalhes).
+    qualities: [75, 100],
+  },
 
   // async redirects() {
   //   return [];
