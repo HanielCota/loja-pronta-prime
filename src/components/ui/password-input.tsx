@@ -3,6 +3,7 @@
 import { ArrowBigUpIcon, EyeIcon, EyeOffIcon } from 'lucide-react';
 import { useState, type ComponentProps, type KeyboardEvent } from 'react';
 import { Button } from './button';
+import { LiveRegion } from './live-region';
 import { FloatingLabelInput } from './floating-label-input';
 
 type PasswordInputProps = Omit<ComponentProps<typeof FloatingLabelInput>, 'type' | 'endSlot'>;
@@ -50,17 +51,16 @@ function PasswordInput({ onKeyDown, onKeyUp, onBlur, ...props }: PasswordInputPr
         }
       />
       {/* O ícone é o mesmo símbolo da tecla: reconhecível sem ler. O leitor de tela lê só o texto. */}
-      <p
-        aria-live="polite"
-        className="flex items-center gap-1.5 px-1 text-sm font-medium text-warning empty:hidden"
-      >
-        {capsLockOn ? (
-          <>
-            <ArrowBigUpIcon aria-hidden="true" className="size-4 shrink-0" />
-            Caps Lock tá ativado.
-          </>
-        ) : null}
-      </p>
+      {capsLockOn ? (
+        <p
+          aria-hidden="true"
+          className="flex items-center gap-1.5 px-1 text-sm font-medium text-warning"
+        >
+          <ArrowBigUpIcon className="size-4 shrink-0" />
+          Caps Lock tá ativado.
+        </p>
+      ) : null}
+      <LiveRegion>{capsLockOn ? 'Caps Lock tá ativado.' : null}</LiveRegion>
     </div>
   );
 }
