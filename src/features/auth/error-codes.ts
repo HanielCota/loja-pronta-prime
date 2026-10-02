@@ -6,6 +6,7 @@ const AUTH_ERROR_CODES = [
   'account_disabled',
   'session_expired',
   'reset_link_invalid',
+  'verification_link_invalid',
   'same_password',
   'unknown',
 ] as const;

@@ -8,6 +8,7 @@ import { celebrateMascot } from '@/components/brand/mascot';
 import { Button } from '@/components/ui/button';
 import { PASSWORD_MIN_LENGTH } from '@/config/auth';
 import { getAuthErrorCode } from '../error-codes';
+import { authHref } from '../links';
 import { resetPasswordSchema } from '../schemas';
 import { resetPassword } from '../server/actions';
 import { useAuthForm } from '../use-auth-form';
@@ -16,13 +17,13 @@ import { AuthStatus } from './auth-status';
 import { PasswordField } from './password-field';
 import { PasswordStrengthMeter } from './password-strength-meter';
 
-export function ResetPasswordForm({ token }: { token: string }) {
+export function ResetPasswordForm({ token, next }: { token: string; next?: string }) {
   const { state, form, fields, pending, responseKey, formProps } = useAuthForm(
     resetPasswordSchema,
     resetPassword,
   );
 
-  if (state?.completed) return <PasswordChanged />;
+  if (state?.completed) return <PasswordChanged next={next} />;
 
   const errorCode = getAuthErrorCode(form.errors);
 
@@ -34,7 +35,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
       />
       <form {...formProps} className="flex flex-col gap-5">
         {errorCode ? <AuthErrorAlert key={responseKey} id={form.errorId} code={errorCode} /> : null}
-        {errorCode === 'reset_link_invalid' ? <RequestNewLink /> : null}
+        {errorCode === 'reset_link_invalid' ? <RequestNewLink next={next} /> : null}
         <input type="hidden" name="token" value={token} />
 
         <PasswordField
@@ -57,25 +58,25 @@ export function ResetPasswordForm({ token }: { token: string }) {
   );
 }
 
-export function InvalidResetLink() {
+export function InvalidResetLink({ next }: { next?: string }) {
   return (
     <div className="flex flex-col gap-5">
       <h1 className="sr-only">Link de redefinição de senha</h1>
       <AuthErrorAlert code="reset_link_invalid" />
-      <RequestNewLink />
+      <RequestNewLink next={next} />
     </div>
   );
 }
 
-function RequestNewLink() {
+function RequestNewLink({ next }: { next?: string }) {
   return (
     <Button asChild>
-      <Link href="/recuperar-senha">Pedir um link novo</Link>
+      <Link href={authHref('/recuperar-senha', next)}>Pedir um link novo</Link>
     </Button>
   );
 }
 
-function PasswordChanged() {
+function PasswordChanged({ next }: { next?: string }) {
   useEffect(() => celebrateMascot(), []);
 
   return (
@@ -84,7 +85,7 @@ function PasswordChanged() {
         Agora é só entrar com o email da compra e a senha que você acabou de criar.
       </AuthStatus>
       <Button asChild>
-        <Link href="/entrar">Entrar agora</Link>
+        <Link href={authHref('/entrar', next)}>Entrar agora</Link>
       </Button>
     </>
   );

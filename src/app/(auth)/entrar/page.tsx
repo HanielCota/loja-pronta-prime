@@ -1,13 +1,14 @@
-import { InboxIcon } from 'lucide-react';
+import { CircleCheckIcon, InboxIcon } from 'lucide-react';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { BrandCard } from '@/components/brand/brand-card';
 import { CardHeading } from '@/components/brand/card-heading';
 import { LoginForm } from '@/features/auth/components/login-form';
-import { parseLoginReason } from '@/features/auth/login-reason';
+import { EMAIL_CONFIRMED_REASON, parseLoginReason } from '@/features/auth/login-reason';
 import { sanitizeRedirect } from '@/features/auth/redirect';
 import { resolvePostLoginPath } from '@/features/auth/server/post-login';
 import { getActiveSession, needsFirstPassword } from '@/features/auth/server/session';
+import { reportAuthError } from '@/server/auth/report-error';
 import { getParam, type SearchParams } from '@/lib/search-params';
 
 export const metadata: Metadata = {
@@ -20,8 +21,15 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const params = await searchParams;
   const next = sanitizeRedirect(getParam(params.next));
 
-  // Já entrou: não mostra o login de novo, segue pra dentro (ou pro primeiro acesso).
-  const session = await getActiveSession();
+  // Já entrou: não mostra o login de novo, segue pra dentro (ou pro primeiro acesso). Se a
+  // sessão não puder ser lida (banco fora do ar), mostra o login mesmo assim: a página de erro
+  // mandaria de volta pra cá, num ciclo sem saída.
+  let session: Awaited<ReturnType<typeof getActiveSession>> = null;
+  try {
+    session = await getActiveSession();
+  } catch (error) {
+    reportAuthError('leitura da sessão no login', error);
+  }
   if (session) {
     redirect(resolvePostLoginPath(next, { mustChangePassword: needsFirstPassword(session.user) }));
   }
@@ -33,7 +41,19 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           title="Sua loja na Shopee começa aqui"
           description="Entre com o email que você usou na compra."
         />
-        <LoginForm next={next} initialError={parseLoginReason(getParam(params.motivo))} />
+        {getParam(params.motivo) === EMAIL_CONFIRMED_REASON && !getParam(params.error) ? (
+          <p className="mb-5 flex items-start gap-3 rounded-2xl bg-primary-soft px-4 py-3.5 text-sm text-pretty text-foreground">
+            <CircleCheckIcon aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-link" />
+            <span>
+              <strong className="font-semibold">Email confirmado!</strong> Agora é só entrar com o
+              seu email e a sua senha.
+            </span>
+          </p>
+        ) : null}
+        <LoginForm
+          next={next}
+          initialError={parseLoginReason(getParam(params.motivo), getParam(params.error))}
+        />
       </BrandCard>
       <p className="flex items-start gap-3 rounded-2xl border border-border px-4 py-3.5 text-sm text-pretty text-muted-foreground">
         <InboxIcon aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary" />

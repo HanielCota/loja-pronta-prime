@@ -12,11 +12,16 @@ import { emailSchema } from '../schemas';
 import { FieldErrorMessage } from './field-error-message';
 
 type EmailFieldProps = {
+  /**
+   * `username` no login: é o que os gerenciadores de senha procuram pra saber de qual conta é a
+   * senha (com `email`, alguns não ligam os dois). Nas outras telas, `email`.
+   */
+  autoComplete?: 'email' | 'username';
   meta: FieldMetadata<string>;
   onSuggestionAccept: (email: string) => void;
 };
 
-export function EmailField({ meta, onSuggestionAccept }: EmailFieldProps) {
+export function EmailField({ meta, onSuggestionAccept, autoComplete = 'email' }: EmailFieldProps) {
   const [focused, setFocused] = useState(false);
   const { key, ...inputProps } = getInputProps(meta, { type: 'email' });
   const suggestion = focused || meta.errors ? undefined : suggestEmail(meta.value ?? '');
@@ -44,7 +49,7 @@ export function EmailField({ meta, onSuggestionAccept }: EmailFieldProps) {
         id={meta.id}
         label="Email da compra"
         inputMode="email"
-        autoComplete="email"
+        autoComplete={autoComplete}
         autoCapitalize="none"
         autoCorrect="off"
         spellCheck={false}

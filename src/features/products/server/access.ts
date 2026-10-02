@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { after } from 'next/server';
 import { PRODUCT_IDS, type ProductId } from '@/config/products';
 import { authHref } from '@/features/auth/links';
-import { getActiveSession, needsFirstPassword } from '@/features/auth/server/session';
+import { getSessionState, needsFirstPassword } from '@/features/auth/server/session';
 import { db } from '@/server/db';
 import { stores, studentProducts } from '@/server/db/schema';
 import { PRODUCTS } from '../catalog';
@@ -43,9 +43,12 @@ export async function getStudentProducts(userId: string): Promise<StudentProduct
  * pro login (e volta pra cá depois); com a senha temporária, pro primeiro acesso.
  */
 export async function requireStudent(path: string) {
-  const session = await getActiveSession();
+  const state = await getSessionState();
   const next = path === '/' ? undefined : path;
-  if (!session) redirect(authHref('/entrar', next));
+  // Bloqueada com a sessão aberta (reembolso, cancelamento): o login explica o motivo.
+  if (state.status === 'banned') redirect('/entrar?motivo=conta-desativada');
+  if (state.status === 'none') redirect(authHref('/entrar', next));
+  const { session } = state;
   if (needsFirstPassword(session.user)) redirect(authHref('/primeiro-acesso', next));
   return { session, ...(await getStudentProducts(session.user.id)) };
 }
