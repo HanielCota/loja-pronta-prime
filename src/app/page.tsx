@@ -11,6 +11,7 @@ import { STORE_PHASES } from '@/config/store-phases';
 import { SignOutButton } from '@/features/auth/components/sign-out-button';
 import { PRODUCTS } from '@/features/products/catalog';
 import { ProductChooser, type ProductStatus } from '@/features/products/components/product-chooser';
+import { getOnboarding } from '@/features/onboarding/server/conversation';
 import { firstName } from '@/features/products/names';
 import { getStorePhase, requireStudent } from '@/features/products/server/access';
 
@@ -59,14 +60,19 @@ export default async function HomePage() {
   // Com a loja nas mãos da equipe, o botão cheio vai pro SLL.
   let primary: ProductId | undefined;
   if (products.includes('loja-pronta')) {
-    const phase = await getStorePhase(user.id);
+    const [phase, onboarding] = await Promise.all([getStorePhase(user.id), getOnboarding(user.id)]);
     const current = STORE_PHASES[phase - 1];
+    // Conversa enviada com a loja ainda na fase 1: a vez é da equipe, não dela.
+    const waitsOnStudent = current?.needsStudent && !(phase === 1 && onboarding.completedAt);
     status['loja-pronta'] = {
       label: `Fase ${phase} de ${STORE_PHASES.length} · ${current?.title}`,
       bar: { step: phase, total: STORE_PHASES.length },
-      detail: current?.detail,
+      detail:
+        waitsOnStudent || phase !== 1
+          ? current?.detail
+          : 'Respostas enviadas: agora é com a nossa equipe.',
     };
-    if (current?.needsStudent) primary = 'loja-pronta';
+    if (waitsOnStudent) primary = 'loja-pronta';
     // A loja está com a equipe: nada a fazer lá agora, então o destaque vai pro curso.
     else if (products.includes('sll')) primary = 'sll';
   }

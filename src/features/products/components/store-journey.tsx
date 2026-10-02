@@ -15,8 +15,7 @@ export function StoreJourney({
   conversation: ConversationStatus;
 }) {
   // Com o bloco "O que fazer agora" acima, a fase atual não repete a explicação na lista.
-  const hasNextStep =
-    (phase === 1 && conversation !== 'enviada') || (phase === 2 && conversation === 'enviada');
+  const hasNextStep = phase === 1 || (phase === 2 && conversation === 'enviada');
   return (
     <div className="flex flex-col gap-8">
       <StoreNextStep phase={phase} conversation={conversation} />

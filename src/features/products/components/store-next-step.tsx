@@ -52,7 +52,9 @@ export function StoreNextStep({
     );
   }
 
-  if (phase === 2 && conversation === 'enviada') {
+  // Na fase 1 também: a equipe pode ter voltado a loja pra fase 1 depois do envio (a conversa
+  // não reabre sozinha), e a área não pode ficar sem dizer o que está acontecendo.
+  if (phase <= 2 && conversation === 'enviada') {
     return (
       <section
         aria-labelledby="o-que-fazer"
