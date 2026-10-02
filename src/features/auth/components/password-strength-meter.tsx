@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { LiveRegion } from '@/components/ui/live-region';
 import { cn } from '@/lib/utils';
 import { loadStrengthChecker, toStrength, type StrengthScore } from '../password-strength';
 
@@ -38,9 +39,12 @@ export function PasswordStrengthMeter({
 
   useEffect(() => {
     let active = true;
-    void loadStrengthChecker().then((loaded) => {
-      if (active) setCheck(() => loaded);
-    });
+    loadStrengthChecker()
+      .then((loaded) => {
+        if (active) setCheck(() => loaded);
+      })
+      // Sem os dicionários o medidor só não aparece; a senha continua sendo validada normalmente.
+      .catch(() => {});
     return () => {
       active = false;
     };
@@ -55,10 +59,9 @@ export function PasswordStrengthMeter({
   const filled = strength ? Math.max(1, strength.score) : 0;
 
   return (
-    // Região sempre presente: o leitor de tela anuncia o nível quando ele muda.
-    <div aria-live="polite" className="flex flex-col gap-1.5 px-1 empty:hidden">
+    <>
       {strength && level ? (
-        <>
+        <div data-slot="password-strength" className="flex flex-col gap-1.5 px-1">
           <div aria-hidden="true" className="grid grid-cols-4 gap-1.5">
             {Array.from({ length: SEGMENTS }, (_, index) => (
               <span
@@ -76,8 +79,10 @@ export function PasswordStrengthMeter({
               <span className="block text-pretty">{strength.tip}</span>
             ) : null}
           </p>
-        </>
+        </div>
       ) : null}
-    </div>
+      {/* Só o nível: anunciar a cada tecla seria falatório. A dica fica no texto visível. */}
+      <LiveRegion>{level ? `Força da senha: ${level.label}` : null}</LiveRegion>
+    </>
   );
 }
