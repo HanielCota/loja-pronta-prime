@@ -21,11 +21,50 @@
         "ignoreRestSiblings": true
       }
     ],
-    "typescript/consistent-type-imports": ["error", { "prefer": "type-imports" }],
+    "typescript/consistent-type-imports": [
+      "error",
+      {
+        "prefer": "type-imports"
+      }
+    ],
     "react/rules-of-hooks": "error",
     "react/exhaustive-deps": "warn",
     "react/react-in-jsx-scope": "off",
-    "import/no-unassigned-import": ["warn", { "allow": ["**/*.css"] }]
+    "import/no-unassigned-import": [
+      "warn",
+      {
+        "allow": ["**/*.css"]
+      }
+    ]
   },
-  "ignorePatterns": [".next/**", "out/**", "build/**", "drizzle/**", "next-env.d.ts"]
+  "ignorePatterns": [".next/**", "out/**", "build/**", "drizzle/**", "next-env.d.ts"],
+  "overrides": [
+    {
+      "files": [
+        "src/components/**",
+        "src/features/*/components/**",
+        "src/features/*/*.ts",
+        "src/app/**/error.tsx"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/server/**",
+                  "!**/server/actions",
+                  "!**/server/first-access",
+                  "!**/server/sign-out",
+                  "@/config/env"
+                ],
+                "message": "Código de servidor (banco, auth, variáveis de ambiente) não pode ir pro navegador. Use uma Server Action ('use server')."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }
