@@ -5,7 +5,7 @@ type MascotBubbleProps = {
   title: string;
   help?: string;
   /** Ids do título e da ajuda, pro formulário apontar pra eles (nome e descrição do grupo). */
-  titleId?: string;
+  titleId: string;
   helpId?: string;
 };
 
@@ -18,9 +18,11 @@ export function MascotBubble({ title, help, titleId, helpId }: MascotBubbleProps
     <div className="flex items-end gap-2.5">
       <Mascot expression="happy" displaySize={64} className="size-14 shrink-0 sm:size-16" />
       <div className="flex-1 rounded-[22px] rounded-bl-md bg-card px-5 py-4 shadow-sm forced-colors:border forced-colors:border-[CanvasText]">
+        {/* tabIndex -1: recebe o foco ao chegar na etapa (FocusOnArrival), sem entrar no Tab. */}
         <h1
           id={titleId}
-          className="text-xl leading-tight font-semibold tracking-tight text-balance sm:text-2xl"
+          tabIndex={-1}
+          className="text-xl leading-tight font-semibold tracking-tight text-balance outline-none sm:text-2xl"
         >
           {title}
         </h1>

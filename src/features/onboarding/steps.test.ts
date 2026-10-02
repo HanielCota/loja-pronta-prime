@@ -8,6 +8,7 @@ import {
 import {
   answerText,
   canOpen,
+  cleanAnswers,
   findQuestion,
   formatWhatsapp,
   nextStep,
@@ -19,6 +20,7 @@ import {
   stepPath,
   stepProgress,
   STEPS,
+  UNKNOWN_NAME,
   WHATSAPP_STEP,
 } from './steps';
 
@@ -115,6 +117,15 @@ describe('parseAnswer', () => {
     expect(parseAnswer(cor, form({ value: '#ff0000' })).ok).toBe(false);
   });
 
+  test('toque pessoal: quebra de linha do navegador (CRLF) conta 1, como no campo', () => {
+    const toque = question('toque');
+    // 300 caracteres no campo (quebra = 1), 350 no envio (quebra = CRLF).
+    const crlf = 'linha\r\n'.repeat(50);
+    const parsed = parseAnswer(toque, form({ value: crlf }));
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) expect(parsed.value).toBe('linha\n'.repeat(50).trim());
+  });
+
   test('toque pessoal: opcional, com limite', () => {
     const toque = question('toque');
     expect(parseAnswer(toque, form({}))).toEqual({ ok: true, value: '' });
@@ -189,6 +200,34 @@ describe('etapas', () => {
   });
 });
 
+describe('cleanAnswers', () => {
+  test('mantém respostas válidas como estão', () => {
+    expect(cleanAnswers(ALL_ANSWERED)).toEqual(ALL_ANSWERED);
+    expect(cleanAnswers({ nome: null })).toEqual({ nome: null });
+  });
+
+  test('descarta opção que saiu da lista; na múltipla, só ela sai', () => {
+    const old: OnboardingAnswers = {
+      vendas: 'Opção antiga',
+      categorias: ['Beleza', 'Categoria removida'],
+      sentimento: ['Removido'],
+    };
+    expect(cleanAnswers(old)).toEqual({ categorias: ['Beleza'] });
+    // Sem resposta válida, a conversa volta a pedir a pergunta.
+    expect(resumeStep(cleanAnswers({ ...ALL_ANSWERED, vendas: 'Opção antiga' }))).toBe('vendas');
+  });
+
+  test('descarta tipos errados e corta acima do máximo', () => {
+    const odd = {
+      vendas: ['Nunca vendi'],
+      nome: 42,
+      toque: null,
+      categorias: ['Beleza', 'Pets', 'Cozinha', 'Infantil'],
+    } as unknown as OnboardingAnswers;
+    expect(cleanAnswers(odd)).toEqual({ categorias: ['Beleza', 'Pets', 'Cozinha'] });
+  });
+});
+
 describe('answerText', () => {
   test('texto da revisão', () => {
     const answers: OnboardingAnswers = {
@@ -196,7 +235,7 @@ describe('answerText', () => {
       nome: null,
       categorias: ['Beleza', 'Pets'],
     };
-    expect(answerText(question('nome'), answers)).toBe('A equipe sugere');
+    expect(answerText(question('nome'), answers)).toBe(`${UNKNOWN_NAME} (a equipe sugere)`);
     expect(answerText(question('toque'), answers)).toBe('Nada em especial');
     expect(answerText(question('categorias'), answers)).toBe('Beleza, Pets');
     expect(findQuestion(REVIEW_STEP)).toBeUndefined();

@@ -10,6 +10,7 @@ import { PERSONAL_TOUCH_MAX, STORE_NAME_MAX, type OnboardingQuestion } from '@/c
 import { submitWithoutReset } from '@/features/auth/enhanced-submit';
 import { cn } from '@/lib/utils';
 import { saveAnswer } from '../server/actions';
+import { UNKNOWN_NAME } from '../steps';
 
 type QuestionFormProps = {
   question: OnboardingQuestion;
@@ -42,12 +43,22 @@ export function QuestionForm({ question, saved, editing, titleId, helpId }: Ques
   const formRef = useRef<HTMLFormElement>(null);
   // Última interação: toque/clique (pode avançar sozinho) ou teclado (não avança).
   const pointerRef = useRef(false);
+  // Avanço automático agendado (um só: um toque novo troca o anterior) e envio em andamento
+  // (o `pending` do render pode estar velho dentro do timer).
+  const advanceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const sendingRef = useRef(false);
+  useEffect(() => {
+    sendingRef.current = pending;
+  }, [pending]);
   const errorId = useId();
   const error = clientError ?? state?.error;
 
   useEffect(() => {
     if (state?.error) upsetMascot('worried');
   }, [state]);
+
+  // Saiu da pergunta (voltar, continuar depois) antes do avanço: não envia nada.
+  useEffect(() => () => clearTimeout(advanceRef.current), []);
 
   useEffect(() => {
     const fromPointer = () => (pointerRef.current = true);
@@ -67,6 +78,12 @@ export function QuestionForm({ question, saved, editing, titleId, helpId }: Ques
   const [text, setText] = useState(typeof saved === 'string' ? saved : '');
 
   function validate(event: { preventDefault: () => void }) {
+    // Já salvando (Enter duas vezes, toque e clique juntos): um envio só.
+    if (sendingRef.current) {
+      event.preventDefault();
+      return;
+    }
+    clearTimeout(advanceRef.current);
     const message = missingAnswer();
     if (message) {
       event.preventDefault();
@@ -85,13 +102,16 @@ export function QuestionForm({ question, saved, editing, titleId, helpId }: Ques
       case 'name':
         return unknownName || text.trim()
           ? undefined
-          : 'Escreva o nome da loja ou marque "Ainda não sei".';
+          : `Escreva o nome da loja ou marque "${UNKNOWN_NAME}".`;
       case 'longtext':
         return undefined;
     }
   }
 
   function choose(value: string, checked: boolean) {
+    // Salvando: a escolha já foi enviada. Ignorar o toque (o campo controlado volta ao que
+    // estava) é melhor que mostrar uma opção marcada que não seria salva.
+    if (pending) return;
     setClientError(undefined);
     const single = question.kind === 'single' || question.kind === 'color';
     setSelected((current) =>
@@ -100,8 +120,11 @@ export function QuestionForm({ question, saved, editing, titleId, helpId }: Ques
     if (!checked) return;
     nodMascot();
     // Escolha única pelo toque/clique: mostra a marcação por um instante e segue.
-    if (single && pointerRef.current && !pending) {
-      setTimeout(() => formRef.current?.requestSubmit(), 250);
+    if (single && pointerRef.current) {
+      clearTimeout(advanceRef.current);
+      advanceRef.current = setTimeout(() => {
+        if (!sendingRef.current) formRef.current?.requestSubmit();
+      }, 250);
     }
   }
 
@@ -258,7 +281,7 @@ export function QuestionForm({ question, saved, editing, titleId, helpId }: Ques
               aria-hidden="true"
               className="hidden size-4 text-link group-has-checked/opt:block"
             />
-            Ainda não sei, me ajudem
+            {UNKNOWN_NAME}
           </label>
         </div>
       );
@@ -284,9 +307,11 @@ export function QuestionForm({ question, saved, editing, titleId, helpId }: Ques
       break;
   }
 
+  // Com limite menor que o número de opções, avisa quando chega nele (as outras travam).
+  const limited = question.kind === 'multi' && max < question.options.length;
   const counter =
     question.kind === 'multi'
-      ? selected.length >= max
+      ? limited && selected.length >= max
         ? `Você escolheu ${max} de ${max}. Pra trocar, desmarque uma.`
         : question.layout === 'chips'
           ? `${selected.length} de ${max} escolhidas`
@@ -302,7 +327,7 @@ export function QuestionForm({ question, saved, editing, titleId, helpId }: Ques
     <form
       ref={formRef}
       action={formAction}
-      onSubmit={submitWithoutReset(validate, formAction)}
+      onSubmit={(event) => submitWithoutReset(validate, formAction)(event)}
       className="flex flex-col gap-5"
     >
       <input type="hidden" name="step" value={question.id} />

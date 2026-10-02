@@ -88,10 +88,40 @@ export function stepProgress(step: Step): { part: 0 | 1 | 2; progress: number } 
 /** A resposta como texto, pra revisão. */
 export function answerText(question: OnboardingQuestion, answers: OnboardingAnswers): string {
   const value = answers[question.id as OnboardingQuestionId];
-  if (question.kind === 'name' && value === null) return 'A equipe sugere';
+  if (question.kind === 'name' && value === null) return `${UNKNOWN_NAME} (a equipe sugere)`;
   if (question.kind === 'longtext' && !value) return 'Nada em especial';
   if (Array.isArray(value)) return value.join(', ');
   return value ?? '';
+}
+
+/** Texto da opção "não sei o nome" (no formulário, no erro e na revisão). */
+export const UNKNOWN_NAME = 'Ainda não sei, me ajudem';
+
+/**
+ * Respostas que ainda valem com a lista de perguntas atual. Uma opção que saiu ou mudou de nome
+ * (a lista de categorias é provisória) deixa de contar: na escolha múltipla, só ela sai; se não
+ * sobrar nada, a pergunta volta a ficar sem resposta e a conversa pede de novo.
+ */
+export function cleanAnswers(answers: OnboardingAnswers): OnboardingAnswers {
+  const clean: OnboardingAnswers = {};
+  for (const question of ONBOARDING_QUESTIONS) {
+    const id = question.id;
+    if (!isAnswered(answers, id)) continue;
+    const value = answers[id];
+    if (!('options' in question)) {
+      const textOk = typeof value === 'string' || (question.kind === 'name' && value === null);
+      if (textOk) clean[id] = value;
+      continue;
+    }
+    const labels: string[] = question.options.map((option) => option.label);
+    if (question.kind === 'multi') {
+      const kept = Array.isArray(value) ? value.filter((item) => labels.includes(item)) : [];
+      if (kept.length > 0) clean[id] = kept.slice(0, question.max);
+    } else if (typeof value === 'string' && labels.includes(value)) {
+      clean[id] = value;
+    }
+  }
+  return clean;
 }
 
 export type ParsedAnswer =
@@ -128,14 +158,18 @@ export function parseAnswer(question: OnboardingQuestion, formData: FormData): P
     case 'name': {
       if (formData.get('unknown')) return { ok: true, value: null };
       const name = (values[0] ?? '').trim().replace(/\s+/g, ' ');
-      if (!name) return { ok: false, error: 'Escreva o nome da loja ou marque "Ainda não sei".' };
+      if (!name) {
+        return { ok: false, error: `Escreva o nome da loja ou marque "${UNKNOWN_NAME}".` };
+      }
       if (name.length > STORE_NAME_MAX) {
         return { ok: false, error: `Use no máximo ${STORE_NAME_MAX} caracteres.` };
       }
       return { ok: true, value: name };
     }
     case 'longtext': {
-      const text = (values[0] ?? '').trim();
+      // O navegador envia quebra de linha como CRLF (2 caracteres), mas o maxLength do campo
+      // conta 1: sem normalizar, um texto que o campo aceitou seria recusado aqui.
+      const text = (values[0] ?? '').replace(/\r\n?/g, '\n').trim();
       if (text.length > PERSONAL_TOUCH_MAX) {
         return { ok: false, error: `Use no máximo ${PERSONAL_TOUCH_MAX} caracteres.` };
       }

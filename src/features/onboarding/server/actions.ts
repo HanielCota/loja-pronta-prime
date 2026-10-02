@@ -1,6 +1,6 @@
 'use server';
 
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { db } from '@/server/db';
 import { storeOnboarding, stores } from '@/server/db/schema';
@@ -44,6 +44,8 @@ export async function saveAnswer(_state: StepResult, formData: FormData): Promis
     .onConflictDoUpdate({
       target: storeOnboarding.userId,
       set: { answers: sql`${storeOnboarding.answers} || ${patch}::jsonb` },
+      // Outra aba pode ter enviado a conversa entre a guarda e este update: enviada, não muda.
+      setWhere: isNull(storeOnboarding.completedAt),
     });
 
   redirect(formData.get('editing') ? stepPath(REVIEW_STEP) : stepPath(nextStep(step)));
@@ -73,7 +75,7 @@ export async function finishConversation(
     await tx
       .update(storeOnboarding)
       .set({ whatsapp, completedAt: new Date() })
-      .where(eq(storeOnboarding.userId, userId));
+      .where(and(eq(storeOnboarding.userId, userId), isNull(storeOnboarding.completedAt)));
     // Só avança quem está na fase 1 (a guarda já confere; isto evita voltar uma loja à fase 2).
     await tx
       .insert(stores)

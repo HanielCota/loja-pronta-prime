@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ONBOARDING_BLOCKS, ONBOARDING_QUESTIONS } from '@/config/onboarding';
 import { ConversationLayout } from '@/features/onboarding/components/conversation-layout';
+import { FocusOnArrival } from '@/features/onboarding/components/focus-on-arrival';
 import { MascotBubble } from '@/features/onboarding/components/mascot-bubble';
 import { QuestionForm } from '@/features/onboarding/components/question-form';
 import { WhatsappForm } from '@/features/onboarding/components/whatsapp-form';
@@ -12,7 +13,6 @@ import {
   answerText,
   canOpen,
   findQuestion,
-  formatWhatsapp,
   isStep,
   previousPath,
   QUESTION_COUNT,
@@ -59,6 +59,7 @@ export default async function ConversationStepPage({ params, searchParams }: Pag
 
   if (passo === REVIEW_STEP) {
     const groups = Object.entries(ONBOARDING_BLOCKS).map(([block, title]) => ({
+      block,
       title,
       questions: ONBOARDING_QUESTIONS.filter((question) => question.block === block),
     }));
@@ -67,15 +68,17 @@ export default async function ConversationStepPage({ params, searchParams }: Pag
         <MascotBubble
           title="Confere as suas respostas"
           help="A equipe cria o seu logo a partir delas. Dá pra mudar qualquer uma."
+          titleId={titleId}
         />
+        <FocusOnArrival targetId={titleId} />
         {groups.map((group) => (
           <section
-            key={group.title}
-            aria-labelledby={`grupo-${group.title}`}
+            key={group.block}
+            aria-labelledby={`grupo-${group.block}`}
             className="rounded-card bg-card px-5 py-2 shadow-card forced-colors:border forced-colors:border-[CanvasText]"
           >
             <h2
-              id={`grupo-${group.title}`}
+              id={`grupo-${group.block}`}
               className="pt-3 pb-1 text-sm font-semibold tracking-wide text-muted-foreground uppercase"
             >
               {group.title}
@@ -118,12 +121,11 @@ export default async function ConversationStepPage({ params, searchParams }: Pag
         <MascotBubble
           title="Última coisa: em que WhatsApp a gente te avisa?"
           help="É por ele que a equipe fala com você em cada fase da loja."
+          titleId={titleId}
           helpId={helpId}
         />
-        <WhatsappForm
-          saved={onboarding.whatsapp ? formatWhatsapp(onboarding.whatsapp) : ''}
-          helpId={helpId}
-        />
+        <FocusOnArrival targetId={titleId} />
+        <WhatsappForm helpId={helpId} />
       </ConversationLayout>
     );
   }
@@ -133,6 +135,7 @@ export default async function ConversationStepPage({ params, searchParams }: Pag
   return (
     <ConversationLayout {...stepProgress(passo)} stepLabel={stepTitle(passo)} backHref={backHref}>
       <MascotBubble title={question.ask} help={question.help} titleId={titleId} helpId={helpId} />
+      <FocusOnArrival targetId={titleId} />
       {/* `key`: ao trocar de pergunta, o formulário começa do zero (sem a escolha da anterior). */}
       <QuestionForm
         key={question.id}

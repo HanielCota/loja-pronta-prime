@@ -87,6 +87,9 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
   await expect(page.getByText('Ateliê da Aluna', { exact: true })).toBeVisible();
   await expect(page.getByText('Beleza, Pets, Cozinha')).toBeVisible();
   await expect(page.getByText('Nada em especial')).toBeVisible();
+  // Cada grupo da revisão é uma região com nome.
+  await expect(page.getByRole('region', { name: 'Sobre você' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Sua marca' })).toBeVisible();
   await expectNoA11yViolations(page);
 
   // Editar volta pra revisão, já com a resposta nova.
@@ -109,6 +112,12 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
 
   await expect(page).toHaveURL(/\/loja-pronta\/conversa\/pronto$/);
   await expect(page.getByRole('heading', { name: /Agora é com a gente/ })).toBeVisible();
+  // O número que ela digitou aparece (dá pra perceber um erro) e, com o SLL, o caminho até ele.
+  await expect(page.getByText('(11) 98765-4321')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'trilha de boas-vindas do SLL' })).toHaveAttribute(
+    'href',
+    '/sll',
+  );
   await expectNoA11yViolations(page);
 
   // A loja foi pra fase 2, com a equipe.
@@ -192,6 +201,8 @@ test.describe('sem JavaScript', () => {
   test.use({ javaScriptEnabled: false });
 
   test('a conversa funciona com formulários comuns e o servidor confere', async ({ page }) => {
+    // Vai da primeira pergunta até o fim: longo de propósito.
+    test.slow();
     await signIn(page, studentEmail('conversasemjs'), PASSWORD, '/loja-pronta/conversa');
     await expect(page).toHaveURL(step('vendas'));
 
@@ -206,6 +217,33 @@ test.describe('sem JavaScript', () => {
     await page.getByText('Renda extra').click();
     await page.getByRole('button', { name: 'Continuar' }).click();
     await expect(page).toHaveURL(step('dificuldade'));
+
+    // Até o fim, só com formulários comuns.
+    const choose = async (label: string, next: string) => {
+      await page.locator('label', { hasText: label }).click();
+      await page.getByRole('button', { name: /Continuar|Pular/ }).click();
+      await expect(page).toHaveURL(step(next));
+    };
+    await choose('Falta de tempo', 'categorias');
+    await choose('Pets', 'tempo');
+    await choose('Até 3 horas', 'nome');
+    await page.getByLabel('Nome da loja').fill('Loja Sem JS');
+    await page.getByRole('button', { name: 'Continuar' }).click();
+    await choose('Moderno', 'cor');
+    await choose('Deixo com a equipe', 'sentimento');
+    await choose('Seguras', 'toque');
+    await page.getByLabel(/Seu toque pessoal/).fill('Um girassol');
+    await page.getByRole('button', { name: /Continuar|Pular/ }).click();
+    await expect(page).toHaveURL(step('revisao'));
+    await expect(page.getByText('Um girassol')).toBeVisible();
+
+    await page.getByRole('link', { name: 'Está tudo certo' }).click();
+    await page.getByLabel('Seu WhatsApp, com DDD').fill('21 3456-7890');
+    await page.getByRole('button', { name: 'Enviar respostas' }).click();
+    await expect(page).toHaveURL(/\/loja-pronta\/conversa\/pronto$/);
+    await expect(page.getByText('(21) 3456-7890')).toBeVisible();
+    // Só com a Loja Pronta: nada sobre o SLL.
+    await expect(page.getByText(/SLL/)).toHaveCount(0);
   });
 });
 

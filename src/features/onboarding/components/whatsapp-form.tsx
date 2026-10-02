@@ -15,7 +15,7 @@ import { parseWhatsapp } from '../steps';
  * atrapalham quem cola o número ou usa leitor de tela): aceita qualquer formato e o servidor
  * guarda só os dígitos.
  */
-export function WhatsappForm({ saved, helpId }: { saved: string; helpId: string }) {
+export function WhatsappForm({ helpId }: { helpId: string }) {
   const [state, formAction, pending] = useActionState(finishConversation, undefined);
   const [clientError, setClientError] = useState<string>();
   const errorId = useId();
@@ -47,7 +47,6 @@ export function WhatsappForm({ saved, helpId }: { saved: string; helpId: string 
         inputMode="tel"
         autoComplete="tel-national"
         label="Seu WhatsApp, com DDD"
-        defaultValue={saved}
         onChange={() => setClientError(undefined)}
         aria-describedby={[helpId, error ? errorId : ''].join(' ').trim()}
         aria-invalid={error ? true : undefined}

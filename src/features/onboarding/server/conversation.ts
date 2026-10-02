@@ -9,6 +9,7 @@ import {
 } from '@/features/products/server/access';
 import { db } from '@/server/db';
 import { storeOnboarding } from '@/server/db/schema';
+import { cleanAnswers } from '../steps';
 
 export type Onboarding = {
   answers: OnboardingAnswers;
@@ -28,7 +29,8 @@ export async function getOnboarding(userId: string): Promise<Onboarding> {
     })
     .from(storeOnboarding)
     .where(eq(storeOnboarding.userId, userId));
-  return row ?? EMPTY;
+  // Só as respostas que ainda valem com as perguntas de hoje (ver cleanAnswers).
+  return row ? { ...row, answers: cleanAnswers(row.answers) } : EMPTY;
 }
 
 /**
