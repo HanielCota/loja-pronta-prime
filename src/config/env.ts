@@ -1,10 +1,21 @@
 import { z } from 'zod';
 
+const isSecureOrigin = (url: string) => {
+  const { protocol, hostname } = new URL(url);
+  return protocol === 'https:' || hostname === 'localhost' || hostname === '127.0.0.1';
+};
+
 /** Variáveis de infraestrutura, validadas uma vez. Só podem ser usadas no servidor. */
 const envSchema = z.object({
   DATABASE_URL: z.url(),
   BETTER_AUTH_SECRET: z.string().min(32),
-  BETTER_AUTH_URL: z.url(),
+  BETTER_AUTH_URL: z
+    .url()
+    // Em produção, só https: o cookie de sessão só ganha a marca "Secure" com https.
+    // Exceção: localhost (testar o build de produção na própria máquina).
+    .refine((url) => process.env.NODE_ENV !== 'production' || isSecureOrigin(url), {
+      error: 'em produção, BETTER_AUTH_URL precisa ser https://',
+    }),
 });
 
 type Env = z.infer<typeof envSchema>;
