@@ -1,1 +1,133 @@
 @import 'tailwindcss';
+/* Base do shadcn/ui (animações e variantes data-open/closed) pra componentes como modal e menu. */
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+/*
+ * Tokens de design Loja Pronta Prime, estilo Apple, no formato do shadcn/ui.
+ * Use pelas classes geradas: bg-primary, text-muted-foreground, rounded-card, text-body...
+ * O sistema tem só o tema claro. Contrastes conferidos para WCAG AA.
+ */
+:root {
+  color-scheme: light;
+
+  --background: #f5f5f7;
+  --foreground: #1d1d1f;
+  --card: #ffffff;
+
+  --primary: #0071e3;
+  --primary-hover: #0077ed;
+  --primary-soft: #e8f2fd;
+  --primary-foreground: #ffffff;
+  /* Azul mais escuro pra texto de link (contraste 5,6:1 no branco). */
+  --link: #0066cc;
+
+  --muted: #f5f5f7;
+  --muted-foreground: #6e6e73;
+
+  --destructive: #e30000;
+  --destructive-soft: #fff1f0;
+  --warning: #b25000;
+
+  --border: #d2d2d7;
+  /* Borda de campo mais escura que --border pra ter contraste mínimo de 3:1. */
+  --input: #86868b;
+  --ring: #0071e3;
+}
+
+@theme inline {
+  --font-sans: var(--font-manrope), 'Helvetica Neue', sans-serif;
+  --font-mono: var(--font-inconsolata), Consolas, 'Courier New', monospace;
+
+  /* Tipografia por tamanho: títulos com tracking negativo, corpo de 17px como na Apple. */
+  --text-title: 1.75rem;
+  --text-title--line-height: 1.15;
+  --text-title--letter-spacing: -0.025em;
+  --text-title-lg: 2rem;
+  --text-title-lg--line-height: 1.125;
+  --text-title-lg--letter-spacing: -0.03em;
+  --text-body: 1.0625rem;
+  --text-body--line-height: 1.47;
+  --text-body--letter-spacing: -0.01em;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-link: var(--link);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-warning: var(--warning);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-field: 12px;
+  --radius-card: 28px;
+
+  --shadow-card: 0 2px 6px rgb(0 0 0 / 0.04), 0 16px 48px -12px rgb(0 0 0 / 0.12);
+}
+
+/*
+ * "Zzz" do mascote dormindo: sobe uma vez e fica parado (em unidades do desenho de 512px).
+ * Sem repetir: movimento automático com mais de 5s precisaria de um botão de pausa (WCAG 2.2.2).
+ */
+@keyframes mascot-zzz {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.7);
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translate(12px, -30px) scale(1);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  /* Fundo também no html: no iPhone, o "rebote" da rolagem mostra o html, não o body. */
+  html {
+    @apply bg-background font-sans;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+
+  /* Seleção de texto e cursor de digitação na cor da marca, como nos apps da Apple. */
+  ::selection {
+    background-color: color-mix(in srgb, var(--primary) 22%, transparent);
+  }
+  input,
+  textarea {
+    caret-color: var(--primary);
+  }
+
+  /* Preenchimento automático (gerenciador de senhas): sem o fundo amarelo/azul do navegador.
+     O atraso enorme na transição impede o navegador de pintar o fundo; o anel de foco continua. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--foreground);
+    transition: background-color 600000s 0s;
+  }
+
+  /* Edge desenha um "olho" próprio em campos de senha; o nosso já existe. */
+  input::-ms-reveal,
+  input::-ms-clear {
+    display: none;
+  }
+}
