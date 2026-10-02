@@ -1,0 +1,3 @@
+ALTER TABLE "store_onboarding" ADD CONSTRAINT "store_onboarding_whatsapp_check" CHECK ("store_onboarding"."whatsapp" ~ '^[1-9][0-9]{9,10}$');--> statement-breakpoint
+ALTER TABLE "store_onboarding" ADD CONSTRAINT "store_onboarding_completed_check" CHECK ("store_onboarding"."completed_at" is null or "store_onboarding"."whatsapp" is not null);--> statement-breakpoint
+ALTER TABLE "store_onboarding" ADD CONSTRAINT "store_onboarding_answers_check" CHECK (jsonb_typeof("store_onboarding"."answers") = 'object');

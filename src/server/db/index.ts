@@ -9,6 +9,9 @@ function createPool(): Pool {
     // Sem banco, a requisição falha em segundos em vez de ficar pendurada pra sempre.
     connectionTimeoutMillis: 5_000,
     idleTimeoutMillis: 30_000,
+    // As colunas de data não têm fuso: tudo em UTC, seja qual for o fuso do servidor do banco.
+    // Sem isso, os padrões do banco (now()) e as datas gravadas pelo app (UTC) podiam divergir.
+    options: '-c timezone=UTC',
   });
   // Uma conexão ociosa que cai (banco reiniciado, rede) emite "error". Sem ouvinte, o Node
   // derrubaria o servidor inteiro; com ele, o pool só descarta a conexão e abre outra.
