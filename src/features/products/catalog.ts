@@ -20,12 +20,12 @@ type Product = {
 export const PRODUCTS: Record<ProductId, Product> = {
   sll: {
     name: 'SLL',
-    title: 'Sistema Loja Lucrativa',
+    title: 'Sistema Loja Lucrativa (SLL)',
     welcome: 'Boas-vindas ao Sistema Loja Lucrativa',
     path: '/sll',
     summary: 'O curso com ferramentas pra você aprender e vender na Shopee por conta própria.',
     tag: 'Curso · você faz',
-    pitch: 'Aulas e ferramentas pra vender na Shopee.',
+    pitch: 'Acesse o método completo, aulas e recursos pra escalar a sua operação.',
   },
   'loja-pronta': {
     name: 'Loja Pronta',

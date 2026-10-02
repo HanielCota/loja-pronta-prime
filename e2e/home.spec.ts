@@ -16,13 +16,6 @@ test('depois de entrar, mostra o início em vez de voltar pro login', async ({ p
   await signIn(page);
   await expect(page).toHaveURL(/\/$/);
   await expectNoA11yViolations(page);
-
-  // A conta aparece no menu do canto (e o menu aberto também passa na acessibilidade).
-  await page.getByRole('button', { name: 'Conta' }).click();
-  await expect(page.getByText(studentEmail('inicio'))).toBeVisible();
-  // Espera o menu terminar de aparecer (no meio do fade, o contraste ainda é menor).
-  await expect(page.locator('#menu-da-conta')).toHaveCSS('opacity', '1');
-  await expectNoA11yViolations(page);
 });
 
 test('logada, abrir o login leva direto pro início', async ({ page }) => {
@@ -34,7 +27,6 @@ test('logada, abrir o login leva direto pro início', async ({ page }) => {
 
 test('sair encerra a sessão e volta pro login', async ({ page, context }) => {
   await signIn(page);
-  await page.getByRole('button', { name: 'Conta' }).click();
   await page.getByRole('button', { name: 'Sair da conta' }).click();
   await expect(page).toHaveURL(/\/entrar$/);
   await expect

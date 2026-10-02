@@ -11,6 +11,11 @@ export const metadata: Metadata = {
 export default async function Page() {
   const { session, products, firstVisit } = await requireProduct('sll');
   return (
-    <ProductArea product="sll" products={products} user={session.user} firstVisit={firstVisit} />
+    <ProductArea
+      product="sll"
+      user={session.user}
+      firstVisit={firstVisit}
+      hasChoice={products.length > 1}
+    />
   );
 }

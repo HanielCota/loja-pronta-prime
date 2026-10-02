@@ -1,10 +1,7 @@
-import { GraduationCapIcon, StoreIcon } from 'lucide-react';
+import { RocketIcon, StoreIcon } from 'lucide-react';
 import type { ProductId } from '@/config/products';
 
-const ICONS = { sll: GraduationCapIcon, 'loja-pronta': StoreIcon } satisfies Record<
-  ProductId,
-  unknown
->;
+const ICONS = { sll: RocketIcon, 'loja-pronta': StoreIcon } satisfies Record<ProductId, unknown>;
 
 /** Ícone do produto num círculo azul-claro (decorativo: o nome do produto vem ao lado). */
 export function ProductIcon({ product }: { product: ProductId }) {

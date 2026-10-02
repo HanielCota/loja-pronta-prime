@@ -13,9 +13,9 @@ export default async function Page() {
   return (
     <ProductArea
       product="loja-pronta"
-      products={products}
       user={session.user}
       firstVisit={firstVisit}
+      hasChoice={products.length > 1}
       storePhase={await getStorePhase(session.user.id)}
     />
   );

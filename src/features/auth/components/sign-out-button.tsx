@@ -6,7 +6,10 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { signOut } from '../server/sign-out';
 
-/** Formulário de verdade: sair funciona mesmo sem JavaScript. */
+/**
+ * Formulário de verdade: sair funciona mesmo sem JavaScript. Em cinza, abaixo do conteúdo: está
+ * sempre à mão, mas não disputa atenção com a ação principal da tela.
+ */
 export function SignOutButton({ className }: { className?: string }) {
   return (
     <form action={signOut} className={cn('flex justify-center', className)}>
@@ -18,7 +21,14 @@ export function SignOutButton({ className }: { className?: string }) {
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" variant="link" size="inline" loading={pending} loadingText="Saindo…">
+    <Button
+      type="submit"
+      variant="link"
+      size="inline"
+      loading={pending}
+      loadingText="Saindo…"
+      className="text-muted-foreground hover:text-foreground"
+    >
       <LogOutIcon aria-hidden="true" className="size-4" />
       Sair da conta
     </Button>
