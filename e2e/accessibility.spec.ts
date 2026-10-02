@@ -1,13 +1,7 @@
-import { AxeBuilder } from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { expectNoA11yViolations as expectNoViolations } from './support/auth';
 
-// Roda no computador e no celular. Regras: WCAG 2.2 A/AA e boas práticas do axe.
-const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
-
-async function expectNoViolations(page: Page) {
-  const { violations } = await new AxeBuilder({ page }).withTags(TAGS).analyze();
-  expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(' | ')}`)).toEqual([]);
-}
+// Roda no computador e no celular.
 
 const PAGES = [
   '/entrar',
@@ -46,13 +40,20 @@ test('login com erros (campos e servidor) sem problemas de acessibilidade', asyn
   await expectNoViolations(page);
 });
 
-test('a sugestão de email fica numa região anunciada pelo leitor de tela', async ({ page }) => {
+test('a sugestão de email é anunciada por uma região que já existia antes dela', async ({
+  page,
+}) => {
   await page.goto('/entrar');
+  // Regiões criadas junto com o texto costumam não ser anunciadas: a dela já está lá, vazia.
+  const regions = page.locator('[aria-live="polite"]');
+  const before = await regions.count();
+  expect(before).toBeGreaterThan(0);
+
   await page.getByLabel('Email da compra').fill('maria@gmial.com');
   await page.getByLabel('Senha', { exact: true }).focus();
-  const suggestion = page.getByRole('button', { name: /Você quis dizer/ });
-  await expect(suggestion).toBeVisible();
-  await expect(page.locator('[aria-live="polite"]').filter({ has: suggestion })).toHaveCount(1);
+  await expect(page.getByRole('button', { name: /Você quis dizer/ })).toBeVisible();
+  await expect(regions.filter({ hasText: 'Você quis dizer maria@gmail.com?' })).toHaveCount(1);
+  expect(await regions.count()).toBe(before);
 });
 
 test('o foco do teclado é um contorno sólido de 2px nos botões e nos campos', async ({ page }) => {

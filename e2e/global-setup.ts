@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { auth } from '@/server/auth/auth';
-import { PASSWORD, studentEmail, type StudentKind } from './support/students';
+import { database, PASSWORD, studentEmail, type StudentKind } from './support/students';
 
 type Student = {
   kind: StudentKind;
@@ -22,11 +22,17 @@ const STUDENTS: Student[] = [
   { kind: 'primeiroacessosenha', emailVerified: true, banned: false, temporaryPassword: true },
   { kind: 'primeiroacessoreset', emailVerified: true, banned: false, temporaryPassword: true },
   { kind: 'forcasenha', emailVerified: true, banned: false, temporaryPassword: true },
+  { kind: 'primeiroacessoabas', emailVerified: true, banned: false, temporaryPassword: true },
+  // Bloqueada no banco depois de entrar (como um reembolso faria).
+  { kind: 'bloqueadadepois', emailVerified: true, banned: false },
 ];
 
 /** Cria as alunas desta execução pela mesma API que a integração com a Hotmart vai usar. */
 export default async function globalSetup() {
   process.env.E2E_RUN_ID = randomBytes(4).toString('hex');
+  // Todos os testes saem do mesmo IP (e do mesmo limite de 30 logins/min): rodar o suite duas
+  // vezes seguidas não pode herdar as tentativas da execução anterior.
+  await database().query('delete from rate_limits');
 
   for (const student of STUDENTS) {
     await auth.api.createUser({
