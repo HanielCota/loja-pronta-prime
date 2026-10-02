@@ -20,6 +20,7 @@ export const RATE_LIMITS_PER_MINUTE = {
   loginPerEmail: 5,
   loginPerIp: 30,
   recoverPerEmail: 3,
+  recoverPerIp: 10,
   resetPerIp: 10,
   /** Criar a senha no primeiro acesso (já logada): por conta. */
   firstPasswordPerUser: 5,
