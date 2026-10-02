@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useId, useRef } from 'react';
+import { useId, useMemo, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import {
   BROWS,
@@ -47,7 +47,7 @@ export function Mascot({
   expression = 'neutral',
   displaySize = DEFAULT_DISPLAY_SIZE,
 }: MascotProps) {
-  const closedEyesImage = imageSet(mascotClosedEyes, displaySize);
+  const closedEyesImage = useMemo(() => imageSet(mascotClosedEyes, displaySize), [displaySize]);
   const rootRef = useRef<HTMLDivElement>(null);
   const faceRef = useRef<HTMLDivElement>(null);
   const id = useId().replace(/[^\w-]/g, '');
