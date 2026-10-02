@@ -84,8 +84,8 @@ Deve existir uma tela com o **histórico legível** de todos os avisos recebidos
 Quando a integração existir:
 
 - O **link de compra** ("Ainda não é aluna?") e os **textos de apoio** do login poderão vir das configurações do painel, em vez de ficarem fixos no código.
-- A **troca obrigatória da senha temporária** no primeiro acesso será ligada no ponto único de redirecionamento pós-login: `src/features/auth/server/post-login.ts`.
-- A conta da aluna deve ser criada no servidor com `auth.api.createUser` do Better Auth (plugin admin, já configurado em `src/server/auth/auth.ts`), com `emailVerified: true` (a compra comprova o email) e a senha temporária. O script `scripts/criar-aluna-teste.ts` mostra a chamada.
+- A **troca obrigatória da senha temporária** já funciona. Toda conta nasce com `mustChangePassword: true`: no primeiro login, a aluna vai pra `/primeiro-acesso` e cria a própria senha antes de seguir. A decisão fica no ponto único de redirecionamento pós-login (`src/features/auth/server/post-login.ts`). Se ela usar "Esqueci a senha" antes, a marca também é desligada.
+- A conta da aluna deve ser criada no servidor com `auth.api.createUser` do Better Auth (plugin admin, já configurado em `src/server/auth/auth.ts`), com `emailVerified: true` (a compra comprova o email) e a senha temporária. Não é preciso passar `mustChangePassword`: o padrão já é `true`. O script `scripts/criar-aluna-teste.ts` mostra a chamada.
 - **Bloquear acesso** (reembolso, chargeback): marcar a conta como desativada (`banned`) com o plugin admin. O login já mostra a mensagem certa pra esse caso.
 - O **envio de emails** (boas-vindas e redefinição de senha) entra em `src/server/auth/emails.ts`, que já concentra os emails de acesso (redefinição de senha e confirmação de email); o de boas-vindas entra ao lado. As mensagens de erro já estão prontas em `src/features/auth/messages.ts`.
 
