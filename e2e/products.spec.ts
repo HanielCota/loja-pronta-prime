@@ -25,6 +25,8 @@ test('com os dois produtos: escolhe uma área e troca pra outra pela barra', asy
 }) => {
   await signIn(page, studentEmail('doisprodutos'), PASSWORD);
   await expect(page.getByRole('heading', { name: /Pra onde vamos/ })).toBeVisible();
+  // Na escolha, só os produtos: sem barra do topo.
+  await expect(page.getByRole('banner')).toHaveCount(0);
   await expectNoA11yViolations(page);
 
   await page.getByRole('link', { name: /Sistema Loja Lucrativa/ }).click();

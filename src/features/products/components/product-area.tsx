@@ -25,7 +25,7 @@ export function ProductArea({ product, products, user, firstVisit, storePhase }:
   const title = firstVisit ? welcome : `Bom te ver de novo${name ? `, ${name}` : ''}!`;
 
   return (
-    <MemberShell products={products} current={product} name={user.name} email={user.email}>
+    <MemberShell header={{ products, current: product, name: user.name, email: user.email }}>
       <BrandCard expression="happy" compact>
         <CardHeading title={title} description={summary} />
         {product === 'loja-pronta' ? <StoreJourney phase={storePhase ?? 1} /> : <SllPath />}

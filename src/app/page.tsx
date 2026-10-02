@@ -16,7 +16,8 @@ export const metadata: Metadata = {
 
 /**
  * Início de quem já entrou (e já criou a própria senha). Com os dois produtos, ela escolhe a
- * área; com um só, entra direto nele; sem nenhum, explica o que fazer.
+ * área; com um só, entra direto nele; sem nenhum, explica o que fazer. Na escolha não há barra
+ * do topo, só os produtos; sem produto, a barra fica (é por ela que dá pra sair da conta).
  */
 export default async function HomePage() {
   const { session, products, lastArea } = await requireStudent('/');
@@ -27,7 +28,9 @@ export default async function HomePage() {
   const name = firstName(user.name);
 
   return (
-    <MemberShell products={products} name={user.name} email={user.email}>
+    <MemberShell
+      header={products.length > 0 ? undefined : { products, name: user.name, email: user.email }}
+    >
       <BrandCard expression="happy" compact>
         {products.length > 0 ? (
           <>
