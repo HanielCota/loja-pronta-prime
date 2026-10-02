@@ -1,0 +1,49 @@
+import { expect, test } from '@playwright/test';
+
+// Roda no perfil "mobile" (Pixel 7): a maioria das alunas acessa pelo celular.
+const PAGES = ['/entrar', '/recuperar-senha', '/redefinir-senha?error=INVALID_TOKEN'];
+
+for (const path of PAGES) {
+  test(`${path} cabe na tela e tem alvos de toque de 44px`, async ({ page }) => {
+    await page.goto(path);
+    await expect(page.getByRole('heading', { level: 1 })).toBeAttached();
+
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > window.innerWidth,
+    );
+    expect(overflow).toBe(false);
+
+    const small = await page
+      .locator('main')
+      .locator('a, button, input:not([type="hidden"])')
+      .evaluateAll((elements) =>
+        elements
+          .map((el) => ({
+            el: el.outerHTML.slice(0, 60),
+            height: el.getBoundingClientRect().height,
+          }))
+          .filter((item) => item.height < 44),
+      );
+    expect(small).toEqual([]);
+  });
+}
+
+test('visual sem padrões do navegador nos campos', async ({ page }) => {
+  await page.goto('/entrar');
+  const email = page.getByLabel('Email da compra');
+  const style = await email.evaluate((input) => {
+    const css = getComputedStyle(input);
+    return {
+      appearance: css.appearance,
+      caret: css.caretColor,
+      font: css.fontFamily,
+      size: css.fontSize,
+    };
+  });
+  expect(style.appearance).toBe('none');
+  expect(style.caret).toBe('rgb(0, 113, 227)');
+  expect(style.font).toContain('Manrope');
+  // 16px ou mais: abaixo disso o iPhone dá zoom ao focar o campo.
+  expect(parseFloat(style.size)).toBeGreaterThanOrEqual(16);
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#f5f5f7');
+});
