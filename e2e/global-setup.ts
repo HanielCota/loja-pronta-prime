@@ -43,6 +43,12 @@ const STUDENTS: Student[] = [
     storePhase: 3,
   },
   { kind: 'primeiroacessoescolha', emailVerified: true, banned: false, temporaryPassword: true },
+  // Conversa inicial da Loja Pronta (cada uma no seu teste: as respostas ficam salvas).
+  { kind: 'conversa', emailVerified: true, banned: false },
+  { kind: 'conversaretoma', emailVerified: true, banned: false, products: ['loja-pronta'] },
+  { kind: 'conversateclado', emailVerified: true, banned: false, products: ['loja-pronta'] },
+  { kind: 'conversasemjs', emailVerified: true, banned: false, products: ['loja-pronta'] },
+  { kind: 'conversasemloja', emailVerified: true, banned: false, products: ['sll'] },
 ];
 
 /** Cria as alunas desta execução pela mesma API que a integração com a Hotmart vai usar. */

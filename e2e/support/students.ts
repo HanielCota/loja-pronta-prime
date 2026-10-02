@@ -21,7 +21,12 @@ export type StudentKind =
   | 'lojafase3'
   | 'voltaarea'
   | 'doisprodutos'
-  | 'primeiroacessoescolha';
+  | 'primeiroacessoescolha'
+  | 'conversa'
+  | 'conversaretoma'
+  | 'conversateclado'
+  | 'conversasemjs'
+  | 'conversasemloja';
 
 /** Id desta execução, definido no global-setup: cada execução usa alunas próprias. */
 export function runId(): string {
