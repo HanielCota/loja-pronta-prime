@@ -14,7 +14,8 @@
     "db:down": "docker compose down",
     "db:generate": "bun --bun drizzle-kit generate",
     "db:migrate": "bun --bun drizzle-kit migrate",
-    "db:studio": "bun --bun drizzle-kit studio"
+    "db:studio": "bun --bun drizzle-kit studio",
+    "auth:schema": "bun x auth@1.7.7 generate --config src/server/auth/auth.ts --output src/server/db/schema/auth.ts -y"
   },
   "dependencies": {
     "@conform-to/react": "^1.21.1",
