@@ -1,6 +1,5 @@
 'use server';
 
-import type { Submission, SubmissionResult } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod/v4';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -9,23 +8,14 @@ import { consumeAttempt } from '@/server/auth/rate-limit';
 import { reportAuthError } from '@/server/auth/report-error';
 import { getClientIp } from '@/server/request/client-ip';
 import { ENHANCED_SUBMIT_FIELD } from '../enhanced-submit';
-import type { AuthErrorCode } from '../error-codes';
 import { loginSchema, recoverSchema, resetPasswordSchema } from '../schemas';
 import { toAuthErrorCode } from './better-auth-errors';
 import { resolvePostLoginPath } from './post-login';
+import { HIDDEN_FIELDS, reject, type FormResult } from './submission';
 
-// A senha nunca volta pro navegador na resposta da action.
-const HIDDEN_FIELDS = ['password'];
-
-type FormResult = SubmissionResult<string[]> | undefined;
 export type LoginResult = { submission?: FormResult; redirectTo?: string } | undefined;
 export type RecoverResult = { submission?: FormResult; sentTo?: string } | undefined;
 export type ResetResult = { submission?: FormResult; completed?: boolean } | undefined;
-
-/** Resposta de recusa: o código vira a mensagem da tela; a senha nunca volta. */
-function reject(submission: Pick<Submission<unknown>, 'reply'>, code: AuthErrorCode): FormResult {
-  return submission.reply({ formErrors: [code], hideFields: HIDDEN_FIELDS });
-}
 
 /** Login: limite por conta (email) e, quando o IP é conhecido, por IP. */
 async function canAttemptLogin(email: string): Promise<boolean> {
