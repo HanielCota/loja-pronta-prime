@@ -1,6 +1,7 @@
 # Loja Pronta Prime
 
 Next.js (App Router) + TypeScript + Tailwind CSS, com Bun como runtime e gerenciador de pacotes.
+Os scripts `dev`, `build` e `start` usam `bun --bun` para rodar o Next no runtime do Bun (e não no Node).
 
 ## Como rodar
 

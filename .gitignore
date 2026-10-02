@@ -12,8 +12,7 @@
 /coverage
 
 # env files
-.env
-.env*.local
+.env*
 !.env.example
 
 # typescript
