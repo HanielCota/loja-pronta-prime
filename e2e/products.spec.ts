@@ -47,6 +47,9 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
   await expect(page.getByRole('heading', { name: SLL })).toBeVisible();
   await expectNoA11yViolations(page);
 
+  // Sem barra: com os dois produtos, o link "Início" leva de volta pra escolha.
+  await page.getByRole('link', { name: 'Início' }).click();
+  await expect(page.getByRole('heading', { name: /Pra onde vamos/ })).toBeVisible();
   await page.goto('/loja-pronta');
   await expect(page.getByRole('heading', { name: LOJA_PRONTA })).toBeVisible();
   await expectNoA11yViolations(page);
@@ -61,8 +64,9 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
     });
   }).toPass();
   await expect(page.getByRole('link', { name: /^Entrar, Sistema Loja Lucrativa/ })).toBeVisible();
-  // Quem volta é recebida com "Continue de onde parou".
-  await expect(page.getByText('Continue de onde parou.')).toBeVisible();
+  // A loja dela está na fase 1, que depende dela: o texto de cima diz isso, em vez do genérico
+  // "Continue de onde parou".
+  await expect(page.getByText('Sua loja está esperando por você.')).toBeVisible();
 
   // Na mesma sessão, a saudação não muda; num login seguinte, ela é recebida de volta.
   await page.goto('/sll');
@@ -71,6 +75,8 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
   await signIn(page, studentEmail('doisprodutos'), PASSWORD, '/sll');
   await expect(page).toHaveURL(/\/sll$/);
   await expect(page.getByRole('heading', { name: /Bom te ver de novo/ })).toBeVisible();
+  // Quem volta vê em qual produto está, acima do título.
+  await expect(page.getByText('Sistema Loja Lucrativa (SLL)', { exact: true })).toBeVisible();
 });
 
 test('com um produto só: entra direto nele, sem tela de escolha', async ({ page }) => {
@@ -79,6 +85,8 @@ test('com um produto só: entra direto nele, sem tela de escolha', async ({ page
   await expect(page.getByRole('heading', { name: SLL })).toBeVisible();
   // Ela nunca passa pela escolha: o sair fica na própria área.
   await expect(page.getByRole('button', { name: 'Sair da conta' })).toBeVisible();
+  // E não há pra onde voltar.
+  await expect(page.getByRole('link', { name: 'Início' })).toHaveCount(0);
 
   // A área do produto que ela não tem leva de volta (e o início manda pro produto dela).
   await page.goto('/loja-pronta');

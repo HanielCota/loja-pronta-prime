@@ -54,7 +54,8 @@ export default async function HomePage() {
   const status: Partial<Record<ProductId, ProductStatus>> = {
     sll: { label: 'Comece pela trilha de boas-vindas' },
   };
-  // A Loja Pronta parada esperando por ela vem antes de tudo: leva o botão cheio.
+  // A Loja Pronta parada esperando por ela vem antes de tudo: leva o botão cheio, e o texto de
+  // cima aponta pra ela (em vez de "Continue de onde parou", que podia apontar pro outro produto).
   let primary: ProductId | undefined;
   if (products.includes('loja-pronta')) {
     const phase = await getStorePhase(user.id);
@@ -74,7 +75,13 @@ export default async function HomePage() {
         <Logo expression="happy" compact />
         <CardHeading
           title={name ? `Oi, ${name}! Pra onde vamos?` : 'Pra onde vamos?'}
-          description={lastArea ? 'Continue de onde parou.' : 'Escolha por onde começar.'}
+          description={
+            primary === 'loja-pronta'
+              ? 'Sua loja está esperando por você.'
+              : lastArea
+                ? 'Continue de onde parou.'
+                : 'Escolha por onde começar.'
+          }
         />
       </div>
       <ProductChooser products={products} lastArea={lastArea} status={status} primary={primary} />
