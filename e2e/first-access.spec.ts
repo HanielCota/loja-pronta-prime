@@ -43,6 +43,7 @@ test('senha temporária: cria a própria senha no primeiro acesso e segue pro de
   expect(await mustChangePassword(email)).toBe(false);
 
   // A temporária deixou de valer; com a senha nova, vai direto pro destino.
+  await page.context().clearCookies();
   await login(page, email, PASSWORD);
   await expect(page.locator('[data-error-code="invalid_credentials"]')).toBeVisible();
   await login(page, email, NEW_PASSWORD);

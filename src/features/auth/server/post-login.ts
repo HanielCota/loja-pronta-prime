@@ -8,8 +8,8 @@ const DEFAULT_PATH = '/';
  *
  * - Senha temporária (`mustChangePassword`): antes de qualquer outra tela, ela cria a própria
  *   senha em /primeiro-acesso, que depois manda pro destino pedido.
- * - Ainda não existe área logada: quando existir, troque DEFAULT_PATH pelo painel da aluna.
- *   Atenção: hoje "/" redireciona pro login.
+ * - Sem destino pedido: o início ("/"). Hoje ele só confirma o acesso; quando a área da aluna
+ *   existir, ela entra ali.
  *
  * `requestedPath` vem da URL (?next=) e só é aceito se for um caminho interno.
  */
