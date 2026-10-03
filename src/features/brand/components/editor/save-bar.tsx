@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, CircleAlertIcon } from 'lucide-react';
+import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, CircleAlertIcon, EyeIcon } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import type { LogoScene } from '../../logo/scene';
@@ -20,14 +20,18 @@ const STATUS: Record<SaveState, { text: string; icon: typeof CheckIcon | null }>
  */
 export function SaveBar({
   scene,
+  variations,
   editing,
   easyHref,
   saveState,
+  onPreview,
 }: {
   scene: LogoScene;
+  variations: LogoScene[];
   editing: boolean;
   easyHref: string;
   saveState: SaveState;
+  onPreview: () => void;
 }) {
   const status = STATUS[saveState];
   const Icon = status.icon;
@@ -35,6 +39,7 @@ export function SaveBar({
     // Presa embaixo da tela: o "Salvar e continuar" está sempre à vista, qualquer que seja a altura.
     <BrandForm action={finishLogoEditor} editing={editing} className="sticky bottom-3 z-20">
       <input type="hidden" name="scene" value={JSON.stringify(scene)} />
+      <input type="hidden" name="variations" value={JSON.stringify(variations)} />
       <div className="flex flex-wrap items-center gap-4 rounded-card border border-border bg-card/95 p-3 shadow-card backdrop-blur-md">
         <Button asChild variant="ghost" size="inline" className="px-3 text-foreground">
           <Link href={easyHref}>
@@ -53,6 +58,10 @@ export function SaveBar({
           {status.text}
         </output>
         <span className="flex-1" />
+        <Button type="button" variant="soft" onClick={onPreview} className="w-auto px-6">
+          <EyeIcon aria-hidden="true" />
+          Pré-visualizar
+        </Button>
         <ContinueButton />
       </div>
     </BrandForm>

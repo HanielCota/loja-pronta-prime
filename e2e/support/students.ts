@@ -42,7 +42,8 @@ export type StudentKind =
   | 'revisamarca'
   | 'revisatravada'
   | 'editorlivre'
-  | 'editorbiblioteca';
+  | 'editorbiblioteca'
+  | 'editorvariacoes';
 
 /** Id desta execução, definido no global-setup: cada execução usa alunas próprias. */
 export function runId(): string {

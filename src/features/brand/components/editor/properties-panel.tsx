@@ -9,6 +9,7 @@ import {
   AlignVerticalJustifyStartIcon,
   BringToFrontIcon,
   CheckIcon,
+  CircleAlertIcon,
   SendToBackIcon,
   Trash2Icon,
 } from 'lucide-react';
@@ -25,7 +26,7 @@ import {
   type Size,
 } from '../../logo/editor';
 import { LOGO_FONTS } from '../../logo/fonts';
-import { LOGO_COLORS } from '../../logo/palette';
+import { contrast, LOGO_COLORS } from '../../logo/palette';
 import { CUSTOM_TEXT_MAX, type LogoScene, type SceneElement } from '../../logo/scene';
 
 /** As cores do editor: as do estúdio, mais branco (pra fundo colorido) e as tintas já usadas. */
@@ -51,6 +52,8 @@ type PropertiesPanelProps = {
   scene: LogoScene;
   selected: SceneElement | undefined;
   size: Size | undefined;
+  /** A cor atrás do elemento (a forma embaixo dele ou o fundo), pro aviso de contraste. */
+  backdrop: string;
   onChange: (patch: Partial<SceneElement>, mode?: 'commit' | 'live') => void;
   onCommitScene: (scene: LogoScene) => void;
   onBeginGesture: (holdSave?: boolean) => void;
@@ -67,6 +70,7 @@ export function PropertiesPanel({
   scene,
   selected,
   size,
+  backdrop,
   onChange,
   onCommitScene,
   onBeginGesture,
@@ -118,6 +122,14 @@ export function PropertiesPanel({
       </div>
 
       <Swatches legend="Cor" value={selected.color} onSelect={(hex) => onChange({ color: hex })} />
+      {/* 3:1 é o mínimo pra texto grande e desenhos (WCAG): abaixo disso, some de longe. */}
+      {selected.type !== 'shape' && contrast(selected.color, backdrop) < 3 ? (
+        <p className="-mt-2 flex items-start gap-1.5 text-sm text-pretty text-destructive">
+          <CircleAlertIcon aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+          Pouco contraste com o que está atrás: fica difícil de ver. Tente uma cor mais escura ou
+          mais clara.
+        </p>
+      ) : null}
 
       {selected.type === 'text' && selected.source === 'custom' ? (
         <Field label="O que está escrito">

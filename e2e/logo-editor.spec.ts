@@ -107,6 +107,48 @@ test.describe('biblioteca, no computador', () => {
   });
 });
 
+test.describe('conferir, no computador', () => {
+  test.use({ viewport: { width: 1440, height: 1000 } });
+
+  test('variações, contraste, círculo da Shopee e pré-visualizar', async ({ page }) => {
+    await signIn(page, studentEmail('editorvariacoes'), PASSWORD, '/loja-pronta/marca/editor');
+    await expect(drawn(page)).toHaveCount(2);
+
+    // Uma cópia guardada; mexer na do quadro não muda a guardada.
+    await page.getByRole('button', { name: 'Nova variação' }).click();
+    await page.getByRole('radio', { name: 'Camadas' }).check({ force: true });
+    await page.getByRole('button', { name: 'Nome da loja', exact: true }).click();
+
+    // Texto branco no fundo branco: o aviso aparece.
+    await page.getByRole('radio', { name: 'Branco' }).check({ force: true });
+    await expect(page.getByText(/Pouco contraste/)).toBeVisible();
+
+    // O círculo da Shopee liga e desliga.
+    const circle = page.getByRole('button', { name: 'Mostrar o círculo da Shopee' });
+    await circle.click();
+    await expect(circle).toHaveAttribute('aria-pressed', 'true');
+
+    // Pré-visualizar abre por cima e fecha com Esc.
+    await page.getByRole('button', { name: 'Pré-visualizar' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Como seu logo aparece' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText('Bem pequeno (32px)')).toBeVisible();
+    await expectNoA11yViolations(page);
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+
+    // Trocar pra guardada traz o nome na cor de antes (sem o aviso).
+    await page.getByRole('button', { name: 'Trocar pra variação 1' }).click();
+    await page.getByRole('button', { name: 'Nome da loja', exact: true }).click();
+    await expect(page.getByText(/Pouco contraste/)).toHaveCount(0);
+
+    // As duas versões ficam salvas.
+    await expect(page.getByText('Tudo salvo')).toBeVisible({ timeout: 10_000 });
+    await page.reload();
+    await expect(page.getByRole('button', { name: 'Trocar pra variação 1' })).toBeVisible();
+  });
+});
+
 test.describe('no celular', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 

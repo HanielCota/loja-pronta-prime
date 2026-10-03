@@ -22,6 +22,8 @@ export const storeBrand = pgTable(
     name: text('name'),
     logo: jsonb('logo').$type<LogoConfig>(),
     logoScene: jsonb('logo_scene').$type<LogoScene>(),
+    /** As outras versões do logo no editor livre (a da vez é a `logoScene`). */
+    logoVariations: jsonb('logo_variations').$type<LogoScene[]>(),
     description: text('description'),
     completedAt: timestamp('completed_at'),
     updatedAt: timestamp('updated_at')
@@ -39,6 +41,10 @@ export const storeBrand = pgTable(
       sql`char_length(${table.description}) between 1 and ${sql.raw(String(BRAND_DESCRIPTION_MAX))}`,
     ),
     check('store_brand_logo_check', sql`jsonb_typeof(${table.logo}) = 'object'`),
+    check(
+      'store_brand_logo_variations_check',
+      sql`${table.logoVariations} is null or jsonb_typeof(${table.logoVariations}) = 'array'`,
+    ),
     // Cena só por cima de um modelo: o estúdio guiado e o "Voltar ao modelo" partem dele.
     check(
       'store_brand_logo_scene_check',

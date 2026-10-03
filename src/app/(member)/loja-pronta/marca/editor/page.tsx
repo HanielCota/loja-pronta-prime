@@ -58,6 +58,7 @@ export default async function LogoEditorPage({
       <div className="hidden lg:block">
         <LogoEditor
           initialScene={scene}
+          initialVariations={brand.logoVariations}
           name={name}
           editing={editing}
           easyHref={easyHref}

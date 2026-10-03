@@ -30,6 +30,8 @@ type EditorCanvasProps = {
   selectedId: string | null;
   /** 1 = o quadro na largura da coluna. */
   zoom: number;
+  /** Escurece o que fica fora do círculo em que a Shopee mostra o logo. */
+  showCircle: boolean;
   onSelect: (id: string | null) => void;
   onBeginGesture: () => void;
   onLive: (scene: LogoScene) => void;
@@ -49,6 +51,7 @@ export function EditorCanvas({
   sizes,
   selectedId,
   zoom,
+  showCircle,
   onSelect,
   onBeginGesture,
   onLive,
@@ -207,6 +210,26 @@ export function EditorCanvas({
               className="stroke-[#ff2d87]"
               strokeWidth={2 / unit}
             />
+          ) : null}
+
+          {showCircle ? (
+            // O que fica fora do círculo some no perfil da Shopee: escurecido e sem pegar cliques.
+            <g aria-hidden="true" pointerEvents="none">
+              <path
+                d={`M0 0H${SCENE_SIZE}V${SCENE_SIZE}H0Z M${SCENE_SIZE / 2} 0a${SCENE_SIZE / 2} ${SCENE_SIZE / 2} 0 1 0 0.01 0Z`}
+                fillRule="evenodd"
+                fill="rgb(0 0 0 / 0.45)"
+              />
+              <circle
+                cx={SCENE_SIZE / 2}
+                cy={SCENE_SIZE / 2}
+                r={SCENE_SIZE / 2 - 1 / unit}
+                fill="none"
+                stroke="white"
+                strokeDasharray={`${8 / unit} ${6 / unit}`}
+                strokeWidth={2 / unit}
+              />
+            </g>
           ) : null}
 
           {selected && selectedSize ? (
