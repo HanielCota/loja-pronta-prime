@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'bun:test';
 import {
   addElement,
+  addVariation,
   alignElement,
+  backdropColor,
   duplicateElement,
   elementLabel,
   mainColor,
@@ -13,6 +15,7 @@ import {
   rotationFromPointer,
   scaleElement,
   snapCenter,
+  switchVariation,
   undo,
   withPrimarySize,
 } from './editor';
@@ -189,5 +192,37 @@ describe('addElement e mainColor', () => {
   test('a cor principal é a do nome', () => {
     expect(mainColor(SCENE)).toBe('#e85d8e');
     expect(mainColor({ ...SCENE, elements: [] })).toBe('#1d1d1f');
+  });
+});
+
+describe('backdropColor', () => {
+  const sizes = new Map([
+    ['faixa', { width: 800, height: 200 }],
+    ['icone', { width: 200, height: 200 }],
+    ['nome', { width: 400, height: 100 }],
+  ]);
+
+  test('em cima de uma forma, a cor dela; fora, o fundo', () => {
+    expect(backdropColor(SCENE, 'nome', sizes)).toBe('#e85d8e');
+    expect(backdropColor(SCENE, 'icone', sizes)).toBe('#ffffff');
+  });
+
+  test('forma na frente do elemento não conta', () => {
+    const scene = { ...SCENE, elements: [NAME, BAND] };
+    expect(backdropColor(scene, 'nome', sizes)).toBe('#ffffff');
+  });
+});
+
+describe('variações', () => {
+  const other = { ...SCENE, background: '#000000' };
+
+  test('trocar põe a do quadro no lugar da escolhida', () => {
+    expect(switchVariation(SCENE, [other], 0)).toEqual({ scene: other, variations: [SCENE] });
+    expect(switchVariation(SCENE, [other], 3)).toBeUndefined();
+  });
+
+  test('nova guarda uma cópia, até o limite', () => {
+    expect(addVariation(SCENE, [other], 5)).toEqual([other, SCENE]);
+    expect(addVariation(SCENE, [other], 1)).toBeUndefined();
   });
 });
