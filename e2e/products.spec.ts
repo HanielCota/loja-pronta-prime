@@ -22,10 +22,10 @@ test('depois de criar a senha no primeiro acesso, escolhe entre a Loja Pronta e 
 test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, context }) => {
   await signIn(page, studentEmail('doisprodutos'), PASSWORD);
   await expect(page.getByRole('heading', { name: /Pra onde vamos/ })).toBeVisible();
-  // O topo é o mesmo das áreas, só com o sair (nada de navegação competindo com os produtos).
-  await expect(page.getByRole('banner').getByRole('link')).toHaveCount(0);
+  // Sem topo (não há pra onde voltar) e nada competindo com os produtos: o sair fica no rodapé.
+  await expect(page.getByRole('banner')).toHaveCount(0);
   await expect(
-    page.getByRole('banner').getByRole('button', { name: 'Sair da conta' }),
+    page.getByRole('contentinfo').getByRole('button', { name: 'Sair da conta' }),
   ).toBeVisible();
   // Leitor de tela: cada produto é um título, o link se chama pelo que faz e o resto do cartão
   // (incluindo qual é o recomendado) vem como descrição.

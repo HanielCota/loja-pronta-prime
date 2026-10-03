@@ -32,8 +32,8 @@ type AreaShellProps = {
 };
 
 /**
- * Moldura das áreas dos produtos (Loja Pronta e SLL): voltar e sair no topo, o nome do produto e
- * onde ela está, e o conteúdo.
+ * Moldura das áreas dos produtos (Loja Pronta e SLL): voltar no topo, o nome do produto e onde ela
+ * está, o conteúdo e, no fim, o sair.
  */
 export function AreaShell({ hasChoice, product, title, intro, children }: AreaShellProps) {
   return (
@@ -47,36 +47,46 @@ export function AreaShell({ hasChoice, product, title, intro, children }: AreaSh
         </div>
         {children}
       </main>
+      <Footer />
     </div>
   );
 }
 
 /**
- * Topo das telas de dentro (região própria): voltar à esquerda, quando houver pra onde, e sair à
- * direita. O mesmo lugar em todas as telas da aluna.
+ * Topo das telas de dentro (região própria): voltar, quando houver pra onde. Sem ele, não há topo:
+ * o sair fica no rodapé, longe da ação principal da tela.
  */
 function TopBar({ back }: { back?: { href: string; label: string } | undefined }) {
+  if (!back) return null;
   return (
-    <header className="flex min-h-11 items-center justify-between gap-4">
-      {back ? (
-        <Link
-          href={back.href}
-          className="-ml-1 inline-flex min-h-11 items-center gap-1 rounded-md font-medium text-muted-foreground transition-colors duration-100 outline-none hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid"
-        >
-          <ChevronLeftIcon aria-hidden="true" className="size-5" />
-          {back.label}
-        </Link>
-      ) : (
-        <span />
-      )}
-      <SignOutButton />
+    <header className="flex min-h-11 items-center">
+      <Link
+        href={back.href}
+        className="-ml-1 inline-flex min-h-11 items-center gap-1 rounded-md font-medium text-muted-foreground transition-colors duration-100 outline-none hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid"
+      >
+        <ChevronLeftIcon aria-hidden="true" className="size-5" />
+        {back.label}
+      </Link>
     </header>
   );
 }
 
 /**
+ * Rodapé das telas de dentro: o sair, em cinza, depois de todo o conteúdo. Sair é raro e, tocado
+ * sem querer, custa digitar a senha de novo: aqui ele não disputa atenção com o que ela veio fazer.
+ * Nas telas curtas, fica no pé da tela; nas longas, no fim da página.
+ */
+function Footer() {
+  return (
+    <footer className="mt-auto flex justify-center pt-4">
+      <SignOutButton />
+    </footer>
+  );
+}
+
+/**
  * Telas de dentro com o conteúdo no meio (a escolha de área, o aviso de acesso não liberado): o
- * mesmo topo das áreas, e o conteúdo centralizado no espaço que sobra.
+ * mesmo topo e rodapé das áreas, e o conteúdo centralizado no espaço que sobra.
  */
 export function CenteredMemberPage({
   children,
@@ -88,7 +98,7 @@ export function CenteredMemberPage({
   back?: { href: string; label: string } | undefined;
 }) {
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-[1040px] flex-col px-4 pt-4 sm:px-6 sm:pt-6">
+    <div className="mx-auto flex min-h-dvh w-full max-w-[1040px] flex-col px-4 pt-4 pb-8 sm:px-6 sm:pt-6">
       <TopBar back={back} />
       <main
         className={cn(
@@ -98,6 +108,7 @@ export function CenteredMemberPage({
       >
         {children}
       </main>
+      <Footer />
     </div>
   );
 }
