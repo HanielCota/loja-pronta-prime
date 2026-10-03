@@ -153,8 +153,8 @@ test('continua de onde parou e não deixa pular perguntas', async ({ page }) => 
   await page.getByText('Nunca vendi').click();
   await expect(page).toHaveURL(step('motivacao'));
 
-  // "Sair e continuar depois" volta pra área, que oferece continuar.
-  await page.getByRole('link', { name: 'Sair e continuar depois' }).click();
+  // "Terminar depois" volta pra área, que oferece continuar.
+  await page.getByRole('link', { name: 'Terminar depois' }).click();
   await expect(page).toHaveURL(/\/loja-pronta$/);
   await page.getByRole('link', { name: 'Continuar a conversa' }).click();
   await expect(page).toHaveURL(step('motivacao'));
