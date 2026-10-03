@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { LOGO_FONT_IDS } from './fonts';
-import { LOGO_ICON_IDS } from './icons';
+import { SCENE_ICON_IDS } from './icons';
 
 /** Tela do logo: quadrada, como a foto de perfil da loja (a Shopee mostra num círculo). */
 export const SCENE_SIZE = 1000;
@@ -55,13 +55,17 @@ const textElement = z.object({
   align: z.enum(['center', 'left']),
 });
 
-/** Um desenho da lista de ícones, em traço, num quadrado de `size`. */
+/**
+ * Um desenho da lista de ícones num quadrado de `size`: em traço ou, com `filled`, cheio (o
+ * traço também pinta o miolo, como um carimbo).
+ */
 const iconElement = z.object({
   ...common,
   type: z.literal('icon'),
-  icon: z.enum(LOGO_ICON_IDS),
+  icon: z.enum(SCENE_ICON_IDS),
   color: hex,
   size: length,
+  filled: z.boolean().optional(),
 });
 
 /**

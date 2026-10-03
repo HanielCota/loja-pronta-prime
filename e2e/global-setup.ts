@@ -136,6 +136,15 @@ const STUDENTS: Student[] = [
     conversationSent: true,
     brandStarted: true,
   },
+  {
+    kind: 'editorbiblioteca',
+    emailVerified: true,
+    banned: false,
+    products: ['loja-pronta'],
+    storePhase: 2,
+    conversationSent: true,
+    brandStarted: true,
+  },
 ];
 
 /** Cria as alunas desta execução pela mesma API que a integração com a Hotmart vai usar. */

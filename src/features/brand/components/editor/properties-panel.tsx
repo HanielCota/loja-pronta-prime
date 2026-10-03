@@ -26,7 +26,7 @@ import {
 } from '../../logo/editor';
 import { LOGO_FONTS } from '../../logo/fonts';
 import { LOGO_COLORS } from '../../logo/palette';
-import type { LogoScene, SceneElement } from '../../logo/scene';
+import { CUSTOM_TEXT_MAX, type LogoScene, type SceneElement } from '../../logo/scene';
 
 /** As cores do editor: as do estúdio, mais branco (pra fundo colorido) e as tintas já usadas. */
 const SWATCHES = [...LOGO_COLORS, { id: 'branco', label: 'Branco', hex: '#ffffff' }];
@@ -53,7 +53,7 @@ type PropertiesPanelProps = {
   size: Size | undefined;
   onChange: (patch: Partial<SceneElement>, mode?: 'commit' | 'live') => void;
   onCommitScene: (scene: LogoScene) => void;
-  onBeginGesture: () => void;
+  onBeginGesture: (holdSave?: boolean) => void;
   onEndGesture: () => void;
   onRemove: () => void;
   className?: string;
@@ -118,6 +118,40 @@ export function PropertiesPanel({
       </div>
 
       <Swatches legend="Cor" value={selected.color} onSelect={(hex) => onChange({ color: hex })} />
+
+      {selected.type === 'text' && selected.source === 'custom' ? (
+        <Field label="O que está escrito">
+          {(id) => (
+            <input
+              id={id}
+              defaultValue={selected.value}
+              key={selected.id}
+              maxLength={CUSTOM_TEXT_MAX}
+              onFocus={() => onBeginGesture(false)}
+              onBlur={onEndGesture}
+              onChange={(event) => {
+                const value = event.target.value.trim();
+                if (value) onChange({ value } as Partial<SceneElement>, 'live');
+              }}
+              className="min-h-11 w-full rounded-xl border-[1.5px] border-input bg-card px-3 text-body outline-none focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-solid"
+            />
+          )}
+        </Field>
+      ) : null}
+
+      {selected.type === 'icon' ? (
+        <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-semibold">
+          Desenho cheio
+          <input
+            type="checkbox"
+            checked={selected.filled ?? false}
+            onChange={(event) =>
+              onChange({ filled: event.target.checked } as Partial<SceneElement>)
+            }
+            className="size-5 cursor-pointer accent-primary"
+          />
+        </label>
+      ) : null}
 
       {selected.type === 'text' ? (
         <>
@@ -332,7 +366,7 @@ function Slider({
           min={min}
           max={max}
           value={clamp(value)}
-          onPointerDown={onBeginGesture}
+          onPointerDown={() => onBeginGesture()}
           onPointerUp={onEndGesture}
           onKeyDown={(event) => {
             if (

@@ -58,7 +58,7 @@ function renderText(element: TextElement, name: string, fonts: LogoFonts): strin
   return `<path transform="translate(${round(dx)} ${round(dy)})" d="${block.d}" fill="${element.color}"/>`;
 }
 
-/** Ícone do Lucide (traço, em 24×24) ampliado pro tamanho do elemento. */
+/** Ícone do Lucide (traço, em 24×24) ampliado pro tamanho do elemento; cheio, se pedido. */
 function renderIcon(element: IconElement): string {
   const children = iconNode(element.icon)
     .map(([tag, attrs]) => {
@@ -71,7 +71,7 @@ function renderIcon(element: IconElement): string {
     .join('');
   const half = element.size / 2;
   const scale = element.size / 24;
-  return `<g transform="translate(${round(-half)} ${round(-half)}) scale(${round(scale, 3)})" fill="none" stroke="${element.color}" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${children}</g>`;
+  return `<g transform="translate(${round(-half)} ${round(-half)}) scale(${round(scale, 3)})" fill="${element.filled ? element.color : 'none'}" stroke="${element.color}" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${children}</g>`;
 }
 
 function renderShape(element: ShapeElement): string {
