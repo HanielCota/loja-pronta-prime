@@ -1,200 +1,35 @@
-import {
-  Anchor,
-  Apple,
-  Baby,
-  BadgeCheck,
-  Bath,
-  Bed,
-  Bike,
-  Bird,
-  Bone,
-  Book,
-  Brush,
-  Cake,
-  Camera,
-  Candy,
-  Car,
-  Carrot,
-  Cat,
-  ChefHat,
-  Cherry,
-  Citrus,
-  Cloud,
-  Clover,
-  Coffee,
-  Cookie,
-  Croissant,
-  Crown,
-  Dog,
-  Droplet,
-  Dumbbell,
-  Feather,
-  Fish,
-  Flame,
-  Flower,
-  Flower2,
-  Footprints,
-  Gamepad2,
-  Gem,
-  Gift,
-  Glasses,
-  Globe,
-  Grape,
-  Heart,
-  House,
-  IceCreamCone,
-  Key,
-  Lamp,
-  Leaf,
-  Lightbulb,
-  Lollipop,
-  MapPin,
-  Medal,
-  Moon,
-  Music,
-  Package,
-  Palette,
-  PawPrint,
-  Pencil,
-  PenTool,
-  Percent,
-  Pizza,
-  Plane,
-  Rabbit,
-  Rainbow,
-  Ribbon,
-  Scissors,
-  Shell,
-  Shirt,
-  ShoppingBag,
-  ShoppingCart,
-  Smile,
-  Snowflake,
-  Sofa,
-  Sparkle,
-  Sparkles,
-  Sprout,
-  Squirrel,
-  Star,
-  Store,
-  Sun,
-  Tag,
-  TreePine,
-  Trophy,
-  Truck,
-  Turtle,
-  Umbrella,
-  Utensils,
-  Watch,
-  Zap,
-  type IconNode,
-} from 'lucide';
+import { EDITOR_ONLY_ICON_LIST, LOGO_ICON_LIST } from './icon-list';
+import { ICON_PATHS } from './icon-paths';
 
 /**
- * Ícones do logo: o desenho dos ícones do Lucide (o mesmo conjunto das telas), em traço. Nome em
- * português pro leitor de tela e pra lista do estúdio.
+ * Os desenhos do logo, do Phosphor Icons (licença MIT): caminhos num quadrado de 256, em três
+ * estilos (traço, cheio e duas cores). A lista (id, nome em português, desenho) fica em
+ * icon-list.ts; os caminhos, em icon-paths.ts (gerado por scripts/gerar-desenhos-logo.ts).
  */
-export const LOGO_ICONS = [
-  { id: 'flor', label: 'Flor', node: Flower },
-  { id: 'margarida', label: 'Margarida', node: Flower2 },
-  { id: 'coracao', label: 'Coração', node: Heart },
-  { id: 'brilho', label: 'Brilho', node: Sparkles },
-  { id: 'estrela', label: 'Estrela', node: Star },
-  { id: 'coroa', label: 'Coroa', node: Crown },
-  { id: 'joia', label: 'Joia', node: Gem },
-  { id: 'folha', label: 'Folha', node: Leaf },
-  { id: 'pena', label: 'Pena', node: Feather },
-  { id: 'passaro', label: 'Passarinho', node: Bird },
-  { id: 'sol', label: 'Sol', node: Sun },
-  { id: 'lua', label: 'Lua', node: Moon },
-  { id: 'casa', label: 'Casa', node: House },
-  { id: 'luminaria', label: 'Luminária', node: Lamp },
-  { id: 'roupa', label: 'Roupa', node: Shirt },
-  { id: 'sacola', label: 'Sacola', node: ShoppingBag },
-  { id: 'presente', label: 'Presente', node: Gift },
-  { id: 'bebe', label: 'Bebê', node: Baby },
-  { id: 'pata', label: 'Pata', node: PawPrint },
-  { id: 'cachorro', label: 'Cachorro', node: Dog },
-  { id: 'gato', label: 'Gato', node: Cat },
-  { id: 'chapeu-chef', label: 'Chapéu de chef', node: ChefHat },
-  { id: 'bolo', label: 'Bolo', node: Cake },
-  { id: 'cafe', label: 'Café', node: Coffee },
-  { id: 'cereja', label: 'Cereja', node: Cherry },
-  { id: 'haltere', label: 'Haltere', node: Dumbbell },
-  { id: 'lapis', label: 'Lápis', node: Pencil },
-  { id: 'paleta', label: 'Paleta', node: Palette },
-  { id: 'tesoura', label: 'Tesoura', node: Scissors },
-] as const satisfies readonly { id: string; label: string; node: IconNode }[];
+
+/** Um caminho do desenho; no estilo "duas cores", a parte clara vem com opacidade. */
+export type IconPath = { d: string; opacity?: number };
+export type IconPaths = { bold: IconPath[]; fill: IconPath[]; duotone: IconPath[] };
+
+/** Os estilos de um desenho: traço (o padrão), cheio e duas cores. */
+export const ICON_WEIGHTS = [
+  { id: 'bold', label: 'Traço' },
+  { id: 'fill', label: 'Cheio' },
+  { id: 'duotone', label: 'Duas cores' },
+] as const;
+export type IconWeight = (typeof ICON_WEIGHTS)[number]['id'];
+
+/** Tamanho do quadrado em que os caminhos são desenhados. */
+export const ICON_VIEWBOX = 256;
+
+export const LOGO_ICONS = LOGO_ICON_LIST;
 
 export type LogoIconId = (typeof LOGO_ICONS)[number]['id'];
 
 export const LOGO_ICON_IDS = LOGO_ICONS.map((icon) => icon.id) as [LogoIconId, ...LogoIconId[]];
 
-/**
- * Desenhos a mais, só do editor (os modelos e a escolha da conversa usam a lista curta de cima, pra não
- * virar uma parede de opções). Mesmo traço do Lucide.
- */
-const EDITOR_ONLY_ICONS = [
-  { id: 'osso', label: 'Osso', node: Bone },
-  { id: 'peixe', label: 'Peixe', node: Fish },
-  { id: 'coelho', label: 'Coelho', node: Rabbit },
-  { id: 'tartaruga', label: 'Tartaruga', node: Turtle },
-  { id: 'esquilo', label: 'Esquilo', node: Squirrel },
-  { id: 'pegadas', label: 'Pegadas', node: Footprints },
-  { id: 'carrinho', label: 'Carrinho', node: ShoppingCart },
-  { id: 'etiqueta', label: 'Etiqueta', node: Tag },
-  { id: 'loja', label: 'Loja', node: Store },
-  { id: 'caixa', label: 'Caixa', node: Package },
-  { id: 'entrega', label: 'Entrega', node: Truck },
-  { id: 'desconto', label: 'Desconto', node: Percent },
-  { id: 'selo-ok', label: 'Selo de confiança', node: BadgeCheck },
-  { id: 'broto', label: 'Broto', node: Sprout },
-  { id: 'trevo', label: 'Trevo', node: Clover },
-  { id: 'arvore', label: 'Árvore', node: TreePine },
-  { id: 'nuvem', label: 'Nuvem', node: Cloud },
-  { id: 'arco-iris', label: 'Arco-íris', node: Rainbow },
-  { id: 'gota', label: 'Gota', node: Droplet },
-  { id: 'concha', label: 'Concha', node: Shell },
-  { id: 'floco', label: 'Floco de neve', node: Snowflake },
-  { id: 'maca', label: 'Maçã', node: Apple },
-  { id: 'pizza', label: 'Pizza', node: Pizza },
-  { id: 'sorvete', label: 'Sorvete', node: IceCreamCone },
-  { id: 'croissant', label: 'Croissant', node: Croissant },
-  { id: 'biscoito', label: 'Biscoito', node: Cookie },
-  { id: 'doce', label: 'Doce', node: Candy },
-  { id: 'pirulito', label: 'Pirulito', node: Lollipop },
-  { id: 'uva', label: 'Uva', node: Grape },
-  { id: 'cenoura', label: 'Cenoura', node: Carrot },
-  { id: 'limao', label: 'Limão', node: Citrus },
-  { id: 'talheres', label: 'Talheres', node: Utensils },
-  { id: 'sofa', label: 'Sofá', node: Sofa },
-  { id: 'cama', label: 'Cama', node: Bed },
-  { id: 'banho', label: 'Banho', node: Bath },
-  { id: 'oculos', label: 'Óculos', node: Glasses },
-  { id: 'relogio', label: 'Relógio', node: Watch },
-  { id: 'pincel', label: 'Pincel', node: Brush },
-  { id: 'caneta', label: 'Caneta', node: PenTool },
-  { id: 'brilhinho', label: 'Brilhinho', node: Sparkle },
-  { id: 'raio', label: 'Raio', node: Zap },
-  { id: 'chama', label: 'Chama', node: Flame },
-  { id: 'fita', label: 'Fita', node: Ribbon },
-  { id: 'medalha', label: 'Medalha', node: Medal },
-  { id: 'trofeu', label: 'Troféu', node: Trophy },
-  { id: 'sorriso', label: 'Sorriso', node: Smile },
-  { id: 'musica', label: 'Música', node: Music },
-  { id: 'camera', label: 'Câmera', node: Camera },
-  { id: 'livro', label: 'Livro', node: Book },
-  { id: 'jogo', label: 'Videogame', node: Gamepad2 },
-  { id: 'carro', label: 'Carro', node: Car },
-  { id: 'bicicleta', label: 'Bicicleta', node: Bike },
-  { id: 'aviao', label: 'Avião', node: Plane },
-  { id: 'ancora', label: 'Âncora', node: Anchor },
-  { id: 'guarda-chuva', label: 'Guarda-chuva', node: Umbrella },
-  { id: 'lampada', label: 'Lâmpada', node: Lightbulb },
-  { id: 'chave', label: 'Chave', node: Key },
-  { id: 'local', label: 'Local', node: MapPin },
-  { id: 'globo', label: 'Globo', node: Globe },
-] as const satisfies readonly { id: string; label: string; node: IconNode }[];
+/** Desenhos a mais, só do editor (os modelos e a conversa usam a lista curta). */
+const EDITOR_ONLY_ICONS = EDITOR_ONLY_ICON_LIST;
 
 /** Todos os desenhos que uma cena pode ter: os do estúdio e os só do editor. */
 export const SCENE_ICONS = [...LOGO_ICONS, ...EDITOR_ONLY_ICONS] as const;
@@ -221,6 +56,7 @@ export const ICON_GROUPS: { id: string; label: string; icons: SceneIconId[] }[] 
       'raio',
       'chama',
       'sorriso',
+      'cuidado',
     ],
   },
   {
@@ -272,6 +108,9 @@ export const ICON_GROUPS: { id: string; label: string; icons: SceneIconId[] }[] 
       'concha',
       'floco',
       'pena',
+      'vaso',
+      'cacto',
+      'lua-estrelas',
     ],
   },
   {
@@ -292,6 +131,7 @@ export const ICON_GROUPS: { id: string; label: string; icons: SceneIconId[] }[] 
       'doce',
       'pirulito',
       'talheres',
+      'panela',
       'chapeu-chef',
     ],
   },
@@ -305,6 +145,9 @@ export const ICON_GROUPS: { id: string; label: string; icons: SceneIconId[] }[] 
       'banho',
       'luminaria',
       'roupa',
+      'vestido',
+      'tenis',
+      'cabide',
       'oculos',
       'relogio',
       'tesoura',
@@ -319,6 +162,8 @@ export const ICON_GROUPS: { id: string; label: string; icons: SceneIconId[] }[] 
     label: 'Mais',
     icons: [
       'bebe',
+      'carrinho-bebe',
+      'quebra-cabeca',
       'haltere',
       'musica',
       'camera',
@@ -357,17 +202,19 @@ export function iconForCategories(categories: readonly string[]): LogoIconId {
   return 'coracao';
 }
 
-export function iconNode(id: SceneIconId): IconNode {
-  return SCENE_ICONS.find((icon) => icon.id === id)?.node ?? Heart;
+/** Os caminhos do desenho no estilo pedido (sem o desenho, um coração: nunca fica vazio). */
+export function iconPaths(id: SceneIconId, weight: IconWeight = 'bold'): IconPath[] {
+  const name = SCENE_ICONS.find((icon) => icon.id === id)?.phosphor ?? 'heart';
+  return (ICON_PATHS[name] ?? ICON_PATHS.heart!)[weight];
 }
 
 const ICONS_BY_CATEGORY: Record<string, SceneIconId[]> = {
-  'Casa e decoração': ['casa', 'sofa', 'luminaria'],
-  Beleza: ['brilho', 'flor', 'joia'],
-  'Moda e acessórios': ['roupa', 'oculos', 'relogio'],
-  Infantil: ['bebe', 'estrela', 'pirulito'],
+  'Casa e decoração': ['casa', 'sofa', 'luminaria', 'vaso'],
+  Beleza: ['brilho', 'flor', 'joia', 'cuidado'],
+  'Moda e acessórios': ['roupa', 'vestido', 'cabide', 'tenis'],
+  Infantil: ['bebe', 'carrinho-bebe', 'estrela', 'quebra-cabeca'],
   Pets: ['pata', 'osso', 'cachorro', 'gato'],
-  Cozinha: ['chapeu-chef', 'talheres', 'bolo'],
+  Cozinha: ['chapeu-chef', 'talheres', 'bolo', 'panela'],
   Fitness: ['haltere', 'raio', 'medalha'],
   Papelaria: ['lapis', 'caneta', 'livro'],
 };

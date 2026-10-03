@@ -56,8 +56,8 @@ const textElement = z.object({
 });
 
 /**
- * Um desenho da lista de ícones num quadrado de `size`: em traço ou, com `filled`, cheio (o
- * traço também pinta o miolo, como um carimbo).
+ * Um desenho da lista num quadrado de `size`, num dos estilos (`weight`): traço, cheio ou duas
+ * cores. `filled` é o jeito antigo de pedir "cheio" (logos salvos antes dos estilos).
  */
 const iconElement = z.object({
   ...common,
@@ -65,6 +65,7 @@ const iconElement = z.object({
   icon: z.enum(SCENE_ICON_IDS),
   color: hex,
   size: length,
+  weight: z.enum(['bold', 'fill', 'duotone']).optional(),
   filled: z.boolean().optional(),
 });
 

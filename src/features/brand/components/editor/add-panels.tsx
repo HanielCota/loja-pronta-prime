@@ -1,12 +1,13 @@
 'use client';
 
 import { SearchIcon } from 'lucide-react';
-import { createElement, useId, useState, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { CUSTOM_TEXT_MAX } from '../../logo/scene';
 import type { LogoScene, TextElement } from '../../logo/scene';
 import type { LogoFontId } from '../../logo/fonts';
 import { ICON_GROUPS, SCENE_ICONS, type SceneIconId } from '../../logo/icons';
+import { IconGlyph } from './icon-glyph';
 import type { NewElement } from '../../logo/editor';
 
 /** As formas da biblioteca, já no tamanho em que entram. */
@@ -257,18 +258,7 @@ function IconButton({ id, onClick }: { id: SceneIconId; onClick: () => void }) {
   if (!icon) return null;
   return (
     <AddButton label={icon.label} onClick={onClick}>
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 24 24"
-        className="size-7"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.75}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        {icon.node.map(([tag, attrs], index) => createElement(tag, { key: index, ...attrs }))}
-      </svg>
+      <IconGlyph id={icon.id} />
     </AddButton>
   );
 }

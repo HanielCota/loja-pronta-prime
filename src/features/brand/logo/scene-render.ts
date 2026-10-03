@@ -1,6 +1,6 @@
 import type { Font } from 'opentype.js';
 import type { LogoFontId } from './fonts';
-import { iconNode } from './icons';
+import { ICON_VIEWBOX, iconPaths, type IconWeight } from './icons';
 import {
   SCENE_SIZE,
   type IconElement,
@@ -58,20 +58,21 @@ function renderText(element: TextElement, name: string, fonts: LogoFonts): strin
   return `<path transform="translate(${round(dx)} ${round(dy)})" d="${block.d}" fill="${element.color}"/>`;
 }
 
-/** Ícone do Lucide (traço, em 24×24) ampliado pro tamanho do elemento; cheio, se pedido. */
+/** O estilo do desenho: o pedido, ou (logos antigos) cheio se `filled`, senão traço. */
+export function iconWeight(element: IconElement): IconWeight {
+  return element.weight ?? (element.filled ? 'fill' : 'bold');
+}
+
+/** Desenho do Phosphor (num quadrado de 256) ampliado pro tamanho do elemento, na cor dele. */
 function renderIcon(element: IconElement): string {
-  const children = iconNode(element.icon)
-    .map(([tag, attrs]) => {
-      const attributes = Object.entries(attrs)
-        .filter(([key]) => key !== 'key')
-        .map(([key, value]) => `${key}="${String(value)}"`)
-        .join(' ');
-      return `<${tag} ${attributes}/>`;
-    })
+  const children = iconPaths(element.icon, iconWeight(element))
+    .map(
+      ({ d, opacity }) => `<path d="${d}"${opacity === undefined ? '' : ` opacity="${opacity}"`}/>`,
+    )
     .join('');
   const half = element.size / 2;
-  const scale = element.size / 24;
-  return `<g transform="translate(${round(-half)} ${round(-half)}) scale(${round(scale, 3)})" fill="${element.filled ? element.color : 'none'}" stroke="${element.color}" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${children}</g>`;
+  const scale = element.size / ICON_VIEWBOX;
+  return `<g transform="translate(${round(-half)} ${round(-half)}) scale(${round(scale, 4)})" fill="${element.color}">${children}</g>`;
 }
 
 function renderShape(element: ShapeElement): string {

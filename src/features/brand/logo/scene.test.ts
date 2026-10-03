@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { logoTemplates, type LogoConfig } from './config';
 import { loadLogoFonts } from './fonts.server';
 import { configToScene } from './from-config';
+import { iconPaths, SCENE_ICONS } from './icons';
 import { logoSceneSchema, MAX_ELEMENTS, type LogoScene, type TextElement } from './scene';
 import { renderSceneSvg } from './scene-render';
 import { drawText } from './text';
@@ -110,14 +111,34 @@ describe('renderSceneSvg', async () => {
     expect(svg).toContain('<rect x="-150"');
   });
 
-  test('desenho cheio pinta o miolo; os desenhos só do editor também valem', () => {
-    const icon = { id: 'a', type: 'icon', icon: 'osso', color: '#123456', size: 200, filled: true };
-    const parsed = logoSceneSchema.safeParse(
-      scene([{ ...icon, x: 500, y: 500, rotation: 0, opacity: 1 }]),
+  test('os três estilos de desenho (e o "cheio" dos logos antigos) saem do Phosphor', () => {
+    const base = { id: 'a', type: 'icon', icon: 'osso', color: '#123456', size: 200 };
+    const at = { x: 500, y: 500, rotation: 0, opacity: 1 };
+    const draw = (extra: object) => {
+      const parsed = logoSceneSchema.safeParse(scene([{ ...base, ...at, ...extra }]));
+      expect(parsed.success).toBe(true);
+      return renderSceneSvg(parsed.data!, 'Bella', fonts);
+    };
+    const bold = draw({});
+    const fill = draw({ weight: 'fill' });
+    const duotone = draw({ weight: 'duotone' });
+    expect(bold).toContain('fill="#123456"');
+    expect(bold).not.toContain('stroke=');
+    expect(fill).not.toBe(bold);
+    expect(duotone).toContain('opacity="0.2"');
+    // Logo salvo antes dos estilos: "filled" continua sendo o cheio.
+    expect(draw({ filled: true })).toBe(fill);
+    expect(logoSceneSchema.safeParse(scene([{ ...base, ...at, weight: 'neon' }])).success).toBe(
+      false,
     );
-    expect(parsed.success).toBe(true);
-    const svg = renderSceneSvg(parsed.data!, 'Bella', fonts);
-    expect(svg).toContain('fill="#123456" stroke="#123456"');
+  });
+
+  test('todo desenho da lista tem os três estilos', () => {
+    for (const icon of SCENE_ICONS) {
+      for (const weight of ['bold', 'fill', 'duotone'] as const) {
+        expect(iconPaths(icon.id, weight).length).toBeGreaterThan(0);
+      }
+    }
   });
 
   test('texto dela vira desenho: nada do que ela digitou entra como texto', () => {

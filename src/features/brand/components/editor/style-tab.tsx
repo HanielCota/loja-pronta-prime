@@ -1,12 +1,13 @@
 'use client';
 
 import { BanIcon } from 'lucide-react';
-import { createElement, useId, useMemo, type ReactNode } from 'react';
+import { useId, useMemo, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { LOGO_LAYOUTS, type LogoConfig } from '../../logo/config';
 import { LOGO_FONTS, type LogoFontId } from '../../logo/fonts';
 import { configToScene } from '../../logo/from-config';
 import { ICON_GROUPS, SCENE_ICONS, type SceneIconId } from '../../logo/icons';
+import { IconGlyph } from './icon-glyph';
 import { inkOn, LOGO_COLORS } from '../../logo/palette';
 import type { LogoScene } from '../../logo/scene';
 import { NAME_FALLBACK, type LogoFonts } from '../../logo/scene-render';
@@ -152,20 +153,7 @@ export function MainIconPicker({
               pressed={style.icon === id}
               onClick={() => onStyle(applyIcon(scene, id), `Desenho ${icon.label}`)}
             >
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                className="size-7"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.75}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                {icon.node.map(([tag, attrs], index) =>
-                  createElement(tag, { key: index, ...attrs }),
-                )}
-              </svg>
+              <IconGlyph id={icon.id} />
             </IconChoice>
           );
         })}

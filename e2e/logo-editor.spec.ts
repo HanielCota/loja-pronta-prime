@@ -80,7 +80,7 @@ test.describe('biblioteca, no computador', () => {
     await page.getByRole('button', { name: 'Adicionar Osso' }).click();
     await expect(drawn(page)).toHaveCount(3);
     await expect(page.getByRole('heading', { name: /Desenho: Osso/ })).toBeVisible();
-    await page.getByLabel('Desenho cheio').check();
+    await page.getByRole('radio', { name: 'Cheio' }).check({ force: true });
     await page.getByRole('button', { name: 'Pronto' }).click();
 
     // Uma forma.
@@ -90,8 +90,8 @@ test.describe('biblioteca, no computador', () => {
     await page.getByRole('button', { name: 'Pronto' }).click();
 
     // A busca ignora acento.
-    await page.getByLabel('Buscar desenhos').fill('maca');
-    await expect(page.getByRole('button', { name: 'Adicionar Maçã' })).toBeVisible();
+    await page.getByLabel('Buscar desenhos').fill('arvore');
+    await expect(page.getByRole('button', { name: 'Adicionar Árvore' })).toBeVisible();
 
     // Um texto dela, que dá pra corrigir depois.
     await tool(page, 'Textos').check({ force: true });

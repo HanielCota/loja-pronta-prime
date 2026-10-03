@@ -28,8 +28,11 @@ import {
   type Size,
 } from '../../logo/editor';
 import { LOGO_FONTS } from '../../logo/fonts';
+import { ICON_WEIGHTS } from '../../logo/icons';
+import { iconWeight } from '../../logo/scene-render';
 import { contrast, LOGO_COLORS } from '../../logo/palette';
 import { CUSTOM_TEXT_MAX, type LogoScene, type SceneElement } from '../../logo/scene';
+import { IconGlyph } from './icon-glyph';
 
 /** As cores do editor: as do estúdio, mais branco (pra fundo colorido) e as tintas já usadas. */
 const SWATCHES = [...LOGO_COLORS, { id: 'branco', label: 'Branco', hex: '#ffffff' }];
@@ -144,17 +147,30 @@ export function PropertiesPanel({
       ) : null}
 
       {selected.type === 'icon' ? (
-        <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-body font-semibold">
-          Desenho cheio
-          <input
-            type="checkbox"
-            checked={selected.filled ?? false}
-            onChange={(event) =>
-              onChange({ filled: event.target.checked } as Partial<SceneElement>)
-            }
-            className="size-5 cursor-pointer accent-primary"
-          />
-        </label>
+        <fieldset>
+          <legend className="mb-2 text-body font-semibold">Estilo do desenho</legend>
+          <div className="grid grid-cols-3 gap-2">
+            {ICON_WEIGHTS.map((weight) => (
+              <label
+                key={weight.id}
+                className="flex min-h-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl border-[1.5px] border-input bg-card px-1 py-2 text-sm font-semibold has-checked:border-primary has-checked:bg-primary-soft has-checked:text-link has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring has-focus-visible:outline-solid forced-colors:has-checked:border-[Highlight]"
+              >
+                <input
+                  type="radio"
+                  name="estilo-desenho"
+                  value={weight.id}
+                  checked={iconWeight(selected) === weight.id}
+                  onChange={() =>
+                    onChange({ weight: weight.id, filled: undefined } as Partial<SceneElement>)
+                  }
+                  className="sr-only"
+                />
+                <IconGlyph id={selected.icon} weight={weight.id} className="size-8" />
+                {weight.label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
       ) : null}
 
       {selected.type === 'text' ? (
