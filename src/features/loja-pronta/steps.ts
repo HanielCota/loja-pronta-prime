@@ -77,16 +77,13 @@ export function stepTitle(step: Step): string {
 
 /**
  * O topo de cada etapa: o que está escrito ("Pergunta 3 de 10"), quantos tracinhos da barra já
- * estão cheios (contando a etapa atual) e se já há respostas salvas. Sem nome de parte e sem
- * número solto: "8 de 10" não diz 8 de quê, e "Sua marca" se confundia com a fase da marca.
- * `hasAnswers`: se já tem alguma resposta salva (vale também na pergunta 1, quando ela volta da
- * revisão ou retoma a conversa).
+ * estão cheios (contando a etapa atual). Sem nome de parte e sem número solto: "8 de 10" não diz
+ * 8 de quê, e "Sua marca" se confundia com a fase da marca.
  */
-export function stepHeader(step: Step, hasAnswers: boolean): StepHeader {
+export function stepHeader(step: Step): StepHeader {
   const total = QUESTION_COUNT;
-  if (step === REVIEW_STEP)
-    return { label: 'Revisão das respostas', filled: total, total, saved: true };
-  if (step === WHATSAPP_STEP) return { label: 'Último passo', filled: total, total, saved: true };
+  if (step === REVIEW_STEP) return { label: 'Revisão das respostas', filled: total, total };
+  if (step === WHATSAPP_STEP) return { label: 'Último passo', filled: total, total };
   const number = questionNumber(step);
   const label =
     number === total
@@ -94,7 +91,7 @@ export function stepHeader(step: Step, hasAnswers: boolean): StepHeader {
       : number === total - 1
         ? `Pergunta ${number} de ${total} · falta só 1`
         : `Pergunta ${number} de ${total}`;
-  return { label, filled: number, total, saved: hasAnswers };
+  return { label, filled: number, total };
 }
 
 export type StepHeader = {
@@ -102,11 +99,6 @@ export type StepHeader = {
   /** Tracinhos cheios na barra (a etapa atual conta). */
   filled: number;
   total: number;
-  /** Já tem resposta salva: o topo avisa, pra ela sair sem medo de perder. */
-  saved: boolean;
-  /**
-   * O nome de cada etapa, embaixo do tracinho dela ("Nome", "Modelo"...): quando a barra tem
-   * poucas etapas, dá pra dizer o que é cada uma.
-   */
+  /** O nome de cada etapa ("Nome", "Logo"...): o leitor de tela ouve junto com o rótulo. */
   names?: readonly string[];
 };

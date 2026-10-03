@@ -47,8 +47,7 @@ export default async function ConversationStepPage({ params, searchParams }: Pag
   return (
     <ConversationLayout
       account={student.session.user}
-      header={stepHeader(passo, Object.keys(answers).length > 0)}
-      savedLabel="Respostas salvas"
+      header={stepHeader(passo)}
       backHref={
         revising && passo === REVIEW_STEP ? '/loja-pronta' : previousPath(passo, { editing })
       }

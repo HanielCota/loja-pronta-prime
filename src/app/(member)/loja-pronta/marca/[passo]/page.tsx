@@ -50,8 +50,7 @@ export default async function BrandStepPage({ params, searchParams }: PageProps)
   return (
     <ConversationLayout
       account={student.session.user}
-      header={brandStepHeader(passo, Boolean(brand.name))}
-      savedLabel="Escolhas salvas"
+      header={brandStepHeader(passo)}
       width={passo === 'ajustar' ? 'editor' : 'normal'}
       backHref={
         editing ? brandStepPath('revisao') : revising ? '/loja-pronta' : previousBrandPath(passo)
