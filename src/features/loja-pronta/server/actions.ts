@@ -14,7 +14,7 @@ import {
   stepPath,
 } from '../steps';
 import { parseAnswer } from '../answers';
-import { parseWhatsapp } from '../whatsapp';
+import { parseWhatsapp, WHATSAPP_EXAMPLE } from '../whatsapp';
 import { getOnboarding, requireConversationAction } from './conversation';
 
 /** Resposta pra tela quando algo não passa (sem erro, a action redireciona). */
@@ -63,7 +63,7 @@ export async function finishConversation(
 
   const whatsapp = parseWhatsapp(String(formData.get('whatsapp') ?? ''));
   if (!whatsapp) {
-    return { error: 'Confira o número com DDD, como (11) 98765-4321.' };
+    return { error: `Confira o número com DDD, como ${WHATSAPP_EXAMPLE}.` };
   }
 
   // Alguma pergunta ficou sem resposta (outra aba, envio direto): volta pra ela.

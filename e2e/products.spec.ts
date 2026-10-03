@@ -52,7 +52,7 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
   await expectNoA11yViolations(page);
 
   // Sem barra: com os dois produtos, o link "Início" leva de volta pra escolha.
-  await page.getByRole('link', { name: 'Início' }).click();
+  await page.getByRole('link', { name: 'Voltar ao início' }).click();
   await expect(page.getByRole('heading', { name: /Pra onde vamos/ })).toBeVisible();
   await page.goto('/loja-pronta');
   await expect(page.getByRole('heading', { name: LOJA_PRONTA })).toBeVisible();
@@ -94,7 +94,7 @@ test('com um produto só: entra direto nele, sem tela de escolha', async ({ page
   // Ela nunca passa pela escolha: o sair fica na própria área.
   await expect(page.getByRole('button', { name: 'Sair da conta' })).toBeVisible();
   // E não há pra onde voltar.
-  await expect(page.getByRole('link', { name: 'Início' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Voltar ao início' })).toHaveCount(0);
 
   // A área do produto que ela não tem leva de volta (e o início manda pro produto dela).
   await page.goto('/loja-pronta');

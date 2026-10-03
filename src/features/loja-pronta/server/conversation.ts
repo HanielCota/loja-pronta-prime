@@ -31,15 +31,15 @@ export async function getOnboarding(userId: string): Promise<Onboarding> {
 }
 
 /**
- * Páginas da conversa: só pra quem tem a Loja Pronta, com a loja na fase 1 e a conversa ainda
- * não enviada. Depois do envio, as perguntas levam de volta pra área (a tela de "pronto" tem a
+ * Páginas da conversa: só pra quem tem a Loja Pronta, com a conversa ainda não enviada e a loja
+ * até a fase 2 (na 2 sem a conversa, ela ainda vê a fase 1: ver displayedPhase). Depois do envio, as perguntas levam de volta pra área (a tela de "pronto" tem a
  * própria regra).
  */
 export async function requireConversation(path: string) {
   const student = await requireProduct('loja-pronta', path);
   const userId = student.session.user.id;
   const [onboarding, phase] = await Promise.all([getOnboarding(userId), getStorePhase(userId)]);
-  if (onboarding.completedAt || phase !== 1) redirect('/loja-pronta');
+  if (onboarding.completedAt || phase > 2) redirect('/loja-pronta');
   return { student, onboarding };
 }
 
@@ -56,7 +56,7 @@ export async function requireConversationAction(): Promise<string> {
     getOnboarding(userId),
     getStorePhase(userId),
   ]);
-  if (!products.includes('loja-pronta') || onboarding.completedAt || phase !== 1) {
+  if (!products.includes('loja-pronta') || onboarding.completedAt || phase > 2) {
     redirect('/loja-pronta');
   }
   return userId;

@@ -9,7 +9,7 @@ import { logoTemplates } from '@/features/brand/logo/config';
 import { requireBrandStudio } from '@/features/brand/server/brand';
 import {
   brandStepPath,
-  brandStepProgress,
+  brandStepHeader,
   brandStepTitle,
   canOpenBrandStep,
   isBrandStep,
@@ -38,14 +38,12 @@ export default async function BrandStepPage({ params, searchParams }: PageProps)
   const { student, answers, brand } = await requireBrandStudio(brandStepPath(passo));
   if (!canOpenBrandStep(passo, brand)) redirect(brandStepPath(resumeBrandStep(brand)));
   const editing = passo !== 'revisao' && getParam(query.editar) === '1';
-  const { label, progress } = brandStepProgress(passo);
   const templates = logoTemplates(answers);
 
   return (
     <ConversationLayout
-      section="Sua marca"
-      stepLabel={label}
-      progress={progress}
+      header={brandStepHeader(passo, Boolean(brand.name))}
+      savedLabel="Escolhas salvas"
       backHref={editing ? brandStepPath('revisao') : previousBrandPath(passo)}
     >
       {passo === 'nome' ? (

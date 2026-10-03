@@ -38,7 +38,7 @@ type AreaShellProps = {
 export function AreaShell({ hasChoice, product, title, intro, children }: AreaShellProps) {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[1040px] flex-col gap-8 px-4 pt-4 pb-12 sm:px-6 sm:pt-6">
-      <TopBar back={hasChoice ? { href: '/', label: 'Início' } : undefined} />
+      <TopBar back={hasChoice ? { href: '/', label: 'Voltar ao início' } : undefined} />
       <main className="flex flex-col gap-8">
         <div className="flex flex-col gap-2">
           {product ? (
@@ -64,12 +64,20 @@ function TopBar({ back }: { back?: { href: string; label: string } | undefined }
   if (!back) return null;
   return (
     <header className="flex min-h-11 items-center">
+      {/* Sutil, mas com cara de botão: a seta azul num círculo branco é o que chama o olho, e o
+          texto escuro diz o que faz. Sem moldura em volta de tudo, não disputa com o título. A área
+          de toque (44px) pega o texto e o círculo juntos. */}
       <Link
         href={back.href}
-        className="-ml-1 inline-flex min-h-11 items-center gap-1 rounded-md font-medium text-muted-foreground transition-colors duration-100 outline-none hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid"
+        className="group -ml-1 inline-flex min-h-11 items-center gap-2.5 rounded-full py-1 pr-3 pl-1 text-body font-semibold text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid"
       >
-        <ChevronLeftIcon aria-hidden="true" className="size-5" />
-        {back.label}
+        <span className="flex size-9 items-center justify-center rounded-full border border-border bg-card text-primary shadow-sm transition-colors duration-150 group-hover:border-primary/30 group-hover:bg-primary-soft group-active:scale-95 motion-safe:transition-[color,background-color,border-color,transform] forced-colors:border-[ButtonText]">
+          <ChevronLeftIcon
+            aria-hidden="true"
+            className="size-5 transition-transform duration-150 motion-safe:group-hover:-translate-x-0.5"
+          />
+        </span>
+        <span className="underline-offset-4 group-hover:underline">{back.label}</span>
       </Link>
     </header>
   );

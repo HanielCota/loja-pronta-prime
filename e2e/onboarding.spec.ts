@@ -101,13 +101,22 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
   await expect(page.getByText('Verde', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Está tudo certo' }).click();
 
-  // WhatsApp: número incompleto avisa; com +55 e máscara, aceita.
+  // WhatsApp: o número se organiza enquanto ela digita, e a dica diz quanto falta; incompleto,
+  // não envia. Colado com +55, o 55 sai sozinho e o número aparece pra ela conferir.
   await expect(page).toHaveURL(step('whatsapp'));
   await expectNoA11yViolations(page);
-  await page.getByLabel('Seu WhatsApp, com DDD').fill('98765');
+  const whatsapp = page.getByLabel('Seu WhatsApp, com DDD');
+  await whatsapp.fill('1198765');
+  await expect(whatsapp).toHaveValue('(11) 9876-5');
+  await expect(page.getByText('Faltam 4 números')).toBeVisible();
   await page.getByRole('button', { name: 'Enviar respostas' }).click();
   await expect(page.getByRole('main').getByRole('alert')).toContainText('Confira o número');
-  await page.getByLabel('Seu WhatsApp, com DDD').fill('+55 (11) 98765-4321');
+  await whatsapp.fill('+55 (11) 98765-4321');
+  await expect(whatsapp).toHaveValue('(11) 98765-4321');
+  // O texto aparece embaixo do campo (e, escondido, no aviso pro leitor de tela).
+  await expect(page.getByText('Número completo').first()).toBeVisible();
+  await expect(page.getByText('Vamos avisar você no (11) 98765-4321')).toBeVisible();
+  await expectNoA11yViolations(page);
   await page.getByRole('button', { name: 'Enviar respostas' }).click();
 
   await expect(page).toHaveURL(/\/loja-pronta\/conversa\/pronto$/);
@@ -144,8 +153,8 @@ test('continua de onde parou e não deixa pular perguntas', async ({ page }) => 
   await page.getByText('Nunca vendi').click();
   await expect(page).toHaveURL(step('motivacao'));
 
-  // "Continuar depois" volta pra área, que oferece continuar.
-  await page.getByRole('link', { name: 'Continuar depois' }).click();
+  // "Sair e continuar depois" volta pra área, que oferece continuar.
+  await page.getByRole('link', { name: 'Sair e continuar depois' }).click();
   await expect(page).toHaveURL(/\/loja-pronta$/);
   await page.getByRole('link', { name: 'Continuar a conversa' }).click();
   await expect(page).toHaveURL(step('motivacao'));

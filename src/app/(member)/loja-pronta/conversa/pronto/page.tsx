@@ -37,7 +37,7 @@ export default async function ConversationDonePage() {
   ];
 
   return (
-    <CenteredMemberPage back={{ href: '/loja-pronta', label: 'Loja Pronta' }}>
+    <CenteredMemberPage back={{ href: '/loja-pronta', label: 'Voltar à Loja Pronta' }}>
       <div className="flex flex-col gap-6">
         <Logo expression="happy" compact />
         <CardHeading

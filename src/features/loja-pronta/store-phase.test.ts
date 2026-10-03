@@ -7,6 +7,11 @@ describe('displayedPhase', () => {
     expect(displayedPhase(1, false)).toBe(1);
     expect(displayedPhase(3, true)).toBe(3);
   });
+
+  test('fase 2 sem a conversa enviada: ela ainda vê a fase 1 (a marca precisa das respostas)', () => {
+    expect(displayedPhase(2, false)).toBe(1);
+    expect(displayedPhase(2, true)).toBe(2);
+  });
 });
 
 describe('conversationStatus', () => {

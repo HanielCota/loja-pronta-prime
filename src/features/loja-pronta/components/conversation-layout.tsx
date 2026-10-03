@@ -1,63 +1,78 @@
-import { ChevronLeftIcon } from 'lucide-react';
+import { CheckIcon, ChevronLeftIcon, DoorOpenIcon } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { cn } from '@/lib/utils';
+import type { StepHeader } from '../steps';
 
 type ConversationLayoutProps = {
-  /** Parte atual, nomeada em cima ("Sobre você", "Seu logo"). */
-  section: string;
-  /** Quanto do caminho inteiro já foi (0 a 1): a barra enche etapa a etapa. */
-  progress: number;
-  /** "Pergunta 3 de 10", "Revisão"... */
-  stepLabel: string;
-  /** Pra onde o "voltar" leva. */
+  /** O que o topo diz e mostra (ver stepHeader e brandStepHeader). */
+  header: StepHeader;
+  /** O aviso de que nada se perde ("Respostas salvas", "Escolhas salvas"). */
+  savedLabel: string;
+  /** Pra onde o "Voltar" leva. */
   backHref: string;
   children: ReactNode;
 };
 
+const topLink =
+  'inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full text-body font-medium transition-colors duration-100 outline-none hover:bg-black/5 focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-solid';
+
 /**
- * Moldura das telas da conversa: no topo, voltar, onde ela está e "Continuar depois" (discreto:
- * a pergunta é o que importa); embaixo, uma barra fina com o progresso da conversa inteira. O
- * conteúdo fica numa coluna, centralizado na vertical a partir do tablet (no celular, perto do
- * topo, pra caber sem rolar), e mais larga no computador, pra pergunta não ficar perdida na tela. Tudo são links de verdade: funciona sem JavaScript.
+ * Moldura das telas passo a passo (conversa e marca), pensada pra quem tem pouca prática:
+ * - "Voltar" escrito, não só a setinha (muita gente não sabe o que a seta faz);
+ * - "Sair e continuar depois" e, quando já tem algo salvo, "✓ Respostas salvas": sair sem medo;
+ * - "Pergunta 3 de 10" (não "3 de 10") e uma barra com um tracinho por pergunta, pra contar
+ *   quanto falta.
+ * O conteúdo fica numa coluna, centralizado na vertical a partir do tablet (no celular, perto do
+ * topo, pra caber sem rolar), e mais larga no computador. Tudo são links de verdade: funciona sem
+ * JavaScript.
  */
 export function ConversationLayout({
-  section,
-  progress,
-  stepLabel,
+  header,
+  savedLabel,
   backHref,
   children,
 }: ConversationLayoutProps) {
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="mx-auto flex w-full max-w-[560px] flex-col gap-2 px-4 pt-3 sm:px-6 lg:max-w-[680px]">
-        <div className="flex items-center gap-1">
-          <Link
-            href={backHref}
-            aria-label="Voltar"
-            className="-ml-2 grid size-11 shrink-0 place-items-center rounded-full text-foreground transition-colors duration-100 outline-none hover:bg-black/5 focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-solid"
-          >
-            <ChevronLeftIcon aria-hidden="true" className="size-6" />
+        <div className="flex items-center justify-between gap-2">
+          <Link href={backHref} className={cn(topLink, '-ml-2 pr-3 pl-1.5 text-foreground')}>
+            <ChevronLeftIcon aria-hidden="true" className="size-5" />
+            Voltar
           </Link>
-          <p className="flex min-w-0 flex-1 flex-col text-sm leading-tight">
-            <span className="font-semibold">{section}</span>
-            <span className="text-muted-foreground">{stepLabel}</span>
-          </p>
           <Link
             href="/loja-pronta"
-            className="-mr-2 inline-flex min-h-11 shrink-0 items-center rounded-full px-3 text-sm font-medium text-muted-foreground transition-colors duration-100 outline-none hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-solid"
+            className={cn(topLink, '-mr-2 px-3 text-muted-foreground hover:text-foreground')}
           >
-            Continuar depois
+            {/* No celular bem pequeno (320px), só o texto: o ícone não cabe junto. */}
+            <DoorOpenIcon aria-hidden="true" className="hidden size-5 min-[360px]:block" />
+            Sair e continuar depois
           </Link>
         </div>
-        {/* O progresso já está escrito acima; a barra é só o desenho dele. */}
-        <div
-          aria-hidden="true"
-          className="h-1 overflow-hidden rounded-full bg-track forced-colors:border forced-colors:border-[CanvasText]"
-        >
-          <div
-            className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out motion-reduce:transition-none forced-colors:bg-[CanvasText]"
-            style={{ width: `${Math.round(progress * 100)}%` }}
-          />
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
+          <span className="font-semibold">{header.label}</span>
+          {header.saved ? (
+            <span className="inline-flex items-center gap-1 text-muted-foreground">
+              <span aria-hidden="true">·</span>
+              <CheckIcon aria-hidden="true" className="size-4" />
+              {savedLabel}
+            </span>
+          ) : null}
+        </p>
+        {/* O progresso já está escrito acima; os tracinhos são só o desenho dele. */}
+        <div aria-hidden="true" className="flex gap-1">
+          {Array.from({ length: header.total }, (_, index) => (
+            <span
+              key={index}
+              className={cn(
+                'h-1.5 flex-1 rounded-full border border-transparent',
+                index < header.filled
+                  ? 'bg-primary forced-colors:bg-[CanvasText]'
+                  : 'bg-track forced-colors:border-[CanvasText]',
+              )}
+            />
+          ))}
         </div>
       </header>
       <main className="mx-auto flex w-full max-w-[560px] flex-1 flex-col gap-8 px-4 pt-8 pb-10 sm:justify-center sm:px-6 sm:py-12 lg:max-w-[680px]">

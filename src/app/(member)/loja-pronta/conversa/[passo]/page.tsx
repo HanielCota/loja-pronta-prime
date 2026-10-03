@@ -12,9 +12,8 @@ import {
   previousPath,
   resumeStep,
   REVIEW_STEP,
-  stepLabel,
   stepPath,
-  stepProgress,
+  stepHeader,
   stepTitle,
   WHATSAPP_STEP,
 } from '@/features/loja-pronta/steps';
@@ -45,8 +44,8 @@ export default async function ConversationStepPage({ params, searchParams }: Pag
 
   return (
     <ConversationLayout
-      {...stepProgress(passo)}
-      stepLabel={stepLabel(passo)}
+      header={stepHeader(passo, Object.keys(answers).length > 0)}
+      savedLabel="Respostas salvas"
       backHref={previousPath(passo, { editing })}
     >
       {passo === REVIEW_STEP ? <ReviewStep answers={answers} /> : null}

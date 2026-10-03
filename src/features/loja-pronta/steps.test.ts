@@ -8,8 +8,7 @@ import {
   resumeStep,
   REVIEW_STEP,
   stepPath,
-  stepLabel,
-  stepProgress,
+  stepHeader,
   stepTitle,
   STEPS,
   WHATSAPP_STEP,
@@ -67,20 +66,36 @@ describe('etapas', () => {
     expect(stepPath('cor', { editing: true })).toBe('/loja-pronta/conversa/cor?editar=1');
   });
 
-  test('barra de progresso: a conversa inteira, etapa a etapa, e a parte de cada uma', () => {
-    expect(stepProgress('vendas')).toEqual({ section: 'Sobre você', progress: 1 / STEPS.length });
-    expect(stepProgress('tempo').section).toBe('Sobre você');
-    expect(stepProgress('nome').section).toBe('Sua marca');
-    expect(stepProgress(REVIEW_STEP).section).toBe('Confirmar');
-    expect(stepProgress(WHATSAPP_STEP)).toEqual({ section: 'Confirmar', progress: 1 });
+  test('topo: "Pergunta N de 10", tracinhos cheios até a atual e o aviso de salvo', () => {
+    expect(stepHeader('vendas', false)).toEqual({
+      label: 'Pergunta 1 de 10',
+      filled: 1,
+      total: 10,
+      saved: false,
+    });
+    expect(stepHeader('tempo', true)).toMatchObject({
+      label: 'Pergunta 5 de 10',
+      filled: 5,
+      saved: true,
+    });
+    expect(stepHeader('sentimento', true).label).toBe('Pergunta 9 de 10 · falta só 1');
+    expect(stepHeader('toque', true).label).toBe('Última pergunta');
+    expect(stepHeader(REVIEW_STEP, true)).toEqual({
+      label: 'Revisão das respostas',
+      filled: 10,
+      total: 10,
+      saved: true,
+    });
+    expect(stepHeader(WHATSAPP_STEP, true).label).toBe('Último passo');
+    // Pergunta 1 com respostas salvas (voltou da revisão, ou retomou): avisa também.
+    expect(stepHeader('vendas', true).saved).toBe(true);
   });
 });
 
-describe('stepTitle e stepLabel', () => {
-  test('título da aba completo, topo curto', () => {
+describe('stepTitle', () => {
+  test('título da aba', () => {
     expect(stepTitle('vendas')).toBe('Pergunta 1 de 10');
-    expect(stepLabel('vendas')).toBe('1 de 10');
     expect(stepTitle(REVIEW_STEP)).toBe('Revisão');
-    expect(stepLabel(WHATSAPP_STEP)).toBe('Último passo');
+    expect(stepTitle(WHATSAPP_STEP)).toBe('Último passo');
   });
 });

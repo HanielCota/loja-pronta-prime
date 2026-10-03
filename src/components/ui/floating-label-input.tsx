@@ -8,26 +8,41 @@ type FloatingLabelInputProps = Omit<ComponentProps<'input'>, 'placeholder'> & {
   label: string;
   /** Ação dentro do campo, à direita (ex.: mostrar senha). */
   endSlot?: ReactNode;
+  /** Algo fixo dentro do campo, à esquerda (ex.: o +55 do telefone), com 5rem de largura. */
+  startSlot?: ReactNode;
 };
 
 /**
  * Campo com rótulo dentro, que sobe e diminui ao focar ou preencher (estilo Apple ID).
  * O rótulo continua sendo um <label> de verdade; só o movimento usa transform.
  */
-function FloatingLabelInput({ id, label, endSlot, className, ...props }: FloatingLabelInputProps) {
+function FloatingLabelInput({
+  id,
+  label,
+  endSlot,
+  startSlot,
+  className,
+  ...props
+}: FloatingLabelInputProps) {
   return (
     <div className="relative">
       <Input
         id={id}
         // Placeholder vazio: é ele que diz ao CSS se o campo está preenchido.
         placeholder=" "
-        className={cn('peer pt-6 pb-2', endSlot ? 'pr-14' : undefined, className)}
+        className={cn(
+          'peer pt-6 pb-2',
+          endSlot ? 'pr-14' : undefined,
+          startSlot ? 'pl-[5.75rem]' : undefined,
+          className,
+        )}
         {...props}
       />
       <Label
         htmlFor={id}
         className={cn(
-          'pointer-events-none absolute top-4 left-4 origin-top-left truncate text-body leading-6 font-normal text-muted-foreground',
+          'pointer-events-none absolute top-4 origin-top-left truncate text-body leading-6 font-normal text-muted-foreground',
+          startSlot ? 'left-[5.75rem]' : 'left-4',
           // Limite à direita: com zoom alto, um rótulo longo não passa por baixo da ação do campo.
           endSlot ? 'right-14' : 'right-4',
           'transition-transform duration-200 ease-out motion-reduce:transition-none',
@@ -40,6 +55,11 @@ function FloatingLabelInput({ id, label, endSlot, className, ...props }: Floatin
       >
         {label}
       </Label>
+      {startSlot ? (
+        <div className="pointer-events-none absolute inset-y-0 left-0 flex w-20 items-center justify-center border-r border-border">
+          {startSlot}
+        </div>
+      ) : null}
       {endSlot ? <div className="absolute top-1.5 right-1.5">{endSlot}</div> : null}
     </div>
   );

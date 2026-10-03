@@ -27,10 +27,14 @@ function SubmitButton() {
       size="inline"
       loading={pending}
       loadingText="Saindo…"
-      className="text-muted-foreground hover:text-foreground"
+      className="group gap-2.5 pr-1 font-semibold text-muted-foreground hover:text-foreground hover:no-underline"
     >
-      <LogOutIcon aria-hidden="true" className="size-4" />
-      Sair da conta
+      {/* Mesmo desenho do voltar (ícone num círculo), mas em cinza e sem fundo: dá pra achar, mas
+          fica um degrau abaixo, porque sair sem querer custa digitar a senha de novo. */}
+      <span className="flex size-9 items-center justify-center rounded-full border border-border transition-colors duration-150 group-hover:border-input group-hover:bg-card forced-colors:border-[ButtonText]">
+        <LogOutIcon aria-hidden="true" className="size-4" />
+      </span>
+      <span className="underline-offset-4 group-hover:underline">Sair da conta</span>
     </Button>
   );
 }
