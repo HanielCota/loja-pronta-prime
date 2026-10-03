@@ -16,3 +16,8 @@ export function formatWhatsapp(digits: string): string {
   const split = rest.length === 9 ? 5 : 4;
   return `(${area}) ${rest.slice(0, split)}-${rest.slice(split)}`;
 }
+
+/** Link que abre a conversa no WhatsApp, já com a primeira mensagem escrita. */
+export function whatsappLink(digits: string, message: string): string {
+  return `https://wa.me/55${digits}?text=${encodeURIComponent(message)}`;
+}

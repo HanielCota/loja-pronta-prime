@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { formatWhatsapp, parseWhatsapp } from './whatsapp';
+import { formatWhatsapp, parseWhatsapp, whatsappLink } from './whatsapp';
 
 describe('parseWhatsapp e formatWhatsapp', () => {
   test('aceita qualquer formato com DDD e guarda só os dígitos', () => {
@@ -19,5 +19,13 @@ describe('parseWhatsapp e formatWhatsapp', () => {
   test('formata celular e fixo', () => {
     expect(formatWhatsapp('11987654321')).toBe('(11) 98765-4321');
     expect(formatWhatsapp('1134567890')).toBe('(11) 3456-7890');
+  });
+});
+
+describe('whatsappLink', () => {
+  test('abre a conversa com o 55 do país e a mensagem escrita', () => {
+    expect(whatsappLink('11987654321', 'Oi! Tudo bem?')).toBe(
+      'https://wa.me/5511987654321?text=Oi!%20Tudo%20bem%3F',
+    );
   });
 });

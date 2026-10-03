@@ -10,7 +10,10 @@ const ORDER: ProductId[] = ['loja-pronta', 'sll'];
 
 type ProductChooserProps = {
   products: ProductId[];
-  /** Última área aberta: o bloco dela diz "Continuar" em vez de "Entrar". */
+  /**
+   * Última área aberta: o bloco dela diz "Continuar" em vez de "Entrar" (a não ser que o
+   * andamento traga o próprio texto do botão).
+   */
   lastArea?: ProductId | undefined;
   /** Andamento de cada produto (quando há), mostrado no bloco dele. */
   status?: Partial<Record<ProductId, ProductStatus>> | undefined;
@@ -38,7 +41,7 @@ export function ProductChooser({ products, lastArea, status, primary }: ProductC
         const { title, tag, pitch, path } = PRODUCTS[product];
         const current = status?.[product];
         const isMain = product === main;
-        const verb = product === lastArea ? 'Continuar' : 'Entrar';
+        const verb = current?.cta ?? (product === lastArea ? 'Continuar' : 'Entrar');
         const id = `produto-${product}`;
         return (
           <li key={product} className="flex">

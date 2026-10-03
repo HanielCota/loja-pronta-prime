@@ -1,10 +1,19 @@
-import { ArrowRightIcon, BookmarkIcon, CheckIcon, ClockIcon, ListChecksIcon } from 'lucide-react';
+import {
+  ArrowRightIcon,
+  BookmarkIcon,
+  CheckIcon,
+  ClockIcon,
+  ListChecksIcon,
+  MessageCircleIcon,
+} from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { STORE_PHASES } from '@/config/store-phases';
+import { TEAM_WHATSAPP } from '@/config/support';
 import { CONVERSATION_PATH, QUESTION_COUNT } from '../steps';
 import type { ConversationStatus } from '../store-phase';
+import { whatsappLink } from '../whatsapp';
 import { cn } from '@/lib/utils';
 import { firstName } from '@/features/products/names';
 import {
@@ -118,6 +127,7 @@ function NextStepCard({
           A equipe está criando opções de logo e de descrição pra sua loja. Em até 24 horas, você
           recebe um aviso no WhatsApp pra escolher.
         </p>
+        <TalkToTeam />
       </ActionCard>
     );
   }
@@ -129,7 +139,29 @@ function NextStepCard({
       <p className="text-body text-pretty text-muted-foreground">
         Quando precisar de você, a equipe chama no WhatsApp.
       </p>
+      <TalkToTeam />
     </ActionCard>
+  );
+}
+
+/**
+ * Enquanto a loja está com a equipe, a tela não pede nada dela: este é o caminho pra tirar uma
+ * dúvida. Só aparece com o número da equipe configurado (config/support.ts).
+ */
+function TalkToTeam() {
+  if (!TEAM_WHATSAPP) return null;
+  return (
+    <Button asChild variant="soft" className="mt-2">
+      <a
+        href={whatsappLink(TEAM_WHATSAPP, 'Oi! Sou aluna da Loja Pronta e tenho uma dúvida.')}
+        target="_blank"
+        rel="noreferrer"
+      >
+        <MessageCircleIcon aria-hidden="true" />
+        Chamar no WhatsApp
+        <span className="sr-only"> (abre em outra aba)</span>
+      </a>
+    </Button>
   );
 }
 

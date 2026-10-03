@@ -6,6 +6,7 @@ import {
   fieldNote,
   maxChoices,
   missingAnswer,
+  questionHelp,
   submitButton,
   type Draft,
 } from './answer-rules';
@@ -45,14 +46,20 @@ describe('escolhas', () => {
   });
 });
 
-describe('fieldNote e submitButton', () => {
-  test('nota: avanço ao tocar, ou quanto texto cabe', () => {
-    expect(fieldNote(question('vendas'), EMPTY, false)).toMatch(/próxima pergunta/);
-    expect(fieldNote(question('vendas'), EMPTY, true)).toMatch(/volta pra revisão/);
-    expect(fieldNote(question('toque'), { ...EMPTY, text: 'abc' }, false)).toBe(
+describe('questionHelp, fieldNote e submitButton', () => {
+  test('ajuda: a da pergunta, ou o aviso de que tocar já segue', () => {
+    expect(questionHelp(question('vendas'), false)).toMatch(/pra seguir/);
+    expect(questionHelp(question('vendas'), true)).toMatch(/voltar à revisão/);
+    expect(questionHelp(question('cor'), false)).toMatch(/pra seguir/);
+    expect(questionHelp(question('motivacao'), false)).toBe('Pode marcar mais de uma.');
+  });
+
+  test('nota: quanto texto cabe', () => {
+    expect(fieldNote(question('toque'), { ...EMPTY, text: 'abc' })).toBe(
       `3 de ${PERSONAL_TOUCH_MAX} caracteres`,
     );
-    expect(fieldNote(question('motivacao'), EMPTY, false)).toBe('');
+    expect(fieldNote(question('vendas'), EMPTY)).toBe('');
+    expect(fieldNote(question('motivacao'), EMPTY)).toBe('');
   });
 
   test('botão: cinza sem resposta, "Pular" no opcional vazio, "Salvar e voltar" editando', () => {
