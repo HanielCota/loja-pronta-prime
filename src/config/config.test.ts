@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { PRODUCTS } from '@/features/products/catalog';
 import { parseWhatsapp } from '@/features/loja-pronta/whatsapp';
-import { firstName } from '@/features/products/names';
 import { ONBOARDING_BLOCKS, ONBOARDING_QUESTIONS } from './onboarding';
 import { PRODUCT_IDS } from './products';
 import { STORE_PHASES } from './store-phases';
@@ -28,15 +27,5 @@ describe('configuração', () => {
 
   test('WhatsApp do suporte: vazio, ou só os dígitos com DDD', () => {
     if (TEAM_WHATSAPP) expect(parseWhatsapp(TEAM_WHATSAPP)).toBe(TEAM_WHATSAPP);
-  });
-});
-
-describe('firstName', () => {
-  test('primeiro nome pra saudação', () => {
-    expect(firstName('Ana Souza')).toBe('Ana');
-    expect(firstName('  Maria   da Silva ')).toBe('Maria');
-    expect(firstName('Ana')).toBe('Ana');
-    expect(firstName('')).toBe('');
-    expect(firstName('   ')).toBe('');
   });
 });

@@ -66,7 +66,7 @@ export function ProfileNameForm({ name }: { name: string }) {
           defaultValue={inputProps.defaultValue ?? name}
           id={fields.name.id}
           label="Seu nome"
-          autoComplete="name"
+          autoComplete="nickname"
           autoCapitalize="words"
           maxLength={NAME_MAX_LENGTH}
         />

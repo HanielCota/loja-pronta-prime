@@ -17,6 +17,7 @@ export const user = pgTable('user', {
   banReason: text('ban_reason'),
   banExpires: timestamp('ban_expires'),
   mustChangePassword: boolean('must_change_password').default(true),
+  preferredName: text('preferred_name'),
 });
 
 export const session = pgTable(

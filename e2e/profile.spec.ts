@@ -22,7 +22,8 @@ test('o menu da conta leva ao perfil, e o nome novo aparece na hora', async ({ p
   await page.getByRole('button', { name: 'Salvar nome' }).click();
   await expect(page.getByText('Digite seu nome')).toBeVisible();
 
-  await name.fill('Maria Clara Souza');
+  // O nome escolhido vale inteiro na saudação (não só o primeiro).
+  await name.fill('Maria Clara');
   await page.getByRole('button', { name: 'Salvar nome' }).click();
   await expect(page.locator('p').filter({ hasText: 'Nome salvo' })).toBeVisible();
 
@@ -30,7 +31,9 @@ test('o menu da conta leva ao perfil, e o nome novo aparece na hora', async ({ p
     .getByRole('navigation', { name: 'Você está em' })
     .getByRole('link', { name: 'Início' })
     .click();
-  await expect(page.getByRole('heading', { name: 'Oi, Maria! Pra onde vamos?' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Oi, Maria Clara! Pra onde vamos?' }),
+  ).toBeVisible();
 });
 
 test('trocar a senha pede a atual e vale no próximo login', async ({ page }) => {

@@ -71,6 +71,11 @@ export const auth = betterAuth({
        * `input: false`: ninguém altera isso por requisição; só o servidor.
        */
       mustChangePassword: { type: 'boolean', required: false, defaultValue: true, input: false },
+      /**
+       * Como ela quer ser chamada (perfil), separado do nome completo da compra: a saudação usa
+       * este inteiro ("Ana Paula"), e o nome completo continua igual. Só o servidor grava.
+       */
+      preferredName: { type: 'string', required: false, input: false },
     },
   },
 

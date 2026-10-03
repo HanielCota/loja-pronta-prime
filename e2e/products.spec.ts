@@ -3,7 +3,6 @@ import { expectNoA11yViolations, signIn } from './support/auth';
 import { PASSWORD, studentEmail } from './support/students';
 
 const SLL = /As aulas abrem em breve/;
-const LOJA_PRONTA = /Vamos montar sua loja/;
 
 test('depois de criar a senha no primeiro acesso, escolhe entre a Loja Pronta e o SLL', async ({
   page,
@@ -61,7 +60,10 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
     .click();
   await expect(page.getByRole('heading', { name: /Pra onde vamos/ })).toBeVisible();
   await page.goto('/loja-pronta');
-  await expect(page.getByRole('heading', { name: LOJA_PRONTA })).toBeVisible();
+  // A escolha já disse "Oi": a área não cumprimenta de novo.
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Vamos montar sua loja?', exact: true }),
+  ).toBeVisible();
   await expectNoA11yViolations(page);
 
   // De volta ao início, a última área aberta aparece como "Continuar". A visita é registrada
@@ -83,7 +85,7 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
   // Na mesma sessão, a saudação não muda; num login seguinte, ela é recebida de volta.
   await page.goto('/sll');
   await expect(page.getByRole('heading', { name: SLL })).toBeVisible();
-  await expect(page.getByText(/^Boas-vindas, E2E!/)).toBeVisible();
+  await expect(page.getByText(/^Boas-vindas, Ana!/)).toBeVisible();
   await context.clearCookies();
   await signIn(page, studentEmail('doisprodutos'), PASSWORD, '/sll');
   await expect(page).toHaveURL(/\/sll$/);
@@ -131,8 +133,11 @@ test('sem nenhum produto: avisa que o acesso ainda não foi liberado', async ({ 
 test('Loja Pronta mostra o que fazer agora e o caminho em 3 etapas', async ({ page }) => {
   await signIn(page, studentEmail('lojafase3'), PASSWORD);
   await expect(page).toHaveURL(/\/loja-pronta$/);
-  // Sem marca ainda: o título chama pra montar a loja.
-  await expect(page.getByRole('heading', { level: 1, name: LOJA_PRONTA })).toBeVisible();
+  // Sem marca ainda: o título chama pra montar a loja. Com um produto só, esta é a primeira tela
+  // dela, e a saudação fica aqui.
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Oi, Ana! Vamos montar sua loja?' }),
+  ).toBeVisible();
 
   const stages = page.getByRole('list', { name: 'As etapas da sua loja' }).getByRole('listitem');
   await expect(stages).toHaveCount(3);

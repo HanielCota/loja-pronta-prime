@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { TEAM_WHATSAPP } from '@/config/support';
 import { ChangePasswordForm, ProfileNameForm } from '@/features/auth/components/profile-forms';
 import { whatsappLink } from '@/features/loja-pronta/whatsapp';
+import { greetingName } from '@/features/products/names';
 import { AreaShell, panelCard, sectionTitleClass } from '@/features/member/components/area-shell';
 import { requireStudent } from '@/features/products/server/access';
 
@@ -57,9 +58,9 @@ export default async function ProfilePage() {
               Como quer ser chamada
             </h2>
             <p className="mt-1 mb-5 text-body text-pretty text-muted-foreground">
-              É o nome que aparece na saudação e no topo das telas.
+              É assim que a gente te chama nas saudações, como “Oi, Ana Paula!”.
             </p>
-            <ProfileNameForm name={user.name} />
+            <ProfileNameForm name={greetingName(user)} />
           </section>
         </div>
 

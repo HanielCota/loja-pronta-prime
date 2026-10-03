@@ -14,7 +14,7 @@ import type { LogoConfig } from '@/features/brand/logo/config';
 import { logoPreviewSrc } from '@/features/brand/logo-preview';
 import { BRAND_PATH, brandStepPath } from '@/features/brand/steps';
 import { AreaShell, panelCard } from '@/features/member/components/area-shell';
-import { firstName } from '@/features/products/names';
+import { greetingName } from '@/features/products/names';
 import { cn } from '@/lib/utils';
 import { storeStages, type StageView } from '../stages';
 import { canReviseDonePhases } from '../editing';
@@ -23,7 +23,7 @@ import type { ConversationStatus } from '../store-phase';
 import { whatsappLink } from '../whatsapp';
 
 type StorePanelProps = {
-  user: { name: string; email: string };
+  user: { name: string; email: string; preferredName?: string | null | undefined };
   /** Tem os dois produtos: o topo leva de volta pra escolha. */
   hasChoice: boolean;
   phase: number;
@@ -39,7 +39,8 @@ type StorePanelProps = {
  * vertical. Com a marca pronta, o título é o nome da loja.
  */
 export function StorePanel({ user, hasChoice, phase, conversation, brand }: StorePanelProps) {
-  const name = firstName(user.name);
+  // Com os dois produtos, ela chega aqui pela escolha de área, que já disse "Oi": sem repetir.
+  const name = hasChoice ? '' : greetingName(user);
   return (
     <AreaShell
       account={user}

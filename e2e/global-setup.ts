@@ -138,7 +138,8 @@ export default async function globalSetup() {
       body: {
         email: studentEmail(student.kind),
         password: PASSWORD,
-        name: `E2E ${student.kind}`,
+        // Um nome de verdade na frente: a saudação descarta o que não parece nome (names.ts).
+        name: `Ana ${student.kind}`,
         role: 'user',
         data: {
           emailVerified: student.emailVerified,

@@ -16,7 +16,7 @@ import {
 } from '@/features/products/chooser';
 import { getStoreOverview } from '@/features/loja-pronta/server/overview';
 import { storeChooserCard } from '@/features/loja-pronta/store-card';
-import { firstName } from '@/features/products/names';
+import { greetingName } from '@/features/products/names';
 import { requireStudent } from '@/features/products/server/access';
 
 export const metadata: Metadata = {
@@ -34,7 +34,7 @@ export default async function HomePage() {
   if (products.length === 1 && onlyProduct) redirect(PRODUCTS[onlyProduct].path);
 
   const { user } = session;
-  const name = firstName(user.name);
+  const name = greetingName(user);
 
   if (products.length === 0) {
     return (
