@@ -33,8 +33,8 @@ type HeadlineInput = {
 /**
  * Qual produto leva o botão cheio e o texto de cima da escolha de área.
  * - Loja Pronta esperando por ela: vem antes de tudo, e o texto aponta pra ela.
- * - Loja nas mãos da equipe: nenhum botão "manda" pra lá (nem pro curso, que ainda não abriu), e o
- *   texto avisa que a equipe chama no WhatsApp.
+ * - Loja numa fase que ainda não abriu: nenhum botão "manda" pra lá (nem pro curso, que ainda
+ *   não abriu), e o texto avisa que ela recebe um aviso no WhatsApp.
  * - Sem loja: continua de onde parou, ou escolhe por onde começar.
  */
 export function chooserHeadline({ store, lastArea }: HeadlineInput): {
@@ -46,8 +46,7 @@ export function chooserHeadline({ store, lastArea }: HeadlineInput): {
   }
   if (store) {
     return {
-      description:
-        'Sua loja está com a equipe. Você recebe um aviso no WhatsApp quando for sua vez.',
+      description: 'A próxima fase da sua loja abre em breve. Você recebe um aviso no WhatsApp.',
     };
   }
   return { description: lastArea ? 'Continue de onde parou.' : 'Escolha por onde começar.' };

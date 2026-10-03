@@ -9,10 +9,10 @@ describe('chooserHeadline', () => {
     });
   });
 
-  test('loja com a equipe: sem destaque, avisa que a equipe chama', () => {
+  test('fase ainda fechada: sem destaque, avisa que chega um aviso', () => {
     const headline = chooserHeadline({ store: { waitsOnStudent: false }, lastArea: 'loja-pronta' });
     expect(headline.primary).toBeUndefined();
-    expect(headline.description).toMatch(/com a equipe/);
+    expect(headline.description).toMatch(/aviso no WhatsApp/);
   });
 
   test('sem loja: continua de onde parou, ou escolhe por onde começar', () => {

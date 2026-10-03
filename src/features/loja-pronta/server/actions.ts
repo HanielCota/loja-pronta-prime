@@ -52,8 +52,8 @@ export async function saveAnswer(_state: StepResult, formData: FormData): Promis
 }
 
 /**
- * Última etapa: confirma o WhatsApp e envia a conversa. A loja passa pra fase 2, e a equipe
- * começa a criar o logo e a descrição.
+ * Última etapa: confirma o WhatsApp e envia a conversa. A loja passa pra fase 2: ela já pode
+ * criar a marca.
  */
 export async function finishConversation(
   _state: StepResult,

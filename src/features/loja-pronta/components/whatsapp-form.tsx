@@ -11,7 +11,7 @@ import { finishConversation } from '../server/actions';
 import { parseWhatsapp } from '../whatsapp';
 
 /**
- * Última etapa: o WhatsApp em que a equipe avisa de cada fase. Sem máscara no campo (máscaras
+ * Última etapa: o WhatsApp dos avisos de cada fase. Sem máscara no campo (máscaras
  * atrapalham quem cola o número ou usa leitor de tela): aceita qualquer formato e o servidor
  * guarda só os dígitos.
  */

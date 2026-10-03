@@ -27,7 +27,7 @@ export function ReviewStep({ answers }: { answers: OnboardingAnswers }) {
     <>
       <MascotBubble
         title="Confira suas respostas"
-        help="A equipe cria seu logo a partir delas. Você pode mudar qualquer uma."
+        help="Com elas, preparamos ideias de nome, logo e texto pra sua loja. Você pode mudar qualquer uma."
         titleId={TITLE_ID}
       />
       <FocusOnArrival targetId={TITLE_ID} />

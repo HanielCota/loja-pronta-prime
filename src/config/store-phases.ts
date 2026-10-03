@@ -1,8 +1,9 @@
 /**
  * Fases da Loja Pronta, da primeira conversa até a loja no ar (docs/PRODUTO.md). Lista única:
  * o banco guarda o número da fase (1 a 7) e a tela mostra o nome e o que acontece nela.
- * `needsStudent`: a fase anda com algo que a aluna faz (conversar, escolher, conectar, confirmar
- * os dados); nas outras, quem trabalha é a equipe.
+ * Tudo é automático, sem equipe: a aluna faz cada fase pela plataforma, passo a passo.
+ * `needsStudent`: a fase tem tela pra ela fazer agora. As fases ainda sem tela ficam como "em
+ * breve" (o painel avisa que ela recebe um aviso no WhatsApp quando abrir).
  */
 export const STORE_PHASES = [
   {
@@ -12,36 +13,35 @@ export const STORE_PHASES = [
     needsStudent: true,
   },
   {
-    title: 'Logo e descrição',
-    detail: 'A equipe cria opções de logo e de descrição, e você escolhe as favoritas.',
-    // A escolha das opções ainda não está na plataforma: por enquanto, ela espera a equipe.
+    title: 'Sua marca',
+    detail: 'Escolha o nome, o logo e o texto da sua loja.',
+    needsStudent: true,
+  },
+  // Fases 3 a 7: as telas ainda não existem. A 3 depende de um passo a passo com as telas da
+  // Shopee; a 4 e a 6, do cadastro de parceiro na Shopee; a 5, da API do fornecedor.
+  {
+    title: 'Conta na Shopee',
+    detail: 'Abra sua conta de vendedora na Shopee, com o nosso passo a passo.',
     needsStudent: false,
   },
-  // As fases 3 e 4 dependem dela, mas as telas delas ainda não estão na plataforma (a equipe
-  // conduz pelo WhatsApp): até existirem, a escolha de área não aponta pra uma página sem ação.
   {
     title: 'Conexão com a Shopee',
-    detail: 'Sua loja é ligada à sua conta na Shopee.',
+    detail: 'Ligue sua conta da Shopee à plataforma, com um toque.',
     needsStudent: false,
   },
   {
-    title: 'Verificação de identidade',
-    detail: 'A Shopee confere seus dados.',
+    title: 'Produtos',
+    detail: 'Escolha os produtos da loja, com o preço já calculado.',
     needsStudent: false,
   },
   {
-    title: 'Fornecedor e produtos',
-    detail: 'A equipe define o fornecedor e os produtos da loja.',
-    needsStudent: false,
-  },
-  {
-    title: 'Publicação dos produtos',
-    detail: 'A equipe cadastra os produtos na sua loja.',
+    title: 'Publicação',
+    detail: 'Sua marca e seus produtos vão pra Shopee, sem você precisar cadastrar nada.',
     needsStudent: false,
   },
   {
     title: 'Loja no ar',
-    detail: 'A loja abre, e a equipe acompanha as primeiras semanas.',
+    detail: 'Sua loja abre, e você acompanha as vendas aqui.',
     needsStudent: false,
   },
 ] as const;

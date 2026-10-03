@@ -12,7 +12,7 @@ type NameFieldProps = {
   onUnknown: (value: boolean) => void;
 };
 
-/** Nome da loja, ou "Ainda não decidi" (que desliga o campo: a equipe sugere). */
+/** Nome da loja, ou "Ainda não decidi" (que desliga o campo: a plataforma sugere nomes). */
 export function NameField({
   text,
   unknown,

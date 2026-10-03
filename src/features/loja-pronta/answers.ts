@@ -16,7 +16,7 @@ export function isAnswered(answers: OnboardingAnswers, id: OnboardingQuestionId)
 /** A resposta como texto, pra revisão. */
 export function answerText(question: OnboardingQuestion, answers: OnboardingAnswers): string {
   const value = answers[question.id];
-  if (question.kind === 'name' && value === null) return `${UNKNOWN_NAME} (a equipe sugere)`;
+  if (question.kind === 'name' && value === null) return `${UNKNOWN_NAME} (a gente sugere)`;
   if (question.kind === 'longtext' && !value) return 'Nada em especial';
   if (Array.isArray(value)) return value.join(', ');
   return value ?? '';

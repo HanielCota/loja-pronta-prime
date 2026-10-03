@@ -46,9 +46,9 @@ describe('parseAnswer', () => {
     expect(parseAnswer(nome, form({ value: 'a'.repeat(STORE_NAME_MAX + 1) })).ok).toBe(false);
   });
 
-  test('cor: uma das cores ou "Deixo com a equipe"', () => {
+  test('cor: uma das cores ou "Escolho depois"', () => {
     const cor = question('cor');
-    expect(parseAnswer(cor, form({ value: 'Deixo com a equipe' })).ok).toBe(true);
+    expect(parseAnswer(cor, form({ value: 'Escolho depois' })).ok).toBe(true);
     expect(parseAnswer(cor, form({ value: '#ff0000' })).ok).toBe(false);
   });
 
@@ -107,7 +107,7 @@ describe('answerText', () => {
       nome: null,
       categorias: ['Beleza', 'Pets'],
     };
-    expect(answerText(question('nome'), answers)).toBe(`${UNKNOWN_NAME} (a equipe sugere)`);
+    expect(answerText(question('nome'), answers)).toBe(`${UNKNOWN_NAME} (a gente sugere)`);
     expect(answerText(question('toque'), answers)).toBe('Nada em especial');
     expect(answerText(question('categorias'), answers)).toBe('Beleza, Pets');
   });

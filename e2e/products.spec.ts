@@ -31,7 +31,7 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
   // (incluindo qual é o recomendado) vem como descrição.
   await expect(page.getByRole('heading', { level: 2, name: 'Loja Pronta' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Entrar, Loja Pronta' })).toHaveAccessibleDescription(
-    /^Recomendado agora\. A equipe monta a loja pra você Fase 1 de 7 Conversa inicial Conte sobre você/,
+    /^Recomendado agora\. Sua loja na Shopee, passo a passo Fase 1 de 7 Conversa inicial Conte sobre você/,
   );
   // A Loja Pronta vem primeiro.
   await expect(page.getByRole('main').getByRole('link').first()).toContainText('Loja Pronta');
@@ -127,7 +127,10 @@ test('Loja Pronta mostra a fase da loja e todas as fases', async ({ page }) => {
   await expect(phases).toHaveCount(7);
   await expect(phases.nth(0)).toContainText('(concluída)');
   await expect(phases.nth(2)).toHaveAttribute('aria-current', 'step');
-  await expect(phases.nth(2)).toContainText('Conexão com a Shopee');
+  await expect(phases.nth(2)).toContainText('Conta na Shopee');
+  // Fase ainda sem tela: avisa que está chegando, sem pedir nada.
+  await expect(page.getByRole('heading', { name: 'Conta na Shopee' })).toBeVisible();
+  await expect(page.getByText(/Você recebe um aviso no WhatsApp quando ela abrir/)).toBeVisible();
   await expect(phases.nth(3)).toContainText('(a seguir)');
   await expectNoA11yViolations(page);
 });

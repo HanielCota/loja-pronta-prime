@@ -4,11 +4,11 @@
  *
  * - `single`: uma opção (botões de rádio); `multi`: até `max` opções (caixas de seleção), em
  *   lista ou em `chips` quando as opções são curtas.
- * - `name`: texto curto, com "Ainda não sei" (a equipe sugere); `color`: uma cor ou "Deixo com a
- *   equipe"; `longtext`: texto livre e opcional.
+ * - `name`: texto curto, com "Ainda não sei" (a plataforma sugere nomes na fase da marca);
+ *   `color`: uma cor ou "Escolho depois"; `longtext`: texto livre e opcional.
  * - `label`: nome curto da pergunta na revisão ("Motivação").
  *
- * As respostas guardam o texto da opção escolhida, pra equipe ler sem tradução.
+ * As respostas guardam o texto da opção escolhida (as sugestões da marca leem daqui).
  */
 
 export const ONBOARDING_BLOCKS = {
@@ -42,8 +42,8 @@ type QuestionDefinition =
   | (BaseQuestion & { kind: 'color'; options: readonly Option[] })
   | (BaseQuestion & { kind: 'longtext' });
 
-/** Texto da opção "deixo com a equipe" na pergunta da cor. */
-const COLOR_UP_TO_TEAM = 'Deixo com a equipe';
+/** Texto da opção "escolho depois" na pergunta da cor (ela escolhe no estúdio do logo). */
+const COLOR_LATER = 'Escolho depois';
 
 export const ONBOARDING_QUESTIONS = [
   {
@@ -124,7 +124,7 @@ export const ONBOARDING_QUESTIONS = [
     block: 'marca',
     kind: 'name',
     ask: 'Como vai se chamar sua loja?',
-    help: 'Se ainda não decidiu, a equipe sugere um nome.',
+    help: 'Se ainda não decidiu, a gente sugere nomes pra você escolher.',
     label: 'Nome da loja',
   },
   {
@@ -153,7 +153,7 @@ export const ONBOARDING_QUESTIONS = [
       { label: 'Verde', color: '#3ba776' },
       { label: 'Terracota', color: '#c8643b' },
       { label: 'Preto', color: '#1d1d1f' },
-      { label: COLOR_UP_TO_TEAM },
+      { label: COLOR_LATER },
     ],
   },
   {
@@ -190,7 +190,7 @@ export type OnboardingQuestionId = (typeof ONBOARDING_QUESTIONS)[number]['id'];
 export type OnboardingQuestion = QuestionDefinition & { id: OnboardingQuestionId };
 
 /**
- * Uma resposta guardada: o texto da opção (uma ou várias); no nome, `null` = "a equipe sugere";
+ * Uma resposta guardada: o texto da opção (uma ou várias); no nome, `null` = "ainda não decidi";
  * no toque pessoal, texto vazio = pulou.
  */
 export type AnswerValue = string | string[] | null;
