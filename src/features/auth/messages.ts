@@ -29,11 +29,11 @@ type AuthMessage = {
 export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, AuthMessage> = {
   invalid_credentials: {
     title: 'Email ou senha incorretos',
-    hint: 'Confira se é o mesmo email da compra. No primeiro acesso, a senha é a temporária que mandamos pra você.',
+    hint: 'Confira se é o mesmo email da compra. No primeiro acesso, use a senha temporária enviada por email.',
   },
   email_not_confirmed: {
     title: 'Confirme seu email primeiro',
-    hint: 'Acabamos de mandar um link de confirmação pro seu email. Abra a mensagem e toque no botão. Não achou? Olha no spam.',
+    hint: 'Enviamos um link de confirmação pro seu email. Abra a mensagem e toque no botão. Se não encontrar, olhe no spam.',
   },
   rate_limited: {
     title: 'Aguarde 1 minuto pra tentar novamente',
@@ -41,27 +41,27 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, AuthMessage> = {
   },
   account_disabled: {
     title: 'Sua conta foi desativada. Entre em contato com o suporte.',
-    hint: 'Isso pode acontecer depois de um reembolso ou cancelamento. Se achar que é engano, o suporte te ajuda.',
+    hint: 'Isso acontece depois de um reembolso ou cancelamento. Se achar que é engano, fale com o suporte.',
   },
   session_expired: {
     title: 'Sessão inválida ou expirada. Faça login novamente.',
-    hint: 'Por segurança, a gente desconecta depois de um tempo sem uso.',
+    hint: 'Por segurança, a sessão termina depois de um tempo sem uso.',
   },
   reset_link_invalid: {
     title: 'Esse link expirou ou já foi usado',
-    hint: `Cada link vale por ${formatHours(RESET_LINK_TTL_HOURS)} e funciona uma vez só. Pede um novo, é rapidinho.`,
+    hint: `Cada link vale por ${formatHours(RESET_LINK_TTL_HOURS)} e funciona uma vez só. Peça um novo.`,
   },
   verification_link_invalid: {
     title: 'Esse link de confirmação não vale mais',
-    hint: 'Entre com o seu email e a sua senha: se o email ainda não estiver confirmado, a gente manda um link novo na hora.',
+    hint: 'Entre com seu email e sua senha. Se o email ainda não estiver confirmado, um link novo chega na hora.',
   },
   same_password: {
     title: 'Escolha uma senha diferente da temporária',
-    hint: 'A temporária foi enviada por email. A senha nova precisa ser só sua.',
+    hint: 'Crie uma senha só sua, diferente da que chegou por email.',
   },
   // Vale pra qualquer tela de acesso (login, primeiro acesso, redefinição): título neutro.
   unknown: {
     title: 'Não deu certo agora',
-    hint: 'Pode ser a sua internet. Tenta de novo em alguns segundos.',
+    hint: 'Pode ser sua internet. Tente de novo em alguns segundos.',
   },
 };

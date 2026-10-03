@@ -17,8 +17,8 @@ export default function ErrorPage({ error, retry }: ErrorPageProps) {
     <PageShell>
       <BrandCard expression="worried">
         <CardHeading
-          title="Algo deu errado por aqui"
-          description="Não foi culpa sua. Tenta de novo e, se continuar, fala com o suporte."
+          title="Algo deu errado"
+          description="Tente de novo. Se continuar, fale com o suporte."
         />
         <div className="flex flex-col items-center gap-4">
           <Button type="button" onClick={() => retry()}>

@@ -32,7 +32,7 @@ export function FirstAccessForm({ email, next }: FirstAccessFormProps) {
     <>
       <CardHeading
         title="Crie sua senha"
-        description={`Esse é seu primeiro acesso. Troque a senha temporária por uma só sua, com pelo menos ${PASSWORD_MIN_LENGTH} caracteres.`}
+        description={`Troque a senha temporária por uma só sua, com pelo menos ${PASSWORD_MIN_LENGTH} caracteres.`}
       />
       <form {...formProps} className="flex flex-col gap-5">
         {errorCode ? <AuthErrorAlert key={responseKey} id={form.errorId} code={errorCode} /> : null}
@@ -43,7 +43,7 @@ export function FirstAccessForm({ email, next }: FirstAccessFormProps) {
           meta={fields.password}
           label="Senha nova"
           autoComplete="new-password"
-          hint="Dica: uma frase curta, tipo “minha loja vai bombar”, é fácil de lembrar e difícil de adivinhar."
+          hint="Uma frase curta, como “minha loja vai bombar”, é fácil de lembrar e difícil de adivinhar."
           meter={
             <PasswordStrengthMeter
               password={fields.password.value ?? ''}

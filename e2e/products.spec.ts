@@ -31,17 +31,16 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
   // (incluindo qual é o recomendado) vem como descrição.
   await expect(page.getByRole('heading', { level: 2, name: 'Loja Pronta' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Entrar, Loja Pronta' })).toHaveAccessibleDescription(
-    /^Recomendado agora\. Serviço · a gente faz Fase 1 de 7 · Conversa inicial Conte pra gente sobre você/,
+    /^Recomendado agora\. A equipe monta a loja pra você Fase 1 de 7 Conversa inicial Conte sobre você/,
   );
   // A Loja Pronta vem primeiro.
   await expect(page.getByRole('main').getByRole('link').first()).toContainText('Loja Pronta');
   // O bloco da Loja Pronta mostra a fase da loja.
-  await expect(page.getByRole('link', { name: /Loja Pronta/ })).toContainText(
-    'Fase 1 de 7 · Conversa inicial',
-  );
+  await expect(page.getByRole('link', { name: /Loja Pronta/ })).toContainText('Fase 1 de 7');
+  await expect(page.getByRole('link', { name: /Loja Pronta/ })).toContainText('Conversa inicial');
   // E o que acontece agora, no lugar do resumo do produto.
   await expect(page.getByRole('link', { name: /Loja Pronta/ })).toContainText(
-    'Conte pra gente sobre você e a sua marca',
+    'Conte sobre você e sua marca',
   );
   await expectNoA11yViolations(page);
 

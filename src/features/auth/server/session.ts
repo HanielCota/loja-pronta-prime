@@ -1,7 +1,7 @@
 import { headers } from 'next/headers';
 import { auth } from '@/server/auth/auth';
 
-// A regra mora num arquivo sem servidor (testável sozinha); daqui ela segue exportada como antes.
+// A regra mora num arquivo sem dependências de servidor, pra ser testada sozinha.
 export { needsFirstPassword } from '../first-password';
 
 async function readSession() {

@@ -6,7 +6,7 @@ import { STORE_PHASES } from '@/config/store-phases';
 import { CONVERSATION_PATH, QUESTION_COUNT } from '@/features/onboarding/steps';
 import { cn } from '@/lib/utils';
 import { firstName } from '../names';
-import { AreaShell, eyebrowClass, greeting, panelCard } from './area-shell';
+import { AreaShell, sectionTitleClass, greeting, panelCard } from './area-shell';
 
 export type ConversationStatus = 'nao-comecou' | 'em-andamento' | 'enviada';
 
@@ -31,13 +31,13 @@ export function StorePanel({ user, firstVisit, hasChoice, phase, conversation }:
   return (
     <AreaShell
       hasChoice={hasChoice}
-      eyebrow="Loja Pronta"
+      product="Loja Pronta"
       title={`Sua loja está na fase ${phase} de ${total}`}
       intro={greeting(
         name,
         firstVisit,
         firstVisit
-          ? 'A nossa equipe monta a sua loja na Shopee, e você acompanha cada fase aqui.'
+          ? 'A equipe monta sua loja na Shopee, e você acompanha cada fase aqui.'
           : 'Aqui você acompanha cada fase da sua loja.',
       )}
     >
@@ -78,10 +78,10 @@ function NextStepCard({
 
   if (phase === 1 && conversation !== 'enviada') {
     return (
-      <ActionCard label="O que fazer agora" title="Conte pra gente sobre você e a sua marca">
+      <ActionCard label="O que fazer agora" title="Conte sobre você e sua marca">
         <p className="text-body text-pretty text-foreground/80">
-          São perguntas rápidas, uma por vez. Com as suas respostas, a equipe cria o logo e a
-          descrição da sua loja.
+          São perguntas rápidas, uma por vez. Com suas respostas, a equipe cria o logo e a descrição
+          da loja.
         </p>
         <ul className="flex flex-wrap gap-x-5 gap-y-1 text-body text-muted-foreground">
           <li className="inline-flex items-center gap-1.5">
@@ -93,7 +93,7 @@ function NextStepCard({
           </li>
           <li className="inline-flex items-center gap-1.5">
             <BookmarkIcon aria-hidden="true" className="size-4" />
-            Dá pra parar e continuar depois
+            Você pode parar e continuar depois
           </li>
         </ul>
         <Button asChild className="mt-2">
@@ -109,10 +109,10 @@ function NextStepCard({
   // Conversa enviada (a página já mostra a fase 2 nesse caso): a equipe está criando a marca.
   if (phase === 2 && conversation === 'enviada') {
     return (
-      <ActionCard label="Com a nossa equipe" title="Estamos criando a sua marca">
+      <ActionCard label="Com a equipe" title="Estamos criando sua marca">
         <p className="text-body text-pretty text-foreground/80">
-          A equipe está criando opções de logo e de descrição pra sua loja. Te avisamos no WhatsApp
-          em até 24 horas pra você escolher.
+          A equipe está criando opções de logo e de descrição pra sua loja. Em até 24 horas, você
+          recebe um aviso no WhatsApp pra escolher.
         </p>
       </ActionCard>
     );
@@ -123,7 +123,7 @@ function NextStepCard({
     <ActionCard label="O que acontece agora" title={current?.title ?? ''}>
       <p className="text-body text-pretty text-foreground/80">{current?.detail}</p>
       <p className="text-body text-pretty text-muted-foreground">
-        Quando precisar de você, a equipe te chama no WhatsApp.
+        Quando precisar de você, a equipe chama no WhatsApp.
       </p>
     </ActionCard>
   );
@@ -140,7 +140,7 @@ function ActionCard({
 }) {
   return (
     <section aria-labelledby="o-que-fazer" className={cn(panelCard, 'gap-3')}>
-      <p className={eyebrowClass}>{label}</p>
+      <p className="text-sm font-medium text-muted-foreground">{label}</p>
       <h2 id="o-que-fazer" className="text-2xl font-semibold tracking-tight text-balance">
         {title}
       </h2>
@@ -153,7 +153,7 @@ function ActionCard({
 function JourneyCard({ phase }: { phase: number }) {
   return (
     <section aria-labelledby="sua-jornada" className={cn(panelCard, 'gap-4')}>
-      <h2 id="sua-jornada" className={eyebrowClass}>
+      <h2 id="sua-jornada" className={sectionTitleClass}>
         Sua jornada
       </h2>
       <ol aria-label="Todas as fases da sua loja" className="flex flex-col gap-1">
@@ -194,11 +194,6 @@ function JourneyCard({ phase }: { phase: number }) {
                   {done ? ' (concluída)' : isCurrent ? '' : ' (a seguir)'}
                 </span>
               </span>
-              {isCurrent ? (
-                <span aria-hidden="true" className="text-sm font-semibold text-link">
-                  Agora
-                </span>
-              ) : null}
             </li>
           );
         })}

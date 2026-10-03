@@ -63,7 +63,7 @@ export async function finishConversation(
 
   const whatsapp = parseWhatsapp(String(formData.get('whatsapp') ?? ''));
   if (!whatsapp) {
-    return { error: 'Confira o número: são o DDD e o número, como (11) 98765-4321.' };
+    return { error: 'Confira o número com DDD, como (11) 98765-4321.' };
   }
 
   // Alguma pergunta ficou sem resposta (outra aba, envio direto): volta pra ela.

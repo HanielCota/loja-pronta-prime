@@ -66,12 +66,12 @@ test('volta do link de confirmação de email: avisa se deu certo ou se o link v
   page,
 }) => {
   await page.goto('/entrar?motivo=email-confirmado');
-  await expect(page.getByText('Email confirmado!')).toBeVisible();
+  await expect(page.getByText('Email confirmado.')).toBeVisible();
   await expect(alert(page)).toHaveCount(0);
 
   // Better Auth acrescenta ?error= quando o link não vale mais.
   await page.goto('/entrar?motivo=email-confirmado&error=TOKEN_EXPIRED');
-  await expect(page.getByText('Email confirmado!')).toHaveCount(0);
+  await expect(page.getByText('Email confirmado.')).toHaveCount(0);
   await expect(alert(page)).toContainText('Esse link de confirmação não vale mais');
 });
 

@@ -91,7 +91,7 @@ export function answerText(question: OnboardingQuestion, answers: OnboardingAnsw
 }
 
 /** Texto da opção "não sei o nome" (no formulário, no erro e na revisão). */
-export const UNKNOWN_NAME = 'Ainda não sei, me ajudem';
+export const UNKNOWN_NAME = 'Ainda não decidi';
 
 /**
  * Respostas que ainda valem com a lista de perguntas atual. Uma opção que saiu ou mudou de nome

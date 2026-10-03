@@ -24,7 +24,7 @@ import {
   WHATSAPP_STEP,
   type Step,
 } from '@/features/onboarding/steps';
-import { eyebrowClass, panelCard } from '@/features/products/components/area-shell';
+import { sectionTitleClass, panelCard } from '@/features/products/components/area-shell';
 import { getParam, type SearchParams } from '@/lib/search-params';
 import { cn } from '@/lib/utils';
 
@@ -43,7 +43,7 @@ function stepLabel(step: Step): string {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { passo } = await params;
-  return { title: isStep(passo) ? `${stepTitle(passo)} · Conversa inicial` : 'Conversa inicial' };
+  return { title: isStep(passo) ? `${stepTitle(passo)}, conversa inicial` : 'Conversa inicial' };
 }
 
 /**
@@ -73,8 +73,8 @@ export default async function ConversationStepPage({ params, searchParams }: Pag
     return (
       <ConversationLayout {...stepProgress(passo)} stepLabel={stepLabel(passo)} backHref={backHref}>
         <MascotBubble
-          title="Confere as suas respostas"
-          help="A equipe cria o seu logo a partir delas. Dá pra mudar qualquer uma."
+          title="Confira suas respostas"
+          help="A equipe cria seu logo a partir delas. Você pode mudar qualquer uma."
           titleId={titleId}
         />
         <FocusOnArrival targetId={titleId} />
@@ -84,7 +84,7 @@ export default async function ConversationStepPage({ params, searchParams }: Pag
             aria-labelledby={`grupo-${group.block}`}
             className={cn(panelCard, 'gap-1')}
           >
-            <h2 id={`grupo-${group.block}`} className={eyebrowClass}>
+            <h2 id={`grupo-${group.block}`} className={sectionTitleClass}>
               {group.title}
             </h2>
             <dl className="divide-y divide-border">
@@ -123,8 +123,8 @@ export default async function ConversationStepPage({ params, searchParams }: Pag
     return (
       <ConversationLayout {...stepProgress(passo)} stepLabel={stepLabel(passo)} backHref={backHref}>
         <MascotBubble
-          title="Última coisa: em que WhatsApp a gente te avisa?"
-          help="É por ele que a equipe fala com você em cada fase da loja."
+          title="Em qual WhatsApp a equipe fala com você?"
+          help="É por lá que você recebe os avisos de cada fase da loja."
           titleId={titleId}
           helpId={helpId}
         />
@@ -138,7 +138,12 @@ export default async function ConversationStepPage({ params, searchParams }: Pag
   if (!question) notFound();
   return (
     <ConversationLayout {...stepProgress(passo)} stepLabel={stepLabel(passo)} backHref={backHref}>
-      <MascotBubble title={question.ask} help={question.help} titleId={titleId} helpId={helpId} />
+      <MascotBubble
+        title={question.ask}
+        help={question.help}
+        titleId={titleId}
+        helpId={question.help ? helpId : undefined}
+      />
       <FocusOnArrival targetId={titleId} />
       {/* `key`: ao trocar de pergunta, o formulário começa do zero (sem a escolha da anterior). */}
       <QuestionForm
@@ -147,7 +152,7 @@ export default async function ConversationStepPage({ params, searchParams }: Pag
         saved={answers[passo as keyof typeof answers]}
         editing={editing}
         titleId={titleId}
-        helpId={helpId}
+        helpId={question.help ? helpId : undefined}
       />
     </ConversationLayout>
   );

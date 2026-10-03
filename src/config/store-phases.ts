@@ -7,13 +7,13 @@
 export const STORE_PHASES = [
   {
     title: 'Conversa inicial',
-    // Mesmas palavras do painel da Loja Pronta ("Conte pra gente sobre você e a sua marca").
-    detail: 'Conte pra gente sobre você e a sua marca: são uns 5 minutos.',
+    // Mesmas palavras do painel da Loja Pronta.
+    detail: 'Conte sobre você e sua marca, em uns 5 minutos.',
     needsStudent: true,
   },
   {
     title: 'Logo e descrição',
-    detail: 'A equipe cria opções de logo e de descrição, e você escolhe as suas favoritas.',
+    detail: 'A equipe cria opções de logo e de descrição, e você escolhe as favoritas.',
     // A escolha das opções ainda não está na plataforma: por enquanto, ela espera a equipe.
     needsStudent: false,
   },
@@ -21,17 +21,17 @@ export const STORE_PHASES = [
   // conduz pelo WhatsApp): até existirem, a escolha de área não aponta pra uma página sem ação.
   {
     title: 'Conexão com a Shopee',
-    detail: 'A sua loja é ligada à sua conta na Shopee.',
+    detail: 'Sua loja é ligada à sua conta na Shopee.',
     needsStudent: false,
   },
   {
     title: 'Verificação de identidade',
-    detail: 'A Shopee confere os seus dados.',
+    detail: 'A Shopee confere seus dados.',
     needsStudent: false,
   },
   {
     title: 'Fornecedor e produtos',
-    detail: 'Definimos o fornecedor e os produtos que a sua loja vai vender.',
+    detail: 'A equipe define o fornecedor e os produtos da loja.',
     needsStudent: false,
   },
   {
@@ -41,7 +41,7 @@ export const STORE_PHASES = [
   },
   {
     title: 'Loja no ar',
-    detail: 'A loja abre, e a gente acompanha as primeiras semanas.',
+    detail: 'A loja abre, e a equipe acompanha as primeiras semanas.',
     needsStudent: false,
   },
 ] as const;

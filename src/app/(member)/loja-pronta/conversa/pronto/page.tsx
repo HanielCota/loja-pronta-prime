@@ -9,7 +9,7 @@ import { getOnboarding } from '@/features/onboarding/server/conversation';
 import { CONVERSATION_PATH, DONE_PATH, formatWhatsapp } from '@/features/onboarding/steps';
 import {
   CenteredMemberPage,
-  eyebrowClass,
+  sectionTitleClass,
   panelCard,
 } from '@/features/products/components/area-shell';
 import { firstName } from '@/features/products/names';
@@ -30,28 +30,28 @@ export default async function ConversationDonePage() {
   const groups: { id: string; title: string; accent: boolean; items: ReactNode[] }[] = [
     {
       id: 'equipe',
-      title: 'Nossa equipe, agora',
+      title: 'O que a equipe faz agora',
       accent: true,
       items: [
         'Cria opções de logo e de descrição pra sua loja.',
         whatsapp ? (
           <>
-            Te avisa no WhatsApp{' '}
+            Avisa você no WhatsApp{' '}
             <strong className="font-semibold whitespace-nowrap">{formatWhatsapp(whatsapp)}</strong>{' '}
             em até 24 horas.
           </>
         ) : (
-          'Te avisa no WhatsApp em até 24 horas.'
+          'Avisa você no WhatsApp em até 24 horas.'
         ),
       ],
     },
     {
       id: 'voce',
-      title: 'Você, enquanto isso',
+      title: 'Enquanto isso',
       accent: false,
       items: [
-        'Fica de olho no WhatsApp: a próxima escolha é sua.',
-        'Pode acompanhar cada fase da loja pela Loja Pronta.',
+        'Fique de olho no WhatsApp. A próxima escolha é sua.',
+        'Acompanhe cada fase da loja na Loja Pronta.',
       ],
     },
   ];
@@ -63,7 +63,7 @@ export default async function ConversationDonePage() {
         <CardHeading
           className="mb-0"
           title={name ? `Pronto, ${name}! Agora é com a gente.` : 'Pronto! Agora é com a gente.'}
-          description="Recebemos as suas respostas."
+          description="Recebemos suas respostas."
         />
       </div>
       {groups.map((group) => (
@@ -72,7 +72,7 @@ export default async function ConversationDonePage() {
           aria-labelledby={`proximos-${group.id}`}
           className={cn(panelCard, 'gap-3')}
         >
-          <h2 id={`proximos-${group.id}`} className={eyebrowClass}>
+          <h2 id={`proximos-${group.id}`} className={sectionTitleClass}>
             {group.title}
           </h2>
           <ul className="flex flex-col gap-2">
