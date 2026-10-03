@@ -17,7 +17,13 @@ import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { submitWithoutReset } from '@/lib/forms';
 import { cn } from '@/lib/utils';
 import { finishConversation } from '../server/actions';
-import { formatTypedWhatsapp, parseWhatsapp, typedWhatsapp, whatsappHint } from '../whatsapp';
+import {
+  formatTypedWhatsapp,
+  parseWhatsapp,
+  typedWhatsapp,
+  WHATSAPP_EXAMPLE,
+  whatsappHint,
+} from '../whatsapp';
 
 /** Posição do cursor logo depois do n-ésimo número do texto formatado. */
 function caretAfterDigits(formatted: string, count: number): number {
@@ -98,7 +104,7 @@ export function WhatsappForm({ helpId }: { helpId: string }) {
         const typed = new FormData(event.currentTarget).get('whatsapp');
         if (!parseWhatsapp(String(typed ?? ''))) {
           event.preventDefault();
-          setClientError('Confira o número com DDD, como (11) 98765-4321.');
+          setClientError(`Confira o número com DDD, como ${WHATSAPP_EXAMPLE}.`);
           upsetMascot('worried');
           return;
         }

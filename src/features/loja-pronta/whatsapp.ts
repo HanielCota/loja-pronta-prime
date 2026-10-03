@@ -52,6 +52,13 @@ export function formatTypedWhatsapp(digits: string): string {
   return `(${area}) ${rest.slice(0, split)}-${rest.slice(split)}`;
 }
 
+/**
+ * Número de exemplo nas telas: o formato, com X no lugar dos números, pra nunca ser o número de
+ * alguém de verdade (um exemplo discável poderia cair num telefone real).
+ */
+export const WHATSAPP_EXAMPLE = '(11) 9XXXX-XXXX';
+const EXAMPLE = WHATSAPP_EXAMPLE;
+
 export type WhatsappHint = { tone: 'info' | 'warning' | 'ok'; text: string };
 
 /**
@@ -64,7 +71,7 @@ export function whatsappHint(digits: string, removed?: 'pais' | 'zero'): Whatsap
   if (removed === 'zero' && missing > 0) {
     return { tone: 'warning', text: 'Não precisa do 0: comece pelo DDD, como 11.' };
   }
-  if (!digits) return { tone: 'info', text: 'Exemplo: (11) 98765-4321' };
+  if (!digits) return { tone: 'info', text: `Exemplo: ${EXAMPLE}` };
   if (digits.length === 9 && digits.startsWith('9')) {
     return { tone: 'warning', text: 'Faltou o DDD: os 2 números da sua cidade, como 11.' };
   }
@@ -74,7 +81,7 @@ export function whatsappHint(digits: string, removed?: 'pais' | 'zero'): Whatsap
       text: 'Esse parece um telefone fixo. Use o número do seu WhatsApp.',
     };
   }
-  if (missing > 0) return { tone: 'info', text: `Exemplo: (11) 98765-4321 · ${left}` };
+  if (missing > 0) return { tone: 'info', text: `Exemplo: ${EXAMPLE} · ${left}` };
   if (digits.charAt(2) !== '9') {
     return { tone: 'warning', text: 'Confira: no celular, o número começa com 9 depois do DDD.' };
   }

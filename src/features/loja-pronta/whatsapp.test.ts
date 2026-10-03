@@ -62,9 +62,9 @@ describe('typedWhatsapp e formatTypedWhatsapp', () => {
 
 describe('whatsappHint', () => {
   test('exemplo e quanto falta', () => {
-    expect(whatsappHint('')).toEqual({ tone: 'info', text: 'Exemplo: (11) 98765-4321' });
-    expect(whatsappHint('1198765').text).toBe('Exemplo: (11) 98765-4321 · Faltam 4 números');
-    expect(whatsappHint('1198765432').text).toBe('Exemplo: (11) 98765-4321 · Falta 1 número');
+    expect(whatsappHint('')).toEqual({ tone: 'info', text: 'Exemplo: (11) 9XXXX-XXXX' });
+    expect(whatsappHint('1198765').text).toBe('Exemplo: (11) 9XXXX-XXXX · Faltam 4 números');
+    expect(whatsappHint('1198765432').text).toBe('Exemplo: (11) 9XXXX-XXXX · Falta 1 número');
   });
 
   test('enganos comuns', () => {
