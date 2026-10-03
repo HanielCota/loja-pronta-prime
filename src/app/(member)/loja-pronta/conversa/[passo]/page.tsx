@@ -44,7 +44,7 @@ export default async function ConversationStepPage({ params, searchParams }: Pag
 
   return (
     <ConversationLayout
-      header={stepHeader(passo)}
+      header={stepHeader(passo, Object.keys(answers).length > 0)}
       savedLabel="Respostas salvas"
       backHref={previousPath(passo, { editing })}
     >

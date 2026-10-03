@@ -67,26 +67,28 @@ describe('etapas', () => {
   });
 
   test('topo: "Pergunta N de 10", tracinhos cheios até a atual e o aviso de salvo', () => {
-    expect(stepHeader('vendas')).toEqual({
+    expect(stepHeader('vendas', false)).toEqual({
       label: 'Pergunta 1 de 10',
       filled: 1,
       total: 10,
       saved: false,
     });
-    expect(stepHeader('tempo')).toMatchObject({
+    expect(stepHeader('tempo', true)).toMatchObject({
       label: 'Pergunta 5 de 10',
       filled: 5,
       saved: true,
     });
-    expect(stepHeader('sentimento').label).toBe('Pergunta 9 de 10 · falta só 1');
-    expect(stepHeader('toque').label).toBe('Última pergunta');
-    expect(stepHeader(REVIEW_STEP)).toEqual({
+    expect(stepHeader('sentimento', true).label).toBe('Pergunta 9 de 10 · falta só 1');
+    expect(stepHeader('toque', true).label).toBe('Última pergunta');
+    expect(stepHeader(REVIEW_STEP, true)).toEqual({
       label: 'Revisão das respostas',
       filled: 10,
       total: 10,
       saved: true,
     });
-    expect(stepHeader(WHATSAPP_STEP).label).toBe('Último passo');
+    expect(stepHeader(WHATSAPP_STEP, true).label).toBe('Último passo');
+    // Pergunta 1 com respostas salvas (voltou da revisão, ou retomou): avisa também.
+    expect(stepHeader('vendas', true).saved).toBe(true);
   });
 });
 

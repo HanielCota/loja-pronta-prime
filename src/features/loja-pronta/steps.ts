@@ -79,8 +79,10 @@ export function stepTitle(step: Step): string {
  * O topo de cada etapa: o que está escrito ("Pergunta 3 de 10"), quantos tracinhos da barra já
  * estão cheios (contando a etapa atual) e se já há respostas salvas. Sem nome de parte e sem
  * número solto: "8 de 10" não diz 8 de quê, e "Sua marca" se confundia com a fase da marca.
+ * `hasAnswers`: se já tem alguma resposta salva (vale também na pergunta 1, quando ela volta da
+ * revisão ou retoma a conversa).
  */
-export function stepHeader(step: Step): StepHeader {
+export function stepHeader(step: Step, hasAnswers: boolean): StepHeader {
   const total = QUESTION_COUNT;
   if (step === REVIEW_STEP)
     return { label: 'Revisão das respostas', filled: total, total, saved: true };
@@ -92,7 +94,7 @@ export function stepHeader(step: Step): StepHeader {
       : number === total - 1
         ? `Pergunta ${number} de ${total} · falta só 1`
         : `Pergunta ${number} de ${total}`;
-  return { label, filled: number, total, saved: number > 1 };
+  return { label, filled: number, total, saved: hasAnswers };
 }
 
 export type StepHeader = {

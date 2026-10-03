@@ -42,7 +42,7 @@ export default async function BrandStepPage({ params, searchParams }: PageProps)
 
   return (
     <ConversationLayout
-      header={brandStepHeader(passo)}
+      header={brandStepHeader(passo, Boolean(brand.name))}
       savedLabel="Escolhas salvas"
       backHref={editing ? brandStepPath('revisao') : previousBrandPath(passo)}
     >

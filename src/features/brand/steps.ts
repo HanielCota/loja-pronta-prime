@@ -66,10 +66,13 @@ export function brandStepTitle(step: BrandStep): string {
   return TITLES[step];
 }
 
-/** O topo de cada passo: "Passo 2 de 4" (ou a revisão), a barra e se já há escolhas salvas. */
-export function brandStepHeader(step: BrandStep): StepHeader {
+/**
+ * O topo de cada passo: "Passo 2 de 4" (ou a revisão), a barra e se já há escolhas salvas (o nome
+ * é a primeira; vale também no passo 1, quando ela volta da revisão pra mudar o nome).
+ */
+export function brandStepHeader(step: BrandStep, hasChoices: boolean): StepHeader {
   const total = BRAND_STEPS.length - 1;
   if (step === 'revisao') return { label: 'Revisão da marca', filled: total, total, saved: true };
   const number = BRAND_STEPS.indexOf(step) + 1;
-  return { label: `Passo ${number} de ${total}`, filled: number, total, saved: number > 1 };
+  return { label: `Passo ${number} de ${total}`, filled: number, total, saved: hasChoices };
 }
