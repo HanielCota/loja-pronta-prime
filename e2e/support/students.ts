@@ -33,7 +33,9 @@ export type StudentKind =
   | 'redefinirnaoconfirmada'
   | 'falharede'
   | 'apinome'
-  | 'conversatoques';
+  | 'conversatoques'
+  | 'marca'
+  | 'marcateclado';
 
 /** Id desta execução, definido no global-setup: cada execução usa alunas próprias. */
 export function runId(): string {
