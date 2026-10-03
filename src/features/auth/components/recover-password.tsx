@@ -62,8 +62,8 @@ function RecoverPasswordFlow({
   return (
     <>
       <CardHeading
-        title="Vamos criar uma senha nova"
-        description="Digite o email da compra e a gente te manda um link. Serve também se a senha temporária não chegou."
+        title="Criar uma senha nova"
+        description="Digite o email da compra pra receber um link. Serve também se a senha temporária não chegou."
       />
       <form {...formProps} className="flex flex-col gap-5">
         {errorCode ? <AuthErrorAlert key={responseKey} id={form.errorId} code={errorCode} /> : null}
@@ -96,14 +96,13 @@ function ResetLinkSent({
 }) {
   return (
     <>
-      <AuthStatus icon={<MailIcon aria-hidden="true" />} title="Confere seu email">
+      <AuthStatus icon={<MailIcon aria-hidden="true" />} title="Confira seu email">
         Se <strong className="font-semibold wrap-anywhere text-foreground">{email}</strong> tiver
-        uma conta com a gente, o link chega em alguns minutos. Ele vale por{' '}
-        {formatHours(RESET_LINK_TTL_HOURS)}.
+        uma conta, o link chega em alguns minutos. Ele vale por {formatHours(RESET_LINK_TTL_HOURS)}.
       </AuthStatus>
       <div className="flex flex-col gap-4">
         <p className="rounded-2xl bg-muted px-4 py-3 text-center text-sm text-muted-foreground">
-          Não chegou? Procura por “Loja Pronta Prime” no spam e na aba Promoções.
+          Se não chegar, procure “Loja Pronta Prime” no spam e na aba Promoções.
         </p>
         <Button asChild>
           <Link href={authHref('/entrar', next)} onClick={() => rememberEmail(email)}>

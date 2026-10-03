@@ -10,7 +10,7 @@ import { getParam, type SearchParams } from '@/lib/search-params';
 
 export const metadata: Metadata = {
   title: 'Primeiro acesso',
-  description: 'Crie a sua senha pra entrar na Loja Pronta Prime.',
+  description: 'Crie sua senha pra entrar na Loja Pronta Prime.',
 };
 
 /** Depois do login com a senha temporária: a aluna cria a própria senha antes de seguir. */

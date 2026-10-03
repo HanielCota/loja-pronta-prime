@@ -20,7 +20,7 @@ type QuestionFormProps = {
   editing: boolean;
   /** Ids do título e da ajuda (no balão do mascote), que nomeiam e descrevem o grupo. */
   titleId: string;
-  helpId: string;
+  helpId?: string;
 };
 
 /** Contorno de foco e estado escolhido das opções (o `<input>` fica escondido dentro do rótulo). */
@@ -325,7 +325,7 @@ export function QuestionForm({ question, saved, editing, titleId, helpId }: Ques
           ? `${selected.length} de ${max} escolhidas`
           : ''
       : '';
-  // Respondida: o botão fica azul. Antes, cinza (mas clicável: o toque mostra o que falta).
+  // Sem resposta, o botão fica cinza, mas clicável: o toque mostra o que falta.
   const ready = question.kind === 'longtext' ? text.trim() !== '' : !missingAnswer();
   const submitLabel = editing
     ? 'Salvar e voltar'
@@ -349,8 +349,8 @@ export function QuestionForm({ question, saved, editing, titleId, helpId }: Ques
         <p id={hintId} className="-mt-2 text-sm text-muted-foreground">
           {autoAdvance
             ? editing
-              ? 'Ao tocar numa opção, a gente salva e volta pra revisão.'
-              : 'Ao tocar numa opção, a gente já segue pra próxima.'
+              ? 'Ao tocar numa opção, você volta pra revisão.'
+              : 'Ao tocar numa opção, você segue pra próxima pergunta.'
             : `${text.length} de ${PERSONAL_TOUCH_MAX} caracteres`}
         </p>
       ) : null}

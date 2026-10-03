@@ -31,7 +31,7 @@ export function ResetPasswordForm({ token, next }: { token: string; next?: strin
     <>
       <CardHeading
         title="Crie sua senha"
-        description={`Use pelo menos ${PASSWORD_MIN_LENGTH} caracteres. Dica: uma frase curta, tipo “minha loja vai bombar”, é fácil de lembrar e difícil de adivinhar.`}
+        description={`Use pelo menos ${PASSWORD_MIN_LENGTH} caracteres. Uma frase curta, como “minha loja vai bombar”, é fácil de lembrar e difícil de adivinhar.`}
       />
       <form {...formProps} className="flex flex-col gap-5">
         {errorCode ? <AuthErrorAlert key={responseKey} id={form.errorId} code={errorCode} /> : null}
@@ -82,7 +82,7 @@ function PasswordChanged({ next }: { next?: string }) {
   return (
     <>
       <AuthStatus icon={<CircleCheckIcon aria-hidden="true" />} title="Senha criada!">
-        Agora é só entrar com o email da compra e a senha que você acabou de criar.
+        Entre com o email da compra e a senha que você acabou de criar.
       </AuthStatus>
       <Button asChild>
         <Link href={authHref('/entrar', next)}>Entrar agora</Link>

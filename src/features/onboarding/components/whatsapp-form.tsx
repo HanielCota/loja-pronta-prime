@@ -32,7 +32,7 @@ export function WhatsappForm({ helpId }: { helpId: string }) {
         const value = new FormData(event.currentTarget).get('whatsapp');
         if (!parseWhatsapp(String(value ?? ''))) {
           event.preventDefault();
-          setClientError('Confira o número: são o DDD e o número, como (11) 98765-4321.');
+          setClientError('Confira o número com DDD, como (11) 98765-4321.');
           upsetMascot('worried');
           return;
         }

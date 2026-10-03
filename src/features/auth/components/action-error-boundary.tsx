@@ -48,7 +48,7 @@ class ActionErrorBoundary extends Component<{ children: ReactNode }, State> {
             <WifiOffIcon aria-hidden="true" />
             <AlertTitle>Não deu pra falar com o servidor</AlertTitle>
             <AlertDescription>
-              Pode ser a sua internet. Confira a conexão e tenta de novo.
+              Pode ser sua internet. Confira a conexão e tente de novo.
             </AlertDescription>
           </Alert>
         ) : null}

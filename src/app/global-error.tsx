@@ -22,8 +22,8 @@ export default function GlobalError({ error, retry }: GlobalErrorProps) {
         <PageShell>
           <section className="flex flex-col gap-6 rounded-card bg-card px-6 py-10 shadow-card sm:px-10">
             <CardHeading
-              title="Algo deu errado por aqui"
-              description="Não foi culpa sua. Tenta de novo e, se continuar, fala com o suporte."
+              title="Algo deu errado"
+              description="Tente de novo. Se continuar, fale com o suporte."
             />
             <Button type="button" onClick={() => retry()}>
               Tentar de novo

@@ -15,7 +15,7 @@ export default function NotFound() {
       <BrandCard expression="worried">
         <CardHeading
           title="Essa página não existe"
-          description="O link pode estar errado ou a página mudou de lugar. Bora voltar pro começo?"
+          description="O link pode estar errado, ou a página mudou de lugar."
         />
         <Button asChild>
           {/* O início leva pro login quem não estiver dentro: serve pras duas situações. */}

@@ -44,8 +44,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <p className="mb-5 flex items-start gap-3 rounded-2xl bg-primary-soft px-4 py-3.5 text-sm text-pretty text-foreground">
           <CircleCheckIcon aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-link" />
           <span>
-            <strong className="font-semibold">Email confirmado!</strong> Agora é só entrar com o seu
-            email e a sua senha.
+            <strong className="font-semibold">Email confirmado.</strong> Entre com seu email e sua
+            senha.
           </span>
         </p>
       ) : null}

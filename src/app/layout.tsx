@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     template: '%s | Loja Pronta Prime',
   },
   description:
-    'Área de membros da Loja Pronta Prime: aprenda a vender na Shopee ou acompanhe a montagem da sua loja.',
+    'Área de membros da Loja Pronta Prime. Aprenda a vender na Shopee ou acompanhe a montagem da sua loja.',
 };
 
 // Barra do navegador no celular na mesma cor do fundo.

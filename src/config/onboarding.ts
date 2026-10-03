@@ -24,7 +24,8 @@ type BaseQuestion = {
   id: string;
   block: OnboardingBlock;
   ask: string;
-  help: string;
+  /** Linha abaixo da pergunta, só quando ajuda a responder (ex.: o limite de opções). */
+  help?: string;
   label: string;
 };
 
@@ -49,7 +50,6 @@ export const ONBOARDING_QUESTIONS = [
     block: 'voce',
     kind: 'single',
     ask: 'Você já vendeu pela internet?',
-    help: 'Sem certo ou errado: é pra gente saber de onde partir.',
     label: 'Já vendeu',
     options: [{ label: 'Nunca vendi' }, { label: 'Já vendi um pouco' }, { label: 'Já vendo hoje' }],
   },
@@ -74,8 +74,7 @@ export const ONBOARDING_QUESTIONS = [
     id: 'dificuldade',
     block: 'voce',
     kind: 'single',
-    ask: 'E o que mais te preocupa hoje?',
-    help: 'A equipe usa isso pra te ajudar onde mais pesa.',
+    ask: 'O que mais preocupa você hoje?',
     label: 'Maior preocupação',
     options: [
       { label: 'Escolher bons produtos' },
@@ -92,7 +91,7 @@ export const ONBOARDING_QUESTIONS = [
     layout: 'chips',
     max: 3,
     ask: 'Que tipo de produto você gostaria de vender?',
-    help: 'Escolha até 3. A equipe usa isso pra escolher os produtos da sua loja.',
+    help: 'Escolha até 3.',
     label: 'Categorias',
     // Lista provisória: as categorias de verdade virão do catálogo de fornecedores (fase 5).
     options: [
@@ -111,7 +110,6 @@ export const ONBOARDING_QUESTIONS = [
     block: 'voce',
     kind: 'single',
     ask: 'Quanto tempo por semana você tem pra loja?',
-    help: 'Pode ser uma estimativa.',
     label: 'Tempo por semana',
     options: [
       { label: 'Até 3 horas' },
@@ -124,16 +122,15 @@ export const ONBOARDING_QUESTIONS = [
     id: 'nome',
     block: 'marca',
     kind: 'name',
-    ask: 'Agora a sua marca. Como vai se chamar a sua loja?',
-    help: 'Se ainda não sabe, tudo bem: a gente sugere.',
+    ask: 'Como vai se chamar sua loja?',
+    help: 'Se ainda não decidiu, a equipe sugere um nome.',
     label: 'Nome da loja',
   },
   {
     id: 'estilo',
     block: 'marca',
     kind: 'single',
-    ask: 'Qual estilo combina com a sua marca?',
-    help: 'Pensa em como você quer que a loja pareça.',
+    ask: 'Qual estilo combina com sua marca?',
     label: 'Estilo',
     options: [
       { label: 'Delicado', description: 'Traços suaves e ar acolhedor' },
@@ -146,8 +143,7 @@ export const ONBOARDING_QUESTIONS = [
     id: 'cor',
     block: 'marca',
     kind: 'color',
-    ask: 'Qual cor você quer na sua marca?',
-    help: 'A equipe usa como cor principal do logo.',
+    ask: 'Qual é a cor principal da sua marca?',
     label: 'Cor principal',
     options: [
       { label: 'Rosa', color: '#e85d8e' },
@@ -181,8 +177,8 @@ export const ONBOARDING_QUESTIONS = [
     id: 'toque',
     block: 'marca',
     kind: 'longtext',
-    ask: 'Tem algo que não pode faltar?',
-    help: 'Um símbolo, uma lembrança, um nome de família… Se não tiver, pode pular.',
+    ask: 'Tem algo que não pode faltar na marca?',
+    help: 'Um símbolo, uma lembrança ou um nome de família. É opcional.',
     label: 'Toque pessoal',
   },
 ] as const satisfies readonly OnboardingQuestion[];
