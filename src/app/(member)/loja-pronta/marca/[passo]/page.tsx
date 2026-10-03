@@ -89,6 +89,7 @@ export default async function BrandStepPage({ params, searchParams }: PageProps)
         <DescriptionStep
           answers={answers}
           storeName={brand.name}
+          logoSrc={brand.logo ? savedLogoSrc({ ...brand, logo: brand.logo }) : undefined}
           saved={brand.description}
           editing={editing}
         />
