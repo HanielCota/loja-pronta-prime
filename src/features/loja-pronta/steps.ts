@@ -66,6 +66,18 @@ export function questionNumber(step: Step): number {
 
 export const QUESTION_COUNT = QUESTION_IDS.length;
 
+/** Nome da etapa, pro título da aba: "Pergunta 3 de 10", "Revisão", "Último passo". */
+export function stepTitle(step: Step): string {
+  if (step === REVIEW_STEP) return 'Revisão';
+  if (step === WHATSAPP_STEP) return 'Último passo';
+  return `Pergunta ${questionNumber(step)} de ${QUESTION_COUNT}`;
+}
+
+/** No topo da conversa, curto (cabe no celular): "3 de 10", "Revisão", "Último passo". */
+export function stepLabel(step: Step): string {
+  return findQuestion(step) ? `${questionNumber(step)} de ${QUESTION_COUNT}` : stepTitle(step);
+}
+
 /**
  * Onde a etapa fica no topo: a parte (Sobre você, Sua marca, Confirmar), pro nome em cima, e
  * quanto da conversa inteira já foi, contando a etapa atual (a 1ª de 12 enche um doze avos).

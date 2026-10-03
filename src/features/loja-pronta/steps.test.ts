@@ -8,7 +8,9 @@ import {
   resumeStep,
   REVIEW_STEP,
   stepPath,
+  stepLabel,
   stepProgress,
+  stepTitle,
   STEPS,
   WHATSAPP_STEP,
 } from './steps';
@@ -71,5 +73,14 @@ describe('etapas', () => {
     expect(stepProgress('nome').part).toBe(1);
     expect(stepProgress(REVIEW_STEP).part).toBe(2);
     expect(stepProgress(WHATSAPP_STEP)).toEqual({ part: 2, progress: 1 });
+  });
+});
+
+describe('stepTitle e stepLabel', () => {
+  test('título da aba completo, topo curto', () => {
+    expect(stepTitle('vendas')).toBe('Pergunta 1 de 10');
+    expect(stepLabel('vendas')).toBe('1 de 10');
+    expect(stepTitle(REVIEW_STEP)).toBe('Revisão');
+    expect(stepLabel(WHATSAPP_STEP)).toBe('Último passo');
   });
 });
