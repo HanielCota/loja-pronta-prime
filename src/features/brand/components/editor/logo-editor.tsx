@@ -2,6 +2,7 @@
 
 import {
   CircleDashedIcon,
+  CircleHelpIcon,
   CopyIcon,
   MaximizeIcon,
   MinusIcon,
@@ -44,6 +45,7 @@ import { EditorCanvas } from './editor-canvas';
 import { LAYERS_TITLE_ID } from './layers-panel';
 import { LEFT_PANEL_ID, LeftPanel } from './left-panel';
 import { PropertiesPanel } from './properties-panel';
+import { HelpDialog } from './help-dialog';
 import { PreviewDialog } from './preview-dialog';
 import { SaveBar } from './save-bar';
 import { sceneDataUrl, VariationsStrip } from './variations-strip';
@@ -101,6 +103,7 @@ export function LogoEditor({
   const [scene, setScene] = useState(initialScene);
   const [variations, setVariations] = useState(initialVariations);
   const [previewing, setPreviewing] = useState(false);
+  const [helping, setHelping] = useState(false);
   const [showCircle, setShowCircle] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>('adicionar');
   const [history, setHistory] = useState<History>({ past: [], future: [] });
@@ -302,7 +305,7 @@ export function LogoEditor({
   function onKeyDown(event: KeyboardEvent) {
     const target = event.target as HTMLElement;
     // Menus e janelas usam as setas pra navegar (o menu da conta, por exemplo).
-    if (target.closest?.('[role="menu"], [role="listbox"], [role="dialog"]')) return;
+    if (target.closest?.('[role="menu"], [role="listbox"], [role="dialog"], dialog')) return;
     const typing = ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName);
     const mod = event.ctrlKey || event.metaKey;
     const key = event.key.toLowerCase();
@@ -426,6 +429,9 @@ export function LogoEditor({
             >
               <CircleDashedIcon />
             </ToolButton>
+            <ToolButton label="Ajuda: como usar o editor" onClick={() => setHelping(true)}>
+              <CircleHelpIcon />
+            </ToolButton>
             <span className="flex-1" />
             <ToolButton label="Duplicar (Ctrl+D)" onClick={duplicateSelected} disabled={!selected}>
               <CopyIcon />
@@ -529,6 +535,7 @@ export function LogoEditor({
         saveState={saveState}
         onPreview={() => setPreviewing(true)}
       />
+      <HelpDialog open={helping} onClose={() => setHelping(false)} />
       <PreviewDialog
         open={previewing}
         src={previewing && fonts ? sceneDataUrl(scene, name, fonts) : null}
