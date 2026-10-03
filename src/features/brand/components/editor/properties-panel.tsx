@@ -324,7 +324,7 @@ function Swatches({
             <span
               aria-hidden="true"
               style={{ backgroundColor: color.hex }}
-              className="grid size-8 place-items-center rounded-full ring-1 ring-black/15 ring-offset-2 ring-offset-card forced-color-adjust-none group-has-checked:ring-[2.5px] group-has-checked:ring-foreground"
+              className="grid size-8 place-items-center rounded-full ring-1 ring-foreground/25 ring-offset-2 ring-offset-card forced-color-adjust-none group-has-checked:ring-[2.5px] group-has-checked:ring-foreground"
             >
               <CheckIcon
                 strokeWidth={3}

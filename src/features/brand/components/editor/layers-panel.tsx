@@ -89,7 +89,7 @@ function LayerButton({
       <span className="min-w-0 truncate">{elementLabel(element)}</span>
       <span
         aria-hidden="true"
-        className="ml-auto size-4 shrink-0 rounded-full ring-1 ring-black/10"
+        className="ml-auto size-4 shrink-0 rounded-full ring-1 ring-foreground/20"
         style={{ backgroundColor: element.color }}
       />
     </button>

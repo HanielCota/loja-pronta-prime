@@ -181,7 +181,7 @@ export function EditorCanvas({
   const handleTouch = 22 / unit;
 
   return (
-    <div className="overflow-auto rounded-card border border-border bg-[#e8e8ed] p-2 [--canvas-max:34dvh] lg:p-4 lg:[--canvas-max:calc(100dvh-420px)] forced-colors:border-[CanvasText]">
+    <div className="overflow-auto rounded-card border border-border bg-[#e8e8ed] p-2 [--canvas-max:34dvh] lg:p-4 lg:[--canvas-max:calc(100dvh-420px)] dark:bg-muted forced-colors:border-[CanvasText]">
       {/* 100% = até 640px; acima disso, o quadro rola. */}
       <div
         className="mx-auto"

@@ -137,6 +137,13 @@ test.describe('conferir, no computador', () => {
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
 
+    // A ajuda explica gestos e atalhos; com ela aberta, as setas não mexem no logo.
+    await page.getByRole('button', { name: 'Ajuda: como usar o editor' }).click();
+    const help = page.getByRole('dialog', { name: 'Como usar o editor' });
+    await expect(help.getByText('Ctrl + Shift + Z')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(help).toBeHidden();
+
     // Trocar pra guardada traz o nome na cor de antes (sem o aviso).
     await page.getByRole('button', { name: 'Trocar pra variação 1' }).click();
     await page.getByRole('button', { name: 'Nome da loja', exact: true }).click();
