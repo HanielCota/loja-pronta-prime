@@ -14,7 +14,7 @@ const AUTH_FORM_OPTIONS = {
   shouldRevalidate: 'onInput',
 } as const;
 
-type ActionResult = { submission?: SubmissionResult<string[]> };
+type ActionResult = { submission?: SubmissionResult<string[]> | undefined };
 
 /**
  * Liga um formulário de acesso à sua Server Action: a mesma validação (schema) no navegador e

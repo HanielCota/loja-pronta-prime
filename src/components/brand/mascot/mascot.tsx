@@ -29,9 +29,9 @@ import { useMascot } from './use-mascot';
 type MascotProps = {
   className?: string;
   /** Expressão de repouso (ex.: preocupado numa página de erro). */
-  expression?: Expression;
+  expression?: Expression | undefined;
   /** Maior tamanho em que ele aparece na tela (px), pra baixar a arte na medida certa. */
-  displaySize?: number;
+  displaySize?: number | undefined;
   /** É o maior elemento da tela (ex.: o login): a arte é pedida antes de tudo. */
   preload?: boolean;
 };

@@ -11,11 +11,11 @@ const ORDER: ProductId[] = ['loja-pronta', 'sll'];
 type ProductChooserProps = {
   products: ProductId[];
   /** Última área aberta: o bloco dela diz "Continuar" em vez de "Entrar". */
-  lastArea?: ProductId;
+  lastArea?: ProductId | undefined;
   /** Andamento de cada produto (quando há), mostrado no bloco dele. */
-  status?: Partial<Record<ProductId, ProductStatus>>;
+  status?: Partial<Record<ProductId, ProductStatus>> | undefined;
   /** Produto que leva o botão cheio. Sem ele, vale a última área aberta (ou o primeiro). */
-  primary?: ProductId;
+  primary?: ProductId | undefined;
 };
 
 /**

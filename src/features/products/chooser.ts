@@ -7,10 +7,10 @@ import type { ProductId } from '@/config/products';
  */
 export type ProductStatus = {
   /** Linha pequena acima ("Fase 1 de 7"). */
-  caption?: string;
+  caption?: string | undefined;
   label: string;
-  bar?: { step: number; total: number };
-  detail?: string;
+  bar?: { step: number; total: number } | undefined;
+  detail?: string | undefined;
 };
 
 /** O SLL ainda não tem aulas no ar: o cartão diz isso, em vez de mandar ela começar. */
@@ -18,8 +18,8 @@ export const SLL_CHOOSER_STATUS: ProductStatus = { label: 'As aulas abrem em bre
 
 type HeadlineInput = {
   /** Situação da Loja Pronta, quando ela tem o produto. */
-  store?: { waitsOnStudent: boolean };
-  lastArea?: ProductId;
+  store?: { waitsOnStudent: boolean } | undefined;
+  lastArea?: ProductId | undefined;
 };
 
 /**
@@ -30,7 +30,7 @@ type HeadlineInput = {
  * - Sem loja: continua de onde parou, ou escolhe por onde começar.
  */
 export function chooserHeadline({ store, lastArea }: HeadlineInput): {
-  primary?: ProductId;
+  primary?: ProductId | undefined;
   description: string;
 } {
   if (store?.waitsOnStudent) {

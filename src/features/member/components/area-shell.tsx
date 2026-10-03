@@ -55,7 +55,7 @@ export function AreaShell({ hasChoice, product, title, intro, children }: AreaSh
  * Topo das telas de dentro (região própria): voltar à esquerda, quando houver pra onde, e sair à
  * direita. O mesmo lugar em todas as telas da aluna.
  */
-function TopBar({ back }: { back?: { href: string; label: string } }) {
+function TopBar({ back }: { back?: { href: string; label: string } | undefined }) {
   return (
     <header className="flex min-h-11 items-center justify-between gap-4">
       {back ? (
@@ -85,7 +85,7 @@ export function CenteredMemberPage({
 }: {
   children: ReactNode;
   wide?: boolean;
-  back?: { href: string; label: string };
+  back?: { href: string; label: string } | undefined;
 }) {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[1040px] flex-col px-4 pt-4 sm:px-6 sm:pt-6">

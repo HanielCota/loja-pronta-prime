@@ -30,7 +30,7 @@ type QuestionFormProps = {
   editing: boolean;
   /** Ids do título e da ajuda (no balão do mascote), que nomeiam e descrevem o campo. */
   titleId: string;
-  helpId?: string;
+  helpId?: string | undefined;
 };
 
 function initialDraft(question: OnboardingQuestion, saved: QuestionFormProps['saved']): Draft {

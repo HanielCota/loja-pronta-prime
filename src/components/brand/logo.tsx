@@ -4,9 +4,9 @@ import { Mascot, type Expression } from './mascot';
 type LogoProps = {
   className?: string;
   /** Expressão de repouso do mascote (ex.: preocupado numa página de erro). */
-  expression?: Expression;
+  expression?: Expression | undefined;
   /** Mascote menor, pras telas de dentro (o conteúdo é o destaque, não a marca). */
-  compact?: boolean;
+  compact?: boolean | undefined;
 };
 
 /** Mascote da marca (que acompanha o que a pessoa faz), centralizado. */

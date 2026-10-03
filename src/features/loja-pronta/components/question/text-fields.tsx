@@ -6,7 +6,7 @@ import { Chip } from './option-field';
 type NameFieldProps = {
   text: string;
   unknown: boolean;
-  describedBy?: string;
+  describedBy?: string | undefined;
   invalid: boolean;
   onText: (value: string) => void;
   onUnknown: (value: boolean) => void;
@@ -56,7 +56,7 @@ export function LongTextField({
   onText,
 }: {
   text: string;
-  describedBy?: string;
+  describedBy?: string | undefined;
   onText: (value: string) => void;
 }) {
   return (

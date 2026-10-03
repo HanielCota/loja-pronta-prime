@@ -14,9 +14,9 @@ import { EmailField } from './email-field';
 import { PasswordField } from './password-field';
 
 type LoginFormProps = {
-  next?: string;
+  next?: string | undefined;
   /** Motivo vindo de outra tela (ex.: sessão expirada), mostrado até o primeiro envio. */
-  initialError?: AuthErrorCode;
+  initialError?: AuthErrorCode | undefined;
 };
 
 export function LoginForm({ next, initialError }: LoginFormProps) {
