@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { FieldError } from '@/components/ui/field';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { PERSONAL_TOUCH_MAX, STORE_NAME_MAX, type OnboardingQuestion } from '@/config/onboarding';
-import { submitWithoutReset } from '@/features/auth/enhanced-submit';
+import { submitWithoutReset } from '@/lib/forms';
 import { cn } from '@/lib/utils';
 import { saveAnswer } from '../server/actions';
 import { UNKNOWN_NAME } from '../steps';

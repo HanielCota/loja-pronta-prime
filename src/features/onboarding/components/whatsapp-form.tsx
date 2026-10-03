@@ -6,7 +6,7 @@ import { celebrateMascot, upsetMascot } from '@/components/brand/mascot';
 import { Button } from '@/components/ui/button';
 import { FieldError } from '@/components/ui/field';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
-import { submitWithoutReset } from '@/features/auth/enhanced-submit';
+import { submitWithoutReset } from '@/lib/forms';
 import { finishConversation } from '../server/actions';
 import { parseWhatsapp } from '../steps';
 

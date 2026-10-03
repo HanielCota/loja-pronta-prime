@@ -8,7 +8,7 @@ import { auth } from '@/server/auth/auth';
 import { consumeAttempt } from '@/server/auth/rate-limit';
 import { reportAuthError } from '@/server/auth/report-error';
 import { getClientIp } from '@/server/request/client-ip';
-import { ENHANCED_SUBMIT_FIELD } from '../enhanced-submit';
+import { ENHANCED_SUBMIT_FIELD } from '@/lib/forms';
 import { sanitizeRedirect } from '../redirect';
 import { EMAIL_CONFIRMED_REASON } from '../login-reason';
 import { loginSchema, recoverSchema, resetPasswordSchema } from '../schemas';
