@@ -1,69 +1,36 @@
-import { ChevronLeftIcon } from 'lucide-react';
-import Link from 'next/link';
-import { BrandCard } from '@/components/brand/brand-card';
-import { CardHeading } from '@/components/brand/card-heading';
-import { PageShell } from '@/components/brand/page-shell';
-import type { ProductId } from '@/config/products';
-import { SignOutButton } from '@/features/auth/components/sign-out-button';
-import { PRODUCTS } from '../catalog';
 import { firstName } from '../names';
-import { SllPath } from './sll-path';
-import { StoreJourney } from './store-journey';
-import type { ConversationStatus } from './store-next-step';
+import { AreaShell, greeting } from './area-shell';
+import { SllCourseCard, SllToolsCard } from './sll-cards';
 
-type ProductAreaProps = {
-  product: ProductId;
+type SllAreaProps = {
   user: { name: string };
-  /** Primeira vez nesta área: boas-vindas; depois, "Bom te ver de novo". */
+  /** Primeira vez nesta área: "Boas-vindas"; depois, "Oi". */
   firstVisit: boolean;
-  /** Tem os dois produtos: a página leva de volta pra escolha. */
+  /** Tem os dois produtos: o topo leva de volta pra escolha. */
   hasChoice: boolean;
-  /** Fase da loja e situação da conversa inicial (só na Loja Pronta). */
-  storePhase?: number;
-  conversation?: ConversationStatus;
 };
 
 /**
- * Página da área de um produto. Quem confere o acesso é a página (requireProduct). Sem barra do
- * topo: quem tem os dois produtos volta pra escolha pelo link acima do cartão.
+ * Área do SLL, no mesmo formato da Loja Pronta: onde ela está no curso, o caminho dele e as
+ * ferramentas ao lado. Quem confere o acesso é a página (requireProduct).
  */
-export function ProductArea({
-  product,
-  user,
-  firstVisit,
-  hasChoice,
-  storePhase,
-  conversation,
-}: ProductAreaProps) {
-  const { welcome, summary, title: productTitle } = PRODUCTS[product];
-  const name = firstName(user.name);
-  const title = firstVisit ? welcome : `Bom te ver de novo${name ? `, ${name}` : ''}!`;
-
+export function SllArea({ user, firstVisit, hasChoice }: SllAreaProps) {
   return (
-    <PageShell>
-      {hasChoice ? (
-        <Link
-          href="/"
-          className="-my-3 inline-flex min-h-11 items-center gap-1 self-start rounded-md font-medium text-muted-foreground transition-colors duration-100 outline-none hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid"
-        >
-          <ChevronLeftIcon aria-hidden="true" className="size-5" />
-          Início
-        </Link>
-      ) : null}
-      <BrandCard expression="happy" compact>
-        {/* Na primeira visita o título já diz o produto ("Boas-vindas à Loja Pronta"). */}
-        <CardHeading
-          eyebrow={firstVisit ? undefined : productTitle}
-          title={title}
-          description={summary}
-        />
-        {product === 'loja-pronta' ? (
-          <StoreJourney phase={storePhase ?? 1} conversation={conversation ?? 'nao-comecou'} />
-        ) : (
-          <SllPath />
-        )}
-      </BrandCard>
-      <SignOutButton />
-    </PageShell>
+    <AreaShell
+      hasChoice={hasChoice}
+      eyebrow="Sistema Loja Lucrativa (SLL)"
+      // As aulas ainda não estão no ar: o título diz isso, sem mandar ela "começar" algo fechado.
+      title="As aulas abrem em breve"
+      intro={greeting(
+        firstName(user.name),
+        firstVisit,
+        'O curso começa pela trilha de boas-vindas, e a gente te avisa quando ela abrir.',
+      )}
+    >
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <SllCourseCard />
+        <SllToolsCard />
+      </div>
+    </AreaShell>
   );
 }

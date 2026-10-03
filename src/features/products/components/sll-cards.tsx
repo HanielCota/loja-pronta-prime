@@ -1,5 +1,6 @@
 import { CalculatorIcon, LockIcon, SparklesIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { eyebrowClass, panelCard } from './area-shell';
 
 const PATH = [
   {
@@ -35,65 +36,69 @@ function Badge({ children, tone }: { children: string; tone: 'primary' | 'muted'
 }
 
 /**
- * Caminho do SLL: a ordem em que o curso abre (trilha, método, minicursos) e as ferramentas.
- * As aulas ainda não estão no ar; a tela já mostra por onde ela vai começar. Nada aqui é
- * clicável ainda, então nada tem cara de botão (sem fundo cheio, sem borda, sem ícone de play):
- * o que está por vir aparece em selos.
+ * Caminho do SLL: a ordem em que o curso abre (trilha, método, minicursos). As aulas ainda não
+ * estão no ar; a tela já mostra por onde ela vai começar. Nada aqui é clicável ainda, então nada
+ * tem cara de botão (sem fundo cheio, sem borda, sem ícone de play): o que está por vir aparece
+ * em selos.
  */
-export function SllPath() {
+export function SllCourseCard() {
   return (
-    <div className="flex flex-col gap-8">
-      <section aria-labelledby="seu-caminho" className="flex flex-col gap-3">
-        <h2 id="seu-caminho" className="text-lg font-semibold text-foreground">
-          Seu caminho no curso
-        </h2>
-        <ol className="flex flex-col divide-y divide-border">
-          {PATH.map((step, index) => (
-            <li key={step.title} className="flex gap-3 py-3.5">
-              <span
-                aria-hidden="true"
-                className={cn(
-                  'grid size-8 shrink-0 place-items-center rounded-full text-sm font-semibold',
-                  step.locked ? 'bg-muted text-muted-foreground' : 'bg-primary-soft text-link',
-                )}
-              >
-                {step.locked ? <LockIcon className="size-4" /> : index + 1}
+    <section aria-labelledby="seu-caminho" className={cn(panelCard, 'gap-3')}>
+      <h2 id="seu-caminho" className={eyebrowClass}>
+        Seu caminho no curso
+      </h2>
+      <ol className="flex flex-col divide-y divide-border">
+        {PATH.map((step, index) => (
+          <li key={step.title} className="flex gap-3 py-3.5">
+            <span
+              aria-hidden="true"
+              className={cn(
+                'grid size-8 shrink-0 place-items-center rounded-full text-sm font-semibold',
+                // Mesmo desenho das fases "a seguir" da Loja Pronta (com anel: sem ele, o círculo
+                // cinza some no fundo branco).
+                step.locked
+                  ? 'bg-muted text-muted-foreground ring-1 ring-border'
+                  : 'bg-primary-soft text-link',
+              )}
+            >
+              {step.locked ? <LockIcon className="size-4" /> : index + 1}
+            </span>
+            <span className="flex min-w-0 flex-col gap-1 pt-0.5">
+              <span className="text-body font-semibold text-foreground">
+                {step.title}
+                {step.locked ? <span className="sr-only"> (bloqueado por enquanto)</span> : null}
               </span>
-              <span className="flex min-w-0 flex-col gap-1 pt-0.5">
-                <span className="text-body font-semibold text-foreground">
-                  {step.title}
-                  {step.locked ? <span className="sr-only"> (bloqueado por enquanto)</span> : null}
-                </span>
-                <span className="text-body text-pretty text-muted-foreground">{step.detail}</span>
-                {step.locked ? null : <Badge tone="primary">Abre primeiro</Badge>}
-              </span>
-            </li>
-          ))}
-        </ol>
-        <p className="text-body text-pretty text-muted-foreground">
-          As aulas estão chegando. A trilha de boas-vindas é a primeira a abrir.
-        </p>
-      </section>
+              <span className="text-body text-pretty text-muted-foreground">{step.detail}</span>
+              {step.locked ? null : <Badge tone="primary">Abre primeiro</Badge>}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
 
-      <section aria-labelledby="ferramentas" className="flex flex-col gap-3">
-        <h2 id="ferramentas" className="text-lg font-semibold text-foreground">
-          Ferramentas
-        </h2>
-        <ul className="flex flex-col divide-y divide-border">
-          {TOOLS.map(({ title, icon: Icon }) => (
-            <li key={title} className="flex items-center gap-3 py-3.5">
-              <span
-                aria-hidden="true"
-                className="grid size-8 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground"
-              >
-                <Icon className="size-4" />
-              </span>
-              <span className="min-w-0 flex-1 text-body text-foreground">{title}</span>
-              <Badge tone="muted">Em breve</Badge>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </div>
+/** Ferramentas do curso (ainda por vir). */
+export function SllToolsCard() {
+  return (
+    <section aria-labelledby="ferramentas" className={cn(panelCard, 'gap-3')}>
+      <h2 id="ferramentas" className={eyebrowClass}>
+        Ferramentas
+      </h2>
+      <ul className="flex flex-col divide-y divide-border">
+        {TOOLS.map(({ title, icon: Icon }) => (
+          <li key={title} className="flex items-center gap-3 py-3.5">
+            <span
+              aria-hidden="true"
+              className="grid size-8 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground ring-1 ring-border"
+            >
+              <Icon className="size-4" />
+            </span>
+            <span className="min-w-0 flex-1 text-body text-foreground">{title}</span>
+            <Badge tone="muted">Em breve</Badge>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

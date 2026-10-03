@@ -4,14 +4,14 @@ import { redirect } from 'next/navigation';
 import { BrandCard } from '@/components/brand/brand-card';
 import { CardHeading } from '@/components/brand/card-heading';
 import { Logo } from '@/components/brand/logo';
-import { PageShell } from '@/components/brand/page-shell';
 import { Button } from '@/components/ui/button';
 import type { ProductId } from '@/config/products';
 import { STORE_PHASES } from '@/config/store-phases';
-import { SignOutButton } from '@/features/auth/components/sign-out-button';
 import { PRODUCTS } from '@/features/products/catalog';
+import { CenteredMemberPage } from '@/features/products/components/area-shell';
 import { ProductChooser, type ProductStatus } from '@/features/products/components/product-chooser';
 import { getOnboarding } from '@/features/onboarding/server/conversation';
+import { displayedPhase } from '@/features/products/store-phase';
 import { firstName } from '@/features/products/names';
 import { getStorePhase, requireStudent } from '@/features/products/server/access';
 
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 /**
  * Início de quem já entrou (e já criou a própria senha). Com os dois produtos, ela escolhe a
  * área (cada cartão mostra onde ela parou); com um só, entra direto nele; sem nenhum, explica o
- * que fazer. Abaixo de tudo, o sair.
+ * que fazer. O sair fica no topo, como nas áreas.
  */
 export default async function HomePage() {
   const { session, products, lastArea } = await requireStudent('/');
@@ -34,7 +34,7 @@ export default async function HomePage() {
 
   if (products.length === 0) {
     return (
-      <PageShell>
+      <CenteredMemberPage>
         <BrandCard expression="happy" compact>
           <CardHeading
             title="Seu acesso ainda não foi liberado"
@@ -47,48 +47,49 @@ export default async function HomePage() {
             </Link>
           </Button>
         </BrandCard>
-        <SignOutButton />
-      </PageShell>
+      </CenteredMemberPage>
     );
   }
 
   const status: Partial<Record<ProductId, ProductStatus>> = {
-    sll: { label: 'Comece pela trilha de boas-vindas' },
+    // As aulas ainda não estão no ar: o cartão diz isso, em vez de mandar ela começar.
+    sll: { label: 'As aulas abrem em breve' },
   };
   // A Loja Pronta parada esperando por ela vem antes de tudo: leva o botão cheio, e o texto de
   // cima aponta pra ela (em vez de "Continue de onde parou", que podia apontar pro outro produto).
-  // Com a loja nas mãos da equipe, o botão cheio vai pro SLL.
+  // Com a loja nas mãos da equipe, nenhum botão "manda" pra lá (nem pro curso, que ainda não abriu):
+  // o texto de cima avisa que a equipe chama no WhatsApp.
   let primary: ProductId | undefined;
+  let storeWithTeam = false;
   if (products.includes('loja-pronta')) {
-    const [phase, onboarding] = await Promise.all([getStorePhase(user.id), getOnboarding(user.id)]);
+    const [storePhase, onboarding] = await Promise.all([
+      getStorePhase(user.id),
+      getOnboarding(user.id),
+    ]);
+    const phase = displayedPhase(storePhase, Boolean(onboarding.completedAt));
     const current = STORE_PHASES[phase - 1];
-    // Conversa enviada com a loja ainda na fase 1: a vez é da equipe, não dela.
-    const waitsOnStudent = current?.needsStudent && !(phase === 1 && onboarding.completedAt);
     status['loja-pronta'] = {
       label: `Fase ${phase} de ${STORE_PHASES.length} · ${current?.title}`,
       bar: { step: phase, total: STORE_PHASES.length },
-      detail:
-        waitsOnStudent || phase !== 1
-          ? current?.detail
-          : 'Respostas enviadas: agora é com a nossa equipe.',
+      detail: current?.detail,
     };
-    if (waitsOnStudent) primary = 'loja-pronta';
-    // A loja está com a equipe: nada a fazer lá agora, então o destaque vai pro curso.
-    else if (products.includes('sll')) primary = 'sll';
+    if (current?.needsStudent) primary = 'loja-pronta';
+    else storeWithTeam = true;
   }
 
   // Sem o cartão em volta: os produtos são os cartões, com o espaço da tela toda.
   return (
-    <PageShell wide>
+    <CenteredMemberPage wide>
       <div className="flex flex-col gap-8 short:gap-4">
         <Logo expression="happy" compact />
         <CardHeading
+          className="mb-0"
           title={name ? `Oi, ${name}! Pra onde vamos?` : 'Pra onde vamos?'}
           description={
             primary === 'loja-pronta'
               ? 'Sua loja está esperando por você.'
-              : primary === 'sll'
-                ? 'Sua loja está com a nossa equipe. Enquanto isso, que tal o curso?'
+              : storeWithTeam
+                ? 'Sua loja está com a nossa equipe: a gente te avisa no WhatsApp quando for a sua vez.'
                 : lastArea
                   ? 'Continue de onde parou.'
                   : 'Escolha por onde começar.'
@@ -96,7 +97,6 @@ export default async function HomePage() {
         />
       </div>
       <ProductChooser products={products} lastArea={lastArea} status={status} primary={primary} />
-      <SignOutButton />
-    </PageShell>
+    </CenteredMemberPage>
   );
 }

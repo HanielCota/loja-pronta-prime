@@ -7,7 +7,8 @@
 export const STORE_PHASES = [
   {
     title: 'Conversa inicial',
-    detail: 'Uma conversa rápida pra gente conhecer você e a marca que você imagina.',
+    // Mesmas palavras do painel da Loja Pronta ("Conte pra gente sobre você e a sua marca").
+    detail: 'Conte pra gente sobre você e a sua marca: são uns 5 minutos.',
     needsStudent: true,
   },
   {

@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { PRODUCTS } from '@/features/products/catalog';
 import { getOnboarding } from '@/features/onboarding/server/conversation';
-import { ProductArea } from '@/features/products/components/product-area';
+import { StorePanel } from '@/features/products/components/store-panel';
+import { displayedPhase } from '@/features/products/store-phase';
 import { getStorePhase, requireProduct } from '@/features/products/server/access';
 
 export const metadata: Metadata = {
@@ -16,12 +17,11 @@ export default async function Page() {
     getOnboarding(session.user.id),
   ]);
   return (
-    <ProductArea
-      product="loja-pronta"
+    <StorePanel
       user={session.user}
       firstVisit={firstVisit}
       hasChoice={products.length > 1}
-      storePhase={storePhase}
+      phase={displayedPhase(storePhase, Boolean(onboarding.completedAt))}
       conversation={
         onboarding.completedAt
           ? 'enviada'

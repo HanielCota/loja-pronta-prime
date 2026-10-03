@@ -3,6 +3,7 @@ import Link from 'next/link';
 import type { ProductId } from '@/config/products';
 import { cn } from '@/lib/utils';
 import { PRODUCTS } from '../catalog';
+import { eyebrowClass } from './area-shell';
 import { ProductIcon } from './product-icon';
 
 /** Ordem na escolha: a Loja Pronta vem primeiro (a fase 1 dela depende da aluna). */
@@ -73,10 +74,7 @@ export function ProductChooser({ products, lastArea, status, primary }: ProductC
                     Recomendado agora.
                   </span>
                 ) : null}
-                <span
-                  id={`${id}-tag`}
-                  className="text-sm font-semibold tracking-wide text-muted-foreground uppercase"
-                >
+                <span id={`${id}-tag`} className={eyebrowClass}>
                   {tag}
                 </span>
                 <h2 className="text-xl font-semibold tracking-tight text-foreground">{title}</h2>
