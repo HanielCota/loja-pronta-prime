@@ -1,4 +1,4 @@
-import { CircleCheckIcon, InboxIcon } from 'lucide-react';
+import { CircleCheckIcon } from 'lucide-react';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { BrandCard } from '@/components/brand/brand-card';
@@ -35,34 +35,24 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   }
 
   return (
-    <>
-      <BrandCard>
-        <CardHeading
-          title="Sua loja na Shopee começa aqui"
-          description="Entre com o email que você usou na compra."
-        />
-        {getParam(params.motivo) === EMAIL_CONFIRMED_REASON && !getParam(params.error) ? (
-          <p className="mb-5 flex items-start gap-3 rounded-2xl bg-primary-soft px-4 py-3.5 text-sm text-pretty text-foreground">
-            <CircleCheckIcon aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-link" />
-            <span>
-              <strong className="font-semibold">Email confirmado!</strong> Agora é só entrar com o
-              seu email e a sua senha.
-            </span>
-          </p>
-        ) : null}
-        <LoginForm
-          next={next}
-          initialError={parseLoginReason(getParam(params.motivo), getParam(params.error))}
-        />
-      </BrandCard>
-      <p className="flex items-start gap-3 rounded-2xl border border-border px-4 py-3.5 text-sm text-pretty text-muted-foreground">
-        <InboxIcon aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary" />
-        <span>
-          <strong className="font-semibold text-foreground">Acabou de comprar?</strong> Seu acesso
-          chega no email da compra em alguns minutos. Não achou? Procura por “Loja Pronta Prime” no
-          spam e na aba Promoções.
-        </span>
-      </p>
-    </>
+    <BrandCard>
+      <CardHeading
+        title="Sua loja na Shopee começa aqui"
+        description="Entre com o email que você usou na compra."
+      />
+      {getParam(params.motivo) === EMAIL_CONFIRMED_REASON && !getParam(params.error) ? (
+        <p className="mb-5 flex items-start gap-3 rounded-2xl bg-primary-soft px-4 py-3.5 text-sm text-pretty text-foreground">
+          <CircleCheckIcon aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-link" />
+          <span>
+            <strong className="font-semibold">Email confirmado!</strong> Agora é só entrar com o seu
+            email e a sua senha.
+          </span>
+        </p>
+      ) : null}
+      <LoginForm
+        next={next}
+        initialError={parseLoginReason(getParam(params.motivo), getParam(params.error))}
+      />
+    </BrandCard>
   );
 }

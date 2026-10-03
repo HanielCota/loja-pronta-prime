@@ -14,7 +14,7 @@ async function requestLink(page: Page, email: string) {
 test('leva o email do login pra recuperação sem colocar na URL', async ({ page }) => {
   await page.goto('/entrar');
   await page.getByLabel('Email da compra').fill(studentEmail('aluna'));
-  await page.getByRole('link', { name: 'Esqueci ou não recebi a senha' }).click();
+  await page.getByRole('link', { name: 'Esqueceu ou não recebeu a senha?' }).click();
   await expect(page).toHaveURL(/\/recuperar-senha$/);
   await expect(page.getByLabel('Email da compra')).toHaveValue(studentEmail('aluna'));
 });
