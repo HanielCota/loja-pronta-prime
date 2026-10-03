@@ -37,6 +37,7 @@ export function LoginForm({ next, initialError }: LoginFormProps) {
       {next ? <input type="hidden" name="next" value={next} /> : null}
 
       <EmailField
+        autoComplete="username"
         meta={fields.email}
         onSuggestionAccept={(email) => form.update({ name: fields.email.name, value: email })}
       />

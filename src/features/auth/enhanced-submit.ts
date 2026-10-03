@@ -1,4 +1,5 @@
 import { startTransition, type SubmitEvent } from 'react';
+import { rememberEmail } from './email-storage';
 
 /**
  * Envio "com JavaScript" dos formulários de acesso, dos dois lados:
@@ -25,6 +26,10 @@ export function submitWithoutReset(
     const { submitter } = event.nativeEvent;
     const formData = new FormData(event.currentTarget, submitter);
     formData.set(ENHANCED_SUBMIT_FIELD, '1');
+    // Se o envio falhar (internet caiu), a tela é recriada (ActionErrorBoundary) e o email
+    // digitado volta sozinho, em vez de ela ter que digitar de novo.
+    const email = formData.get('email');
+    if (typeof email === 'string' && email) rememberEmail(email);
     startTransition(() => action(formData));
   };
 }

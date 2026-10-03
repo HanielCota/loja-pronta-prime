@@ -4,6 +4,7 @@ import {
   InvalidResetLink,
   ResetPasswordForm,
 } from '@/features/auth/components/reset-password-form';
+import { sanitizeRedirect } from '@/features/auth/redirect';
 import { getParam, type SearchParams } from '@/lib/search-params';
 
 export const metadata: Metadata = {
@@ -20,10 +21,16 @@ export default async function ResetPasswordPage({
   const params = await searchParams;
   const token = getParam(params.token);
   const linkIsValid = token && !getParam(params.error);
+  // Destino que ela queria antes de esquecer a senha (veio no link do email).
+  const next = sanitizeRedirect(getParam(params.next));
 
   return (
     <BrandCard>
-      {linkIsValid ? <ResetPasswordForm token={token} /> : <InvalidResetLink />}
+      {linkIsValid ? (
+        <ResetPasswordForm token={token} next={next} />
+      ) : (
+        <InvalidResetLink next={next} />
+      )}
     </BrandCard>
   );
 }

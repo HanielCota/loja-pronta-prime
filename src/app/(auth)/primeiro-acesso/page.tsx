@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { BrandCard } from '@/components/brand/brand-card';
 import { FirstAccessForm } from '@/features/auth/components/first-access-form';
+import { SignOutButton } from '@/features/auth/components/sign-out-button';
 import { sanitizeRedirect } from '@/features/auth/redirect';
 import { resolvePostLoginPath } from '@/features/auth/server/post-login';
 import { getActiveSession, needsFirstPassword } from '@/features/auth/server/session';
@@ -32,8 +33,12 @@ export default async function FirstAccessPage({
   if (!needsFirstPassword(session.user)) redirect(resolvePostLoginPath(next));
 
   return (
-    <BrandCard>
-      <FirstAccessForm email={session.user.email} next={next} />
-    </BrandCard>
+    <>
+      <BrandCard>
+        <FirstAccessForm email={session.user.email} next={next} />
+      </BrandCard>
+      {/* Entrou na conta errada (celular compartilhado)? Sem isso, ficaria presa aqui. */}
+      <SignOutButton />
+    </>
   );
 }

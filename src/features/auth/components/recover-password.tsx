@@ -30,6 +30,11 @@ export function RecoverPassword(props: RecoverPasswordProps) {
       onRestart={() => {
         rememberEmail('');
         setAttempt((n) => n + 1);
+        // A tela é recriada (o botão clicado some): o foco vai pro campo de email, pra ela já
+        // digitar o outro, em vez de cair no começo da página.
+        requestAnimationFrame(() =>
+          document.querySelector<HTMLInputElement>('input[name="email"]')?.focus(),
+        );
       }}
     />
   );
@@ -62,6 +67,8 @@ function RecoverPasswordFlow({
       />
       <form {...formProps} className="flex flex-col gap-5">
         {errorCode ? <AuthErrorAlert key={responseKey} id={form.errorId} code={errorCode} /> : null}
+        {/* O destino segue pelo link do email até depois de criar a senha. */}
+        {next ? <input type="hidden" name="next" value={next} /> : null}
 
         <EmailField
           meta={fields.email}

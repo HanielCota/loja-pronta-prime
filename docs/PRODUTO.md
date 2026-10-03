@@ -35,7 +35,7 @@ Serviço em que a equipe monta a loja da aluna, e ela acompanha cada etapa.
 
 A aluna passa por uma jornada em fases, da primeira conversa até a loja no ar:
 
-1. Conversa inicial para conhecer o perfil e as preferências da aluna.
+1. Conversa inicial para conhecer o perfil e as preferências da aluna (detalhes abaixo).
 2. Geração, por IA, de opções de logo e de descrição da loja, e escolha da aluna.
 3. Conexão da loja com a Shopee.
 4. Verificação de identidade.
@@ -44,6 +44,18 @@ A aluna passa por uma jornada em fases, da primeira conversa até a loja no ar:
 7. Loja no ar e acompanhamento nas semanas seguintes.
 
 A aluna sempre sabe em que fase está.
+
+#### Conversa inicial (fase 1)
+
+Feita na própria plataforma, uma pergunta por tela, com o mascote "fazendo" cada pergunta. Leva uns 5 minutos e dá para parar e continuar depois: cada resposta fica salva.
+
+- **Sobre você:** se já vendeu pela internet, o que a motivou, o que mais a preocupa, que tipo de produto gostaria de vender (até 3) e quanto tempo tem por semana.
+- **Sua marca:** nome da loja (ou "ainda não sei", e a equipe sugere), estilo, cor principal (ou "deixo com a equipe"), como quer que as clientes se sintam (até 3) e um toque pessoal opcional.
+- **Confirmar:** revisão de todas as respostas, com edição, e o WhatsApp em que a equipe vai falar com ela.
+
+Ao enviar, a loja passa para a fase 2 e a equipe começa a criar o logo e a descrição. A promessa mostrada à aluna é de aviso no WhatsApp em até 24 horas.
+
+Pendências: as categorias de produto ainda são uma lista provisória (devem vir do catálogo de fornecedores) e o vídeo de boas-vindas da Pri, que existia no sistema antigo, fica para quando houver o vídeo.
 
 ### Aluna com os dois produtos
 

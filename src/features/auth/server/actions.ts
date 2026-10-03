@@ -9,6 +9,8 @@ import { consumeAttempt } from '@/server/auth/rate-limit';
 import { reportAuthError } from '@/server/auth/report-error';
 import { getClientIp } from '@/server/request/client-ip';
 import { ENHANCED_SUBMIT_FIELD } from '../enhanced-submit';
+import { sanitizeRedirect } from '../redirect';
+import { EMAIL_CONFIRMED_REASON } from '../login-reason';
 import { loginSchema, recoverSchema, resetPasswordSchema } from '../schemas';
 import { toAuthErrorCode } from './better-auth-errors';
 import { resolvePostLoginPath } from './post-login';
@@ -19,12 +21,18 @@ export type LoginResult = { submission?: FormResult; redirectTo?: string } | und
 export type RecoverResult = { submission?: FormResult; sentTo?: string } | undefined;
 export type ResetResult = { submission?: FormResult; completed?: boolean } | undefined;
 
-/** Login: limite por conta (email) e, quando o IP é conhecido, por IP. */
+/**
+ * Login: limite por conta vinda de um mesmo IP, teto por conta e, quando o IP é conhecido, por
+ * IP. Sem IP conhecido, o limite apertado vale pra conta inteira (o lado seguro).
+ */
 async function canAttemptLogin(email: string): Promise<boolean> {
   const ip = await getClientIp();
-  const byEmail = await consumeAttempt('loginPerEmail', email);
-  const byIp = ip ? await consumeAttempt('loginPerIp', ip) : true;
-  return byEmail && byIp;
+  const results = await Promise.all([
+    consumeAttempt('loginPerEmailAndIp', ip ? `${email} ${ip}` : email),
+    consumeAttempt('loginPerEmail', email),
+    ip ? consumeAttempt('loginPerIp', ip) : true,
+  ]);
+  return results.every(Boolean);
 }
 
 export async function login(_state: LoginResult, formData: FormData): Promise<LoginResult> {
@@ -42,8 +50,13 @@ export async function login(_state: LoginResult, formData: FormData): Promise<Lo
   let mustChangePassword: boolean;
   try {
     const { user } = await auth.api.signInEmail({
-      // callbackURL: pra onde volta o link de confirmação de email, se ele for enviado.
-      body: { email, password, callbackURL: '/entrar' },
+      // callbackURL: pra onde volta o link de confirmação de email, se ele for enviado. O login
+      // avisa que deu certo (ou que o link venceu) e mantém o destino que ela queria.
+      body: {
+        email,
+        password,
+        callbackURL: `/entrar?${new URLSearchParams({ motivo: EMAIL_CONFIRMED_REASON, ...(next ? { next } : {}) })}`,
+      },
       headers: await headers(),
     });
     // Conta com senha temporária (ou sem a marca): primeiro cria a própria senha.
@@ -68,6 +81,11 @@ export async function requestPasswordReset(
   if (submission.status !== 'success') return { submission: submission.reply() };
 
   const { email } = submission.value;
+  const next = sanitizeRedirect(submission.value.next);
+  // O link do email traz o destino de volta: depois de criar a senha, ela entra e segue pra ele.
+  const redirectTo = next
+    ? `/redefinir-senha?${new URLSearchParams({ next })}`
+    : '/redefinir-senha';
 
   // Por email: ninguém consegue encher a caixa de entrada de outra pessoa com links.
   // Por IP: ninguém dispara links pra uma lista inteira de emails.
@@ -82,7 +100,7 @@ export async function requestPasswordReset(
   after(async () => {
     try {
       await auth.api.requestPasswordReset({
-        body: { email, redirectTo: '/redefinir-senha' },
+        body: { email, redirectTo },
         headers: requestHeaders,
       });
     } catch (error) {

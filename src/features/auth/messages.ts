@@ -51,12 +51,17 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, AuthMessage> = {
     title: 'Esse link expirou ou já foi usado',
     hint: `Cada link vale por ${formatHours(RESET_LINK_TTL_HOURS)} e funciona uma vez só. Pede um novo, é rapidinho.`,
   },
+  verification_link_invalid: {
+    title: 'Esse link de confirmação não vale mais',
+    hint: 'Entre com o seu email e a sua senha: se o email ainda não estiver confirmado, a gente manda um link novo na hora.',
+  },
   same_password: {
     title: 'Escolha uma senha diferente da temporária',
     hint: 'A temporária foi enviada por email. A senha nova precisa ser só sua.',
   },
+  // Vale pra qualquer tela de acesso (login, primeiro acesso, redefinição): título neutro.
   unknown: {
-    title: 'Não foi possível entrar',
+    title: 'Não deu certo agora',
     hint: 'Pode ser a sua internet. Tenta de novo em alguns segundos.',
   },
 };

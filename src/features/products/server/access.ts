@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { after } from 'next/server';
 import { PRODUCT_IDS, type ProductId } from '@/config/products';
 import { authHref } from '@/features/auth/links';
-import { getActiveSession, needsFirstPassword } from '@/features/auth/server/session';
+import { getSessionState, needsFirstPassword } from '@/features/auth/server/session';
 import { db } from '@/server/db';
 import { stores, studentProducts } from '@/server/db/schema';
 import { PRODUCTS } from '../catalog';
@@ -43,21 +43,25 @@ export async function getStudentProducts(userId: string): Promise<StudentProduct
  * pro login (e volta pra cá depois); com a senha temporária, pro primeiro acesso.
  */
 export async function requireStudent(path: string) {
-  const session = await getActiveSession();
+  const state = await getSessionState();
   const next = path === '/' ? undefined : path;
-  if (!session) redirect(authHref('/entrar', next));
+  // Bloqueada com a sessão aberta (reembolso, cancelamento): o login explica o motivo.
+  if (state.status === 'banned') redirect('/entrar?motivo=conta-desativada');
+  if (state.status === 'none') redirect(authHref('/entrar', next));
+  const { session } = state;
   if (needsFirstPassword(session.user)) redirect(authHref('/primeiro-acesso', next));
   return { session, ...(await getStudentProducts(session.user.id)) };
 }
 
 /**
  * Área de um produto: quem não tem esse produto volta pro início (que mostra o que ela tem).
+ * `path` é a página atual (pra onde o login devolve), quando é uma página dentro da área.
  * Registra a visita depois de responder (não atrasa a página). `firstVisit` vale durante toda a
  * sessão em que ela abriu a área pela primeira vez: a página pode ser renderizada de novo logo em
  * seguida, e a saudação não pode trocar no meio da primeira visita.
  */
-export async function requireProduct(product: ProductId) {
-  const student = await requireStudent(PRODUCTS[product].path);
+export async function requireProduct(product: ProductId, path: string = PRODUCTS[product].path) {
+  const student = await requireStudent(path);
   if (!student.products.includes(product)) redirect('/');
 
   const userId = student.session.user.id;

@@ -1,26 +1,7 @@
 import { useEffect, useRef } from 'react';
+import { readRememberedEmail, rememberEmail } from './email-storage';
 
-/**
- * Leva o email digitado entre o login e a recuperação de senha sem colocá-lo na URL
- * (URLs vão parar em logs de servidor). Fica só na aba atual do navegador.
- */
-const STORAGE_KEY = 'lojaprontaprime:auth-email';
-
-export function rememberEmail(email: string): void {
-  try {
-    sessionStorage.setItem(STORAGE_KEY, email.trim());
-  } catch {
-    // Navegação privada ou armazenamento bloqueado: a aluna só digita de novo.
-  }
-}
-
-function readRememberedEmail(): string {
-  try {
-    return sessionStorage.getItem(STORAGE_KEY) ?? '';
-  } catch {
-    return '';
-  }
-}
+export { rememberEmail };
 
 /**
  * Preenche o campo com o email lembrado, logo depois de a tela carregar. É de uso único (sai do

@@ -85,6 +85,9 @@ test('criar a senha pelo link de "Esqueci a senha" também conta como primeiro a
 test('depois de criada a senha, o formulário do primeiro acesso não troca mais a senha', async ({
   browser,
 }) => {
+  // Três logins e duas senhas criadas (o hash de senha é lento de propósito): com a suíte rodando
+  // em paralelo, passa dos 30s padrão.
+  test.slow();
   const email = studentEmail('primeiroacessoabas');
   const context = await browser.newContext();
   const first = await context.newPage();

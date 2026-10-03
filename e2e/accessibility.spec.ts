@@ -84,3 +84,24 @@ test('com 320px de largura não há rolagem lateral', async ({ page }) => {
   );
   expect(overflow).toBe(false);
 });
+
+test.describe('alto contraste do Windows', () => {
+  test.use({ forcedColors: 'active' });
+
+  test('o botão principal e o cartão continuam desenhados (com borda)', async ({ page }) => {
+    await page.goto('/entrar');
+    const borderOf = (selector: string) =>
+      page
+        .locator(selector)
+        .first()
+        .evaluate((element) => getComputedStyle(element).borderTopWidth);
+    expect(await borderOf('button[type="submit"]')).not.toBe('0px');
+    expect(await borderOf('main section')).not.toBe('0px');
+    // O mascote é uma ilustração: mantém as próprias cores (as pupilas não somem).
+    const adjust = await page
+      .locator('[data-slot="mascot"]')
+      .first()
+      .evaluate((element) => getComputedStyle(element).forcedColorAdjust);
+    expect(adjust).toBe('none');
+  });
+});

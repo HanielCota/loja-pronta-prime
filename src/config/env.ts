@@ -16,6 +16,13 @@ const envSchema = z.object({
     .refine((url) => process.env.NODE_ENV !== 'production' || isSecureOrigin(url), {
       error: 'em produção, BETTER_AUTH_URL precisa ser https://',
     }),
+  /**
+   * Quantos proxies confiáveis ficam na frente do sistema (cada um acrescenta um IP ao
+   * X-Forwarded-For). 1: atrás de um proxy (o comum em hospedagem). 0: exposto direto, sem
+   * proxy: o cabeçalho viria do próprio cliente, então o limite por IP é desligado em vez de
+   * confiar num valor que o atacante inventa.
+   */
+  TRUSTED_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
 });
 
 type Env = z.infer<typeof envSchema>;
@@ -29,6 +36,7 @@ const BUILD_PLACEHOLDERS: Env = {
   DATABASE_URL: 'postgres://build:build@localhost:5432/build',
   BETTER_AUTH_SECRET: 'valor-de-build-nunca-usado-em-requisicoes',
   BETTER_AUTH_URL: 'http://localhost:3000',
+  TRUSTED_PROXY_HOPS: 1,
 };
 
 function loadEnv(): Env {

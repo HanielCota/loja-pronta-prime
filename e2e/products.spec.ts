@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test';
 import { expectNoA11yViolations, signIn } from './support/auth';
 import { PASSWORD, studentEmail } from './support/students';
 
-const SLL = /Boas-vindas ao Sistema Loja Lucrativa/;
-const LOJA_PRONTA = /Boas-vindas à Loja Pronta/;
+const SLL = /As aulas abrem em breve/;
+const LOJA_PRONTA = /Sua loja está na fase/;
 
 test('depois de criar a senha no primeiro acesso, escolhe entre a Loja Pronta e o SLL', async ({
   page,
@@ -22,13 +22,16 @@ test('depois de criar a senha no primeiro acesso, escolhe entre a Loja Pronta e 
 test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, context }) => {
   await signIn(page, studentEmail('doisprodutos'), PASSWORD);
   await expect(page.getByRole('heading', { name: /Pra onde vamos/ })).toBeVisible();
-  // Sem barra do topo: na tela, só os produtos.
-  await expect(page.getByRole('banner')).toHaveCount(0);
+  // O topo é o mesmo das áreas, só com o sair (nada de navegação competindo com os produtos).
+  await expect(page.getByRole('banner').getByRole('link')).toHaveCount(0);
+  await expect(
+    page.getByRole('banner').getByRole('button', { name: 'Sair da conta' }),
+  ).toBeVisible();
   // Leitor de tela: cada produto é um título, o link se chama pelo que faz e o resto do cartão
   // (incluindo qual é o recomendado) vem como descrição.
   await expect(page.getByRole('heading', { level: 2, name: 'Loja Pronta' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Entrar, Loja Pronta' })).toHaveAccessibleDescription(
-    /^Recomendado agora\. Serviço · a gente faz Fase 1 de 7 · Conversa inicial A gente conhece/,
+    /^Recomendado agora\. Serviço · a gente faz Fase 1 de 7 · Conversa inicial Conte pra gente sobre você/,
   );
   // A Loja Pronta vem primeiro.
   await expect(page.getByRole('main').getByRole('link').first()).toContainText('Loja Pronta');
@@ -38,7 +41,7 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
   );
   // E o que acontece agora, no lugar do resumo do produto.
   await expect(page.getByRole('link', { name: /Loja Pronta/ })).toContainText(
-    'A gente conhece o seu perfil',
+    'Conte pra gente sobre você e a sua marca',
   );
   await expectNoA11yViolations(page);
 
@@ -71,10 +74,12 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
   // Na mesma sessão, a saudação não muda; num login seguinte, ela é recebida de volta.
   await page.goto('/sll');
   await expect(page.getByRole('heading', { name: SLL })).toBeVisible();
+  await expect(page.getByText(/^Boas-vindas, E2E!/)).toBeVisible();
   await context.clearCookies();
   await signIn(page, studentEmail('doisprodutos'), PASSWORD, '/sll');
   await expect(page).toHaveURL(/\/sll$/);
-  await expect(page.getByRole('heading', { name: /Bom te ver de novo/ })).toBeVisible();
+  // Quem volta não é cumprimentada de novo (já foi, na escolha de área).
+  await expect(page.getByText(/^Boas-vindas/)).toHaveCount(0);
   // Quem volta vê em qual produto está, acima do título.
   await expect(page.getByText('Sistema Loja Lucrativa (SLL)', { exact: true })).toBeVisible();
 });

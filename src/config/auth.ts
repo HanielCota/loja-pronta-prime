@@ -13,11 +13,15 @@ export const VERIFICATION_LINK_TTL_HOURS = 24;
 
 /**
  * Tentativas por minuto nas Server Actions de acesso.
- * - Por email: protege cada conta mesmo que o atacante troque de IP a cada tentativa.
+ * - Login por email + IP: o limite apertado. Quem tenta adivinhar a senha de uma conta de um
+ *   mesmo lugar para logo; a dona da conta, de outro IP, continua entrando.
+ * - Login só por email: teto mais alto, pra quem troca de IP a cada tentativa. Alto o bastante
+ *   pra que travar a conta de alguém custe muitos IPs.
  * - Por IP: freia quem testa uma senha em muitas contas (só quando o IP é conhecido).
  */
 export const RATE_LIMITS_PER_MINUTE = {
-  loginPerEmail: 5,
+  loginPerEmailAndIp: 5,
+  loginPerEmail: 30,
   loginPerIp: 30,
   recoverPerEmail: 3,
   recoverPerIp: 10,

@@ -19,7 +19,8 @@
   --card: #ffffff;
 
   --primary: #0071e3;
-  --primary-hover: #0077ed;
+  /* Mais escuro no hover (não mais claro): o texto branco precisa de 4,5:1 também com o mouse em cima. */
+  --primary-hover: #0068d6;
   --primary-soft: #e8f2fd;
   --primary-foreground: #ffffff;
   /* Azul mais escuro pra texto de link (contraste 5,6:1 no branco). */
@@ -28,7 +29,8 @@
   --muted: #f5f5f7;
   --muted-foreground: #6e6e73;
 
-  --destructive: #e30000;
+  /* 4,9:1 até sobre o cinza do fundo e o rosa dos alertas (o #e30000 ficava no limite, 4,5:1). */
+  --destructive: #d70015;
   --destructive-soft: #fff1f0;
   --warning: #b25000;
 
@@ -102,6 +104,13 @@
   /* Fundo também no html: no iPhone, o "rebote" da rolagem mostra o html, não o body. */
   html {
     @apply bg-background font-sans;
+  }
+  /* No celular, a conversa tem o botão preso embaixo: o que recebe foco (Tab) rola até ficar
+     acima dele, em vez de parar escondido atrás (WCAG 2.4.11). */
+  @media (width < 40rem) {
+    html {
+      scroll-padding-bottom: 7rem;
+    }
   }
   body {
     @apply bg-background text-foreground antialiased;

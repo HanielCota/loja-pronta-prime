@@ -7,23 +7,27 @@
 export const STORE_PHASES = [
   {
     title: 'Conversa inicial',
-    detail: 'A gente conhece o seu perfil e o que você gosta.',
+    // Mesmas palavras do painel da Loja Pronta ("Conte pra gente sobre você e a sua marca").
+    detail: 'Conte pra gente sobre você e a sua marca: são uns 5 minutos.',
     needsStudent: true,
   },
   {
     title: 'Logo e descrição',
-    detail: 'Você escolhe entre opções de logo e de descrição criadas pra sua loja.',
-    needsStudent: true,
+    detail: 'A equipe cria opções de logo e de descrição, e você escolhe as suas favoritas.',
+    // A escolha das opções ainda não está na plataforma: por enquanto, ela espera a equipe.
+    needsStudent: false,
   },
+  // As fases 3 e 4 dependem dela, mas as telas delas ainda não estão na plataforma (a equipe
+  // conduz pelo WhatsApp): até existirem, a escolha de área não aponta pra uma página sem ação.
   {
     title: 'Conexão com a Shopee',
     detail: 'A sua loja é ligada à sua conta na Shopee.',
-    needsStudent: true,
+    needsStudent: false,
   },
   {
     title: 'Verificação de identidade',
     detail: 'A Shopee confere os seus dados.',
-    needsStudent: true,
+    needsStudent: false,
   },
   {
     title: 'Fornecedor e produtos',

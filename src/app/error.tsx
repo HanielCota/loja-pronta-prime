@@ -24,8 +24,9 @@ export default function ErrorPage({ error, retry }: ErrorPageProps) {
           <Button type="button" onClick={() => retry()}>
             Tentar de novo
           </Button>
+          {/* O início leva pro login quem não estiver dentro: serve pras duas situações. */}
           <Button asChild variant="link" size="inline">
-            <Link href="/entrar">Ir pro login</Link>
+            <Link href="/">Voltar pro início</Link>
           </Button>
           {error.digest ? (
             // Código pra ajudar o suporte a achar o erro nos logs do servidor.
