@@ -180,7 +180,8 @@ test('página que não existe mostra o mascote preocupado e o caminho de volta',
   expect(response?.status()).toBe(404);
   await expect(page.getByRole('heading', { name: 'Essa página não existe' })).toBeVisible();
   await expect(mascot(page)).toHaveAttribute('data-expression', 'worried');
-  await page.getByRole('link', { name: 'Ir pro login' }).click();
+  // Sem sessão, o início leva pro login.
+  await page.getByRole('link', { name: 'Voltar pro início' }).click();
   await expect(page).toHaveURL(/\/entrar$/);
 });
 

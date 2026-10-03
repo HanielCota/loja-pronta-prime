@@ -49,6 +49,7 @@ const STUDENTS: Student[] = [
   { kind: 'conversateclado', emailVerified: true, banned: false, products: ['loja-pronta'] },
   { kind: 'conversasemjs', emailVerified: true, banned: false, products: ['loja-pronta'] },
   { kind: 'conversasemloja', emailVerified: true, banned: false, products: ['sll'] },
+  { kind: 'conversatoques', emailVerified: true, banned: false, products: ['loja-pronta'] },
   // Correções de acesso (e2e/auth-hardening.spec.ts).
   { kind: 'travadaip', emailVerified: true, banned: false },
   { kind: 'loginsemjs', emailVerified: true, banned: false },

@@ -27,7 +27,9 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
   test.slow();
   await signIn(page, studentEmail('conversa'), PASSWORD, '/loja-pronta');
   await expect(page).toHaveURL(/\/loja-pronta$/);
-  await expect(page.getByRole('heading', { name: 'O que fazer agora' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Conte pra gente sobre você e a sua marca' }),
+  ).toBeVisible();
   await expectNoA11yViolations(page);
   await page.getByRole('link', { name: 'Começar a conversa' }).click();
 
@@ -112,29 +114,32 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
 
   await expect(page).toHaveURL(/\/loja-pronta\/conversa\/pronto$/);
   await expect(page.getByRole('heading', { name: /Agora é com a gente/ })).toBeVisible();
-  // O número que ela digitou aparece (dá pra perceber um erro) e, com o SLL, o caminho até ele.
+  // O número que ela digitou aparece (dá pra perceber um erro).
   await expect(page.getByText('(11) 98765-4321')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'trilha de boas-vindas do SLL' })).toHaveAttribute(
-    'href',
-    '/sll',
-  );
   await expectNoA11yViolations(page);
 
   // A loja foi pra fase 2, com a equipe.
-  await page.getByRole('link', { name: 'Voltar pra Loja Pronta' }).click();
+  await page.getByRole('link', { name: 'Ver a minha loja' }).click();
   await expect(page.getByRole('heading', { name: 'Fase 2 de 7' })).toBeVisible();
+  // A jornada concorda com o cartão: a conversa concluída, a fase 2 como a atual.
+  const phases = page
+    .getByRole('list', { name: 'Todas as fases da sua loja' })
+    .getByRole('listitem');
+  await expect(phases.nth(0)).toContainText('(concluída)');
+  await expect(phases.nth(1)).toHaveAttribute('aria-current', 'step');
   await expect(page.getByRole('heading', { name: 'Estamos criando a sua marca' })).toBeVisible();
 
   // Enviada, a conversa não abre de novo.
   await page.goto('/loja-pronta/conversa/vendas');
   await expect(page).toHaveURL(/\/loja-pronta$/);
 
-  // Na escolha, com a loja nas mãos da equipe, o destaque vai pro curso.
+  // Na escolha, com a loja nas mãos da equipe: o texto diz que ela será chamada, e nenhum cartão
+  // é "recomendado" (o curso ainda não abriu).
   await page.goto('/');
-  await expect(page.getByText('Sua loja está com a nossa equipe.', { exact: false })).toBeVisible();
+  await expect(page.getByText(/Sua loja está com a nossa equipe/)).toBeVisible();
   await expect(
     page.getByRole('link', { name: /Sistema Loja Lucrativa/ }),
-  ).toHaveAccessibleDescription(/^Recomendado agora\./);
+  ).not.toHaveAccessibleDescription(/Recomendado/);
 });
 
 test('continua de onde parou e não deixa pular perguntas', async ({ page }) => {
@@ -197,6 +202,25 @@ test('pelo teclado, trocar a opção com as setas não avança sozinho', async (
   await expect(page).toHaveURL(step('estilo'));
 });
 
+test('dois toques rápidos em opções diferentes: um envio só, com a última escolha', async ({
+  page,
+}) => {
+  await signIn(page, studentEmail('conversatoques'), PASSWORD, '/loja-pronta/conversa');
+  await expect(page).toHaveURL(step('vendas'));
+
+  let posts = 0;
+  page.on('request', (request) => {
+    if (request.method() === 'POST' && request.url().includes('/loja-pronta/conversa/')) posts += 1;
+  });
+  await page.getByText('Nunca vendi').click();
+  await page.getByText('Já vendo hoje').click();
+  await expect(page).toHaveURL(step('motivacao'));
+  expect(posts).toBe(1);
+
+  await page.getByRole('link', { name: 'Voltar' }).click();
+  await expect(page.getByRole('radio', { name: 'Já vendo hoje' })).toBeChecked();
+});
+
 test.describe('sem JavaScript', () => {
   test.use({ javaScriptEnabled: false });
 
@@ -251,7 +275,7 @@ test('quem não pode fazer a conversa não chega nela', async ({ page }) => {
   // Loja já depois da fase 1.
   await signIn(page, studentEmail('lojafase3'), PASSWORD, '/loja-pronta/conversa/vendas');
   await expect(page).toHaveURL(/\/loja-pronta$/);
-  await expect(page.getByRole('heading', { name: 'O que fazer agora' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /a conversa/ })).toHaveCount(0);
 });
 
 test('sem a Loja Pronta, a conversa leva pra área que ela tem', async ({ page }) => {
