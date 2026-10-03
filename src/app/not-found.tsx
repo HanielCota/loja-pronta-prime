@@ -18,7 +18,8 @@ export default function NotFound() {
           description="O link pode estar errado ou a página mudou de lugar. Bora voltar pro começo?"
         />
         <Button asChild>
-          <Link href="/entrar">Ir pro login</Link>
+          {/* O início leva pro login quem não estiver dentro: serve pras duas situações. */}
+          <Link href="/">Voltar pro início</Link>
         </Button>
       </BrandCard>
     </PageShell>

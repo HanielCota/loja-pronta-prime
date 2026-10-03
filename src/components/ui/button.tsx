@@ -5,22 +5,27 @@ import { cn } from '@/lib/utils';
 import { Spinner } from './spinner';
 
 // Resposta no instante do toque (active), não só ao soltar: encolhe levemente em 100ms.
+// Carregando (aria-busy) não fica apagado: "Entrando…" é o único aviso da tela nesse momento, e
+// a 60% o texto branco cairia pra 2,4:1. O spinner já diz que está esperando.
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap outline-none select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid disabled:pointer-events-none disabled:opacity-60 aria-disabled:opacity-60 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5",
+  "inline-flex shrink-0 items-center justify-center gap-2 outline-none select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid disabled:pointer-events-none disabled:opacity-60 aria-disabled:not-aria-busy:opacity-60 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5",
   {
     variants: {
       variant: {
+        // Alto contraste do Windows: o fundo some, a borda (da cor de botão do sistema) fica.
         default:
-          'rounded-full bg-primary text-body font-semibold text-primary-foreground transition-[background-color,transform] duration-100 ease-out hover:bg-primary-hover active:scale-[0.97] motion-reduce:active:scale-100',
+          'rounded-full bg-primary text-body font-semibold text-primary-foreground transition-[background-color,transform] duration-100 ease-out hover:bg-primary-hover active:scale-[0.97] motion-reduce:active:scale-100 forced-colors:border-2 forced-colors:border-[ButtonText]',
         ghost:
           'rounded-full text-muted-foreground transition-[background-color,color,opacity] duration-100 hover:bg-muted hover:text-foreground active:opacity-60',
         link: 'rounded-md font-medium text-link underline-offset-4 transition-opacity duration-100 hover:underline active:opacity-60',
       },
       size: {
-        default: 'h-12 w-full px-6',
+        // Altura mínima (não fixa) e quebra de linha: com zoom só de texto ou espaçamento de
+        // texto maior (WCAG 1.4.12), um rótulo longo cresce o botão em vez de vazar dele.
+        default: 'min-h-12 w-full px-6 py-2.5 text-center text-balance',
         icon: 'size-11',
         /** Link de texto com alvo de toque de 44px. */
-        inline: 'h-auto min-h-11 px-0',
+        inline: 'h-auto min-h-11 px-0 whitespace-nowrap',
       },
     },
     defaultVariants: {

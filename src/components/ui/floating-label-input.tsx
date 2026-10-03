@@ -27,7 +27,9 @@ function FloatingLabelInput({ id, label, endSlot, className, ...props }: Floatin
       <Label
         htmlFor={id}
         className={cn(
-          'pointer-events-none absolute top-4 left-4 origin-top-left text-body leading-6 font-normal text-muted-foreground',
+          'pointer-events-none absolute top-4 left-4 origin-top-left truncate text-body leading-6 font-normal text-muted-foreground',
+          // Limite à direita: com zoom alto, um rótulo longo não passa por baixo da ação do campo.
+          endSlot ? 'right-14' : 'right-4',
           'transition-transform duration-200 ease-out motion-reduce:transition-none',
           // Rótulo flutuando: ao focar, quando preenchido e quando o navegador preenche sozinho.
           'peer-focus:-translate-y-2.5 peer-focus:scale-75',
