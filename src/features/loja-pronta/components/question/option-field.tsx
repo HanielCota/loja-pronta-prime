@@ -169,7 +169,7 @@ function Swatch({ label, color, children }: { label: string; color: string; chil
       <span
         aria-hidden="true"
         style={{ backgroundColor: color }}
-        className="grid size-12 place-items-center rounded-full text-white ring-1 ring-black/10 lg:size-14 forced-colors:border forced-colors:border-[CanvasText]"
+        className="grid size-12 place-items-center rounded-full text-white ring-1 ring-foreground/10 lg:size-14 forced-colors:border forced-colors:border-[CanvasText]"
       >
         <CheckIcon className="hidden size-6 group-has-checked/opt:block" />
       </span>

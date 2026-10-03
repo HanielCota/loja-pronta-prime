@@ -20,7 +20,7 @@ type ConversationLayoutProps = {
 };
 
 const topLink =
-  'inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full text-body font-medium transition-colors duration-100 outline-none hover:bg-black/5 focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-solid';
+  'inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full text-body font-medium transition-colors duration-100 outline-none hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-solid';
 
 /**
  * Moldura das telas passo a passo (conversa e marca), pensada pra quem tem pouca prática:

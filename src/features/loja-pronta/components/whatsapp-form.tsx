@@ -134,7 +134,7 @@ export function WhatsappForm({ helpId }: { helpId: string }) {
         endSlot={
           <span aria-hidden="true" className="grid size-11 place-items-center">
             {complete ? (
-              <CircleCheckIcon className="size-6 text-green-700" />
+              <CircleCheckIcon className="size-6 text-progress-text" />
             ) : (
               <MessageCircleIcon className="size-6 text-muted-foreground" />
             )}
@@ -146,7 +146,7 @@ export function WhatsappForm({ helpId }: { helpId: string }) {
         id={hintId}
         className={cn(
           'flex items-start gap-1.5 px-1 text-sm',
-          hint.tone === 'ok' && 'font-semibold text-green-700',
+          hint.tone === 'ok' && 'font-semibold text-progress-text',
           hint.tone === 'warning' && 'text-warning',
           hint.tone === 'info' && 'text-muted-foreground',
         )}

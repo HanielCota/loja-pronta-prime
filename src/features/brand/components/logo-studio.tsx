@@ -393,7 +393,7 @@ function Section({
         aria-expanded={open}
         aria-controls={panelId}
         onClick={onToggle}
-        className="flex min-h-14 w-full items-center gap-3 rounded-2xl px-4 text-left outline-none hover:bg-black/[0.03] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid"
+        className="flex min-h-14 w-full items-center gap-3 rounded-2xl px-4 text-left outline-none hover:bg-foreground/[0.04] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid"
       >
         <span
           aria-hidden="true"
@@ -451,7 +451,7 @@ function Swatch({
   return (
     <label
       className={cn(
-        'group flex min-w-0 cursor-pointer flex-col items-center gap-1.5 rounded-2xl border-2 border-transparent py-1.5 transition-colors duration-100 hover:bg-black/[0.04]',
+        'group flex min-w-0 cursor-pointer flex-col items-center gap-1.5 rounded-2xl border-2 border-transparent py-1.5 transition-colors duration-100 hover:bg-foreground/[0.05]',
         // Alto contraste: o sistema pintaria a borda "transparente"; só a escolhida ganha a dele.
         'forced-colors:border-[Canvas] forced-colors:has-checked:border-[Highlight]',
         optionFocus,
@@ -468,7 +468,7 @@ function Swatch({
       <span
         aria-hidden="true"
         style={{ backgroundColor: hex }}
-        className="grid size-11 place-items-center rounded-full ring-1 ring-black/10 ring-offset-2 ring-offset-card transition-shadow duration-100 forced-color-adjust-none group-has-checked:ring-[2.5px] group-has-checked:ring-foreground forced-colors:border forced-colors:border-[CanvasText]"
+        className="grid size-11 place-items-center rounded-full ring-1 ring-foreground/10 ring-offset-2 ring-offset-card transition-shadow duration-100 forced-color-adjust-none group-has-checked:ring-[2.5px] group-has-checked:ring-foreground forced-colors:border forced-colors:border-[CanvasText]"
       >
         <CheckIcon
           strokeWidth={3}
