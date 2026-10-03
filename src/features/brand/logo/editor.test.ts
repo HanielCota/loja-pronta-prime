@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 import {
+  addElement,
   alignElement,
   duplicateElement,
   elementLabel,
+  mainColor,
   moveLayer,
   nextId,
   record,
@@ -163,5 +165,29 @@ describe('histórico', () => {
   test('sem nada pra desfazer ou refazer: nada', () => {
     expect(undo({ past: [], future: [] }, SCENE)).toBeUndefined();
     expect(redo({ past: [], future: [] }, SCENE)).toBeUndefined();
+  });
+});
+
+describe('addElement e mainColor', () => {
+  test('o novo entra no meio, na frente de todos, e vira válido', () => {
+    const result = addElement(SCENE, { type: 'icon', icon: 'osso', color: '#000000', size: 200 })!;
+    const added = result.scene.elements.at(-1)!;
+    expect(added).toMatchObject({ id: result.id, x: 500, y: 500, rotation: 0, opacity: 1 });
+    expect(logoSceneSchema.safeParse(result.scene).success).toBe(true);
+  });
+
+  test('com a cena cheia, não entra', () => {
+    const full = {
+      ...SCENE,
+      elements: Array.from({ length: 24 }, (_, i) => ({ ...ICON, id: `i${i}` })),
+    };
+    expect(
+      addElement(full, { type: 'icon', icon: 'osso', color: '#000000', size: 200 }),
+    ).toBeUndefined();
+  });
+
+  test('a cor principal é a do nome', () => {
+    expect(mainColor(SCENE)).toBe('#e85d8e');
+    expect(mainColor({ ...SCENE, elements: [] })).toBe('#1d1d1f');
   });
 });

@@ -110,6 +110,16 @@ describe('renderSceneSvg', async () => {
     expect(svg).toContain('<rect x="-150"');
   });
 
+  test('desenho cheio pinta o miolo; os desenhos só do editor também valem', () => {
+    const icon = { id: 'a', type: 'icon', icon: 'osso', color: '#123456', size: 200, filled: true };
+    const parsed = logoSceneSchema.safeParse(
+      scene([{ ...icon, x: 500, y: 500, rotation: 0, opacity: 1 }]),
+    );
+    expect(parsed.success).toBe(true);
+    const svg = renderSceneSvg(parsed.data!, 'Bella', fonts);
+    expect(svg).toContain('fill="#123456" stroke="#123456"');
+  });
+
   test('texto dela vira desenho: nada do que ela digitou entra como texto', () => {
     const custom = { ...NAME, id: 'slogan', source: 'custom', value: '<script>alert(1)</script>' };
     const svg = renderSceneSvg(scene([custom]) as LogoScene, 'Bella', fonts);

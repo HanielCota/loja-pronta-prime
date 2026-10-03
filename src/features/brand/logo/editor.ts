@@ -1,4 +1,4 @@
-import { LOGO_ICONS } from './icons';
+import { SCENE_ICONS } from './icons';
 import {
   MAX_ELEMENTS,
   SCENE_SIZE,
@@ -59,7 +59,7 @@ export function elementLabel(element: SceneElement): string {
       if (element.source === 'initial') return 'Inicial do nome';
       return `Texto: ${element.value ?? ''}`;
     case 'icon':
-      return `Desenho: ${LOGO_ICONS.find((icon) => icon.id === element.icon)?.label ?? ''}`;
+      return `Desenho: ${SCENE_ICONS.find((icon) => icon.id === element.icon)?.label ?? ''}`;
     case 'shape':
       return { circle: 'Círculo', ring: 'Anel', rect: 'Retângulo' }[element.shape];
   }
@@ -170,6 +170,35 @@ export function alignElement(
     case 'bottom':
       return { ...element, y: clampCenter(SCENE_SIZE - half.height) };
   }
+}
+
+/** O que um elemento novo traz (o lugar, o giro e a transparência vêm do editor). */
+export type NewElement = SceneElement extends infer T
+  ? T extends SceneElement
+    ? Omit<T, 'id' | 'x' | 'y' | 'rotation' | 'opacity'>
+    : never
+  : never;
+
+/**
+ * Põe um elemento novo no meio da tela, na frente de todos. Com a cena cheia (MAX_ELEMENTS),
+ * nada muda.
+ */
+export function addElement(
+  scene: LogoScene,
+  element: NewElement,
+): { scene: LogoScene; id: string } | undefined {
+  if (scene.elements.length >= MAX_ELEMENTS) return undefined;
+  const id = nextId(scene);
+  const placed = { ...element, id, x: CENTER, y: CENTER, rotation: 0, opacity: 1 } as SceneElement;
+  return { scene: { ...scene, elements: [...scene.elements, placed] }, id };
+}
+
+/** A cor principal do logo (a do nome, ou a do primeiro elemento), pro que ela adicionar. */
+export function mainColor(scene: LogoScene): string {
+  const name = scene.elements.find(
+    (element) => element.type === 'text' && element.source === 'name',
+  );
+  return (name ?? scene.elements[0])?.color ?? '#1d1d1f';
 }
 
 /** Um id que ainda não existe na cena. */
