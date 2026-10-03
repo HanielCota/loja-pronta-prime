@@ -18,9 +18,9 @@ import { submitWithoutReset } from '@/lib/forms';
 import { cn } from '@/lib/utils';
 import { finishConversation } from '../server/actions';
 import {
+  cleanWhatsapp,
   formatTypedWhatsapp,
   parseWhatsapp,
-  typedWhatsapp,
   WHATSAPP_EXAMPLE,
   whatsappHint,
 } from '../whatsapp';
@@ -48,7 +48,7 @@ function caretAfterDigits(formatted: string, count: number): number {
 export function WhatsappForm({ helpId }: { helpId: string }) {
   const [state, formAction, pending] = useActionState(finishConversation, undefined);
   const [value, setValue] = useState('');
-  const [removed, setRemoved] = useState<'pais' | 'zero'>();
+  const [removed, setRemoved] = useState<ReturnType<typeof cleanWhatsapp>['removed']>();
   const [clientError, setClientError] = useState<string>();
   const inputRef = useRef<HTMLInputElement>(null);
   const caretRef = useRef<number | null>(null);
@@ -56,7 +56,7 @@ export function WhatsappForm({ helpId }: { helpId: string }) {
   const hintId = useId();
   const error = clientError ?? state?.error;
 
-  const { digits } = typedWhatsapp(value);
+  const { digits } = cleanWhatsapp(value);
   const hint = whatsappHint(digits, removed);
   const complete = hint.tone === 'ok';
 
@@ -82,16 +82,16 @@ export function WhatsappForm({ helpId }: { helpId: string }) {
     const raw = event.target.value;
     const caret = event.target.selectionStart ?? raw.length;
     let before = raw.slice(0, caret).replace(/\D/g, '').length;
-    const typed = typedWhatsapp(raw);
+    const typed = cleanWhatsapp(raw);
     let next = typed.digits;
     // Apagou só um símbolo (parêntese, espaço, traço): apaga o número antes dele, senão a
     // formatação poria o símbolo de volta e o apagar pareceria travado.
-    if (raw.length < value.length && next === typedWhatsapp(value).digits && before > 0) {
+    if (raw.length < value.length && next === cleanWhatsapp(value).digits && before > 0) {
       next = next.slice(0, before - 1) + next.slice(before);
       before -= 1;
     }
     const formatted = formatTypedWhatsapp(next);
-    // Tirou o 55 ou o 0 da frente: o cursor vai pro fim (as posições mudaram).
+    // Tirou o 55, o 0 ou a operadora da frente: o cursor vai pro fim (as posições mudaram).
     caretRef.current = typed.removed ? formatted.length : caretAfterDigits(formatted, before);
     setRemoved(typed.removed);
     setValue(formatted);
