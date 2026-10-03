@@ -46,8 +46,24 @@ export function joinList(items: readonly string[]): string {
   return `${items.slice(0, -1).join(', ')} e ${items.at(-1)}`;
 }
 
-/** 6 nomes diferentes, todos dentro do limite da Shopee. */
-export function nameSuggestions(answers: OnboardingAnswers, studentName: string): string[] {
+/** Sem palavra repetida ("Casa Casa", "Pet & Pet"): soa como erro. */
+const repeatsWord = (name: string): boolean => {
+  const words = name
+    .toLowerCase()
+    .split(/[\s&]+/)
+    .filter(Boolean);
+  return new Set(words).size !== words.length;
+};
+
+/**
+ * Nomes diferentes (6, ou `limit`), todos dentro do limite da Shopee. Os primeiros são os mais
+ * fortes; os outros servem pro "Outras ideias".
+ */
+export function nameSuggestions(
+  answers: OnboardingAnswers,
+  studentName: string,
+  limit = 6,
+): string[] {
   const categories = list(answers.categorias);
   const words = categories.flatMap((category) => CATEGORY_WORDS[category] ?? []);
   const [first = 'Loja', second = first, third = second] = words.length ? words : ['Loja'];
@@ -65,11 +81,20 @@ export function nameSuggestions(answers: OnboardingAnswers, studentName: string)
     `Ateliê ${second}`,
     `Espaço ${third}`,
     `${adjective} ${third}`,
+    `${other} ${second}`,
+    `Clube ${first}`,
+    owner && `${second} da ${owner}`,
+    `${first} & ${second}`,
+    `Universo ${third}`,
+    `${place} ${first}`,
+    `Empório ${second}`,
+    owner && `Ateliê da ${owner}`,
+    `${adjective} ${second}`,
   ];
   const unique = [...new Set(candidates.filter(Boolean))].filter(
-    (name) => name.length <= BRAND_NAME_MAX,
+    (name) => name.length <= BRAND_NAME_MAX && !repeatsWord(name),
   );
-  return unique.slice(0, 6);
+  return unique.slice(0, limit);
 }
 
 /** 3 descrições prontas pra ela escolher (e editar), dentro do limite da Shopee. */

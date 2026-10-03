@@ -28,6 +28,26 @@ describe('nameSuggestions', () => {
     }
   });
 
+  test('mais ideias pro "Outras ideias", sem repetir nem palavra dobrada', () => {
+    const names = nameSuggestions(
+      { categorias: ['Casa e decoração'], estilo: 'Moderno' },
+      'Ana',
+      18,
+    );
+    expect(names.length).toBeGreaterThan(12);
+    expect(new Set(names).size).toBe(names.length);
+    expect(names.slice(0, 6)).toEqual(
+      nameSuggestions({ categorias: ['Casa e decoração'], estilo: 'Moderno' }, 'Ana'),
+    );
+    for (const name of names) {
+      const words = name
+        .toLowerCase()
+        .split(/[\s&]+/)
+        .filter(Boolean);
+      expect(new Set(words).size).toBe(words.length);
+    }
+  });
+
   test('mesmas respostas, mesmas sugestões', () => {
     const answers = { categorias: ['Beleza', 'Fitness'], estilo: 'Moderno' };
     expect(nameSuggestions(answers, 'Ana')).toEqual(nameSuggestions(answers, 'Ana'));
