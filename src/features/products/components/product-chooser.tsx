@@ -108,7 +108,7 @@ function StatusBlock({ caption, label, bar, detail, id }: ProductStatus & { id: 
                 'h-1.5 flex-1 rounded-full border border-transparent',
                 index < bar.step
                   ? 'bg-primary forced-colors:bg-[CanvasText]'
-                  : 'bg-border forced-colors:border-[CanvasText]',
+                  : 'bg-track forced-colors:border-[CanvasText]',
               )}
             />
           ))}

@@ -55,7 +55,7 @@ export function StorePanel({ user, firstVisit, hasChoice, phase, conversation }:
                 'h-2 flex-1 rounded-full border border-transparent',
                 index < phase
                   ? 'bg-primary forced-colors:bg-[CanvasText]'
-                  : 'bg-border forced-colors:border-[CanvasText]',
+                  : 'bg-track forced-colors:border-[CanvasText]',
               )}
             />
           ))}
