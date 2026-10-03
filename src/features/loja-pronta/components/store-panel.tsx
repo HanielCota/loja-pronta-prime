@@ -10,8 +10,6 @@ import { Mascot } from '@/components/brand/mascot';
 import { Button } from '@/components/ui/button';
 import { STORE_PHASES, STORE_STAGES } from '@/config/store-phases';
 import { TEAM_WHATSAPP } from '@/config/support';
-import type { LogoConfig } from '@/features/brand/logo/config';
-import { logoPreviewSrc } from '@/features/brand/logo-preview';
 import { BRAND_PATH, brandStepPath } from '@/features/brand/steps';
 import { AreaShell, panelCard } from '@/features/member/components/area-shell';
 import { greetingName } from '@/features/products/names';
@@ -29,7 +27,8 @@ type StorePanelProps = {
   phase: number;
   conversation: ConversationStatus;
   /** A marca, quando já tem: o nome vira o título e o logo aparece no destaque. */
-  brand: { name: string | null; logo: LogoConfig | null; started: boolean; confirmed: boolean };
+  /** `logoSrc`: a imagem do logo salvo (savedLogoSrc), quando já tem. */
+  brand: { name: string | null; logoSrc: string | null; started: boolean; confirmed: boolean };
 };
 
 /**
@@ -138,7 +137,7 @@ function NextStep({
   brand: StorePanelProps['brand'];
 }) {
   const hero = heroFor(phase, conversation, brand.started);
-  const showLogo = phase >= 3 && brand.logo && brand.name;
+  const showLogo = phase >= 3 && brand.logoSrc && brand.name;
 
   return (
     <section
@@ -149,7 +148,7 @@ function NextStep({
         {showLogo ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={logoPreviewSrc(brand.logo!)}
+            src={brand.logoSrc!}
             alt={`Logo da loja ${brand.name}`}
             width={176}
             height={176}

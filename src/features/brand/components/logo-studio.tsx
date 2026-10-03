@@ -1,6 +1,14 @@
 'use client';
 
-import { ArrowRightIcon, CheckIcon, ChevronDownIcon, RotateCcwIcon, Undo2Icon } from 'lucide-react';
+import {
+  ArrowRightIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  MoveIcon,
+  RotateCcwIcon,
+  Undo2Icon,
+} from 'lucide-react';
+import Link from 'next/link';
 import { createElement, useEffect, useRef, useState, type ReactNode } from 'react';
 import { nodMascot } from '@/components/brand/mascot';
 import { Button } from '@/components/ui/button';
@@ -17,6 +25,7 @@ import { LOGO_ICONS, type LogoIconId } from '../logo/icons';
 import { LOGO_COLORS } from '../logo/palette';
 import { logoPreviewSrc } from '../logo-preview';
 import { saveLogo } from '../server/actions';
+import { LOGO_EDITOR_PATH } from '../steps';
 import { BrandForm, useBrandPending } from './brand-form';
 import { LogoMockups } from './logo-mockups';
 
@@ -97,6 +106,8 @@ type LogoStudioProps = {
   /** O nome da loja, pro "Como fica por aí". */
   storeName: string;
   editing: boolean;
+  /** O logo salvo foi montado no editor livre (salvar aqui troca pelo do Modo fácil). */
+  freeEdited?: boolean;
 };
 
 /**
@@ -105,7 +116,13 @@ type LogoStudioProps = {
  * escolhido. Cada toque muda a prévia na hora; "Desfazer" volta o último toque e "Voltar ao
  * modelo", o logo do começo. "Como fica por aí" mostra o logo na Shopee, na caixa e no cartão.
  */
-export function LogoStudio({ initial, base, storeName, editing }: LogoStudioProps) {
+export function LogoStudio({
+  initial,
+  base,
+  storeName,
+  editing,
+  freeEdited = false,
+}: LogoStudioProps) {
   const [config, setConfig] = useState(initial);
   const [history, setHistory] = useState<LogoConfig[]>([]);
   const [open, setOpen] = useState<SectionId | null>('cor');
@@ -129,13 +146,14 @@ export function LogoStudio({ initial, base, storeName, editing }: LogoStudioProp
     (key) => config[key] === base[key],
   );
   const src = logoPreviewSrc(config);
+  const editorHref = `${LOGO_EDITOR_PATH}${editing ? '?editar=1' : ''}`;
 
   return (
     <BrandForm action={saveLogo} editing={editing}>
       {/* Celular: título, prévia (presa no topo ao rolar), as partes, "Como fica por aí" e o botão.
           Computador: a prévia e o "Como fica por aí" presos à esquerda; o resto à direita. Assim o
           logo nunca sai da tela enquanto ela toca nas opções. */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] lg:grid-rows-[auto_auto_1fr] lg:gap-x-14 lg:gap-y-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] lg:grid-rows-[auto_auto_auto_1fr] lg:gap-x-14 lg:gap-y-6">
         {/* Sem o mascote: aqui o desenho grande é o logo dela. */}
         <div className="flex flex-col gap-2 text-center lg:col-start-2 lg:row-start-1 lg:text-left">
           <h1
@@ -148,11 +166,22 @@ export function LogoStudio({ initial, base, storeName, editing }: LogoStudioProp
           <p className="text-body text-pretty text-muted-foreground">
             Abra uma parte e toque numa opção. O logo muda na hora.
           </p>
+          {freeEdited ? (
+            <p className="rounded-2xl bg-primary-soft px-4 py-3 text-left text-body text-pretty">
+              Seu logo foi montado no editor livre. Se salvar aqui, ele volta a ser o do Modo fácil.{' '}
+              <Link
+                href={editorHref}
+                className="hidden font-semibold text-link underline underline-offset-4 lg:inline"
+              >
+                Continuar no editor livre
+              </Link>
+            </p>
+          ) : null}
         </div>
         <FocusOnArrival targetId={TITLE_ID} />
 
         {/* No celular, `contents`: a prévia vira item solto da grade e fica presa no topo. */}
-        <div className="contents lg:sticky lg:top-6 lg:col-start-1 lg:row-span-3 lg:row-start-1 lg:flex lg:flex-col lg:gap-8 lg:self-start">
+        <div className="contents lg:sticky lg:top-6 lg:col-start-1 lg:row-span-4 lg:row-start-1 lg:flex lg:flex-col lg:gap-8 lg:self-start">
           <div
             ref={previewRef}
             className="sticky -top-px z-10 -mx-4 bg-background/90 px-4 py-3 backdrop-blur-md sm:-mx-6 sm:px-6 lg:static lg:m-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none"
@@ -341,6 +370,21 @@ export function LogoStudio({ initial, base, storeName, editing }: LogoStudioProp
             </Section>
           ))}
         </ol>
+
+        {/* O editor livre precisa de tela grande: no celular, o Modo fácil é o caminho. */}
+        <Link
+          href={editorHref}
+          className="hidden min-h-14 items-center gap-3 rounded-2xl border border-dashed border-input px-4 text-body outline-none hover:border-primary hover:bg-primary-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid lg:col-start-2 lg:row-start-3 lg:flex"
+        >
+          <MoveIcon aria-hidden="true" className="size-5 shrink-0 text-link" />
+          <span className="flex-1">
+            <span className="font-semibold">Editar livremente</span>
+            <span className="block text-sm text-muted-foreground">
+              Mover, girar e mudar o tamanho de cada parte
+            </span>
+          </span>
+          <ArrowRightIcon aria-hidden="true" className="size-5 shrink-0 text-link" />
+        </Link>
 
         {/* No celular, o "Como fica por aí" fica guardado antes do botão: aberto, empurraria o botão
             pra longe; no fim da página, ninguém chegava nele. */}
@@ -554,7 +598,7 @@ function SaveButton() {
   const pending = useBrandPending();
   return (
     // Item solto da grade: dentro de outra caixa, no celular, não ficaria preso embaixo da tela.
-    <StickyAction className="lg:col-start-2 lg:row-start-3">
+    <StickyAction className="lg:col-start-2 lg:row-start-4">
       <Button type="submit" loading={pending} loadingText="Salvando…">
         Gostei, continuar
         {pending ? null : <ArrowRightIcon aria-hidden="true" />}

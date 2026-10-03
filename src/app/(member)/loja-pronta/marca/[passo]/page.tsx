@@ -6,6 +6,7 @@ import { LogoStudio } from '@/features/brand/components/logo-studio';
 import { NameStep } from '@/features/brand/components/name-step';
 import { TemplateStep } from '@/features/brand/components/template-step';
 import { logoTemplates } from '@/features/brand/logo/config';
+import { savedLogoSrc } from '@/features/brand/logo-preview';
 import { requireBrandStudio } from '@/features/brand/server/brand';
 import {
   brandStepPath,
@@ -46,7 +47,7 @@ export default async function BrandStepPage({ params, searchParams }: PageProps)
       account={student.session.user}
       header={brandStepHeader(passo, Boolean(brand.name))}
       savedLabel="Escolhas salvas"
-      wide={passo === 'ajustar'}
+      width={passo === 'ajustar' ? 'wide' : 'normal'}
       backHref={
         editing ? brandStepPath('revisao') : revising ? '/loja-pronta' : previousBrandPath(passo)
       }
@@ -67,6 +68,7 @@ export default async function BrandStepPage({ params, searchParams }: PageProps)
           initial={brand.logo}
           base={templates[brand.logo.template] ?? brand.logo}
           storeName={brand.name ?? ''}
+          freeEdited={Boolean(brand.logoScene)}
           editing={editing}
         />
       ) : null}
@@ -81,7 +83,8 @@ export default async function BrandStepPage({ params, searchParams }: PageProps)
       {passo === 'revisao' && brand.name && brand.logo && brand.description ? (
         <BrandReview
           name={brand.name}
-          logo={brand.logo}
+          logoSrc={savedLogoSrc({ ...brand, logo: brand.logo })}
+          freeEdited={Boolean(brand.logoScene)}
           description={brand.description}
           revising={revising}
         />

@@ -8,26 +8,52 @@ import { getStudentProducts, requireProduct } from '@/features/products/server/a
 import { db } from '@/server/db';
 import { storeBrand } from '@/server/db/schema';
 import { logoConfigSchema } from '../logo/config';
+import { logoSceneSchema, type LogoScene } from '../logo/scene';
 import type { BrandDraft } from '../steps';
 
-export type Brand = BrandDraft & { completedAt: Date | null };
+/**
+ * `logoScene`: o logo do editor livre, quando ela usou (vale no lugar do `logo`). `updatedAt`:
+ * muda a cada escolha salva, pra imagem do logo salvo não vir velha do cache.
+ */
+export type Brand = BrandDraft & {
+  logoScene: LogoScene | null;
+  completedAt: Date | null;
+  updatedAt: Date | null;
+};
 
-const EMPTY: Brand = { name: null, logo: null, description: null, completedAt: null };
+const EMPTY: Brand = {
+  name: null,
+  logo: null,
+  logoScene: null,
+  description: null,
+  completedAt: null,
+  updatedAt: null,
+};
 
-/** A marca como está (sem linha: nada escolhido ainda). Logo que não vale mais conta como sem logo. */
+/**
+ * A marca como está (sem linha: nada escolhido ainda). Logo (ou cena) que não vale mais conta como
+ * sem logo; cena sem modelo embaixo não vale.
+ */
 export async function getBrand(userId: string): Promise<Brand> {
   const [row] = await db
     .select({
       name: storeBrand.name,
       logo: storeBrand.logo,
+      logoScene: storeBrand.logoScene,
       description: storeBrand.description,
       completedAt: storeBrand.completedAt,
+      updatedAt: storeBrand.updatedAt,
     })
     .from(storeBrand)
     .where(eq(storeBrand.userId, userId));
   if (!row) return EMPTY;
   const logo = logoConfigSchema.safeParse(row.logo);
-  return { ...row, logo: logo.success ? logo.data : null };
+  const scene = logoSceneSchema.safeParse(row.logoScene);
+  return {
+    ...row,
+    logo: logo.success ? logo.data : null,
+    logoScene: logo.success && scene.success ? scene.data : null,
+  };
 }
 
 /**

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { CardHeading } from '@/components/brand/card-heading';
 import { Button } from '@/components/ui/button';
-import { LOGO_DOWNLOAD_PATH, logoPreviewSrc } from '@/features/brand/logo-preview';
+import { LOGO_DOWNLOAD_PATH, savedLogoSrc } from '@/features/brand/logo-preview';
 import { getBrand } from '@/features/brand/server/brand';
 import { BRAND_DONE_PATH, BRAND_PATH } from '@/features/brand/steps';
 import {
@@ -39,7 +39,7 @@ export default async function BrandDonePage() {
       <div className="flex flex-col items-center gap-6">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={logoPreviewSrc(brand.logo)}
+          src={savedLogoSrc({ ...brand, logo: brand.logo })}
           alt={`Logo da loja ${brand.name}`}
           width={220}
           height={220}

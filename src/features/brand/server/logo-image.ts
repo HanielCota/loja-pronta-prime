@@ -1,6 +1,7 @@
 import { logoConfigSchema, logoTemplates, type LogoConfig } from '../logo/config';
 import { loadLogoFonts } from '../logo/fonts.server';
 import { renderLogoSvg } from '../logo/render';
+import { renderSceneSvg } from '../logo/scene-render';
 import { getOwnBrandForImage } from './brand';
 
 /** Logo da URL da prévia (os nomes curtos de logoPreviewSrc). */
@@ -26,9 +27,15 @@ export async function ownLogoSvg(
 ): Promise<{ svg: string; name: string } | undefined> {
   const own = await getOwnBrandForImage();
   if (!own) return undefined;
-  const config = logoFromSearchParams(params) ?? own.brand.logo ?? logoTemplates(own.answers)[0];
-  if (!config) return undefined;
   const name =
     own.brand.name ?? (typeof own.answers.nome === 'string' ? own.answers.nome : 'Sua loja');
-  return { svg: renderLogoSvg(config, name, await loadLogoFonts()), name };
+  const fonts = await loadLogoFonts();
+  const requested = logoFromSearchParams(params);
+  // O salvo do editor livre vale no lugar do do estúdio (a prévia de um modelo ainda vem da URL).
+  if (!requested && own.brand.logoScene) {
+    return { svg: renderSceneSvg(own.brand.logoScene, name, fonts), name };
+  }
+  const config = requested ?? own.brand.logo ?? logoTemplates(own.answers)[0];
+  if (!config) return undefined;
+  return { svg: renderLogoSvg(config, name, fonts), name };
 }

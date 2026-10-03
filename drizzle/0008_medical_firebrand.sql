@@ -1,0 +1,2 @@
+ALTER TABLE "store_brand" ADD COLUMN "logo_scene" jsonb;--> statement-breakpoint
+ALTER TABLE "store_brand" ADD CONSTRAINT "store_brand_logo_scene_check" CHECK ("store_brand"."logo_scene" is null or (jsonb_typeof("store_brand"."logo_scene") = 'object' and "store_brand"."logo" is not null));

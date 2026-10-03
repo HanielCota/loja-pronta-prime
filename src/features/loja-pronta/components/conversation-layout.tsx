@@ -14,8 +14,11 @@ type ConversationLayoutProps = {
   savedLabel: string;
   /** Pra onde o "Voltar" leva. */
   backHref: string;
-  /** Telas de trabalho (o estúdio do logo): no computador, a largura da barra do topo. */
-  wide?: boolean;
+  /**
+   * Largura no computador: `normal` (perguntas), `wide` (o estúdio, a largura da barra do topo) ou
+   * `editor` (o editor livre, que precisa de espaço pros painéis dos lados).
+   */
+  width?: 'normal' | 'wide' | 'editor';
   children: ReactNode;
 };
 
@@ -38,12 +41,12 @@ export function ConversationLayout({
   header,
   savedLabel,
   backHref,
-  wide = false,
+  width = 'normal',
   children,
 }: ConversationLayoutProps) {
   const column = cn(
     'mx-auto flex w-full max-w-[560px] flex-col px-4 sm:px-6',
-    wide ? 'lg:max-w-[1040px]' : 'lg:max-w-[680px]',
+    { normal: 'lg:max-w-[680px]', wide: 'lg:max-w-[1040px]', editor: 'lg:max-w-[1320px]' }[width],
   );
   return (
     <div className="flex min-h-dvh flex-col">
@@ -98,7 +101,15 @@ export function ConversationLayout({
           </Link>
         </div>
       </nav>
-      <main className={cn(column, 'flex-1 gap-8 pt-8 pb-10 sm:justify-center sm:py-12')}>
+      <main
+        className={cn(
+          column,
+          // O editor usa a altura toda (o quadro cabe na janela); o resto fica no meio.
+          width === 'editor'
+            ? 'flex-1 gap-5 pt-6 pb-6'
+            : 'flex-1 gap-8 pt-8 pb-10 sm:justify-center sm:py-12',
+        )}
+      >
         {children}
       </main>
     </div>

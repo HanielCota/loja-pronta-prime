@@ -40,7 +40,8 @@ export type StudentKind =
   | 'perfilsenha'
   | 'revisaconversa'
   | 'revisamarca'
-  | 'revisatravada';
+  | 'revisatravada'
+  | 'editorlivre';
 
 /** Id desta execução, definido no global-setup: cada execução usa alunas próprias. */
 export function runId(): string {
