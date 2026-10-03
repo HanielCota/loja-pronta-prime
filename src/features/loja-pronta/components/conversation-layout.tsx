@@ -64,7 +64,13 @@ export function ConversationLayout({
             {/* Sem "·" entre os dois: no celular, o aviso desce pra linha de baixo e o ponto
                 ficaria sobrando no começo dela. O ✓ já separa. */}
             <p className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm">
-              <span className="font-semibold">{header.label}</span>
+              <span className="font-semibold">
+                {header.label}
+                {/* O nome da etapa vai junto pro leitor de tela (na tela, ele está embaixo da barra). */}
+                {header.names?.[header.filled - 1] ? (
+                  <span className="sr-only">: {header.names[header.filled - 1]}</span>
+                ) : null}
+              </span>
               {header.saved ? (
                 <span className="inline-flex items-center gap-1 text-muted-foreground">
                   <CheckIcon aria-hidden="true" className="size-4" />
@@ -86,6 +92,23 @@ export function ConversationLayout({
                 />
               ))}
             </div>
+            {header.names ? (
+              <div aria-hidden="true" className="flex gap-1">
+                {header.names.map((name, index) => (
+                  <span
+                    key={name}
+                    className={cn(
+                      'flex-1 truncate text-xs',
+                      index === header.filled - 1
+                        ? 'font-semibold text-foreground'
+                        : 'text-muted-foreground',
+                    )}
+                  >
+                    {name}
+                  </span>
+                ))}
+              </div>
+            ) : null}
           </div>
           {/* Fora do computador, só "Sair" na tela (cabe ao lado da barra); o nome completo
               continua pro leitor de tela, começando pelo que está escrito. */}

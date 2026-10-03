@@ -104,4 +104,9 @@ export type StepHeader = {
   total: number;
   /** Já tem resposta salva: o topo avisa, pra ela sair sem medo de perder. */
   saved: boolean;
+  /**
+   * O nome de cada etapa, embaixo do tracinho dela ("Nome", "Modelo"...): quando a barra tem
+   * poucas etapas, dá pra dizer o que é cada uma.
+   */
+  names?: readonly string[];
 };

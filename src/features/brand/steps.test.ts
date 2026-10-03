@@ -10,12 +10,15 @@ describe('passos da marca', () => {
       filled: 1,
       total: 4,
       saved: false,
+      names: ['Nome', 'Modelo', 'Logo', 'Texto'],
     });
     expect(brandStepHeader('ajustar', true)).toMatchObject({ label: 'Passo 3 de 4', saved: true });
     expect(brandStepHeader('revisao', true)).toMatchObject({
       label: 'Revisão da marca',
       filled: 4,
     });
+    // Na revisão, sem os nomes: a barra está toda cheia e o rótulo já diz onde ela está.
+    expect(brandStepHeader('revisao', true)).not.toHaveProperty('names');
     // Nome já escolhido (voltou da revisão pra mudar): o passo 1 também avisa.
     expect(brandStepHeader('nome', true).saved).toBe(true);
   });
