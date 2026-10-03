@@ -188,10 +188,12 @@ function TalkToTeam() {
  * O caminho em 3 etapas: as feitas com ✓, a atual marcada com "Você está aqui" e as próximas
  * esmaecidas. Na vertical no celular e na horizontal no computador, com a linha entre elas
  * enchendo de azul conforme ela avança.
+ * Num cartão igual ao do destaque: as duas caixas com a mesma largura e a mesma margem interna,
+ * pra o começo e o fim de cada uma se alinharem.
  */
 function Path({ stages }: { stages: StageView[] }) {
   return (
-    <section aria-labelledby="seu-caminho" className="-mt-2 flex flex-col gap-4">
+    <section aria-labelledby="seu-caminho" className={cn(panelCard, 'gap-5')}>
       <h2
         id="seu-caminho"
         className="text-sm font-semibold tracking-wide text-muted-foreground uppercase"
