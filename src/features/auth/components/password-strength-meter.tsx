@@ -5,13 +5,16 @@ import { cn } from '@/lib/utils';
 import type { StrengthScore } from '../password-strength';
 import { usePasswordStrength } from '../use-password-strength';
 
-/** Cores com contraste AA no texto (sobre branco); a barra é só reforço visual. */
+/**
+ * Cores com contraste AA no texto, sobre o branco e sobre o cartão escuro (no escuro, os tons
+ * claros); a barra é só reforço visual.
+ */
 const LEVELS: Record<StrengthScore, { label: string; bar: string; text: string }> = {
-  0: { label: 'Muito fraca', bar: 'bg-red-600', text: 'text-red-700' },
-  1: { label: 'Fraca', bar: 'bg-orange-500', text: 'text-orange-700' },
-  2: { label: 'Razoável', bar: 'bg-amber-400', text: 'text-amber-700' },
-  3: { label: 'Boa', bar: 'bg-green-500', text: 'text-green-700' },
-  4: { label: 'Forte', bar: 'bg-green-600', text: 'text-green-700' },
+  0: { label: 'Muito fraca', bar: 'bg-red-600', text: 'text-red-700 dark:text-red-400' },
+  1: { label: 'Fraca', bar: 'bg-orange-500', text: 'text-orange-700 dark:text-orange-400' },
+  2: { label: 'Razoável', bar: 'bg-amber-400', text: 'text-amber-700 dark:text-amber-300' },
+  3: { label: 'Boa', bar: 'bg-green-500', text: 'text-green-700 dark:text-green-400' },
+  4: { label: 'Forte', bar: 'bg-green-600', text: 'text-green-700 dark:text-green-400' },
 };
 const SEGMENTS = 4;
 

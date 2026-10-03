@@ -7,6 +7,8 @@ import {
   KeyRoundIcon,
   LockIcon,
   MailIcon,
+  MoonIcon,
+  SunMoonIcon,
   UserRoundIcon,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -15,8 +17,10 @@ import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { LiveRegion } from '@/components/ui/live-region';
+import { Switch } from '@/components/ui/switch';
 import { PASSWORD_MIN_LENGTH } from '@/config/auth';
 import { listCard } from '@/features/member/list-card';
+import { useTheme } from '@/features/theme/use-theme';
 import { cn } from '@/lib/utils';
 import { rememberEmail } from '../email-storage';
 import { getAuthErrorCode } from '../error-codes';
@@ -141,8 +145,92 @@ export function ProfileSettings({ name, email, emailHelp }: ProfileSettingsProps
         </ExpandableRow>
       </SettingsGroup>
 
+      <SettingsGroup
+        id="perfil-aparencia"
+        title="Aparência"
+        footer="Vale só neste aparelho: no celular e no computador, você escolhe em cada um."
+      >
+        <AppearanceRows />
+      </SettingsGroup>
+
       <LiveRegion>{saved?.message ?? null}</LiveRegion>
     </>
+  );
+}
+
+/**
+ * Aparência, como nos Ajustes do iPhone: "Automático" segue o tema do aparelho (o padrão), e a
+ * chave do escuro mostra o tema que está na tela. Mexer nela desliga o automático. Tudo vale na
+ * hora, sem salvar.
+ */
+function AppearanceRows() {
+  const { preference, theme, setPreference } = useTheme();
+  return (
+    <>
+      <SwitchRow
+        id="tema-automatico"
+        icon={<SunMoonIcon />}
+        label="Automático"
+        description="Segue o tema do seu celular ou computador."
+        checked={preference === 'system'}
+        // Desligar não muda nada na tela: fica fixo o tema que já estava.
+        onCheckedChange={(checked) => setPreference(checked ? 'system' : theme)}
+      />
+      <SwitchRow
+        id="tema-escuro"
+        icon={<MoonIcon />}
+        label="Tema escuro"
+        description="Fundo preto, mais confortável à noite."
+        checked={theme === 'dark'}
+        onCheckedChange={(checked) => setPreference(checked ? 'dark' : 'light')}
+      />
+    </>
+  );
+}
+
+/**
+ * Linha com chave liga/desliga. A linha inteira é o alvo do toque (o rótulo aponta pra chave); a
+ * chave tem só o nome curto, e a explicação vem como descrição.
+ */
+function SwitchRow({
+  id,
+  icon,
+  label,
+  description,
+  checked,
+  onCheckedChange,
+}: {
+  id: string;
+  icon: ReactNode;
+  label: string;
+  description: string;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+}) {
+  return (
+    <li>
+      <label
+        htmlFor={id}
+        className="grid cursor-pointer grid-cols-[auto_1fr_auto] items-center gap-4 px-5 py-4 hover:bg-muted motion-safe:transition-colors motion-safe:duration-150 sm:px-6"
+      >
+        <RowIcon>{icon}</RowIcon>
+        <span className="flex min-w-0 flex-col">
+          <span id={`${id}-rotulo`} className="text-body font-semibold text-foreground">
+            {label}
+          </span>
+          <span id={`${id}-descricao`} className="text-sm text-pretty text-muted-foreground">
+            {description}
+          </span>
+        </span>
+        <Switch
+          id={id}
+          aria-labelledby={`${id}-rotulo`}
+          aria-describedby={`${id}-descricao`}
+          checked={checked}
+          onCheckedChange={onCheckedChange}
+        />
+      </label>
+    </li>
   );
 }
 

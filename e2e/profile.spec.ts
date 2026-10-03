@@ -90,3 +90,47 @@ test('quem esqueceu a senha atual vai pra recuperação com o email preenchido',
   await expect(page).toHaveURL(/\/recuperar-senha\?next=%2Fperfil$/);
   await expect(page.getByLabel('Email da compra')).toHaveValue(email);
 });
+
+test('aparência: automático segue o aparelho, e o escuro fixo continua ao recarregar', async ({
+  page,
+}) => {
+  await signIn(page, studentEmail('perfilnome'), PASSWORD, '/perfil');
+  await expect(page).toHaveURL(/\/perfil$/);
+  const html = page.locator('html');
+  const automatic = page.getByRole('switch', { name: 'Automático' });
+  const dark = page.getByRole('switch', { name: 'Tema escuro' });
+
+  // Padrão: automático, seguindo o aparelho (claro aqui).
+  await expect(automatic).toBeChecked();
+  await expect(dark).not.toBeChecked();
+  await expect(html).not.toHaveClass(/\bdark\b/);
+
+  // O aparelho escurece: a página acompanha, e a chave do escuro mostra o que está na tela.
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect(html).toHaveClass(/\bdark\b/);
+  await expect(dark).toBeChecked();
+  await expect(automatic).toBeChecked();
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#000000');
+  await expectNoA11yViolations(page);
+
+  // Mexer no escuro desliga o automático. A linha inteira é o alvo, não só a bolinha.
+  await page.getByText('Fundo preto, mais confortável à noite.').click();
+  await expect(dark).not.toBeChecked();
+  await expect(automatic).not.toBeChecked();
+  await expect(html).not.toHaveClass(/\bdark\b/);
+
+  // Escuro fixo: vale mesmo com o aparelho claro, e já vem escuro ao recarregar (sem clarão).
+  await dark.click();
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  expect(await html.evaluate((root) => root.classList.contains('dark'))).toBe(true);
+  await expect(dark).toBeChecked();
+  await expect(automatic).not.toBeChecked();
+
+  // De volta ao automático, pelo teclado: segue o aparelho (claro) de novo.
+  await automatic.focus();
+  await page.keyboard.press('Space');
+  await expect(automatic).toBeChecked();
+  await expect(html).not.toHaveClass(/\bdark\b/);
+  await expect(dark).not.toBeChecked();
+});
