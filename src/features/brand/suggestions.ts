@@ -97,18 +97,76 @@ export function nameSuggestions(
   return unique.slice(0, limit);
 }
 
-/** 3 descrições prontas pra ela escolher (e editar), dentro do limite da Shopee. */
-export function descriptionSuggestions(answers: OnboardingAnswers, storeName: string): string[] {
-  const categories = list(answers.categorias).map((category) => category.toLowerCase());
+/**
+ * Cada categoria como cabe em "produtos de ...": uma palavra só, pra lista não virar "beleza e casa
+ * e decoração" (o "e" de dentro da categoria se confunde com o da lista).
+ */
+const CATEGORY_PRODUCTS: Record<string, string> = {
+  'Casa e decoração': 'decoração',
+  Beleza: 'beleza',
+  'Moda e acessórios': 'moda',
+  Infantil: 'infância',
+  Pets: 'pets',
+  Cozinha: 'cozinha',
+  Fitness: 'fitness',
+  Papelaria: 'papelaria',
+};
+
+/** Um jeito de falar da descrição, com as versões dele (o "Outro texto" passa de uma pra outra). */
+export type DescriptionTone = {
+  id: 'carinhoso' | 'direto' | 'animado';
+  label: string;
+  texts: string[];
+};
+
+/**
+ * As descrições prontas, por jeito de falar (carinhoso, direto, animado), 3 versões de cada, todas
+ * com o nome da loja, o que ela vende e como quer que a cliente se sinta. Dentro do limite da
+ * Shopee.
+ */
+export function descriptionTones(answers: OnboardingAnswers, storeName: string): DescriptionTone[] {
+  const categories = list(answers.categorias)
+    .map((category) => CATEGORY_PRODUCTS[category] ?? category.toLowerCase())
+    .slice(0, 3);
   const products = categories.length ? `produtos de ${joinList(categories)}` : 'produtos';
+  const Products = products.charAt(0).toUpperCase() + products.slice(1);
   const feelings = list(answers.sentimento)
     .map((feeling) => FEELING[feeling])
     .filter((feeling): feeling is string => Boolean(feeling));
   const feel = feelings.length ? joinList(feelings) : 'bem atendida';
+  const name = storeName;
 
-  return [
-    `Na loja ${storeName}, você encontra ${products} escolhidos com carinho, pra você se sentir ${feel}. Enviamos pra todo o Brasil, com atendimento rápido e atencioso.`,
-    `${storeName}: ${products} com qualidade e preço justo. Cada pedido é preparado com cuidado, pra você comprar com tranquilidade e se sentir ${feel}.`,
-    `Boas-vindas à loja ${storeName}! Separamos ${products} que deixam o dia a dia mais bonito e prático. Siga a loja pra acompanhar as novidades e as promoções.`,
-  ].map((description) => description.slice(0, BRAND_DESCRIPTION_MAX));
+  const tones: DescriptionTone[] = [
+    {
+      id: 'carinhoso',
+      label: 'Carinhoso',
+      texts: [
+        `Na loja ${name}, você encontra ${products} escolhidos com carinho, pra você se sentir ${feel}. Enviamos pra todo o Brasil, com atendimento rápido e atencioso.`,
+        `Que bom ter você aqui! A ${name} separa ${products} com todo o cuidado, pra você se sentir ${feel}. Cada pedido sai embalado com carinho.`,
+        `Bem-vinda à ${name}! Aqui cada detalhe é pensado com amor: ${products} que deixam o seu dia mais leve. Estamos sempre por perto pra te ajudar.`,
+      ],
+    },
+    {
+      id: 'direto',
+      label: 'Direto',
+      texts: [
+        `${name}: ${products} com qualidade e preço justo. Cada pedido é preparado com cuidado, pra você comprar com tranquilidade e se sentir ${feel}.`,
+        `${Products} com bom preço e envio rápido pra todo o Brasil. Na ${name}, você compra com segurança e recebe tudo certinho.`,
+        `A ${name} reúne ${products} com ótimo custo-benefício. Compra fácil, envio rápido e atendimento que responde de verdade.`,
+      ],
+    },
+    {
+      id: 'animado',
+      label: 'Animado',
+      texts: [
+        `Boas-vindas à loja ${name}! Separamos ${products} que deixam o dia a dia mais bonito e prático. Siga a loja pra acompanhar as novidades e as promoções.`,
+        `Chegou na ${name}? Então se prepare: ${products} lindos, novidades toda semana e promoções que você não vai querer perder. Siga a loja!`,
+        `Aqui na ${name} tem ${products} pra todo gosto! Novidades chegando sempre e ofertas especiais pra quem segue a loja. Vem conferir!`,
+      ],
+    },
+  ];
+  return tones.map((tone) => ({
+    ...tone,
+    texts: tone.texts.map((item) => item.slice(0, BRAND_DESCRIPTION_MAX)),
+  }));
 }
