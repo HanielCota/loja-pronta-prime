@@ -3,6 +3,7 @@
 import { CircleHelpIcon, Redo2Icon, RotateCcwIcon, SparklesIcon, Undo2Icon } from 'lucide-react';
 import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { nodMascot } from '@/components/brand/mascot';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
   addElement,
@@ -541,6 +542,30 @@ export function LogoEditor({
                 <AddTexts scene={scene} color={mainColor(scene)} onAdd={add} />
               ) : null}
               {tool === 'partes' ? <LayersPanel scene={scene} onSelect={select} /> : null}
+              {tool === 'ia' ? (
+                // Lugar guardado pra criar o logo com IA (ainda não existe): diz isso com
+                // clareza e leva pro que já ajuda hoje, as ideias prontas.
+                <>
+                  <p className="-mt-3 inline-flex w-fit items-center rounded-full bg-primary-soft px-3 py-1 text-sm font-semibold text-link forced-colors:border forced-colors:border-[CanvasText]">
+                    Em breve
+                  </p>
+                  <p className="text-body text-pretty text-muted-foreground">
+                    Aqui você vai poder contar como é a sua loja e receber logos feitos pela
+                    inteligência artificial.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="soft"
+                    onClick={() => {
+                      chooseTool('modelos');
+                      focusPanel();
+                    }}
+                  >
+                    <SparklesIcon aria-hidden="true" />
+                    Enquanto isso, ver ideias prontas
+                  </Button>
+                </>
+              ) : null}
               {tool === 'versoes' ? (
                 <VariationsStrip
                   scene={scene}

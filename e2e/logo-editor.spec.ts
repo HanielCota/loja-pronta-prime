@@ -168,6 +168,13 @@ test.describe('ajuda pra acertar, no computador', () => {
     await expect(drawn(page)).toHaveCount(2);
     const logo = () => canvas(page).innerHTML();
 
+    // A IA ainda não existe: o item diz "Em breve" e leva pras ideias prontas.
+    await tool(page, 'IA').check({ force: true });
+    await expect(page.getByText('Em breve')).toBeVisible();
+    await page.getByRole('button', { name: 'Enquanto isso, ver ideias prontas' }).click();
+    await expect(tool(page, 'Modelos')).toBeChecked();
+    await tool(page, 'Estilo').check({ force: true });
+
     // "Me mostra ideias prontas" leva às ideias; uma ideia troca o logo inteiro.
     await page.getByRole('button', { name: 'Me mostra ideias prontas' }).click();
     await expect(tool(page, 'Modelos')).toBeChecked();
