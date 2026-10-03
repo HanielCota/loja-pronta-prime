@@ -8,7 +8,7 @@ import type { LogoConfig } from './logo/config';
 export const BRAND_PATH = '/loja-pronta/marca';
 export const BRAND_DONE_PATH = `${BRAND_PATH}/pronta`;
 
-export const BRAND_STEPS = ['nome', 'modelo', 'ajustar', 'descricao', 'revisao'] as const;
+export const BRAND_STEPS = ['nome', 'ajustar', 'descricao', 'revisao'] as const;
 export type BrandStep = (typeof BRAND_STEPS)[number];
 
 export type BrandDraft = {
@@ -19,7 +19,6 @@ export type BrandDraft = {
 
 const TITLES: Record<BrandStep, string> = {
   nome: 'Nome da loja',
-  modelo: 'Modelo do logo',
   ajustar: 'Ajustar o logo',
   descricao: 'Descrição da loja',
   revisao: 'Revisão',
@@ -39,7 +38,6 @@ export function brandStepPath(step: BrandStep): string {
  */
 export function resumeBrandStep(draft: BrandDraft): BrandStep {
   if (!draft.name) return 'nome';
-  if (!draft.logo) return 'modelo';
   if (!draft.description) return 'ajustar';
   return 'revisao';
 }
@@ -48,8 +46,7 @@ export function resumeBrandStep(draft: BrandDraft): BrandStep {
 export function canOpenBrandStep(step: BrandStep, draft: BrandDraft): boolean {
   const needs: Record<BrandStep, boolean> = {
     nome: true,
-    modelo: Boolean(draft.name),
-    ajustar: Boolean(draft.name && draft.logo),
+    ajustar: Boolean(draft.name),
     descricao: Boolean(draft.name && draft.logo),
     revisao: Boolean(draft.name && draft.logo && draft.description),
   };
@@ -63,14 +60,14 @@ export function previousBrandPath(step: BrandStep): string {
 }
 
 /** O nome curto de cada passo, embaixo da barra do topo. */
-const STEP_NAMES = ['Nome', 'Modelo', 'Logo', 'Texto'] as const;
+const STEP_NAMES = ['Nome', 'Logo', 'Texto'] as const;
 
 export function brandStepTitle(step: BrandStep): string {
   return TITLES[step];
 }
 
 /**
- * O topo de cada passo: "Passo 2 de 4" (ou a revisão), a barra e se já há escolhas salvas (o nome
+ * O topo de cada passo: "Passo 2 de 3" (ou a revisão), a barra e se já há escolhas salvas (o nome
  * é a primeira; vale também no passo 1, quando ela volta da revisão pra mudar o nome).
  */
 export function brandStepHeader(step: BrandStep, hasChoices: boolean): StepHeader {

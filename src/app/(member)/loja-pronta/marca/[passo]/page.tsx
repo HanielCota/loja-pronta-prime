@@ -4,7 +4,6 @@ import { BrandReview } from '@/features/brand/components/brand-review';
 import { DescriptionStep } from '@/features/brand/components/description-step';
 import { LogoEditor } from '@/features/brand/components/editor/logo-editor';
 import { NameStep } from '@/features/brand/components/name-step';
-import { TemplateStep } from '@/features/brand/components/template-step';
 import { logoTemplates } from '@/features/brand/logo/config';
 import { loadLogoFonts } from '@/features/brand/logo/fonts.server';
 import { configToScene } from '@/features/brand/logo/from-config';
@@ -31,12 +30,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 /**
- * Um passo da marca: nome, modelo do logo, o editor do logo, descrição ou revisão. Ela pode voltar aos
+ * Um passo da marca: nome, o editor do logo, descrição ou revisão. Ela pode voltar aos
  * passos feitos, mas não pular os que faltam. Com "?editar=1" (vindo da revisão), salvar volta
  * pra revisão.
  */
 export default async function BrandStepPage({ params, searchParams }: PageProps) {
   const [{ passo }, query] = await Promise.all([params, searchParams]);
+  // O passo de escolher um modelo saiu (os formatos estão no editor): links antigos vão pro logo.
+  if (passo === 'modelo') redirect(brandStepPath('ajustar'));
   if (!isBrandStep(passo)) notFound();
 
   const { student, answers, brand, revising } = await requireBrandStudio(brandStepPath(passo));
@@ -64,19 +65,16 @@ export default async function BrandStepPage({ params, searchParams }: PageProps)
           editing={editing}
         />
       ) : null}
-      {passo === 'modelo' ? (
-        <TemplateStep answers={answers} saved={brand.logo} editing={editing} />
-      ) : null}
-      {passo === 'ajustar' && brand.logo ? (
+      {passo === 'ajustar' ? (
         <>
           {/* Título curto: o espaço da tela é do quadro. */}
           <h1 className="-mb-2 text-xl font-semibold text-balance">Deixe o logo do seu jeito</h1>
           <div>
             <LogoEditor
-              // A cena salva ou, na primeira vez, o modelo escolhido virado cena.
+              // A cena salva ou, na primeira vez, o primeiro modelo virado cena.
               initialScene={
                 brand.logoScene ??
-                configToScene(brand.logo, brand.name ?? '', await loadLogoFonts())
+                configToScene(brand.logo ?? templates[0]!, brand.name ?? '', await loadLogoFonts())
               }
               initialVariations={brand.logoVariations}
               name={brand.name ?? ''}

@@ -41,13 +41,8 @@ test('marca completa: nome, modelo, estúdio, texto, revisão com mudança e log
   await expect(page.getByRole('main').getByRole('alert')).toContainText('Use até 30 letras');
   await page.getByRole('button', { name: /Patinhas da Ana/ }).click();
 
-  // Modelo: 6 logos prontos, com o nome dela.
-  await expect(page).toHaveURL(step('modelo'));
-  await expect(page.getByRole('main').getByRole('button')).toHaveCount(6);
-  await expectNoA11yViolations(page);
-  await page.getByRole('button', { name: 'Selo redondo' }).click();
-
-  // Logo: o modelo abre no editor, na aba Estilo; um toque muda o logo inteiro e desfazer volta.
+  // Logo: direto no editor, já com um modelo montado com as respostas dela, na aba Estilo; um
+  // toque muda o logo inteiro e desfazer volta.
   await expect(page).toHaveURL(step('ajustar'));
   await expect(drawn(page)).not.toHaveCount(0);
   const color = page.getByRole('group', { name: 'Cor', exact: true });
@@ -110,8 +105,6 @@ test('logo pelo teclado: as setas mudam a cor, e Enter salva', async ({ page }) 
   await signIn(page, studentEmail('marcateclado'), PASSWORD, '/loja-pronta/marca');
   await expect(page).toHaveURL(step('nome'));
   await page.getByRole('button', { name: /Patinhas da Ana/ }).press('Enter');
-  await expect(page).toHaveURL(step('modelo'));
-  await page.getByRole('button', { name: 'Ícone em cima' }).press('Enter');
   await expect(page).toHaveURL(step('ajustar'));
 
   // As setas trocam a cor (e não mexem no logo, que é das setas fora dos campos).
