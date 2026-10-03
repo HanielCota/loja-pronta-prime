@@ -5,11 +5,16 @@ import { BrandCard } from '@/components/brand/brand-card';
 import { CardHeading } from '@/components/brand/card-heading';
 import { Button } from '@/components/ui/button';
 import type { ProductId } from '@/config/products';
-import { STORE_PHASES } from '@/config/store-phases';
 import { PRODUCTS } from '@/features/products/catalog';
 import { CenteredMemberPage } from '@/features/member/components/area-shell';
-import { ProductChooser, type ProductStatus } from '@/features/products/components/product-chooser';
+import { ProductChooser } from '@/features/products/components/product-chooser';
+import {
+  chooserHeadline,
+  SLL_CHOOSER_STATUS,
+  type ProductStatus,
+} from '@/features/products/chooser';
 import { getStoreOverview } from '@/features/loja-pronta/server/overview';
+import { storeChooserCard } from '@/features/loja-pronta/store-card';
 import { firstName } from '@/features/products/names';
 import { requireStudent } from '@/features/products/server/access';
 
@@ -49,28 +54,14 @@ export default async function HomePage() {
     );
   }
 
+  const store = products.includes('loja-pronta')
+    ? storeChooserCard((await getStoreOverview(user.id)).phase)
+    : undefined;
   const status: Partial<Record<ProductId, ProductStatus>> = {
-    // As aulas ainda não estão no ar: o cartão diz isso, em vez de mandar ela começar.
-    sll: { label: 'As aulas abrem em breve' },
+    sll: SLL_CHOOSER_STATUS,
+    ...(store ? { 'loja-pronta': store.status } : {}),
   };
-  // A Loja Pronta parada esperando por ela vem antes de tudo: leva o botão cheio, e o texto de
-  // cima aponta pra ela.
-  // Com a loja nas mãos da equipe, nenhum botão "manda" pra lá (nem pro curso, que ainda não abriu):
-  // o texto de cima avisa que a equipe chama no WhatsApp.
-  let primary: ProductId | undefined;
-  let storeWithTeam = false;
-  if (products.includes('loja-pronta')) {
-    const { phase } = await getStoreOverview(user.id);
-    const current = STORE_PHASES[phase - 1];
-    status['loja-pronta'] = {
-      caption: `Fase ${phase} de ${STORE_PHASES.length}`,
-      label: current?.title ?? '',
-      bar: { step: phase, total: STORE_PHASES.length },
-      detail: current?.detail,
-    };
-    if (current?.needsStudent) primary = 'loja-pronta';
-    else storeWithTeam = true;
-  }
+  const { primary, description } = chooserHeadline({ store, lastArea });
 
   // Sem o cartão em volta: os produtos são os cartões, com o espaço da tela toda.
   return (
@@ -79,15 +70,7 @@ export default async function HomePage() {
         <CardHeading
           className="mb-0"
           title={name ? `Oi, ${name}! Pra onde vamos?` : 'Pra onde vamos?'}
-          description={
-            primary === 'loja-pronta'
-              ? 'Sua loja está esperando por você.'
-              : storeWithTeam
-                ? 'Sua loja está com a equipe. Você recebe um aviso no WhatsApp quando for sua vez.'
-                : lastArea
-                  ? 'Continue de onde parou.'
-                  : 'Escolha por onde começar.'
-          }
+          description={description}
         />
       </div>
       <ProductChooser products={products} lastArea={lastArea} status={status} primary={primary} />
