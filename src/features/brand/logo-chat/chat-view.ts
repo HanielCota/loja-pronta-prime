@@ -1,0 +1,66 @@
+import type { InterviewContext } from './interviewer-prompt';
+import { MAX_GENERATIONS, type AssistantTurn, type LogoChat, type LogoChatMessage } from './model';
+
+/**
+ * O que a tela do chat recebe: as mensagens (com o id da imagem, não a chave guardada), se já dá
+ * pra criar o logo e quantas criações ainda restam. Funções puras.
+ */
+
+export type ChatViewMessage = {
+  role: LogoChatMessage['role'];
+  text: string;
+  suggestions?: string[];
+  /** O id do logo gerado (a imagem vem de marca/imagens/<id>). */
+  imageId?: string;
+};
+
+export type ChatView = {
+  messages: ChatViewMessage[];
+  /** A conversa já tem o resumo: aparece "Criar meu logo". */
+  ready: boolean;
+  /** Um resumo do logo pra ela conferir antes de criar. */
+  summary: string | null;
+  generationsLeft: number;
+};
+
+export function assistantMessage(turn: AssistantTurn): LogoChatMessage {
+  return {
+    role: 'assistant',
+    text: turn.reply,
+    ...(turn.suggestions.length ? { suggestions: turn.suggestions } : {}),
+  };
+}
+
+/** A conversa com a primeira fala quando ainda está vazia (a primeira fala não custa nada). */
+export function withOpening(
+  chat: LogoChat,
+  opening: (context: InterviewContext) => AssistantTurn,
+  context: InterviewContext,
+): LogoChat {
+  return chat.messages.length ? chat : { ...chat, messages: [assistantMessage(opening(context))] };
+}
+
+export function toChatView(
+  chat: LogoChat,
+  imageIdFromKey: (key: string) => string | null,
+): ChatView {
+  const { brief } = chat;
+  return {
+    messages: chat.messages.map((message) => {
+      const imageId = message.image ? imageIdFromKey(message.image) : null;
+      return {
+        role: message.role,
+        text: message.text,
+        ...(message.suggestions ? { suggestions: message.suggestions } : {}),
+        ...(imageId ? { imageId } : {}),
+      };
+    }),
+    ready: Boolean(brief),
+    summary: brief
+      ? [brief.symbol, brief.colors, `letras ${brief.lettering}`, `fundo ${brief.background}`].join(
+          ' · ',
+        )
+      : null,
+    generationsLeft: Math.max(0, MAX_GENERATIONS - chat.generations),
+  };
+}

@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
+import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import type { ProductId } from '@/config/products';
-import { logoTemplates } from '@/features/brand/logo/config';
 import { auth } from '@/server/auth/auth';
 import { database, PASSWORD, studentEmail, type StudentKind } from './support/students';
 
@@ -15,10 +16,15 @@ type Student = {
   storePhase?: number;
   /** Conversa inicial já enviada (com respostas de exemplo): a loja está na fase da marca. */
   conversationSent?: boolean;
-  /** Marca já confirmada (nome, o primeiro modelo de logo e um texto de exemplo). */
+  /** Marca já confirmada (nome, um logo de exemplo e um texto de exemplo). */
   brandDone?: boolean;
-  /** Marca começada: nome e o primeiro modelo de logo, sem texto (está no estúdio). */
+  /** Marca começada: só o nome (está no chat do logo). */
   brandStarted?: boolean;
+  /**
+   * Marca confirmada antes do chat do logo (nome e texto, sem imagem: o logo antigo saiu na
+   * migração). Só o logo reabre, em qualquer fase.
+   */
+  brandDoneWithoutLogo?: boolean;
 };
 
 /** Respostas de exemplo da conversa, pras alunas que já começam na fase da marca. */
@@ -109,6 +115,15 @@ const STUDENTS: Student[] = [
     conversationSent: true,
     brandDone: true,
   },
+  {
+    kind: 'marcasemlogo',
+    emailVerified: true,
+    banned: false,
+    products: ['loja-pronta'],
+    storePhase: 6,
+    conversationSent: true,
+    brandDoneWithoutLogo: true,
+  },
   // Marca da loja (fase 2): a conversa já enviada.
   {
     kind: 'marca',
@@ -125,52 +140,6 @@ const STUDENTS: Student[] = [
     products: ['loja-pronta'],
     storePhase: 2,
     conversationSent: true,
-  },
-  // Editor livre (e2e/logo-editor.spec.ts): nome e modelo escolhidos, no estúdio.
-  {
-    kind: 'editorlivre',
-    emailVerified: true,
-    banned: false,
-    products: ['loja-pronta'],
-    storePhase: 2,
-    conversationSent: true,
-    brandStarted: true,
-  },
-  {
-    kind: 'editorbiblioteca',
-    emailVerified: true,
-    banned: false,
-    products: ['loja-pronta'],
-    storePhase: 2,
-    conversationSent: true,
-    brandStarted: true,
-  },
-  {
-    kind: 'editorvariacoes',
-    emailVerified: true,
-    banned: false,
-    products: ['loja-pronta'],
-    storePhase: 2,
-    conversationSent: true,
-    brandStarted: true,
-  },
-  {
-    kind: 'editorideias',
-    emailVerified: true,
-    banned: false,
-    products: ['loja-pronta'],
-    storePhase: 2,
-    conversationSent: true,
-    brandStarted: true,
-  },
-  {
-    kind: 'editorcelular',
-    emailVerified: true,
-    banned: false,
-    products: ['loja-pronta'],
-    storePhase: 2,
-    conversationSent: true,
-    brandStarted: true,
   },
 ];
 
@@ -217,16 +186,39 @@ export default async function globalSetup() {
     }
     if (student.brandStarted) {
       await database().query(
-        `insert into store_brand (user_id, name, logo) values ($1, 'Patinhas da Ana', $2)`,
-        [user.id, JSON.stringify(logoTemplates(SENT_ANSWERS)[0])],
+        `insert into store_brand (user_id, name) values ($1, 'Patinhas da Ana')`,
+        [user.id],
+      );
+    }
+    if (student.brandDoneWithoutLogo) {
+      await database().query(
+        `insert into store_brand (user_id, name, description, completed_at)
+         values ($1, 'Patinhas da Ana', 'Tudo pro seu pet, com carinho.', now())`,
+        [user.id],
       );
     }
     if (student.brandDone) {
       await database().query(
-        `insert into store_brand (user_id, name, logo, description, completed_at)
+        `insert into store_brand (user_id, name, logo_image, description, completed_at)
          values ($1, 'Patinhas da Ana', $2, 'Tudo pro seu pet, com carinho.', now())`,
-        [user.id, JSON.stringify(logoTemplates(SENT_ANSWERS)[0])],
+        [user.id, await seedLogo(user.id)],
       );
     }
   }
+}
+
+/** Um PNG de exemplo (8×8 rosa), como o logo criado no chat. */
+const SAMPLE_LOGO =
+  'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAEklEQVR4nGP4/+M/VsQwKoEXAQB3h5ZJ6UMsdwAAAABJRU5ErkJggg==';
+
+/**
+ * Guarda o logo de exemplo na pasta local (o servidor dos testes roda com STORAGE_DRIVER=local) e
+ * devolve a chave, no mesmo formato das do chat (logos/<aluna>/<id>.png).
+ */
+async function seedLogo(userId: string): Promise<string> {
+  const key = `logos/${userId.replace(/[^\w-]/g, '')}/e2e-logo-0001.png`;
+  const file = path.join(process.cwd(), '.data', 'storage', ...key.split('/'));
+  await mkdir(path.dirname(file), { recursive: true });
+  await writeFile(file, Buffer.from(SAMPLE_LOGO, 'base64'));
+  return key;
 }

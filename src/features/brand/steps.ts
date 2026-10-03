@@ -1,5 +1,4 @@
 import type { StepHeader } from '@/features/loja-pronta/steps';
-import type { LogoConfig } from './logo/config';
 
 /**
  * Passos da marca (fase 2), na ordem. Cada passo é uma página (`/loja-pronta/marca/<passo>`) com
@@ -8,18 +7,19 @@ import type { LogoConfig } from './logo/config';
 export const BRAND_PATH = '/loja-pronta/marca';
 export const BRAND_DONE_PATH = `${BRAND_PATH}/pronta`;
 
-export const BRAND_STEPS = ['nome', 'ajustar', 'descricao', 'revisao'] as const;
+export const BRAND_STEPS = ['nome', 'logo', 'descricao', 'revisao'] as const;
 export type BrandStep = (typeof BRAND_STEPS)[number];
 
 export type BrandDraft = {
   name: string | null;
-  logo: LogoConfig | null;
+  /** A chave da imagem do logo que ela escolheu no chat. */
+  logoImage: string | null;
   description: string | null;
 };
 
 const TITLES: Record<BrandStep, string> = {
   nome: 'Nome da loja',
-  ajustar: 'Ajustar o logo',
+  logo: 'Logo da loja',
   descricao: 'Descrição da loja',
   revisao: 'Revisão',
 };
@@ -32,13 +32,11 @@ export function brandStepPath(step: BrandStep): string {
   return `${BRAND_PATH}/${step}`;
 }
 
-/**
- * Onde ela parou: sem nome, o nome; sem logo, o modelo; com logo e sem descrição, o estúdio (ela
- * pode ter saído no meio dos ajustes); com tudo, a revisão.
- */
+/** Onde ela parou: sem nome, o nome; sem logo, o chat do logo; sem texto, o texto; senão, a revisão. */
 export function resumeBrandStep(draft: BrandDraft): BrandStep {
   if (!draft.name) return 'nome';
-  if (!draft.description) return 'ajustar';
+  if (!draft.logoImage) return 'logo';
+  if (!draft.description) return 'descricao';
   return 'revisao';
 }
 
@@ -46,9 +44,9 @@ export function resumeBrandStep(draft: BrandDraft): BrandStep {
 export function canOpenBrandStep(step: BrandStep, draft: BrandDraft): boolean {
   const needs: Record<BrandStep, boolean> = {
     nome: true,
-    ajustar: Boolean(draft.name),
-    descricao: Boolean(draft.name && draft.logo),
-    revisao: Boolean(draft.name && draft.logo && draft.description),
+    logo: Boolean(draft.name),
+    descricao: Boolean(draft.name && draft.logoImage),
+    revisao: Boolean(draft.name && draft.logoImage && draft.description),
   };
   return needs[step];
 }
@@ -78,3 +76,11 @@ export function brandStepHeader(step: BrandStep): StepHeader {
     names: STEP_NAMES,
   };
 }
+
+/** A imagem do logo salvo (`v` muda a cada escolha salva, pro cache não mostrar a de antes). */
+export function brandLogoSrc(brand: { updatedAt: Date | null }): string {
+  return `${BRAND_PATH}/logo.png?v=${brand.updatedAt?.getTime() ?? 0}`;
+}
+
+/** O logo salvo, pra baixar (o mesmo arquivo, como anexo). */
+export const LOGO_DOWNLOAD_PATH = `${BRAND_PATH}/logo.png?baixar=1`;

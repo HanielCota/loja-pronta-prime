@@ -36,16 +36,12 @@ export type StudentKind =
   | 'conversatoques'
   | 'marca'
   | 'marcateclado'
+  | 'marcasemlogo'
   | 'perfilnome'
   | 'perfilsenha'
   | 'revisaconversa'
   | 'revisamarca'
-  | 'revisatravada'
-  | 'editorlivre'
-  | 'editorbiblioteca'
-  | 'editorvariacoes'
-  | 'editorideias'
-  | 'editorcelular';
+  | 'revisatravada';
 
 /** Id desta execução, definido no global-setup: cada execução usa alunas próprias. */
 export function runId(): string {

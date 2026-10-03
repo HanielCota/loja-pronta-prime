@@ -30,6 +30,9 @@ export default defineConfig({
   ],
   webServer: {
     command: 'bun run dev',
+    // IA de mentira (sem custo, sempre igual) e arquivos numa pasta do projeto, não no bucket.
+    // Rodando contra um servidor já aberto, suba ele com essas mesmas variáveis.
+    env: { AI_FAKE: '1', STORAGE_DRIVER: 'local' },
     url: `${baseURL}/entrar`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

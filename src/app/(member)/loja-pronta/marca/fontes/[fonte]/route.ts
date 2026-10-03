@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { LOGO_FONTS } from '@/features/brand/logo/fonts';
+import { LOGO_FONTS } from '@/features/brand/fonts';
 
 /**
  * As fontes do logo pro editor livre, que desenha o texto no navegador com o mesmo desenho do

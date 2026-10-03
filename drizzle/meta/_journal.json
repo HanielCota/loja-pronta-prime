@@ -71,6 +71,27 @@
       "when": 1791060853168,
       "tag": "0009_blue_adam_destine",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791070427007,
+      "tag": "0010_drop_logo_editor",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791070427212,
+      "tag": "0011_logo_ai_chat",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791071442109,
+      "tag": "0012_logo_chat_turns",
+      "breakpoints": true
     }
   ]
 }

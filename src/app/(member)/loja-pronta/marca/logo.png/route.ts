@@ -1,5 +1,5 @@
-import sharp from 'sharp';
-import { ownLogoSvg } from '@/features/brand/server/logo-image';
+import { storage } from '@/server/storage';
+import { getOwnBrandForImage } from '@/features/brand/server/brand';
 
 /** Nome do arquivo: "logo-pet-da-ana.png". */
 function fileName(name: string): string {
@@ -13,18 +13,24 @@ function fileName(name: string): string {
 }
 
 /**
- * O logo dela em PNG de 1000×1000, pra baixar (e, na publicação, pra enviar à Shopee). Sempre o
- * logo salvo: a URL não muda o desenho.
+ * O logo que ela escolheu (o PNG criado no chat), só pra dona. Com `?baixar=1`, vem como arquivo
+ * pra baixar (e, na publicação, pra enviar à Shopee).
  */
-export async function GET() {
-  const logo = await ownLogoSvg(new URLSearchParams());
-  if (!logo) return new Response('Não encontrado', { status: 404 });
-  const png = await sharp(Buffer.from(logo.svg)).png().toBuffer();
+export async function GET(request: Request) {
+  const owner = await getOwnBrandForImage();
+  const key = owner?.brand.logoImage;
+  if (!owner || !key) return new Response('Não encontrado', { status: 404 });
+  const png = await storage().get(key);
+  if (!png) return new Response('Não encontrado', { status: 404 });
+  const download = new URL(request.url).searchParams.get('baixar') === '1';
   return new Response(new Uint8Array(png), {
     headers: {
       'Content-Type': 'image/png',
-      'Content-Disposition': `attachment; filename="${fileName(logo.name)}"`,
       'Cache-Control': 'private, no-store',
+      'X-Content-Type-Options': 'nosniff',
+      ...(download
+        ? { 'Content-Disposition': `attachment; filename="${fileName(owner.brand.name ?? '')}"` }
+        : {}),
     },
   });
 }

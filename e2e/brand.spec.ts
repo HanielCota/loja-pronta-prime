@@ -4,13 +4,12 @@ import { PASSWORD, studentEmail } from './support/students';
 
 const step = (name: string) => new RegExp(`/loja-pronta/marca/${name}(\\?.*)?$`);
 
-/** Prévia do logo carregada de verdade (a imagem desenhada no servidor). */
-/** As partes do logo desenhadas no quadro do editor (aparecem quando as letras carregam). */
-const drawn = (page: Page) =>
-  page
-    .getByRole('img', { name: /^Seu logo, com/ })
-    .locator(':scope > g[transform]:not([aria-hidden])');
+/**
+ * O servidor dos testes roda com AI_FAKE=1 e STORAGE_DRIVER=local: o chat e a imagem respondem de
+ * mentira (sem custo, sempre iguais) e o logo fica numa pasta do projeto.
+ */
 
+/** Prévia do logo carregada de verdade (a imagem guardada). */
 async function expectLogoLoaded(page: Page, alt: RegExp) {
   const image = page.getByRole('img', { name: alt }).first();
   await expect(image).toBeVisible();
@@ -19,7 +18,7 @@ async function expectLogoLoaded(page: Page, alt: RegExp) {
     .toBe(true);
 }
 
-test('marca completa: nome, modelo, estúdio, texto, revisão com mudança e logo pra baixar', async ({
+test('marca completa: nome, chat do logo, texto, revisão com mudança e logo pra baixar', async ({
   page,
 }) => {
   await signIn(page, studentEmail('marca'), PASSWORD);
@@ -43,26 +42,26 @@ test('marca completa: nome, modelo, estúdio, texto, revisão com mudança e log
   await expect(name).toHaveValue('Patinhas da Ana');
   await page.getByRole('button', { name: 'Continuar com “Patinhas da Ana”' }).click();
 
-  // Logo: direto no editor, já com um modelo montado com as respostas dela, na aba Estilo; um
-  // toque muda o logo inteiro e desfazer volta.
-  await expect(page).toHaveURL(step('ajustar'));
-  await expect(drawn(page)).not.toHaveCount(0);
-  const color = page.getByRole('group', { name: 'Cor', exact: true });
-  await expect(color.getByLabel('Verde')).toBeChecked();
-  await expect(page.getByRole('button', { name: /^Desfazer/ })).toBeDisabled();
-  await color.getByLabel('Lilás').check({ force: true });
-  await expect(color.getByLabel('Lilás')).toBeChecked();
-  await page.getByRole('button', { name: /^Desfazer/ }).click();
-  await expect(color.getByLabel('Verde')).toBeChecked();
-  await color.getByLabel('Turquesa').check({ force: true });
-  await page.getByRole('radio', { name: 'Desenhos' }).check({ force: true });
-  await page.getByRole('button', { name: 'Coração', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Coração', exact: true })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
+  // Logo: o chat pergunta (com respostas rápidas), monta o resumo e cria o logo; ela escolhe.
+  await expect(page).toHaveURL(step('logo'));
+  await expect(page.getByRole('heading', { name: 'Vamos criar o seu logo' })).toBeVisible();
+  const conversation = page.getByRole('log', { name: 'Conversa sobre o seu logo' });
+  await expect(conversation).toContainText('Vamos criar o logo da Patinhas da Ana?');
   await expectNoA11yViolations(page);
-  await page.getByRole('button', { name: 'Gostei, continuar' }).click();
+  await page.getByRole('group', { name: 'Respostas rápidas' }).getByText('Um desenho').click();
+  await expect(conversation).toContainText('Que cores você quer no logo?');
+  await page.getByLabel('Sua mensagem').fill('Rosa e dourado');
+  await page.getByLabel('Sua mensagem').press('Enter');
+  await expect(conversation).toContainText('Vai ser uma patinha rosa');
+  await expect(page.getByText('uma patinha · rosa e dourado')).toBeVisible();
+  await expectNoA11yViolations(page);
+  await page.getByRole('button', { name: 'Criar meu logo' }).click();
+  const logo = conversation.getByRole('img', { name: 'Logo criado pra sua loja' });
+  await expect(logo).toBeVisible();
+  await expect
+    .poll(() => logo.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0))
+    .toBe(true);
+  await page.getByRole('button', { name: 'Usar esse logo' }).click();
 
   // Texto: já vem um pronto no cartão; um jeito de falar troca o texto, "Outro texto" traz
   // outra versão do mesmo jeito, e vazio não segue.
@@ -118,25 +117,58 @@ test('marca completa: nome, modelo, estúdio, texto, revisão com mudança e log
   ).toContainText('Passo 1 de 5: Conta na Shopee');
 });
 
-test('logo pelo teclado: as setas mudam a cor, e Enter salva', async ({ page }) => {
+test('chat do logo pelo teclado: escreve, Enter manda, e a conversa continua depois', async ({
+  page,
+}) => {
   await signIn(page, studentEmail('marcateclado'), PASSWORD, '/loja-pronta/marca');
   await expect(page).toHaveURL(step('nome'));
   await page.getByRole('button', { name: /^Continuar com/ }).press('Enter');
-  await expect(page).toHaveURL(step('ajustar'));
+  await expect(page).toHaveURL(step('logo'));
 
-  // As setas trocam a cor (e não mexem no logo, que é das setas fora dos campos).
-  const color = page.getByRole('group', { name: 'Cor', exact: true });
-  await color.getByLabel('Verde').focus();
-  await page.keyboard.press('ArrowRight');
-  await expect(color.getByLabel('Terracota')).toBeChecked();
-  await page.getByRole('button', { name: 'Gostei, continuar' }).press('Enter');
-  await expect(page).toHaveURL(step('descricao'));
+  const field = page.getByLabel('Sua mensagem');
+  await field.fill('Uma flor');
+  await field.press('Enter');
+  const conversation = page.getByRole('log', { name: 'Conversa sobre o seu logo' });
+  await expect(conversation).toContainText('Que cores você quer no logo?');
+  // Sem nada escrito, "Enviar" fica desligado.
+  await expect(page.getByRole('button', { name: 'Enviar' })).toBeDisabled();
+
+  // Saiu e voltou: a conversa está lá; "Recomeçar conversa" volta ao começo.
+  await page.reload();
+  await expect(conversation).toContainText('Uma flor');
+  await page.getByRole('button', { name: 'Recomeçar conversa' }).click();
+  await expect(conversation).not.toContainText('Uma flor');
+  await expect(conversation).toContainText('Vamos criar o logo da Patinhas da Ana?');
 });
 
 test('a marca só abre depois da conversa; o logo é só da dona', async ({ page }) => {
   // Conversa ainda não enviada: volta pra área.
   await signIn(page, studentEmail('conversaretoma'), PASSWORD, '/loja-pronta/marca');
   await expect(page).toHaveURL(/\/loja-pronta(\/conversa\/\w+)?$/);
-  const response = await page.request.get('/loja-pronta/marca/logo.svg');
-  expect(response.status()).toBe(404);
+  for (const path of ['/loja-pronta/marca/logo.png', '/loja-pronta/marca/imagens/e2e-logo-0001']) {
+    expect((await page.request.get(path)).status()).toBe(404);
+  }
+});
+
+test('marca confirmada antes do chat, sem logo: só o logo reabre, mesmo com a loja publicada', async ({
+  page,
+}) => {
+  await signIn(page, studentEmail('marcasemlogo'), PASSWORD, '/loja-pronta/marca');
+  await expect(page).toHaveURL(step('logo'));
+  // Os outros passos continuam fechados: levam pro logo.
+  for (const other of ['nome', 'descricao', 'revisao']) {
+    await page.goto(`/loja-pronta/marca/${other}`);
+    await expect(page).toHaveURL(step('logo'));
+  }
+  const conversation = page.getByRole('log', { name: 'Conversa sobre o seu logo' });
+  await page.getByRole('group', { name: 'Respostas rápidas' }).getByText('Um desenho').click();
+  await expect(conversation).toContainText('Que cores você quer no logo?');
+  await page.getByLabel('Sua mensagem').fill('Rosa');
+  await page.getByLabel('Sua mensagem').press('Enter');
+  await page.getByRole('button', { name: 'Criar meu logo' }).click();
+  await page.getByRole('button', { name: 'Usar esse logo' }).click();
+  // Escolheu: volta pro painel, com o logo; a marca fecha de novo.
+  await expect(page).toHaveURL(/\/loja-pronta$/);
+  await page.goto('/loja-pronta/marca/logo');
+  await expect(page).toHaveURL(/\/loja-pronta$/);
 });

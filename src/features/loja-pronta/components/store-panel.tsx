@@ -27,7 +27,7 @@ type StorePanelProps = {
   phase: number;
   conversation: ConversationStatus;
   /** A marca, quando já tem: o nome vira o título e o logo aparece no destaque. */
-  /** `logoSrc`: a imagem do logo salvo (savedLogoSrc), quando já tem. */
+  /** `logoSrc`: a imagem do logo salvo (brandLogoSrc), quando já tem. */
   brand: { name: string | null; logoSrc: string | null; started: boolean; confirmed: boolean };
 };
 
@@ -99,7 +99,7 @@ function heroFor(phase: number, conversation: ConversationStatus, brandStarted: 
     return {
       eyebrow: stageEyebrow(2),
       title: 'Crie a marca da sua loja',
-      text: 'Escolha o nome, monte o logo e defina o texto da loja. As ideias já estão prontas.',
+      text: 'Escolha o nome, crie o logo conversando com a nossa assistente e defina o texto da loja.',
       action: {
         href: BRAND_PATH,
         label: brandStarted ? 'Continuar minha marca' : 'Criar minha marca',
