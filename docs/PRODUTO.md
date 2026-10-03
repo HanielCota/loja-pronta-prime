@@ -65,9 +65,11 @@ Ao entrar, ela escolhe qual área quer acessar.
 
 1. A aluna compra na Hotmart.
 2. A conta é criada automaticamente e o produto comprado é liberado.
-3. Ela recebe um e-mail com uma senha temporária.
-4. No primeiro acesso, cria uma senha própria.
+3. Ela recebe um e-mail de boas-vindas com o botão "Criar minha senha".
+4. O botão abre a tela de criar a senha; ao salvar, ela já entra.
 5. Depois, entra com e-mail e senha.
+
+Hoje, até a integração com a Hotmart existir, as contas de teste usam uma senha temporária no lugar do botão (ver `docs/INTEGRACAO-HOTMART.md`, seção 4.1).
 
 Não existe cadastro público: só entra quem comprou ou quem a equipe liberou manualmente. Reembolso ou cancelamento bloqueia o acesso.
 
@@ -89,4 +91,4 @@ Não existe cadastro público: só entra quem comprou ou quem a equipe liberou m
 - **Dropshipping:** venda sem estoque próprio; o fornecedor envia o produto ao cliente.
 - **Hotmart:** plataforma onde os produtos são vendidos.
 - **Fase:** cada etapa da jornada da Loja Pronta.
-- **Senha temporária:** senha enviada na compra, usada só no primeiro acesso.
+- **Senha temporária:** senha das contas de teste, usada só no primeiro acesso. Com a integração com a Hotmart, dá lugar ao link "Criar minha senha" do email de boas-vindas.
