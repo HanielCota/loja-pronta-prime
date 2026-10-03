@@ -1,13 +1,8 @@
 import { headers } from 'next/headers';
 import { auth } from '@/server/auth/auth';
 
-/**
- * Ainda está com a senha temporária? A marca nasce `true`; `null` (contas antigas, sem a
- * marca) conta como temporária, pelo lado seguro. Único lugar com essa regra.
- */
-export function needsFirstPassword(user: { mustChangePassword?: boolean | null }): boolean {
-  return user.mustChangePassword !== false;
-}
+// A regra mora num arquivo sem servidor (testável sozinha); daqui ela segue exportada como antes.
+export { needsFirstPassword } from '../first-password';
 
 async function readSession() {
   return auth.api.getSession({ headers: await headers() });
