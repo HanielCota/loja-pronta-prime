@@ -35,16 +35,19 @@ export default async function BrandStepPage({ params, searchParams }: PageProps)
   const [{ passo }, query] = await Promise.all([params, searchParams]);
   if (!isBrandStep(passo)) notFound();
 
-  const { student, answers, brand } = await requireBrandStudio(brandStepPath(passo));
+  const { student, answers, brand, revising } = await requireBrandStudio(brandStepPath(passo));
   if (!canOpenBrandStep(passo, brand)) redirect(brandStepPath(resumeBrandStep(brand)));
-  const editing = passo !== 'revisao' && getParam(query.editar) === '1';
+  // Revendo a marca confirmada, todo passo é edição: salvar volta pra revisão.
+  const editing = passo !== 'revisao' && (revising || getParam(query.editar) === '1');
   const templates = logoTemplates(answers);
 
   return (
     <ConversationLayout
       header={brandStepHeader(passo, Boolean(brand.name))}
       savedLabel="Escolhas salvas"
-      backHref={editing ? brandStepPath('revisao') : previousBrandPath(passo)}
+      backHref={
+        editing ? brandStepPath('revisao') : revising ? '/loja-pronta' : previousBrandPath(passo)
+      }
     >
       {passo === 'nome' ? (
         <NameStep
@@ -73,7 +76,12 @@ export default async function BrandStepPage({ params, searchParams }: PageProps)
         />
       ) : null}
       {passo === 'revisao' && brand.name && brand.logo && brand.description ? (
-        <BrandReview name={brand.name} logo={brand.logo} description={brand.description} />
+        <BrandReview
+          name={brand.name}
+          logo={brand.logo}
+          description={brand.description}
+          revising={revising}
+        />
       ) : null}
     </ConversationLayout>
   );

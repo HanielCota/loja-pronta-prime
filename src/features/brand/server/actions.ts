@@ -14,29 +14,35 @@ export type BrandResult = { error?: string } | undefined;
 
 type BrandPatch = Partial<Pick<typeof storeBrand.$inferInsert, 'name' | 'logo' | 'description'>>;
 
-/** Grava só o que mudou, criando a linha na primeira escolha. Confirmada, não muda mais. */
+/**
+ * Grava só o que mudou, criando a linha na primeira escolha. Confirmada, muda só revendo (a guarda
+ * de cada action já decidiu que ela pode, até a publicação).
+ */
 async function saveBrand(userId: string, patch: BrandPatch) {
   await db
     .insert(storeBrand)
     .values({ userId, ...patch })
-    .onConflictDoUpdate({
-      target: storeBrand.userId,
-      set: patch,
-      setWhere: isNull(storeBrand.completedAt),
-    });
+    .onConflictDoUpdate({ target: storeBrand.userId, set: patch });
 }
 
-/** Volta pra revisão quando ela veio de lá pra mudar algo; senão, segue pro próximo passo. */
-function after(formData: FormData, next: Parameters<typeof brandStepPath>[0]): never {
-  redirect(brandStepPath(formData.get('editing') ? 'revisao' : next));
+/**
+ * Volta pra revisão quando ela veio de lá pra mudar algo (ou está revendo a marca confirmada);
+ * senão, segue pro próximo passo.
+ */
+function after(
+  formData: FormData,
+  revising: boolean,
+  next: Parameters<typeof brandStepPath>[0],
+): never {
+  redirect(brandStepPath(formData.get('editing') || revising ? 'revisao' : next));
 }
 
 export async function saveBrandName(_state: BrandResult, formData: FormData): Promise<BrandResult> {
-  const { userId } = await requireBrandAction();
+  const { userId, revising } = await requireBrandAction();
   const parsed = parseBrandName(formData.get('name'));
   if (!parsed.ok) return { error: parsed.error };
   await saveBrand(userId, { name: parsed.value });
-  after(formData, 'modelo');
+  after(formData, revising, 'modelo');
 }
 
 /** Escolheu um dos modelos prontos: o logo começa dele, e ela segue pro estúdio. */
@@ -44,17 +50,17 @@ export async function chooseLogoTemplate(
   _state: BrandResult,
   formData: FormData,
 ): Promise<BrandResult> {
-  const { userId, answers } = await requireBrandAction();
+  const { userId, answers, revising } = await requireBrandAction();
   const index = Number(formData.get('template'));
   const template = logoTemplates(answers)[index];
   if (!template) return { error: 'Não encontramos esse modelo. Recarregue a página.' };
   await saveBrand(userId, { logo: template });
-  redirect(`${brandStepPath('ajustar')}${formData.get('editing') ? '?editar=1' : ''}`);
+  redirect(`${brandStepPath('ajustar')}${formData.get('editing') || revising ? '?editar=1' : ''}`);
 }
 
 /** O logo como ficou no estúdio. */
 export async function saveLogo(_state: BrandResult, formData: FormData): Promise<BrandResult> {
-  const { userId } = await requireBrandAction();
+  const { userId, revising } = await requireBrandAction();
   const parsed = logoConfigSchema.safeParse({
     template: Number(formData.get('template')),
     layout: formData.get('layout'),
@@ -65,23 +71,25 @@ export async function saveLogo(_state: BrandResult, formData: FormData): Promise
   });
   if (!parsed.success) return { error: 'Não conseguimos salvar o logo. Recarregue a página.' };
   await saveBrand(userId, { logo: parsed.data });
-  after(formData, 'descricao');
+  after(formData, revising, 'descricao');
 }
 
 export async function saveBrandDescription(
   _state: BrandResult,
   formData: FormData,
 ): Promise<BrandResult> {
-  const { userId } = await requireBrandAction();
+  const { userId, revising } = await requireBrandAction();
   const parsed = parseBrandDescription(formData.get('description'));
   if (!parsed.ok) return { error: parsed.error };
   await saveBrand(userId, { description: parsed.value });
-  after(formData, 'revisao');
+  after(formData, revising, 'revisao');
 }
 
 /** Confirma a marca: a loja passa pra fase 3 (abrir a conta na Shopee). */
 export async function finishBrand(): Promise<BrandResult> {
-  const { userId, brand } = await requireBrandAction();
+  const { userId, brand, revising } = await requireBrandAction();
+  // Revendo, a marca já foi confirmada e cada mudança já está salva: só volta pro painel.
+  if (revising) redirect('/loja-pronta');
   if (!brand.name || !brand.logo || !brand.description) {
     redirect(brandStepPath(!brand.name ? 'nome' : !brand.logo ? 'modelo' : 'descricao'));
   }

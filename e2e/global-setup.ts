@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import type { ProductId } from '@/config/products';
+import { logoTemplates } from '@/features/brand/logo/config';
 import { auth } from '@/server/auth/auth';
 import { database, PASSWORD, studentEmail, type StudentKind } from './support/students';
 
@@ -14,6 +15,8 @@ type Student = {
   storePhase?: number;
   /** Conversa inicial já enviada (com respostas de exemplo): a loja está na fase da marca. */
   conversationSent?: boolean;
+  /** Marca já confirmada (nome, o primeiro modelo de logo e um texto de exemplo). */
+  brandDone?: boolean;
 };
 
 /** Respostas de exemplo da conversa, pras alunas que já começam na fase da marca. */
@@ -76,6 +79,34 @@ const STUDENTS: Student[] = [
   // Perfil (e2e/profile.spec.ts): cada uma no seu teste, porque nome e senha mudam.
   { kind: 'perfilnome', emailVerified: true, banned: false },
   { kind: 'perfilsenha', emailVerified: true, banned: false },
+  // Rever fases feitas (e2e/revise.spec.ts): a conversa enviada; a marca confirmada; e uma loja já
+  // publicada, em que nada reabre.
+  {
+    kind: 'revisaconversa',
+    emailVerified: true,
+    banned: false,
+    products: ['loja-pronta'],
+    storePhase: 2,
+    conversationSent: true,
+  },
+  {
+    kind: 'revisamarca',
+    emailVerified: true,
+    banned: false,
+    products: ['loja-pronta'],
+    storePhase: 3,
+    conversationSent: true,
+    brandDone: true,
+  },
+  {
+    kind: 'revisatravada',
+    emailVerified: true,
+    banned: false,
+    products: ['loja-pronta'],
+    storePhase: 6,
+    conversationSent: true,
+    brandDone: true,
+  },
   // Marca da loja (fase 2): a conversa já enviada.
   {
     kind: 'marca',
@@ -133,6 +164,13 @@ export default async function globalSetup() {
         `insert into store_onboarding (user_id, answers, whatsapp, completed_at)
          values ($1, $2, '11987654321', now())`,
         [user.id, JSON.stringify(SENT_ANSWERS)],
+      );
+    }
+    if (student.brandDone) {
+      await database().query(
+        `insert into store_brand (user_id, name, logo, description, completed_at)
+         values ($1, 'Patinhas da Ana', $2, 'Tudo pro seu pet, com carinho.', now())`,
+        [user.id, JSON.stringify(logoTemplates(SENT_ANSWERS)[0])],
       );
     }
   }

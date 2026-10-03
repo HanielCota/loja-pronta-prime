@@ -6,6 +6,7 @@ import { getStudentProducts, requireProduct } from '@/features/products/server/a
 import { db } from '@/server/db';
 import { storeOnboarding } from '@/server/db/schema';
 import { cleanAnswers } from '../answers';
+import { canReviseDonePhases } from '../editing';
 import { getStorePhase } from './store';
 
 export type Onboarding = {
@@ -31,23 +32,32 @@ export async function getOnboarding(userId: string): Promise<Onboarding> {
 }
 
 /**
- * Páginas da conversa: só pra quem tem a Loja Pronta, com a conversa ainda não enviada e a loja
- * até a fase 2 (na 2 sem a conversa, ela ainda vê a fase 1: ver displayedPhase). Depois do envio, as perguntas levam de volta pra área (a tela de "pronto" tem a
- * própria regra).
+ * Quem pode abrir a conversa e como: respondendo (ainda não enviada, loja até a fase 2: na 2 sem a
+ * conversa, ela ainda vê a fase 1, ver displayedPhase) ou revendo (já enviada, antes da
+ * publicação: cada mudança fica salva, sem voltar de fase). Fora disso, nada.
+ */
+function conversationAccess(onboarding: Onboarding, phase: number) {
+  if (!onboarding.completedAt) return phase <= 2 ? 'answering' : null;
+  return canReviseDonePhases(phase) ? 'revising' : null;
+}
+
+/**
+ * Páginas da conversa: só pra quem tem a Loja Pronta e pode responder ou rever (ver acima). Fora
+ * disso, as perguntas levam de volta pra área (a tela de "pronto" tem a própria regra).
  */
 export async function requireConversation(path: string) {
   const student = await requireProduct('loja-pronta', path);
   const userId = student.session.user.id;
   const [onboarding, phase] = await Promise.all([getOnboarding(userId), getStorePhase(userId)]);
-  if (onboarding.completedAt || phase > 2) redirect('/loja-pronta');
-  return { student, onboarding };
+  const access = conversationAccess(onboarding, phase);
+  if (!access) redirect('/loja-pronta');
+  return { student, onboarding, revising: access === 'revising' };
 }
 
 /**
  * Mesma regra, pras Server Actions (que podem ser chamadas direto, sem passar pela página).
- * Devolve o id da aluna.
  */
-export async function requireConversationAction(): Promise<string> {
+export async function requireConversationAction(): Promise<{ userId: string; revising: boolean }> {
   const session = await getActiveSession();
   if (!session || needsFirstPassword(session.user)) redirect('/entrar');
   const userId = session.user.id;
@@ -56,8 +66,7 @@ export async function requireConversationAction(): Promise<string> {
     getOnboarding(userId),
     getStorePhase(userId),
   ]);
-  if (!products.includes('loja-pronta') || onboarding.completedAt || phase > 2) {
-    redirect('/loja-pronta');
-  }
-  return userId;
+  const access = conversationAccess(onboarding, phase);
+  if (!products.includes('loja-pronta') || !access) redirect('/loja-pronta');
+  return { userId, revising: access === 'revising' };
 }

@@ -134,9 +134,9 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
   await expect(stages.nth(1)).toHaveAttribute('aria-current', 'step');
   await expect(page.getByRole('heading', { name: 'Crie a marca da sua loja' })).toBeVisible();
 
-  // Enviada, a conversa não abre de novo.
+  // Enviada, a conversa reabre só pra rever: a pergunta salva volta pra revisão (e2e/revise.spec.ts).
   await page.goto('/loja-pronta/conversa/vendas');
-  await expect(page).toHaveURL(/\/loja-pronta$/);
+  await expect(page.getByRole('button', { name: 'Salvar e voltar' })).toBeVisible();
 
   // Na escolha, a marca depende dela: a Loja Pronta é a recomendada, e o curso (que ainda não
   // abriu) não.

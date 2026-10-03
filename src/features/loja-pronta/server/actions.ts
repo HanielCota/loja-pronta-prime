@@ -22,10 +22,11 @@ export type StepResult = { error?: string } | undefined;
 
 /**
  * Salva a resposta de uma pergunta e leva pra próxima (ou de volta pra revisão, quando ela veio
- * de lá pra editar). Salvar a cada pergunta é o que deixa ela continuar de onde parou.
+ * de lá pra editar ou está revendo a conversa já enviada). Salvar a cada pergunta é o que deixa
+ * ela continuar de onde parou.
  */
 export async function saveAnswer(_state: StepResult, formData: FormData): Promise<StepResult> {
-  const userId = await requireConversationAction();
+  const { userId, revising } = await requireConversationAction();
 
   const step = String(formData.get('step') ?? '');
   const question = isStep(step) ? findQuestion(step) : undefined;
@@ -43,12 +44,11 @@ export async function saveAnswer(_state: StepResult, formData: FormData): Promis
     .values({ userId, answers: { [question.id]: parsed.value } })
     .onConflictDoUpdate({
       target: storeOnboarding.userId,
+      // Enviada ou não, a guarda acima já decidiu que ela pode mudar (revendo, até a publicação).
       set: { answers: sql`${storeOnboarding.answers} || ${patch}::jsonb` },
-      // Outra aba pode ter enviado a conversa entre a guarda e este update: enviada, não muda.
-      setWhere: isNull(storeOnboarding.completedAt),
     });
 
-  redirect(formData.get('editing') ? stepPath(REVIEW_STEP) : stepPath(nextStep(step)));
+  redirect(formData.get('editing') || revising ? stepPath(REVIEW_STEP) : stepPath(nextStep(step)));
 }
 
 /**
@@ -59,7 +59,9 @@ export async function finishConversation(
   _state: StepResult,
   formData: FormData,
 ): Promise<StepResult> {
-  const userId = await requireConversationAction();
+  const { userId, revising } = await requireConversationAction();
+  // Revendo, a conversa já foi enviada: não há o que enviar de novo.
+  if (revising) redirect('/loja-pronta');
 
   const whatsapp = parseWhatsapp(String(formData.get('whatsapp') ?? ''));
   if (!whatsapp) {

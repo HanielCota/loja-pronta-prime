@@ -1,4 +1,10 @@
-import { ArrowRightIcon, BellIcon, CheckIcon, MessageCircleIcon } from 'lucide-react';
+import {
+  ArrowRightIcon,
+  BellIcon,
+  CheckIcon,
+  ChevronRightIcon,
+  MessageCircleIcon,
+} from 'lucide-react';
 import Link from 'next/link';
 import { Mascot } from '@/components/brand/mascot';
 import { Button } from '@/components/ui/button';
@@ -6,12 +12,13 @@ import { STORE_PHASES, STORE_STAGES } from '@/config/store-phases';
 import { TEAM_WHATSAPP } from '@/config/support';
 import type { LogoConfig } from '@/features/brand/logo/config';
 import { logoPreviewSrc } from '@/features/brand/logo-preview';
-import { BRAND_PATH } from '@/features/brand/steps';
+import { BRAND_PATH, brandStepPath } from '@/features/brand/steps';
 import { AreaShell, panelCard } from '@/features/member/components/area-shell';
 import { firstName } from '@/features/products/names';
 import { cn } from '@/lib/utils';
 import { storeStages, type StageView } from '../stages';
-import { CONVERSATION_PATH } from '../steps';
+import { canReviseDonePhases } from '../editing';
+import { CONVERSATION_PATH, REVIEW_STEP, stepPath } from '../steps';
 import type { ConversationStatus } from '../store-phase';
 import { whatsappLink } from '../whatsapp';
 
@@ -22,7 +29,7 @@ type StorePanelProps = {
   phase: number;
   conversation: ConversationStatus;
   /** A marca, quando já tem: o nome vira o título e o logo aparece no destaque. */
-  brand: { name: string | null; logo: LogoConfig | null; started: boolean };
+  brand: { name: string | null; logo: LogoConfig | null; started: boolean; confirmed: boolean };
 };
 
 /**
@@ -44,7 +51,18 @@ export function StorePanel({ user, hasChoice, phase, conversation, brand }: Stor
       intro={brand.name ? 'Sua loja na Shopee' : undefined}
     >
       <NextStep phase={phase} conversation={conversation} brand={brand} />
-      <Path stages={storeStages(phase)} />
+      <Path
+        stages={storeStages(phase)}
+        reviewHrefs={
+          // Só o que existe pra rever: a conversa enviada e a marca confirmada, até a publicação.
+          canReviseDonePhases(phase)
+            ? [
+                conversation === 'enviada' ? stepPath(REVIEW_STEP) : undefined,
+                brand.confirmed ? brandStepPath('revisao') : undefined,
+              ]
+            : []
+        }
+      />
     </AreaShell>
   );
 }
@@ -199,7 +217,14 @@ function TalkToTeam() {
  * Num cartão igual ao do destaque: as duas caixas com a mesma largura e a mesma margem interna,
  * pra o começo e o fim de cada uma se alinharem.
  */
-function Path({ stages }: { stages: StageView[] }) {
+/** `reviewHrefs`: onde rever cada etapa, na ordem (sem link: nada a rever ainda, ou já travada). */
+function Path({
+  stages,
+  reviewHrefs,
+}: {
+  stages: StageView[];
+  reviewHrefs: readonly (string | undefined)[];
+}) {
   return (
     <section aria-labelledby="seu-caminho" className={cn(panelCard, 'gap-5')}>
       <h2
@@ -209,15 +234,23 @@ function Path({ stages }: { stages: StageView[] }) {
         Seu caminho
       </h2>
       <ol aria-label="As etapas da sua loja" className="flex flex-col gap-6 lg:grid lg:grid-cols-3">
-        {stages.map((stage) => (
-          <Stage key={stage.title} stage={stage} />
+        {stages.map((stage, index) => (
+          <Stage
+            key={stage.title}
+            stage={stage}
+            reviewHref={stage.status === 'done' ? reviewHrefs[index] : undefined}
+          />
         ))}
       </ol>
     </section>
   );
 }
 
-function Stage({ stage }: { stage: StageView }) {
+/**
+ * Uma etapa do caminho. Feita e ainda aberta pra mudanças (até a publicação), ganha "Ver e
+ * editar": ela revê o que respondeu ou escolheu e muda, sem voltar de fase.
+ */
+function Stage({ stage, reviewHref }: { stage: StageView; reviewHref?: string | undefined }) {
   const { status } = stage;
   return (
     <li aria-current={status === 'current' ? 'step' : undefined} className="flex flex-col gap-1">
@@ -253,6 +286,19 @@ function Stage({ stage }: { stage: StageView }) {
       {/* Na atual com várias fases, em que passo ela está: "Passo 2 de 5: Conexão com a Shopee". */}
       {status === 'current' && stage.step ? (
         <span className="text-sm font-semibold text-pretty text-progress-text">{stage.step}</span>
+      ) : null}
+      {reviewHref ? (
+        <Link
+          href={reviewHref}
+          aria-label={`Ver e editar: ${stage.title}`}
+          className="group -ml-2 inline-flex min-h-11 items-center gap-0.5 self-start rounded-full px-2 font-semibold text-link outline-none focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-solid"
+        >
+          <span className="underline-offset-4 group-hover:underline">Ver e editar</span>
+          <ChevronRightIcon
+            aria-hidden="true"
+            className="size-4 motion-safe:transition-transform motion-safe:group-hover:translate-x-0.5"
+          />
+        </Link>
       ) : null}
     </li>
   );

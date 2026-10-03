@@ -16,8 +16,15 @@ import { StickyAction } from './sticky-action';
 const TITLE_ID = 'revisao-titulo';
 
 /** Revisão: as respostas por parte, cada uma com "Editar", e o caminho pro último passo
- * (preso embaixo no celular: são dez respostas pra rolar). */
-export function ReviewStep({ answers }: { answers: OnboardingAnswers }) {
+ * (preso embaixo no celular: são dez respostas pra rolar). `revising`: a conversa já foi
+ * enviada e ela voltou pra rever; cada mudança já fica salva, e o botão só leva de volta. */
+export function ReviewStep({
+  answers,
+  revising = false,
+}: {
+  answers: OnboardingAnswers;
+  revising?: boolean;
+}) {
   const groups = Object.entries(ONBOARDING_BLOCKS).map(([block, title]) => ({
     block,
     title,
@@ -26,8 +33,12 @@ export function ReviewStep({ answers }: { answers: OnboardingAnswers }) {
   return (
     <>
       <MascotBubble
-        title="Confira suas respostas"
-        help="Com elas, preparamos ideias de nome, logo e texto pra sua loja. Você pode mudar qualquer uma."
+        title={revising ? 'Suas respostas' : 'Confira suas respostas'}
+        help={
+          revising
+            ? 'Toque em Editar pra mudar uma resposta. O que você muda já fica salvo.'
+            : 'Com elas, preparamos ideias de nome, logo e texto pra sua loja. Você pode mudar qualquer uma.'
+        }
         titleId={TITLE_ID}
       />
       <FocusOnArrival targetId={TITLE_ID} />
@@ -67,7 +78,11 @@ export function ReviewStep({ answers }: { answers: OnboardingAnswers }) {
       ))}
       <StickyAction>
         <Button asChild>
-          <Link href={stepPath(WHATSAPP_STEP)}>Está tudo certo</Link>
+          {revising ? (
+            <Link href="/loja-pronta">Voltar pra Loja Pronta</Link>
+          ) : (
+            <Link href={stepPath(WHATSAPP_STEP)}>Está tudo certo</Link>
+          )}
         </Button>
       </StickyAction>
     </>

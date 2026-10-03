@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { getActiveSession, needsFirstPassword } from '@/features/auth/server/session';
+import { canReviseDonePhases } from '@/features/loja-pronta/editing';
 import { getOnboarding } from '@/features/loja-pronta/server/conversation';
 import { getStorePhase } from '@/features/loja-pronta/server/store';
 import { getStudentProducts, requireProduct } from '@/features/products/server/access';
@@ -37,7 +38,17 @@ function isBrandTurn(storePhase: number, conversationSent: boolean, brand: Brand
   return conversationSent && storePhase <= 2 && !brand.completedAt;
 }
 
-/** Páginas da marca: fora da vez dela, levam de volta pra área da Loja Pronta. */
+/**
+ * Como ela pode abrir a marca: criando (na vez dela) ou revendo (já confirmada, antes da
+ * publicação: cada mudança fica salva, sem voltar de fase). Fora disso, nada.
+ */
+function brandAccess(storePhase: number, conversationSent: boolean, brand: Brand) {
+  if (isBrandTurn(storePhase, conversationSent, brand)) return 'creating';
+  if (conversationSent && brand.completedAt && canReviseDonePhases(storePhase)) return 'revising';
+  return null;
+}
+
+/** Páginas da marca: sem poder criar nem rever, levam de volta pra área da Loja Pronta. */
 export async function requireBrandStudio(path: string) {
   const student = await requireProduct('loja-pronta', path);
   const userId = student.session.user.id;
@@ -46,8 +57,9 @@ export async function requireBrandStudio(path: string) {
     getStorePhase(userId),
     getBrand(userId),
   ]);
-  if (!isBrandTurn(phase, Boolean(onboarding.completedAt), brand)) redirect('/loja-pronta');
-  return { student, answers: onboarding.answers, brand };
+  const access = brandAccess(phase, Boolean(onboarding.completedAt), brand);
+  if (!access) redirect('/loja-pronta');
+  return { student, answers: onboarding.answers, brand, revising: access === 'revising' };
 }
 
 /** Mesma regra, pras Server Actions (que podem ser chamadas direto). */
@@ -61,13 +73,15 @@ export async function requireBrandAction() {
     getStorePhase(userId),
     getBrand(userId),
   ]);
-  if (
-    !products.includes('loja-pronta') ||
-    !isBrandTurn(phase, Boolean(onboarding.completedAt), brand)
-  ) {
-    redirect('/loja-pronta');
-  }
-  return { userId, studentName: session.user.name, answers: onboarding.answers, brand };
+  const access = brandAccess(phase, Boolean(onboarding.completedAt), brand);
+  if (!products.includes('loja-pronta') || !access) redirect('/loja-pronta');
+  return {
+    userId,
+    studentName: session.user.name,
+    answers: onboarding.answers,
+    brand,
+    revising: access === 'revising',
+  };
 }
 
 /**
