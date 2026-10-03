@@ -69,7 +69,7 @@ export async function consumeAttempt(scope: RateLimitScope, identity: string): P
     points = await countInDatabase(key);
   } catch (error) {
     console.error(
-      `[rate-limit] banco indisponível, usando o limite em memória: ${(error as Error).name}`,
+      `[rate-limit] banco indisponível, usando o limite em memória: ${error instanceof Error ? error.name : String(error)}`,
     );
     points = countInMemory(key);
   }

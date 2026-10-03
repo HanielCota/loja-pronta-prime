@@ -38,3 +38,5 @@ export function createFaceRenderer(face: HTMLElement) {
     },
   };
 }
+
+export type FaceRenderer = NonNullable<ReturnType<typeof createFaceRenderer>>;

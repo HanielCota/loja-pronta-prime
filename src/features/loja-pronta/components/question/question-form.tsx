@@ -5,7 +5,7 @@ import { useActionState, useEffect, useId, useRef, useState } from 'react';
 import { nodMascot, upsetMascot } from '@/components/brand/mascot';
 import { Button } from '@/components/ui/button';
 import { FieldError } from '@/components/ui/field';
-import type { OnboardingQuestion } from '@/config/onboarding';
+import type { AnswerValue, OnboardingQuestion } from '@/config/onboarding';
 import { submitWithoutReset } from '@/lib/forms';
 import { cn } from '@/lib/utils';
 import {
@@ -25,7 +25,7 @@ import { useAutoAdvance } from './use-auto-advance';
 type QuestionFormProps = {
   question: OnboardingQuestion;
   /** Resposta já salva (ela voltou ou veio editar). */
-  saved: string | string[] | null | undefined;
+  saved: AnswerValue | undefined;
   /** Veio da revisão: salvar leva de volta pra ela. */
   editing: boolean;
   /** Ids do título e da ajuda (no balão do mascote), que nomeiam e descrevem o campo. */

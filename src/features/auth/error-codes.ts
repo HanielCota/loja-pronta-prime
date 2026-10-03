@@ -13,8 +13,10 @@ const AUTH_ERROR_CODES = [
 
 export type AuthErrorCode = (typeof AUTH_ERROR_CODES)[number];
 
+const CODE_SET: ReadonlySet<unknown> = new Set(AUTH_ERROR_CODES);
+
 function isAuthErrorCode(value: unknown): value is AuthErrorCode {
-  return AUTH_ERROR_CODES.includes(value as AuthErrorCode);
+  return CODE_SET.has(value);
 }
 
 /** Pega o código de erro de tela que a Server Action devolveu em `formErrors`. */
