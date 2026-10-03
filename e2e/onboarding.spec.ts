@@ -111,13 +111,14 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
   await page.getByRole('button', { name: 'Enviar respostas' }).click();
 
   await expect(page).toHaveURL(/\/loja-pronta\/conversa\/pronto$/);
-  await expect(page.getByRole('heading', { name: /Agora é com a gente/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Agora vem a sua marca/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Criar minha marca/ })).toBeVisible();
   // O número que ela digitou aparece (dá pra perceber um erro).
   await expect(page.getByText('(11) 98765-4321')).toBeVisible();
   await expectNoA11yViolations(page);
 
-  // A loja foi pra fase 2, com a equipe.
-  await page.getByRole('link', { name: 'Ver a minha loja' }).click();
+  // A loja foi pra fase 2: a vez da marca.
+  await page.getByRole('link', { name: 'Fazer depois' }).click();
   await expect(page.getByRole('heading', { name: 'Fase 2 de 7' })).toBeVisible();
   // A jornada concorda com o cartão: a conversa concluída, a fase 2 como a atual.
   const phases = page
@@ -125,16 +126,16 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
     .getByRole('listitem');
   await expect(phases.nth(0)).toContainText('(concluída)');
   await expect(phases.nth(1)).toHaveAttribute('aria-current', 'step');
-  await expect(page.getByRole('heading', { name: 'Estamos criando sua marca' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Crie a marca da sua loja' })).toBeVisible();
 
   // Enviada, a conversa não abre de novo.
   await page.goto('/loja-pronta/conversa/vendas');
   await expect(page).toHaveURL(/\/loja-pronta$/);
 
-  // Na escolha, com a loja nas mãos da equipe: o texto diz que ela será chamada, e nenhum cartão
-  // é "recomendado" (o curso ainda não abriu).
+  // Na escolha, a marca depende dela: a Loja Pronta é a recomendada, e o curso (que ainda não
+  // abriu) não.
   await page.goto('/');
-  await expect(page.getByText(/Sua loja está com a equipe/)).toBeVisible();
+  await expect(page.getByText('Sua loja está esperando por você.')).toBeVisible();
   await expect(
     page.getByRole('link', { name: /Sistema Loja Lucrativa/ }),
   ).not.toHaveAccessibleDescription(/Recomendado/);
@@ -252,7 +253,7 @@ test.describe('sem JavaScript', () => {
     await page.getByLabel('Nome da loja').fill('Loja Sem JS');
     await page.getByRole('button', { name: 'Continuar' }).click();
     await choose('Moderno', 'cor');
-    await choose('Deixo com a equipe', 'sentimento');
+    await choose('Escolho depois', 'sentimento');
     await choose('Seguras', 'toque');
     await page.getByLabel(/Seu toque pessoal/).fill('Um girassol');
     await page.getByRole('button', { name: /Continuar|Pular/ }).click();

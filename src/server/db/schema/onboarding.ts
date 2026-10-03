@@ -7,7 +7,7 @@ import { user } from './auth';
 /**
  * Conversa inicial da Loja Pronta (fase 1): as respostas da aluna, salvas a cada pergunta (pra
  * ela continuar de onde parou), e o WhatsApp que ela confirma no fim. `completedAt` marca o
- * envio: a loja passa pra fase 2 e a equipe começa a criar o logo e a descrição.
+ * envio: a loja passa pra fase 2, a da marca.
  */
 export const storeOnboarding = pgTable(
   'store_onboarding',
@@ -27,7 +27,7 @@ export const storeOnboarding = pgTable(
   (table) => [
     // O mesmo formato que o app grava: DDD (sem 0) e número, só dígitos.
     check('store_onboarding_whatsapp_check', sql`${table.whatsapp} ~ '^[1-9][0-9]{9,10}$'`),
-    // Enviada sempre com o WhatsApp: é por ele que a equipe fala com ela.
+    // Enviada sempre com o WhatsApp: é por ele que chegam os avisos de cada fase.
     check(
       'store_onboarding_completed_check',
       sql`${table.completedAt} is null or ${table.whatsapp} is not null`,

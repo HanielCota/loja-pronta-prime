@@ -14,8 +14,9 @@ describe('storeChooserCard', () => {
     });
   });
 
-  test('fase com a equipe: não depende dela', () => {
-    expect(storeChooserCard(2).waitsOnStudent).toBe(false);
+  test('marca: depende dela; fases ainda fechadas, não', () => {
+    expect(storeChooserCard(2).waitsOnStudent).toBe(true);
+    expect(storeChooserCard(3).waitsOnStudent).toBe(false);
     expect(storeChooserCard(7).status.label).toBe('Loja no ar');
   });
 });

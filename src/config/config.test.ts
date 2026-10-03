@@ -26,7 +26,7 @@ describe('configuração', () => {
     }
   });
 
-  test('WhatsApp da equipe: vazio, ou só os dígitos com DDD', () => {
+  test('WhatsApp do suporte: vazio, ou só os dígitos com DDD', () => {
     if (TEAM_WHATSAPP) expect(parseWhatsapp(TEAM_WHATSAPP)).toBe(TEAM_WHATSAPP);
   });
 });

@@ -43,6 +43,13 @@
       "when": 1790982320898,
       "tag": "0005_cool_jack_power",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791046323466,
+      "tag": "0006_adorable_thor",
+      "breakpoints": true
     }
   ]
 }

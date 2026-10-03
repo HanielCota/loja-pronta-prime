@@ -2,13 +2,10 @@ import { ChevronLeftIcon } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-/** As três partes da conversa, nomeadas no topo. */
-const PARTS = ['Sobre você', 'Sua marca', 'Confirmar'] as const;
-
 type ConversationLayoutProps = {
-  /** Parte atual (0 a 2): dá o nome em cima. */
-  part: 0 | 1 | 2;
-  /** Quanto da conversa inteira já foi (0 a 1): a barra enche etapa a etapa. */
+  /** Parte atual, nomeada em cima ("Sobre você", "Seu logo"). */
+  section: string;
+  /** Quanto do caminho inteiro já foi (0 a 1): a barra enche etapa a etapa. */
   progress: number;
   /** "Pergunta 3 de 10", "Revisão"... */
   stepLabel: string;
@@ -24,7 +21,7 @@ type ConversationLayoutProps = {
  * topo, pra caber sem rolar), e mais larga no computador, pra pergunta não ficar perdida na tela. Tudo são links de verdade: funciona sem JavaScript.
  */
 export function ConversationLayout({
-  part,
+  section,
   progress,
   stepLabel,
   backHref,
@@ -42,7 +39,7 @@ export function ConversationLayout({
             <ChevronLeftIcon aria-hidden="true" className="size-6" />
           </Link>
           <p className="flex min-w-0 flex-1 flex-col text-sm leading-tight">
-            <span className="font-semibold">{PARTS[part]}</span>
+            <span className="font-semibold">{section}</span>
             <span className="text-muted-foreground">{stepLabel}</span>
           </p>
           <Link

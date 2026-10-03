@@ -67,7 +67,7 @@ export function OptionField({
           );
         }
         if (layout === 'chips' || layout === 'color') {
-          // Na pergunta da cor, o "Deixo com a equipe" é um chip numa linha própria.
+          // Na pergunta da cor, o "Escolho depois" é um chip numa linha própria.
           return (
             <Chip key={option.label} label={option.label} fullRow={layout === 'color'}>
               {input}

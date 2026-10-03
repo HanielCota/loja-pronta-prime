@@ -12,6 +12,22 @@ type Student = {
   products?: ProductId[];
   /** Fase da loja na Loja Pronta (sem valor, nenhuma loja cadastrada: conta como a primeira). */
   storePhase?: number;
+  /** Conversa inicial já enviada (com respostas de exemplo): a loja está na fase da marca. */
+  conversationSent?: boolean;
+};
+
+/** Respostas de exemplo da conversa, pras alunas que já começam na fase da marca. */
+const SENT_ANSWERS = {
+  vendas: 'Nunca vendi',
+  motivacao: ['Renda extra'],
+  dificuldade: 'Escolher bons produtos',
+  categorias: ['Pets'],
+  tempo: 'Até 3 horas',
+  nome: 'Patinhas da Ana',
+  estilo: 'Divertido',
+  cor: 'Verde',
+  sentimento: ['Acolhidas'],
+  toque: '',
 };
 
 const STUDENTS: Student[] = [
@@ -57,6 +73,23 @@ const STUDENTS: Student[] = [
   { kind: 'redefinirnaoconfirmada', emailVerified: false, banned: false },
   { kind: 'falharede', emailVerified: true, banned: false },
   { kind: 'apinome', emailVerified: true, banned: false },
+  // Marca da loja (fase 2): a conversa já enviada.
+  {
+    kind: 'marca',
+    emailVerified: true,
+    banned: false,
+    products: ['loja-pronta'],
+    storePhase: 2,
+    conversationSent: true,
+  },
+  {
+    kind: 'marcateclado',
+    emailVerified: true,
+    banned: false,
+    products: ['loja-pronta'],
+    storePhase: 2,
+    conversationSent: true,
+  },
 ];
 
 /** Cria as alunas desta execução pela mesma API que a integração com a Hotmart vai usar. */
@@ -91,6 +124,13 @@ export default async function globalSetup() {
         user.id,
         student.storePhase,
       ]);
+    }
+    if (student.conversationSent) {
+      await database().query(
+        `insert into store_onboarding (user_id, answers, whatsapp, completed_at)
+         values ($1, $2, '11987654321', now())`,
+        [user.id, JSON.stringify(SENT_ANSWERS)],
+      );
     }
   }
 }

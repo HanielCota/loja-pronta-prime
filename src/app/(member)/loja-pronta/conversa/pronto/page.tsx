@@ -1,3 +1,4 @@
+import { ArrowRightIcon } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -5,6 +6,7 @@ import type { ReactNode } from 'react';
 import { CardHeading } from '@/components/brand/card-heading';
 import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
+import { BRAND_PATH } from '@/features/brand/steps';
 import { getOnboarding } from '@/features/loja-pronta/server/conversation';
 import { CONVERSATION_PATH, DONE_PATH } from '@/features/loja-pronta/steps';
 import { formatWhatsapp } from '@/features/loja-pronta/whatsapp';
@@ -21,40 +23,17 @@ export const metadata: Metadata = {
   title: 'Respostas enviadas',
 };
 
-/** Fim da conversa: o que acontece agora, de cada lado. */
+/** Fim da conversa: a marca é o próximo passo, e já dá pra começar. */
 export default async function ConversationDonePage() {
   const { session } = await requireProduct('loja-pronta', DONE_PATH);
   const { completedAt, whatsapp } = await getOnboarding(session.user.id);
   if (!completedAt) redirect(CONVERSATION_PATH);
   const name = firstName(session.user.name);
 
-  const groups: { id: string; title: string; accent: boolean; items: ReactNode[] }[] = [
-    {
-      id: 'equipe',
-      title: 'O que a equipe faz agora',
-      accent: true,
-      items: [
-        'Cria opções de logo e de descrição pra sua loja.',
-        whatsapp ? (
-          <>
-            Avisa você no WhatsApp{' '}
-            <strong className="font-semibold whitespace-nowrap">{formatWhatsapp(whatsapp)}</strong>{' '}
-            em até 24 horas.
-          </>
-        ) : (
-          'Avisa você no WhatsApp em até 24 horas.'
-        ),
-      ],
-    },
-    {
-      id: 'voce',
-      title: 'Enquanto isso',
-      accent: false,
-      items: [
-        'Fique de olho no WhatsApp. A próxima escolha é sua.',
-        'Acompanhe cada fase da loja na Loja Pronta.',
-      ],
-    },
+  const next: ReactNode[] = [
+    'Escolher o nome da loja.',
+    'Montar o seu logo, a partir de modelos prontos.',
+    'Escolher o texto que aparece na loja.',
   ];
 
   return (
@@ -63,38 +42,47 @@ export default async function ConversationDonePage() {
         <Logo expression="happy" compact />
         <CardHeading
           className="mb-0"
-          title={name ? `Pronto, ${name}! Agora é com a gente.` : 'Pronto! Agora é com a gente.'}
-          description="Recebemos suas respostas."
+          title={
+            name ? `Pronto, ${name}! Agora vem a sua marca.` : 'Pronto! Agora vem a sua marca.'
+          }
+          description="Recebemos suas respostas e já preparamos ideias pra você."
         />
       </div>
-      {groups.map((group) => (
-        <section
-          key={group.id}
-          aria-labelledby={`proximos-${group.id}`}
-          className={cn(panelCard, 'gap-3')}
-        >
-          <h2 id={`proximos-${group.id}`} className={sectionTitleClass}>
-            {group.title}
-          </h2>
-          <ul className="flex flex-col gap-2">
-            {group.items.map((item, index) => (
-              <li key={index} className="flex gap-3 text-body text-pretty">
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    'mt-2.5 size-2 shrink-0 rounded-full forced-colors:bg-[CanvasText]',
-                    group.accent ? 'bg-primary' : 'bg-muted-foreground',
-                  )}
-                />
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
-      <Button asChild>
-        <Link href="/loja-pronta">Ver a minha loja</Link>
-      </Button>
+      <section aria-labelledby="proximos-passos" className={cn(panelCard, 'gap-3')}>
+        <h2 id="proximos-passos" className={sectionTitleClass}>
+          O que você vai fazer agora
+        </h2>
+        <ol className="flex flex-col gap-2">
+          {next.map((item, index) => (
+            <li key={index} className="flex gap-3 text-body text-pretty">
+              <span
+                aria-hidden="true"
+                className="grid size-7 shrink-0 place-items-center rounded-full bg-primary-soft text-sm font-semibold text-link forced-colors:border forced-colors:border-[CanvasText]"
+              >
+                {index + 1}
+              </span>
+              <span className="pt-0.5">{item}</span>
+            </li>
+          ))}
+        </ol>
+        {whatsapp ? (
+          <p className="text-body text-pretty text-muted-foreground">
+            Os avisos de cada fase chegam no WhatsApp{' '}
+            <strong className="font-semibold whitespace-nowrap">{formatWhatsapp(whatsapp)}</strong>.
+          </p>
+        ) : null}
+      </section>
+      <div className="flex flex-col gap-2">
+        <Button asChild>
+          <Link href={BRAND_PATH}>
+            Criar minha marca
+            <ArrowRightIcon aria-hidden="true" />
+          </Link>
+        </Button>
+        <Button asChild variant="ghost">
+          <Link href="/loja-pronta">Fazer depois</Link>
+        </Button>
+      </div>
     </CenteredMemberPage>
   );
 }

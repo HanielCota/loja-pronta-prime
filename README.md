@@ -4,7 +4,7 @@
 
 # Loja Pronta Prime
 
-**The member area where beginners learn to sell on Shopee, or follow along while our team builds their store.**
+**The member area where beginners learn to sell on Shopee, or build their store step by step, with everything prepared for them.**
 
 [lojaprontaprime.com](https://lojaprontaprime.com)
 
@@ -281,6 +281,7 @@ src/
 ├─ features/
 │  ├─ auth/              Access screens: components, schemas and messages
 │  │  └─ server/         Server Actions and server-side rules
+│  ├─ brand/             Loja Pronta brand step: name, logo studio and description
 │  ├─ loja-pronta/       Loja Pronta: first conversation, store panel and phases
 │  │  └─ server/         Answers storage, store phase and Server Actions
 │  ├─ member/            Frame shared by the signed-in screens (top bar, cards)

@@ -32,8 +32,8 @@ export const PRODUCTS: Record<ProductId, Product> = {
     title: 'Loja Pronta',
     welcome: 'Boas-vindas à Loja Pronta',
     path: '/loja-pronta',
-    summary: 'A equipe monta sua loja na Shopee, e você acompanha cada fase.',
-    tag: 'A equipe monta a loja pra você',
-    pitch: 'Montamos sua loja na Shopee pra você.',
+    summary: 'Você monta sua loja na Shopee passo a passo, com tudo já preparado.',
+    tag: 'Sua loja na Shopee, passo a passo',
+    pitch: 'Monte sua loja na Shopee com tudo já preparado pra você.',
   },
 };

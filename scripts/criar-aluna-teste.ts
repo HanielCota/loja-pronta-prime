@@ -3,16 +3,17 @@
  * Em produção, as contas nascem da integração com a Hotmart (docs/INTEGRACAO-HOTMART.md).
  *
  *   bun run dev:aluna <email> <senha> [--nao-confirmada] [--desativada] [--primeiro-acesso]
- *                     [--so-sll | --so-loja-pronta | --sem-produto] [--fase=<1 a 7>]
+ *                     [--so-sll | --so-loja-pronta | --sem-produto] [--fase=<1 a 7>] [--marca]
  *
  * Produtos: sem opção, a aluna tem os dois (e vê a tela de escolha de área).
  * Fase: em que fase está a loja dela na Loja Pronta (sem opção, a primeira).
+ * --marca: conversa inicial já enviada (com respostas de exemplo): ela cai na fase da marca.
  */
 import type { ProductId } from '@/config/products';
 import { STORE_PHASES } from '@/config/store-phases';
 import { auth } from '@/server/auth/auth';
 import { db } from '@/server/db';
-import { stores, studentProducts } from '@/server/db/schema';
+import { storeOnboarding, stores, studentProducts } from '@/server/db/schema';
 
 if (process.env.NODE_ENV === 'production') {
   console.error('Esse script é só pra desenvolvimento.');
@@ -28,7 +29,7 @@ const phase = phaseFlag ? Number(phaseFlag.slice('--fase='.length)) : 1;
 
 if (!email || !password || !Number.isInteger(phase) || phase < 1 || phase > STORE_PHASES.length) {
   console.error(
-    'Uso: bun run dev:aluna <email> <senha> [--nao-confirmada] [--desativada] [--primeiro-acesso] [--so-sll | --so-loja-pronta | --sem-produto] [--fase=<1 a 7>]',
+    'Uso: bun run dev:aluna <email> <senha> [--nao-confirmada] [--desativada] [--primeiro-acesso] [--so-sll | --so-loja-pronta | --sem-produto] [--fase=<1 a 7>] [--marca]',
   );
   process.exit(1);
 }
@@ -62,7 +63,27 @@ if (products.length) {
 }
 
 if (products.includes('loja-pronta')) {
-  await db.insert(stores).values({ userId: user.id, phase });
+  const marca = flags.has('--marca');
+  await db.insert(stores).values({ userId: user.id, phase: marca ? 2 : phase });
+  if (marca) {
+    await db.insert(storeOnboarding).values({
+      userId: user.id,
+      answers: {
+        vendas: 'Nunca vendi',
+        motivacao: ['Renda extra'],
+        dificuldade: 'Escolher bons produtos',
+        categorias: ['Beleza', 'Casa e decoração'],
+        tempo: 'Até 3 horas',
+        nome: 'Bella Flor',
+        estilo: 'Delicado',
+        cor: 'Rosa',
+        sentimento: ['Acolhidas', 'Especiais'],
+        toque: '',
+      },
+      whatsapp: '11987654321',
+      completedAt: new Date(),
+    });
+  }
 }
 
 console.info(`Aluna de teste criada (${user.id}), produtos: ${products.join(', ') || 'nenhum'}.`);

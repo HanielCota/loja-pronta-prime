@@ -5,7 +5,7 @@ import { STORE_PHASES } from '../../../config/store-phases';
 import { user } from './auth';
 
 /**
- * Loja que a equipe monta pra aluna da Loja Pronta, e a fase em que ela está (1 a 7, ver
+ * Loja da aluna na Loja Pronta, e a fase em que ela está (1 a 7, ver
  * src/config/store-phases.ts). Sem linha, a loja ainda está na primeira fase.
  */
 export const stores = pgTable(

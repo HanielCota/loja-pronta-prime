@@ -11,6 +11,7 @@ import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { STORE_PHASES } from '@/config/store-phases';
 import { TEAM_WHATSAPP } from '@/config/support';
+import { BRAND_PATH } from '@/features/brand/steps';
 import { CONVERSATION_PATH, QUESTION_COUNT } from '../steps';
 import type { ConversationStatus } from '../store-phase';
 import { whatsappLink } from '../whatsapp';
@@ -50,7 +51,7 @@ export function StorePanel({ user, firstVisit, hasChoice, phase, conversation }:
         name,
         firstVisit,
         firstVisit
-          ? 'A equipe monta sua loja na Shopee, e você acompanha cada fase aqui.'
+          ? 'Você monta sua loja na Shopee aqui, passo a passo, com tudo já preparado.'
           : 'Aqui você acompanha cada fase da sua loja.',
       )}
     >
@@ -85,7 +86,7 @@ export function StorePanel({ user, firstVisit, hasChoice, phase, conversation }:
   );
 }
 
-/** O que fazer agora (ou, quando a vez é da equipe, o que ela está fazendo). */
+/** O que fazer agora (ou, quando a fase ainda não abriu, o que vem nela). */
 function NextStepCard({
   phase,
   conversation,
@@ -99,8 +100,8 @@ function NextStepCard({
     return (
       <ActionCard label="O que fazer agora" title="Conte sobre você e sua marca">
         <p className="text-body text-pretty text-foreground/80">
-          São perguntas rápidas, uma por vez. Com suas respostas, a equipe cria o logo e a descrição
-          da loja.
+          São perguntas rápidas, uma por vez. Com suas respostas, preparamos ideias de nome, logo e
+          texto pra sua loja.
         </p>
         <ul className="flex flex-wrap gap-x-5 gap-y-1 text-body text-muted-foreground">
           <li className="inline-flex items-center gap-1.5">
@@ -125,25 +126,40 @@ function NextStepCard({
     );
   }
 
-  // Conversa enviada (a página já mostra a fase 2 nesse caso): a equipe está criando a marca.
+  // Conversa enviada (a página já mostra a fase 2 nesse caso): a vez da marca.
   if (phase === 2 && conversation === 'enviada') {
     return (
-      <ActionCard label="Com a equipe" title="Estamos criando sua marca">
+      <ActionCard label="O que fazer agora" title="Crie a marca da sua loja">
         <p className="text-body text-pretty text-foreground/80">
-          A equipe está criando opções de logo e de descrição pra sua loja. Em até 24 horas, você
-          recebe um aviso no WhatsApp pra escolher.
+          Escolha o nome, monte o logo e escolha o texto da loja. Já deixamos ideias prontas com as
+          suas respostas.
         </p>
-        <TalkToTeam />
+        <ul className="flex flex-wrap gap-x-5 gap-y-1 text-body text-muted-foreground">
+          <li className="inline-flex items-center gap-1.5">
+            <ClockIcon aria-hidden="true" className="size-4" />
+            10 minutos
+          </li>
+          <li className="inline-flex items-center gap-1.5">
+            <BookmarkIcon aria-hidden="true" className="size-4" />
+            Você pode parar e continuar depois
+          </li>
+        </ul>
+        <Button asChild className="mt-2">
+          <Link href={BRAND_PATH}>
+            Criar minha marca
+            <ArrowRightIcon aria-hidden="true" />
+          </Link>
+        </Button>
       </ActionCard>
     );
   }
 
-  // As outras fases ainda não têm telas: o que acontece agora, e quem avisa quando for a vez dela.
+  // As outras fases ainda não têm telas: o que vem nelas, e o aviso de quando abrirem.
   return (
-    <ActionCard label="O que acontece agora" title={current?.title ?? ''}>
+    <ActionCard label="Em breve" title={current?.title ?? ''}>
       <p className="text-body text-pretty text-foreground/80">{current?.detail}</p>
       <p className="text-body text-pretty text-muted-foreground">
-        Quando precisar de você, a equipe chama no WhatsApp.
+        Estamos preparando essa fase. Você recebe um aviso no WhatsApp quando ela abrir.
       </p>
       <TalkToTeam />
     </ActionCard>
@@ -151,8 +167,8 @@ function NextStepCard({
 }
 
 /**
- * Enquanto a loja está com a equipe, a tela não pede nada dela: este é o caminho pra tirar uma
- * dúvida. Só aparece com o número da equipe configurado (config/support.ts).
+ * Enquanto a próxima fase não abre, a tela não pede nada dela: este é o caminho pra tirar uma
+ * dúvida. Só aparece com o número do suporte configurado (config/support.ts).
  */
 function TalkToTeam() {
   if (!TEAM_WHATSAPP) return null;
@@ -191,20 +207,19 @@ function ActionCard({
   );
 }
 
-/** O serviço em três passos, pra iniciante saber o que esperar de cada lado. */
+/** O caminho em três passos, pra iniciante saber o que esperar. */
 const HOW_IT_WORKS = [
   {
     title: 'Você conta sobre você',
-    detail: 'Seu perfil e o jeito da sua marca, aqui na plataforma.',
+    detail: 'Umas perguntas rápidas sobre você e o jeito da sua marca.',
   },
   {
-    title: 'A equipe monta sua loja',
-    detail: 'Cria o logo e a descrição, escolhe os produtos e publica tudo na Shopee.',
+    title: 'Você cria sua marca',
+    detail: 'Escolhe o nome, monta o logo e o texto, com ideias já prontas.',
   },
   {
-    title: 'Você acompanha cada fase',
-    detail:
-      'Quando for a sua vez (escolher o logo, conectar a Shopee), a equipe avisa no WhatsApp.',
+    title: 'A loja vai pra Shopee',
+    detail: 'Você abre sua conta com o nosso passo a passo, e a plataforma publica tudo.',
   },
 ] as const;
 

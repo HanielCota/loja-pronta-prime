@@ -3,3 +3,4 @@ export * from './rate-limit';
 export * from './products';
 export * from './stores';
 export * from './onboarding';
+export * from './brand';
