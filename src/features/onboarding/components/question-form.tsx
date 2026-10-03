@@ -51,6 +51,7 @@ export function QuestionForm({ question, saved, editing, titleId, helpId }: Ques
     sendingRef.current = pending;
   }, [pending]);
   const errorId = useId();
+  const hintId = useId();
   const error = clientError ?? state?.error;
 
   useEffect(() => {
@@ -129,7 +130,12 @@ export function QuestionForm({ question, saved, editing, titleId, helpId }: Ques
   }
 
   const max = question.kind === 'multi' ? question.max : 1;
-  const describedBy = cn(helpId, error && errorId) || undefined;
+  // Escolha única avança sozinha ao tocar (WCAG 3.2.2: avisar antes de mudar de página); o texto
+  // livre mostra quanto ainda cabe. As duas notas descrevem o campo, junto com a ajuda.
+  const autoAdvance = question.kind === 'single' || question.kind === 'color';
+  const hasHint = autoAdvance || question.kind === 'longtext';
+  const describedBy =
+    [helpId, hasHint && hintId, error && errorId].filter(Boolean).join(' ') || undefined;
 
   let body: ReactNode;
   switch (question.kind) {
@@ -222,15 +228,17 @@ export function QuestionForm({ question, saved, editing, titleId, helpId }: Ques
                 <span className="flex flex-1 flex-col gap-0.5">
                   {option.label}
                   {option.description ? (
-                    <span className="font-normal text-muted-foreground">{option.description}</span>
+                    // Marcada, o fundo azul-claro tira contraste do cinza: o texto escurece.
+                    <span className="font-normal text-muted-foreground group-has-checked/opt:text-foreground/80">
+                      {option.description}
+                    </span>
                   ) : null}
                 </span>
+                {/* O mesmo círculo pra uma ou várias opções (como nas listas da Apple): a pergunta
+                    diz quantas dá pra marcar, e o leitor de tela anuncia o tipo de campo. */}
                 <span
                   aria-hidden="true"
-                  className={cn(
-                    'grid size-6 shrink-0 place-items-center border-[1.5px] border-muted-foreground text-primary-foreground group-has-checked/opt:border-primary group-has-checked/opt:bg-primary',
-                    isMulti ? 'rounded-md' : 'rounded-full',
-                  )}
+                  className="grid size-6 shrink-0 place-items-center rounded-full border-[1.5px] border-muted-foreground text-primary-foreground group-has-checked/opt:border-primary group-has-checked/opt:bg-primary"
                 >
                   <CheckIcon className="hidden size-4 group-has-checked/opt:block" />
                 </span>
@@ -300,7 +308,7 @@ export function QuestionForm({ question, saved, editing, titleId, helpId }: Ques
             value={text}
             onChange={(event) => setText(event.target.value)}
             aria-describedby={describedBy}
-            className="w-full resize-none rounded-field border border-input bg-card px-4 py-3.5 text-body leading-relaxed outline-none focus-visible:border-ring focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-solid"
+            className="w-full resize-none scroll-mb-28 rounded-field border border-input bg-card px-4 py-3.5 text-body leading-relaxed outline-none focus-visible:border-ring focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-solid"
           />
         </div>
       );
@@ -317,6 +325,8 @@ export function QuestionForm({ question, saved, editing, titleId, helpId }: Ques
           ? `${selected.length} de ${max} escolhidas`
           : ''
       : '';
+  // Respondida: o botão fica azul. Antes, cinza (mas clicável: o toque mostra o que falta).
+  const ready = question.kind === 'longtext' ? text.trim() !== '' : !missingAnswer();
   const submitLabel = editing
     ? 'Salvar e voltar'
     : question.kind === 'longtext' && !text.trim()
@@ -335,14 +345,34 @@ export function QuestionForm({ question, saved, editing, titleId, helpId }: Ques
       {body}
       {/* Sempre no código (vazio, fora do fluxo): regiões criadas junto com o texto não são
           anunciadas, e escondida com display:none ela sai da árvore de acessibilidade. */}
+      {hasHint ? (
+        <p id={hintId} className="-mt-2 text-sm text-muted-foreground">
+          {autoAdvance
+            ? editing
+              ? 'Ao tocar numa opção, a gente salva e volta pra revisão.'
+              : 'Ao tocar numa opção, a gente já segue pra próxima.'
+            : `${text.length} de ${PERSONAL_TOUCH_MAX} caracteres`}
+        </p>
+      ) : null}
       <p aria-live="polite" className="text-body text-muted-foreground empty:sr-only">
         {counter}
       </p>
       <FieldError id={errorId}>{error}</FieldError>
-      <Button type="submit" loading={pending} loadingText="Salvando…">
-        {submitLabel}
-        {pending ? null : <ArrowRightIcon aria-hidden="true" />}
-      </Button>
+      {/* No celular, o botão fica preso embaixo da tela: sempre à mão, mesmo com muitas opções. */}
+      <div className="sticky bottom-0 -mx-4 bg-background/90 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-md sm:static sm:mx-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
+        <Button
+          type="submit"
+          loading={pending}
+          loadingText="Salvando…"
+          className={cn(
+            !ready &&
+              'bg-black/[0.07] text-foreground hover:bg-black/10 forced-colors:border-[GrayText]',
+          )}
+        >
+          {submitLabel}
+          {pending ? null : <ArrowRightIcon aria-hidden="true" />}
+        </Button>
+      </div>
     </form>
   );
 }

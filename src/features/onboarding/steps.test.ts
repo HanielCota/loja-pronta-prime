@@ -191,11 +191,11 @@ describe('etapas', () => {
     expect(stepPath('cor', { editing: true })).toBe('/loja-pronta/conversa/cor?editar=1');
   });
 
-  test('barra de progresso enche aos poucos em cada parte', () => {
-    expect(stepProgress('vendas')).toEqual({ part: 0, progress: 0.2 });
-    expect(stepProgress('tempo')).toEqual({ part: 0, progress: 1 });
-    expect(stepProgress('nome')).toEqual({ part: 1, progress: 0.2 });
-    expect(stepProgress(REVIEW_STEP)).toEqual({ part: 2, progress: 0.5 });
+  test('barra de progresso: a conversa inteira, etapa a etapa, e a parte de cada uma', () => {
+    expect(stepProgress('vendas')).toEqual({ part: 0, progress: 1 / STEPS.length });
+    expect(stepProgress('tempo').part).toBe(0);
+    expect(stepProgress('nome').part).toBe(1);
+    expect(stepProgress(REVIEW_STEP).part).toBe(2);
     expect(stepProgress(WHATSAPP_STEP)).toEqual({ part: 2, progress: 1 });
   });
 });

@@ -4,10 +4,14 @@ import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { CardHeading } from '@/components/brand/card-heading';
 import { Logo } from '@/components/brand/logo';
-import { PageShell } from '@/components/brand/page-shell';
 import { Button } from '@/components/ui/button';
 import { getOnboarding } from '@/features/onboarding/server/conversation';
 import { CONVERSATION_PATH, DONE_PATH, formatWhatsapp } from '@/features/onboarding/steps';
+import {
+  CenteredMemberPage,
+  eyebrowClass,
+  panelCard,
+} from '@/features/products/components/area-shell';
 import { firstName } from '@/features/products/names';
 import { requireProduct } from '@/features/products/server/access';
 import { cn } from '@/lib/utils';
@@ -18,7 +22,7 @@ export const metadata: Metadata = {
 
 /** Fim da conversa: o que acontece agora, de cada lado. */
 export default async function ConversationDonePage() {
-  const { session, products } = await requireProduct('loja-pronta', DONE_PATH);
+  const { session } = await requireProduct('loja-pronta', DONE_PATH);
   const { completedAt, whatsapp } = await getOnboarding(session.user.id);
   if (!completedAt) redirect(CONVERSATION_PATH);
   const name = firstName(session.user.name);
@@ -47,30 +51,17 @@ export default async function ConversationDonePage() {
       accent: false,
       items: [
         'Fica de olho no WhatsApp: a próxima escolha é sua.',
-        // Só pra quem tem o curso, e já com o caminho até ele.
-        ...(products.includes('sll')
-          ? [
-              <>
-                Pode começar o curso pela{' '}
-                <Link
-                  href="/sll"
-                  className="font-semibold text-link underline-offset-4 hover:underline"
-                >
-                  trilha de boas-vindas do SLL
-                </Link>
-                .
-              </>,
-            ]
-          : []),
+        'Pode acompanhar cada fase da loja pela Loja Pronta.',
       ],
     },
   ];
 
   return (
-    <PageShell>
+    <CenteredMemberPage back={{ href: '/loja-pronta', label: 'Loja Pronta' }}>
       <div className="flex flex-col gap-6">
-        <Logo expression="happy" />
+        <Logo expression="happy" compact />
         <CardHeading
+          className="mb-0"
           title={name ? `Pronto, ${name}! Agora é com a gente.` : 'Pronto! Agora é com a gente.'}
           description="Recebemos as suas respostas."
         />
@@ -79,12 +70,9 @@ export default async function ConversationDonePage() {
         <section
           key={group.id}
           aria-labelledby={`proximos-${group.id}`}
-          className="flex flex-col gap-3 rounded-card bg-card px-6 py-5 shadow-card forced-colors:border forced-colors:border-[CanvasText]"
+          className={cn(panelCard, 'gap-3')}
         >
-          <h2
-            id={`proximos-${group.id}`}
-            className="text-sm font-semibold tracking-wide text-muted-foreground uppercase"
-          >
+          <h2 id={`proximos-${group.id}`} className={eyebrowClass}>
             {group.title}
           </h2>
           <ul className="flex flex-col gap-2">
@@ -104,8 +92,8 @@ export default async function ConversationDonePage() {
         </section>
       ))}
       <Button asChild>
-        <Link href="/loja-pronta">Voltar pra Loja Pronta</Link>
+        <Link href="/loja-pronta">Ver a minha loja</Link>
       </Button>
-    </PageShell>
+    </CenteredMemberPage>
   );
 }

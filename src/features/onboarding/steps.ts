@@ -72,17 +72,13 @@ export function questionNumber(step: Step): number {
 export const QUESTION_COUNT = QUESTION_IDS.length;
 
 /**
- * Onde a etapa fica na barra do topo: a parte (Sobre você, Sua marca, Confirmar) e quanto dela
- * já foi, contando a pergunta atual (a 1ª de 5 enche um quinto).
+ * Onde a etapa fica no topo: a parte (Sobre você, Sua marca, Confirmar), pro nome em cima, e
+ * quanto da conversa inteira já foi, contando a etapa atual (a 1ª de 12 enche um doze avos).
  */
 export function stepProgress(step: Step): { part: 0 | 1 | 2; progress: number } {
-  if (step === REVIEW_STEP) return { part: 2, progress: 0.5 };
-  if (step === WHATSAPP_STEP) return { part: 2, progress: 1 };
-  const question = findQuestion(step);
-  const block = question?.block ?? 'voce';
-  const inBlock = ONBOARDING_QUESTIONS.filter((item) => item.block === block);
-  const position = inBlock.findIndex((item) => item.id === step) + 1;
-  return { part: block === 'voce' ? 0 : 1, progress: position / inBlock.length };
+  const progress = (STEPS.indexOf(step) + 1) / STEPS.length;
+  if (step === REVIEW_STEP || step === WHATSAPP_STEP) return { part: 2, progress };
+  return { part: findQuestion(step)?.block === 'marca' ? 1 : 0, progress };
 }
 
 /** A resposta como texto, pra revisão. */

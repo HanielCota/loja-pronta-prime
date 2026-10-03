@@ -24,7 +24,9 @@ import {
   WHATSAPP_STEP,
   type Step,
 } from '@/features/onboarding/steps';
+import { eyebrowClass, panelCard } from '@/features/products/components/area-shell';
 import { getParam, type SearchParams } from '@/lib/search-params';
+import { cn } from '@/lib/utils';
 
 type PageProps = { params: Promise<{ passo: string }>; searchParams: Promise<SearchParams> };
 
@@ -32,6 +34,11 @@ function stepTitle(step: Step): string {
   if (step === REVIEW_STEP) return 'Revisão';
   if (step === WHATSAPP_STEP) return 'Último passo';
   return `Pergunta ${questionNumber(step)} de ${QUESTION_COUNT}`;
+}
+
+/** No topo, curto (cabe no celular ao lado da parte): "1 de 10". */
+function stepLabel(step: Step): string {
+  return findQuestion(step) ? `${questionNumber(step)} de ${QUESTION_COUNT}` : stepTitle(step);
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -64,7 +71,7 @@ export default async function ConversationStepPage({ params, searchParams }: Pag
       questions: ONBOARDING_QUESTIONS.filter((question) => question.block === block),
     }));
     return (
-      <ConversationLayout {...stepProgress(passo)} stepLabel={stepTitle(passo)} backHref={backHref}>
+      <ConversationLayout {...stepProgress(passo)} stepLabel={stepLabel(passo)} backHref={backHref}>
         <MascotBubble
           title="Confere as suas respostas"
           help="A equipe cria o seu logo a partir delas. Dá pra mudar qualquer uma."
@@ -75,12 +82,9 @@ export default async function ConversationStepPage({ params, searchParams }: Pag
           <section
             key={group.block}
             aria-labelledby={`grupo-${group.block}`}
-            className="rounded-card bg-card px-5 py-2 shadow-card forced-colors:border forced-colors:border-[CanvasText]"
+            className={cn(panelCard, 'gap-1')}
           >
-            <h2
-              id={`grupo-${group.block}`}
-              className="pt-3 pb-1 text-sm font-semibold tracking-wide text-muted-foreground uppercase"
-            >
+            <h2 id={`grupo-${group.block}`} className={eyebrowClass}>
               {group.title}
             </h2>
             <dl className="divide-y divide-border">
@@ -117,7 +121,7 @@ export default async function ConversationStepPage({ params, searchParams }: Pag
 
   if (passo === WHATSAPP_STEP) {
     return (
-      <ConversationLayout {...stepProgress(passo)} stepLabel={stepTitle(passo)} backHref={backHref}>
+      <ConversationLayout {...stepProgress(passo)} stepLabel={stepLabel(passo)} backHref={backHref}>
         <MascotBubble
           title="Última coisa: em que WhatsApp a gente te avisa?"
           help="É por ele que a equipe fala com você em cada fase da loja."
@@ -133,7 +137,7 @@ export default async function ConversationStepPage({ params, searchParams }: Pag
   const question = findQuestion(passo);
   if (!question) notFound();
   return (
-    <ConversationLayout {...stepProgress(passo)} stepLabel={stepTitle(passo)} backHref={backHref}>
+    <ConversationLayout {...stepProgress(passo)} stepLabel={stepLabel(passo)} backHref={backHref}>
       <MascotBubble title={question.ask} help={question.help} titleId={titleId} helpId={helpId} />
       <FocusOnArrival targetId={titleId} />
       {/* `key`: ao trocar de pergunta, o formulário começa do zero (sem a escolha da anterior). */}
