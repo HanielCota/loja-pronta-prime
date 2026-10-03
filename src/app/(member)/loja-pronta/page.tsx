@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 /** Área do produto: só pra quem tem o produto (os outros voltam pro início). */
 export default async function Page() {
-  const { session, products, firstVisit } = await requireProduct('loja-pronta');
+  const { session, products } = await requireProduct('loja-pronta');
   const [{ phase, conversation }, brand] = await Promise.all([
     getStoreOverview(session.user.id),
     getBrand(session.user.id),
@@ -19,7 +19,6 @@ export default async function Page() {
   return (
     <StorePanel
       user={session.user}
-      firstVisit={firstVisit}
       hasChoice={products.length > 1}
       phase={phase}
       conversation={conversation}

@@ -3,7 +3,7 @@ import { expectNoA11yViolations, signIn } from './support/auth';
 import { PASSWORD, studentEmail } from './support/students';
 
 const SLL = /As aulas abrem em breve/;
-const LOJA_PRONTA = /^Sua loja$/;
+const LOJA_PRONTA = /Vamos montar sua loja/;
 
 test('depois de criar a senha no primeiro acesso, escolhe entre a Loja Pronta e o SLL', async ({
   page,
@@ -121,8 +121,8 @@ test('sem nenhum produto: avisa que o acesso ainda não foi liberado', async ({ 
 test('Loja Pronta mostra o que fazer agora e o caminho em 3 etapas', async ({ page }) => {
   await signIn(page, studentEmail('lojafase3'), PASSWORD);
   await expect(page).toHaveURL(/\/loja-pronta$/);
-  // Sem marca ainda: o título é "Sua loja".
-  await expect(page.getByRole('heading', { level: 1, name: 'Sua loja' })).toBeVisible();
+  // Sem marca ainda: o título chama pra montar a loja.
+  await expect(page.getByRole('heading', { level: 1, name: LOJA_PRONTA })).toBeVisible();
 
   const stages = page.getByRole('list', { name: 'As etapas da sua loja' }).getByRole('listitem');
   await expect(stages).toHaveCount(3);

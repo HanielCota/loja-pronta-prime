@@ -8,7 +8,7 @@ import { TEAM_WHATSAPP } from '@/config/support';
 import type { LogoConfig } from '@/features/brand/logo/config';
 import { logoPreviewSrc } from '@/features/brand/logo-preview';
 import { BRAND_PATH } from '@/features/brand/steps';
-import { AreaShell, greeting, panelCard } from '@/features/member/components/area-shell';
+import { AreaShell, panelCard } from '@/features/member/components/area-shell';
 import { firstName } from '@/features/products/names';
 import { cn } from '@/lib/utils';
 import { storeStages, type StageView } from '../stages';
@@ -18,7 +18,6 @@ import { whatsappLink } from '../whatsapp';
 
 type StorePanelProps = {
   user: { name: string };
-  firstVisit: boolean;
   /** Tem os dois produtos: o topo leva de volta pra escolha. */
   hasChoice: boolean;
   phase: number;
@@ -28,28 +27,20 @@ type StorePanelProps = {
 };
 
 /**
- * Painel da Loja Pronta: um destaque com a única coisa a fazer agora e, embaixo, o caminho em 3
- * etapas (as 7 fases agrupadas com as palavras dela). Uma decisão e um mapa simples, em vez de
- * várias listas contando a mesma jornada. No celular, o caminho fica na vertical.
+ * Painel da Loja Pronta: um título pessoal, um destaque com a única coisa a fazer agora e, embaixo,
+ * o caminho em 3 etapas (as 7 fases agrupadas com as palavras dela). Uma decisão e um mapa
+ * simples, em vez de várias listas contando a mesma jornada. No celular, o caminho fica na
+ * vertical. Com a marca pronta, o título é o nome da loja.
  */
-export function StorePanel({
-  user,
-  firstVisit,
-  hasChoice,
-  phase,
-  conversation,
-  brand,
-}: StorePanelProps) {
+export function StorePanel({ user, hasChoice, phase, conversation, brand }: StorePanelProps) {
+  const name = firstName(user.name);
   return (
     <AreaShell
       hasChoice={hasChoice}
-      product="Loja Pronta"
-      title={brand.name ?? 'Sua loja'}
-      intro={greeting(
-        firstName(user.name),
-        firstVisit,
-        'Aqui você monta sua loja na Shopee, um passo de cada vez.',
-      )}
+      title={
+        brand.name ?? (name ? `Oi, ${name}! Vamos montar sua loja?` : 'Vamos montar sua loja?')
+      }
+      intro={brand.name ? 'Sua loja na Shopee' : undefined}
     >
       <NextStep phase={phase} conversation={conversation} brand={brand} />
       <Path stages={storeStages(phase)} />
@@ -145,7 +136,7 @@ function NextStep({
         )}
       </div>
       <div className="flex flex-1 flex-col gap-3">
-        <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-link">
+        <p className="inline-flex items-center gap-1.5 text-sm font-semibold tracking-wide text-link uppercase">
           {hero.action ? null : <BellIcon aria-hidden="true" className="size-4" />}
           {hero.eyebrow}
         </p>
@@ -153,17 +144,19 @@ function NextStep({
           {hero.title}
         </h2>
         <p className="max-w-[60ch] text-body text-pretty text-foreground/80">{hero.text}</p>
-        <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
-          {hero.action ? (
-            <Button asChild className="sm:w-auto sm:px-8">
+        {hero.action ? (
+          <div className="mt-1 flex flex-col gap-2">
+            <Button asChild className="sm:w-auto sm:self-start sm:px-8">
               <Link href={hero.action.href}>
                 {hero.action.label}
                 <ArrowRightIcon aria-hidden="true" />
               </Link>
             </Button>
-          ) : null}
+            <p className="text-sm text-pretty text-muted-foreground">{hero.note}</p>
+          </div>
+        ) : (
           <p className="text-body text-pretty text-muted-foreground">{hero.note}</p>
-        </div>
+        )}
         {hero.action ? null : <TalkToTeam />}
       </div>
     </section>
@@ -198,8 +191,11 @@ function TalkToTeam() {
  */
 function Path({ stages }: { stages: StageView[] }) {
   return (
-    <section aria-labelledby="seu-caminho" className="flex flex-col gap-5">
-      <h2 id="seu-caminho" className="text-xl font-semibold tracking-tight">
+    <section aria-labelledby="seu-caminho" className="-mt-2 flex flex-col gap-4">
+      <h2
+        id="seu-caminho"
+        className="text-sm font-semibold tracking-wide text-muted-foreground uppercase"
+      >
         Seu caminho
       </h2>
       <ol
@@ -248,10 +244,11 @@ function Stage({ stage, number, last }: { stage: StageView; number: number; last
       >
         {status === 'done' ? <CheckIcon className="size-5" /> : number}
       </span>
-      <div className="flex flex-col gap-1 pt-1.5 lg:pt-0">
+      <div className="flex flex-col gap-1 pt-2 lg:pt-0">
         <span
           className={cn(
             'text-body font-semibold text-balance',
+            status === 'current' && 'text-link',
             status === 'next' && 'text-muted-foreground',
           )}
         >
@@ -261,8 +258,12 @@ function Stage({ stage, number, last }: { stage: StageView; number: number; last
             {status === 'done' ? ' (feita)' : status === 'next' ? ' (a seguir)' : ''}
           </span>
         </span>
-        <span className="text-body text-pretty text-muted-foreground">{stage.detail}</span>
-        {status === 'current' ? <StageBadge>{stage.step ?? 'Você está aqui'}</StageBadge> : null}
+        {/* Na atual, só onde ela está: o destaque já explica a etapa. */}
+        {status === 'current' ? (
+          <StageBadge>{stage.step ?? 'Você está aqui'}</StageBadge>
+        ) : (
+          <span className="text-body text-pretty text-muted-foreground">{stage.detail}</span>
+        )}
       </div>
     </li>
   );
@@ -270,7 +271,7 @@ function Stage({ stage, number, last }: { stage: StageView; number: number; last
 
 function StageBadge({ children }: { children: ReactNode }) {
   return (
-    <span className="mt-1 self-start rounded-xl bg-primary-soft px-3 py-1 text-sm font-semibold text-pretty text-link forced-colors:border forced-colors:border-[Highlight]">
+    <span className="self-start rounded-xl bg-primary-soft px-3 py-1 text-sm font-semibold text-pretty text-link forced-colors:border forced-colors:border-[Highlight]">
       {children}
     </span>
   );

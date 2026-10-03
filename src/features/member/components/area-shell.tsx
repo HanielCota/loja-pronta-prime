@@ -22,12 +22,12 @@ export function greeting(name: string, firstVisit: boolean, rest: string): strin
 type AreaShellProps = {
   /** Tem os dois produtos: o topo leva de volta pra escolha. */
   hasChoice: boolean;
-  /** Nome do produto, em cima do título. */
-  product: string;
+  /** Nome do produto, em cima do título (sem ele, o título fala sozinho). */
+  product?: string | undefined;
   /** O assunto da área (o nome da loja, "As aulas abrem em breve"). */
   title: string;
-  /** A saudação e o que a página mostra. */
-  intro: string;
+  /** A saudação e o que a página mostra (opcional). */
+  intro?: string | undefined;
   children: ReactNode;
 };
 
@@ -41,9 +41,13 @@ export function AreaShell({ hasChoice, product, title, intro, children }: AreaSh
       <TopBar back={hasChoice ? { href: '/', label: 'Início' } : undefined} />
       <main className="flex flex-col gap-8">
         <div className="flex flex-col gap-2">
-          <p className="text-body font-medium text-muted-foreground">{product}</p>
+          {product ? (
+            <p className="text-body font-medium text-muted-foreground">{product}</p>
+          ) : null}
           <h1 className="text-title font-semibold text-balance sm:text-title-lg">{title}</h1>
-          <p className="max-w-[60ch] text-body text-pretty text-muted-foreground">{intro}</p>
+          {intro ? (
+            <p className="max-w-[60ch] text-body text-pretty text-muted-foreground">{intro}</p>
+          ) : null}
         </div>
         {children}
       </main>
