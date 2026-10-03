@@ -35,7 +35,7 @@ export default async function ConversationStepPage({ params, searchParams }: Pag
   const [{ passo }, query] = await Promise.all([params, searchParams]);
   if (!isStep(passo)) notFound();
 
-  const { onboarding, revising } = await requireConversation(stepPath(passo));
+  const { student, onboarding, revising } = await requireConversation(stepPath(passo));
   const { answers } = onboarding;
   if (!canOpen(passo, answers)) redirect(stepPath(resumeStep(answers)));
   if (revising && passo === WHATSAPP_STEP) redirect(stepPath(REVIEW_STEP));
@@ -46,6 +46,7 @@ export default async function ConversationStepPage({ params, searchParams }: Pag
 
   return (
     <ConversationLayout
+      account={student.session.user}
       header={stepHeader(passo, Object.keys(answers).length > 0)}
       savedLabel="Respostas salvas"
       backHref={

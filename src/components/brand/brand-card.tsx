@@ -14,8 +14,9 @@ type BrandCardProps = {
 export function BrandCard({ children, expression, compact }: BrandCardProps) {
   return (
     // Alto contraste: a sombra some; a borda desenha o cartão.
-    <section className="flex flex-col gap-8 rounded-card bg-card px-6 py-10 shadow-card sm:px-10 sm:py-12 lg:px-16 forced-colors:border forced-colors:border-[CanvasText] short:gap-4 short:py-5">
-      <Logo expression={expression} compact={compact} />
+    <section className="flex flex-col gap-8 rounded-card bg-card px-6 py-10 shadow-card sm:px-10 sm:py-12 lg:px-16 forced-colors:border forced-colors:border-[CanvasText] short:py-5">
+      {/* Celular deitado: a marca já está na barra do topo, e o espaço vai pros campos. */}
+      <Logo expression={expression} compact={compact} className="short:hidden" />
       <div className="flex flex-col">{children}</div>
     </section>
   );

@@ -43,6 +43,7 @@ export default async function BrandStepPage({ params, searchParams }: PageProps)
 
   return (
     <ConversationLayout
+      account={student.session.user}
       header={brandStepHeader(passo, Boolean(brand.name))}
       savedLabel="Escolhas salvas"
       backHref={

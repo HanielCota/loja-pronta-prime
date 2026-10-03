@@ -1,16 +1,21 @@
 import { CheckIcon, ChevronLeftIcon, DoorOpenIcon } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { MemberNavbar, type NavbarAccount } from '@/features/member/components/member-navbar';
 import { cn } from '@/lib/utils';
 import type { StepHeader } from '../steps';
 
 type ConversationLayoutProps = {
+  /** Quem está logada (a barra do topo, a mesma de todas as telas). */
+  account: NavbarAccount;
   /** O que o topo diz e mostra (ver stepHeader e brandStepHeader). */
   header: StepHeader;
   /** O aviso de que nada se perde ("Respostas salvas", "Escolhas salvas"). */
   savedLabel: string;
   /** Pra onde o "Voltar" leva. */
   backHref: string;
+  /** Telas de trabalho (o estúdio do logo): no computador, a largura da barra do topo. */
+  wide?: boolean;
   children: ReactNode;
 };
 
@@ -28,14 +33,23 @@ const topLink =
  * JavaScript.
  */
 export function ConversationLayout({
+  account,
   header,
   savedLabel,
   backHref,
+  wide = false,
   children,
 }: ConversationLayoutProps) {
+  const column = cn(
+    'mx-auto flex w-full max-w-[560px] flex-col px-4 sm:px-6',
+    wide ? 'lg:max-w-[1040px]' : 'lg:max-w-[680px]',
+  );
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="mx-auto flex w-full max-w-[560px] flex-col gap-2 px-4 pt-3 sm:px-6 lg:max-w-[680px]">
+      <MemberNavbar account={account} />
+      {/* Um <nav>, não <header>: o topo da página já é a barra (um só "banner" pro leitor de tela).
+          E dentro de uma região: o voltar, o sair e onde ela está não ficam soltos na página. */}
+      <nav aria-label="Etapa atual" className={cn(column, 'gap-2 pt-3')}>
         <div className="flex items-center justify-between gap-2">
           <Link href={backHref} className={cn(topLink, '-ml-2 pr-3 pl-1.5 text-foreground')}>
             <ChevronLeftIcon aria-hidden="true" className="size-5" />
@@ -74,8 +88,8 @@ export function ConversationLayout({
             />
           ))}
         </div>
-      </header>
-      <main className="mx-auto flex w-full max-w-[560px] flex-1 flex-col gap-8 px-4 pt-8 pb-10 sm:justify-center sm:px-6 sm:py-12 lg:max-w-[680px]">
+      </nav>
+      <main className={cn(column, 'flex-1 gap-8 pt-8 pb-10 sm:justify-center sm:py-12')}>
         {children}
       </main>
     </div>
