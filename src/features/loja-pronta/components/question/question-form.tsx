@@ -18,6 +18,7 @@ import {
   type Draft,
 } from '../../answer-rules';
 import { saveAnswer } from '../../server/actions';
+import { StickyAction } from '../sticky-action';
 import { OptionField } from './option-field';
 import { LongTextField, NameField } from './text-fields';
 import { useAutoAdvance } from './use-auto-advance';
@@ -152,8 +153,7 @@ export function QuestionForm({ question, saved, editing, titleId, helpId }: Ques
       </p>
       <FieldError id={errorId}>{error}</FieldError>
 
-      {/* No celular, o botão fica preso embaixo da tela: sempre à mão, mesmo com muitas opções. */}
-      <div className="sticky bottom-0 -mx-4 bg-background/90 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-md sm:static sm:mx-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
+      <StickyAction>
         <Button
           type="submit"
           loading={pending}
@@ -166,7 +166,7 @@ export function QuestionForm({ question, saved, editing, titleId, helpId }: Ques
           {button.label}
           {pending ? null : <ArrowRightIcon aria-hidden="true" />}
         </Button>
-      </div>
+      </StickyAction>
     </form>
   );
 }

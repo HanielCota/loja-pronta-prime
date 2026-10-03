@@ -11,10 +11,12 @@ import { answerText } from '../answers';
 import { stepPath, WHATSAPP_STEP } from '../steps';
 import { FocusOnArrival } from './focus-on-arrival';
 import { MascotBubble } from './mascot-bubble';
+import { StickyAction } from './sticky-action';
 
 const TITLE_ID = 'revisao-titulo';
 
-/** Revisão: as respostas por parte, cada uma com "Editar", e o caminho pro último passo. */
+/** Revisão: as respostas por parte, cada uma com "Editar", e o caminho pro último passo
+ * (preso embaixo no celular: são dez respostas pra rolar). */
 export function ReviewStep({ answers }: { answers: OnboardingAnswers }) {
   const groups = Object.entries(ONBOARDING_BLOCKS).map(([block, title]) => ({
     block,
@@ -63,9 +65,11 @@ export function ReviewStep({ answers }: { answers: OnboardingAnswers }) {
           </dl>
         </section>
       ))}
-      <Button asChild>
-        <Link href={stepPath(WHATSAPP_STEP)}>Está tudo certo</Link>
-      </Button>
+      <StickyAction>
+        <Button asChild>
+          <Link href={stepPath(WHATSAPP_STEP)}>Está tudo certo</Link>
+        </Button>
+      </StickyAction>
     </>
   );
 }
