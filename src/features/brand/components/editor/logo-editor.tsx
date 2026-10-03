@@ -1,7 +1,7 @@
 'use client';
 
-import { CircleHelpIcon, EyeIcon, Redo2Icon, Undo2Icon } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CircleHelpIcon, Redo2Icon, RotateCcwIcon, SparklesIcon, Undo2Icon } from 'lucide-react';
+import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { nodMascot } from '@/components/brand/mascot';
 import { cn } from '@/lib/utils';
 import {
@@ -25,15 +25,19 @@ import {
   elementSize,
   type Size,
 } from '../../logo/editor';
+import { checkLogo, type LogoIssue } from '../../logo/checks';
 import type { LogoConfig } from '../../logo/config';
 import { loadLogoFontsInBrowser } from '../../logo/fonts.client';
+import { configToScene } from '../../logo/from-config';
 import type { SceneIconId } from '../../logo/icons';
 import { MAX_VARIATIONS, SCENE_SIZE, type LogoScene, type SceneElement } from '../../logo/scene';
 import type { LogoFonts } from '../../logo/scene-render';
 import { saveLogoScene } from '../../server/actions';
 import { EditorCanvas } from './editor-canvas';
 import { AddDrawings, AddTexts } from './add-panels';
+import { CheckDialog } from './check-dialog';
 import { HelpDialog } from './help-dialog';
+import { IdeasPanel } from './ideas-panel';
 import { LayersPanel } from './layers-panel';
 import { PropertiesPanel } from './properties-panel';
 import { PreviewDialog } from './preview-dialog';
@@ -67,6 +71,8 @@ type LogoEditorProps = {
   recommended: SceneIconId[];
   /** Os modelos do estúdio, pra recomeçar de um. */
   templates: LogoConfig[];
+  /** Logos inteiros prontos, montados com as respostas dela ("Ideias prontas"). */
+  ideas: LogoConfig[];
 };
 
 /**
@@ -84,6 +90,7 @@ export function LogoEditor({
   editing,
   recommended,
   templates,
+  ideas,
 }: LogoEditorProps) {
   const [scene, setScene] = useState(initialScene);
   const [variations, setVariations] = useState(initialVariations);
@@ -139,6 +146,49 @@ export function LogoEditor({
   }, [scene, fonts, name]);
 
   const selected = findElement(scene, selectedId);
+
+  // A conferência antes de seguir: só calcula com a janela aberta (e de novo a cada conserto).
+  const [checking, setChecking] = useState(false);
+  const formId = useId();
+  const measure = useCallback(
+    (element: SceneElement) =>
+      fonts ? elementSize(element, name, fonts) : { width: 0, height: 0 },
+    [fonts, name],
+  );
+  const issues = useMemo(
+    () => (checking && fonts ? checkLogo(scene, measure) : []),
+    [checking, fonts, scene, measure],
+  );
+
+  /** "Gostei, continuar": com algo pra arrumar, abre a conferência em vez de seguir. */
+  function beforeContinue(): boolean {
+    if (!fonts || !checkLogo(scene, measure).length) return true;
+    setChecking(true);
+    return false;
+  }
+
+  function fixIssue(issue: LogoIssue) {
+    if (!issue.fix) return;
+    commit(issue.fix.apply(scene));
+    setAnnouncement(`${issue.fix.label}: feito. Desfazer volta.`);
+  }
+
+  function fixAllIssues() {
+    // Um depois do outro, em cima do resultado do anterior: uma mudança só no histórico.
+    const fixed = issues.reduce((current, issue) => issue.fix?.apply(current) ?? current, scene);
+    commit(fixed);
+    setAnnouncement('Tudo arrumado. Desfazer volta.');
+  }
+
+  /** "Recomeçar do zero": o logo volta a ser o primeiro modelo (Desfazer traz o de antes). */
+  function restart() {
+    const first = templates[0];
+    if (!first || !fonts) return;
+    commit(configToScene(first, name, fonts));
+    setSelectedId(null);
+    setAnnouncement('Logo recomeçado do primeiro modelo. Desfazer traz o de antes.');
+    nodMascot();
+  }
 
   /** Uma mudança de uma vez (um clique, uma tecla): entra no histórico. */
   const commit = useCallback(
@@ -378,7 +428,8 @@ export function LogoEditor({
             <span className="max-sm:sr-only">Refazer</span>
           </ToolButton>
           <ToolButton onClick={() => setPreviewing(true)} disabled={!fonts}>
-            <EyeIcon aria-hidden="true" />
+            {/* O logo de verdade, pequeno e redondo como na Shopee, mudando junto com o quadro. */}
+            <LiveAvatar scene={scene} name={name} fonts={fonts} />
             Ver como fica
           </ToolButton>
           {/* A ajuda é mais do mouse e do teclado: no celular, os três de cima cabem numa linha. */}
@@ -433,16 +484,51 @@ export function LogoEditor({
                 {TOOLS.find((item) => item.id === tool)?.label}
               </h2>
               {tool === 'estilo' ? (
-                <StylePanel scene={scene} name={name} fonts={fonts} onStyle={applyStyle} />
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      chooseTool('modelos');
+                      focusPanel();
+                    }}
+                    className="-mt-2 flex min-h-14 items-center gap-3 rounded-2xl bg-primary-soft px-4 text-left text-body font-semibold text-link transition-[background-color,transform] duration-100 outline-none hover:bg-primary/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid active:scale-[0.98] motion-reduce:active:scale-100 forced-colors:border-2 forced-colors:border-[ButtonText]"
+                  >
+                    <SparklesIcon aria-hidden="true" className="size-5 shrink-0" />
+                    Me mostra ideias prontas
+                  </button>
+                  <StylePanel scene={scene} name={name} fonts={fonts} onStyle={applyStyle} />
+                </>
               ) : null}
               {tool === 'modelos' ? (
-                <TemplatesPanel
-                  scene={scene}
-                  name={name}
-                  fonts={fonts}
-                  templates={templates}
-                  onStyle={applyStyle}
-                />
+                <>
+                  <section aria-labelledby="ideias-titulo" className="flex flex-col gap-4">
+                    <h3 id="ideias-titulo" className="-mt-2 text-body font-semibold">
+                      Ideias prontas pra você
+                    </h3>
+                    <IdeasPanel ideas={ideas} name={name} fonts={fonts} onPick={applyStyle} />
+                  </section>
+                  <section aria-labelledby="formatos-titulo" className="flex flex-col gap-4">
+                    <h3 id="formatos-titulo" className="text-body font-semibold">
+                      Só mudar o formato
+                    </h3>
+                    <TemplatesPanel
+                      scene={scene}
+                      name={name}
+                      fonts={fonts}
+                      templates={templates}
+                      onStyle={applyStyle}
+                    />
+                  </section>
+                  <button
+                    type="button"
+                    onClick={restart}
+                    disabled={!fonts}
+                    className="inline-flex min-h-12 items-center justify-center gap-2 self-center rounded-full px-5 text-body font-semibold text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid disabled:opacity-50"
+                  >
+                    <RotateCcwIcon aria-hidden="true" className="size-5" />
+                    Recomeçar do zero
+                  </button>
+                </>
               ) : null}
               {tool === 'desenhos' ? (
                 <>
@@ -473,10 +559,25 @@ export function LogoEditor({
 
       {/* No celular, preso embaixo da tela: o botão de seguir está sempre à mão. */}
       <div className="sticky bottom-0 z-20 -mx-4 bg-background/95 px-4 pt-2 pb-3 backdrop-blur-md sm:-mx-6 sm:px-6 lg:static lg:col-start-2 lg:row-start-2 lg:mx-auto lg:w-full lg:max-w-[560px] lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
-        <SaveBar scene={scene} variations={variations} editing={editing} saveState={saveState} />
+        <SaveBar
+          scene={scene}
+          variations={variations}
+          editing={editing}
+          saveState={saveState}
+          formId={formId}
+          onContinue={beforeContinue}
+        />
       </div>
 
       <HelpDialog open={helping} onClose={() => setHelping(false)} />
+      <CheckDialog
+        open={checking}
+        issues={issues}
+        formId={formId}
+        onFix={fixIssue}
+        onFixAll={fixAllIssues}
+        onClose={() => setChecking(false)}
+      />
       <PreviewDialog
         open={previewing}
         src={previewing && fonts ? sceneDataUrl(scene, name, fonts) : null}
@@ -484,6 +585,38 @@ export function LogoEditor({
         onClose={() => setPreviewing(false)}
       />
     </div>
+  );
+}
+
+/**
+ * O logo pequeno e redondo, como a Shopee mostra na lista de lojas. Atualiza junto com o quadro,
+ * sem atrasar o arraste (o desenho fica pra quando a tela estiver livre).
+ */
+function LiveAvatar({
+  scene,
+  name,
+  fonts,
+}: {
+  scene: LogoScene;
+  name: string;
+  fonts: LogoFonts | null;
+}) {
+  const deferred = useDeferredValue(scene);
+  const src = useMemo(
+    () => (fonts ? sceneDataUrl(deferred, name, fonts) : null),
+    [deferred, name, fonts],
+  );
+  return src ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt=""
+      width={28}
+      height={28}
+      className="size-7 shrink-0 rounded-full ring-1 ring-border"
+    />
+  ) : (
+    <span aria-hidden="true" className="size-7 shrink-0 rounded-full bg-muted" />
   );
 }
 

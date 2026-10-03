@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { OnboardingAnswers } from '@/config/onboarding';
 import { fontForStyle, LOGO_FONT_IDS, type LogoFontId } from './fonts';
-import { iconForCategories, LOGO_ICON_IDS, type LogoIconId } from './icons';
+import { iconForCategories, iconsForCategories, LOGO_ICON_IDS, type LogoIconId } from './icons';
 import { colorFromAnswer, LOGO_COLOR_IDS, type LogoColorId } from './palette';
 
 /** Formatos do logo: onde ficam o ícone e o nome. */
@@ -87,4 +87,62 @@ export function logoTemplates(answers: OnboardingAnswers): LogoConfig[] {
     },
   ];
   return presets.map((preset, template) => ({ ...preset, template, color }));
+}
+
+/** Cores que combinam com cada estilo da conversa, pras ideias prontas (a dela vem primeiro). */
+const COLORS_BY_STYLE: Record<string, LogoColorId[]> = {
+  Delicado: ['rosa', 'lilas', 'dourado', 'terracota', 'turquesa'],
+  Moderno: ['azul', 'preto', 'turquesa', 'verde', 'vermelho'],
+  Divertido: ['laranja', 'mostarda', 'turquesa', 'rosa', 'azul'],
+  Elegante: ['preto', 'dourado', 'marrom', 'verde', 'lilas'],
+};
+
+/** Quantas ideias prontas ficam guardadas (o "Outras ideias" mostra de 6 em 6). */
+export const IDEA_COUNT = 18;
+
+/**
+ * Logos prontos e variados, montados com as respostas dela: cada um com um formato, uma cor que
+ * combina com o estilo, uma letra e um desenho das categorias dela. Sempre os mesmos pras mesmas
+ * respostas, e nenhum repetido.
+ */
+export function logoIdeas(answers: OnboardingAnswers, count = IDEA_COUNT): LogoConfig[] {
+  const base = logoBase(answers);
+  const style = typeof answers.estilo === 'string' ? answers.estilo : '';
+  const colors = [
+    ...new Set([base.color, ...(COLORS_BY_STYLE[style] ?? ['azul', 'rosa', 'verde', 'preto'])]),
+  ];
+  const fonts = [base.font, ...LOGO_FONT_IDS.filter((font) => font !== base.font)];
+  const categories = Array.isArray(answers.categorias) ? answers.categorias : [];
+  const icons = [
+    ...new Set([
+      base.icon,
+      ...iconsForCategories(categories).filter((id): id is LogoIconId =>
+        (LOGO_ICON_IDS as readonly string[]).includes(id),
+      ),
+    ]),
+  ];
+
+  const ideas: LogoConfig[] = [];
+  const seen = new Set<string>();
+  // Anda pelas combinações em passos diferentes pra cada parte: as vizinhas nunca se parecem.
+  for (let index = 0; ideas.length < count && index < count * 12; index++) {
+    const template = index % LOGO_LAYOUTS.length;
+    const layout = LOGO_LAYOUTS[template]!.id;
+    const idea: LogoConfig = {
+      template,
+      layout,
+      color: colors[(index * 2 + Math.floor(index / 6)) % colors.length]!,
+      font: fonts[(index * 5 + Math.floor(index / 6)) % fonts.length]!,
+      icon:
+        layout === 'nome' || layout === 'inicial'
+          ? null
+          : icons[(index + Math.floor(index / 6)) % icons.length]!,
+      background: (index + Math.floor(index / 6)) % 3 === 2 ? 'cor' : 'branco',
+    };
+    const key = `${idea.layout}-${idea.color}-${idea.font}-${idea.icon}-${idea.background}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    ideas.push(idea);
+  }
+  return ideas;
 }

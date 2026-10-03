@@ -155,6 +155,15 @@ const STUDENTS: Student[] = [
     brandStarted: true,
   },
   {
+    kind: 'editorideias',
+    emailVerified: true,
+    banned: false,
+    products: ['loja-pronta'],
+    storePhase: 2,
+    conversationSent: true,
+    brandStarted: true,
+  },
+  {
     kind: 'editorcelular',
     emailVerified: true,
     banned: false,
