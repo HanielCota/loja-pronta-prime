@@ -55,7 +55,7 @@ export function ConversationLayout({
         {/* O progresso já está escrito acima; a barra é só o desenho dele. */}
         <div
           aria-hidden="true"
-          className="h-1 overflow-hidden rounded-full bg-border forced-colors:border forced-colors:border-[CanvasText]"
+          className="h-1 overflow-hidden rounded-full bg-track forced-colors:border forced-colors:border-[CanvasText]"
         >
           <div
             className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out motion-reduce:transition-none forced-colors:bg-[CanvasText]"

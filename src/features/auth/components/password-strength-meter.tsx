@@ -44,7 +44,7 @@ export function PasswordStrengthMeter({
                 key={index}
                 className={cn(
                   'h-1.5 rounded-full transition-colors duration-200 motion-reduce:transition-none',
-                  index < filled ? level.bar : 'bg-border',
+                  index < filled ? level.bar : 'bg-track',
                 )}
               />
             ))}
