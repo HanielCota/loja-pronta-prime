@@ -3,18 +3,18 @@ import Link from 'next/link';
 import type { ProductId } from '@/config/products';
 import { cn } from '@/lib/utils';
 import { PRODUCTS } from '../catalog';
-import { eyebrowClass } from './area-shell';
-import { ProductIcon } from './product-icon';
 
 /** Ordem na escolha: a Loja Pronta vem primeiro (a fase 1 dela depende da aluna). */
 const ORDER: ProductId[] = ['loja-pronta', 'sll'];
 
 /**
- * Onde ela está num produto: a linha principal ("Fase 3 de 7 · …"), a barra de etapas (quando
+ * Onde ela está num produto: a etapa ("Fase 3 de 7"), o nome dela, a barra de etapas (quando
  * há) e o que acontece agora. Com `detail`, o bloco troca o resumo do produto por ele: quem já
  * comprou precisa saber o que vem a seguir, não o que o produto é.
  */
 export type ProductStatus = {
+  /** Linha pequena acima ("Fase 1 de 7"). */
+  caption?: string;
   label: string;
   bar?: { step: number; total: number };
   detail?: string;
@@ -37,7 +37,7 @@ type ProductChooserProps = {
  * claro por onde seguir.
  *
  * Leitor de tela: o link se chama pelo que faz ("Entrar, Loja Pronta") e o resto do cartão vira
- * a descrição, em vez de um nome de 25 palavras. O nome do produto é um título, pra quem navega
+ * a descrição, pra o nome continuar curto. O nome do produto é um título, pra quem navega
  * por títulos. No alto contraste do Windows (forced-colors), as cores de fundo somem: as bordas
  * transparentes desenham o cartão e o botão, e a barra de etapas usa as cores do sistema.
  */
@@ -67,17 +67,16 @@ export function ProductChooser({ products, lastArea, status, primary }: ProductC
                 .join(' ')}
               className="group/product flex flex-1 flex-col gap-5 rounded-card border border-transparent bg-card p-6 text-left shadow-card transition-transform duration-100 ease-out outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid active:scale-[0.98] motion-reduce:active:scale-100 sm:p-8 forced-colors:border-[CanvasText]"
             >
-              <ProductIcon product={product} />
-              <span className="flex flex-col gap-1.5">
+              <span className="flex flex-col gap-1">
                 {isMain ? (
                   <span id={`${id}-recomendado`} className="sr-only">
                     Recomendado agora.
                   </span>
                 ) : null}
-                <span id={`${id}-tag`} className={eyebrowClass}>
+                <h2 className="text-xl font-semibold tracking-tight text-foreground">{title}</h2>
+                <span id={`${id}-tag`} className="text-body text-muted-foreground">
                   {tag}
                 </span>
-                <h2 className="text-xl font-semibold tracking-tight text-foreground">{title}</h2>
                 {current?.detail ? null : (
                   <span id={`${id}-resumo`} className="text-body text-pretty text-muted-foreground">
                     {pitch}
@@ -109,7 +108,7 @@ export function ProductChooser({ products, lastArea, status, primary }: ProductC
 }
 
 /** Um traço por etapa (os feitos e o atual em azul), a etapa atual e o que acontece nela. */
-function StatusBlock({ label, bar, detail, id }: ProductStatus & { id: string }) {
+function StatusBlock({ caption, label, bar, detail, id }: ProductStatus & { id: string }) {
   return (
     <span id={id} className="flex flex-col gap-2">
       {bar ? (
@@ -127,7 +126,10 @@ function StatusBlock({ label, bar, detail, id }: ProductStatus & { id: string })
           ))}
         </span>
       ) : null}
-      <span className="text-body font-semibold text-foreground">{label}</span>
+      <span className="flex flex-col">
+        {caption ? <span className="text-sm text-muted-foreground">{caption}</span> : null}
+        <span className="text-body font-semibold text-foreground">{label}</span>
+      </span>
       {detail ? (
         <span className="text-body text-pretty text-muted-foreground">{detail}</span>
       ) : null}

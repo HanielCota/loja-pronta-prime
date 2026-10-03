@@ -18,13 +18,13 @@ export function SllArea({ user, firstVisit, hasChoice }: SllAreaProps) {
   return (
     <AreaShell
       hasChoice={hasChoice}
-      eyebrow="Sistema Loja Lucrativa (SLL)"
+      product="Sistema Loja Lucrativa (SLL)"
       // As aulas ainda não estão no ar: o título diz isso, sem mandar ela "começar" algo fechado.
       title="As aulas abrem em breve"
       intro={greeting(
         firstName(user.name),
         firstVisit,
-        'O curso começa pela trilha de boas-vindas, e a gente te avisa quando ela abrir.',
+        'O curso começa pela trilha de boas-vindas. Você recebe um aviso quando ela abrir.',
       )}
     >
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">

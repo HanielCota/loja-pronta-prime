@@ -41,16 +41,9 @@ export function ConversationLayout({
           >
             <ChevronLeftIcon aria-hidden="true" className="size-6" />
           </Link>
-          {/* No celular, parte e número em linhas próprias (lado a lado não cabem com o
-              "Continuar depois" em 320px); a partir do tablet, numa linha só. */}
-          <p className="flex min-w-0 flex-1 flex-col text-sm leading-tight sm:flex-row sm:gap-1">
+          <p className="flex min-w-0 flex-1 flex-col text-sm leading-tight">
             <span className="font-semibold">{PARTS[part]}</span>
-            <span className="whitespace-nowrap text-muted-foreground">
-              <span aria-hidden="true" className="hidden sm:inline">
-                ·{' '}
-              </span>
-              {stepLabel}
-            </span>
+            <span className="text-muted-foreground">{stepLabel}</span>
           </p>
           <Link
             href="/loja-pronta"

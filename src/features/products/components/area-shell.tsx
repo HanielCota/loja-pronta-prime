@@ -1,15 +1,14 @@
 import { ChevronLeftIcon } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { Mascot } from '@/components/brand/mascot';
 import { SignOutButton } from '@/features/auth/components/sign-out-button';
 import { cn } from '@/lib/utils';
 
 /** Cartão branco das áreas; no alto contraste, a borda desenha o que a sombra desenhava. */
 export const panelCard =
   'flex flex-col rounded-card bg-card p-6 shadow-card sm:p-8 forced-colors:border forced-colors:border-[CanvasText]';
-/** Rótulo pequeno em maiúsculas ("LOJA PRONTA", "SUA JORNADA"), igual em todas as telas. */
-export const eyebrowClass = 'text-sm font-semibold tracking-wide text-muted-foreground uppercase';
+/** Título de seção dentro de um cartão ("Sua jornada", "Ferramentas"). */
+export const sectionTitleClass = 'text-body font-semibold text-foreground';
 
 /**
  * Saudação das áreas, a mesma em todas: "Boas-vindas, Ana!" na primeira visita, seguida do que a
@@ -24,7 +23,7 @@ type AreaShellProps = {
   /** Tem os dois produtos: o topo leva de volta pra escolha. */
   hasChoice: boolean;
   /** Nome do produto, em cima do título. */
-  eyebrow: string;
+  product: string;
   /** Onde ela está no produto ("Sua loja está na fase 1 de 7"). */
   title: string;
   /** A saudação e o que a página mostra. */
@@ -33,22 +32,18 @@ type AreaShellProps = {
 };
 
 /**
- * Moldura das áreas dos produtos (Loja Pronta e SLL), igual nas duas: no topo, voltar pra
- * escolha (com os dois produtos) e sair; o mascote com o nome do produto e onde ela está; e o
- * conteúdo da área. Sem cartão em volta, como a escolha de área.
+ * Moldura das áreas dos produtos (Loja Pronta e SLL): voltar e sair no topo, o nome do produto e
+ * onde ela está, e o conteúdo.
  */
-export function AreaShell({ hasChoice, eyebrow, title, intro, children }: AreaShellProps) {
+export function AreaShell({ hasChoice, product, title, intro, children }: AreaShellProps) {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[1040px] flex-col gap-8 px-4 pt-4 pb-12 sm:px-6 sm:pt-6">
       <TopBar back={hasChoice ? { href: '/', label: 'Início' } : undefined} />
       <main className="flex flex-col gap-8">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6">
-          <Mascot expression="happy" displaySize={96} className="size-20 shrink-0 sm:size-24" />
-          <div className="flex flex-1 flex-col gap-2">
-            <p className={eyebrowClass}>{eyebrow}</p>
-            <h1 className="text-title font-semibold text-balance sm:text-title-lg">{title}</h1>
-            <p className="text-body text-pretty text-muted-foreground">{intro}</p>
-          </div>
+        <div className="flex flex-col gap-2">
+          <p className="text-body font-medium text-muted-foreground">{product}</p>
+          <h1 className="text-title font-semibold text-balance sm:text-title-lg">{title}</h1>
+          <p className="max-w-[60ch] text-body text-pretty text-muted-foreground">{intro}</p>
         </div>
         {children}
       </main>

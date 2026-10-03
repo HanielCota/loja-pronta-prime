@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { BrandCard } from '@/components/brand/brand-card';
 import { CardHeading } from '@/components/brand/card-heading';
-import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
 import type { ProductId } from '@/config/products';
 import { STORE_PHASES } from '@/config/store-phases';
@@ -38,7 +37,7 @@ export default async function HomePage() {
         <BrandCard expression="happy" compact>
           <CardHeading
             title="Seu acesso ainda não foi liberado"
-            description="Se você acabou de comprar, a liberação leva alguns minutos. Se já faz tempo, fala com o suporte."
+            description="Se você acabou de comprar, a liberação leva alguns minutos. Se já faz tempo, fale com o suporte."
           />
           {/* Link comum (recarrega a página): funciona sem JavaScript. */}
           <Button asChild>
@@ -56,7 +55,7 @@ export default async function HomePage() {
     sll: { label: 'As aulas abrem em breve' },
   };
   // A Loja Pronta parada esperando por ela vem antes de tudo: leva o botão cheio, e o texto de
-  // cima aponta pra ela (em vez de "Continue de onde parou", que podia apontar pro outro produto).
+  // cima aponta pra ela.
   // Com a loja nas mãos da equipe, nenhum botão "manda" pra lá (nem pro curso, que ainda não abriu):
   // o texto de cima avisa que a equipe chama no WhatsApp.
   let primary: ProductId | undefined;
@@ -69,7 +68,8 @@ export default async function HomePage() {
     const phase = displayedPhase(storePhase, Boolean(onboarding.completedAt));
     const current = STORE_PHASES[phase - 1];
     status['loja-pronta'] = {
-      label: `Fase ${phase} de ${STORE_PHASES.length} · ${current?.title}`,
+      caption: `Fase ${phase} de ${STORE_PHASES.length}`,
+      label: current?.title ?? '',
       bar: { step: phase, total: STORE_PHASES.length },
       detail: current?.detail,
     };
@@ -80,8 +80,7 @@ export default async function HomePage() {
   // Sem o cartão em volta: os produtos são os cartões, com o espaço da tela toda.
   return (
     <CenteredMemberPage wide>
-      <div className="flex flex-col gap-8 short:gap-4">
-        <Logo expression="happy" compact />
+      <div className="flex flex-col">
         <CardHeading
           className="mb-0"
           title={name ? `Oi, ${name}! Pra onde vamos?` : 'Pra onde vamos?'}
@@ -89,7 +88,7 @@ export default async function HomePage() {
             primary === 'loja-pronta'
               ? 'Sua loja está esperando por você.'
               : storeWithTeam
-                ? 'Sua loja está com a nossa equipe: a gente te avisa no WhatsApp quando for a sua vez.'
+                ? 'Sua loja está com a equipe. Você recebe um aviso no WhatsApp quando for sua vez.'
                 : lastArea
                   ? 'Continue de onde parou.'
                   : 'Escolha por onde começar.'
