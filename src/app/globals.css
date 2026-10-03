@@ -59,6 +59,10 @@
   --text-title-lg: 2rem;
   --text-title-lg--line-height: 1.125;
   --text-title-lg--letter-spacing: -0.03em;
+  /* Pergunta da conversa no computador: uma por tela, ocupando o espaço que a tela tem. */
+  --text-title-xl: 2.5rem;
+  --text-title-xl--line-height: 1.1;
+  --text-title-xl--letter-spacing: -0.03em;
   --text-body: 1.0625rem;
   --text-body--line-height: 1.47;
   --text-body--letter-spacing: -0.01em;

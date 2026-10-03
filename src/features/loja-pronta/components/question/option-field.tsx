@@ -96,7 +96,7 @@ function OptionRow({
   return (
     <label
       className={cn(
-        'group/opt flex min-h-14 cursor-pointer items-center gap-3 rounded-2xl border-[1.5px] border-input bg-card px-4 py-3 text-body font-medium transition-[background-color,border-color,transform] duration-100 active:scale-[0.98] motion-reduce:active:scale-100',
+        'group/opt flex min-h-14 cursor-pointer items-center gap-3 rounded-2xl border-[1.5px] border-input bg-card px-4 py-3 text-body font-medium transition-[background-color,border-color,transform] duration-100 active:scale-[0.98] motion-reduce:active:scale-100 lg:min-h-16 lg:px-5',
         'has-disabled:cursor-not-allowed has-disabled:opacity-50',
         optionFocus,
         optionChecked,
@@ -169,7 +169,7 @@ function Swatch({ label, color, children }: { label: string; color: string; chil
       <span
         aria-hidden="true"
         style={{ backgroundColor: color }}
-        className="grid size-12 place-items-center rounded-full text-white ring-1 ring-black/10 forced-colors:border forced-colors:border-[CanvasText]"
+        className="grid size-12 place-items-center rounded-full text-white ring-1 ring-black/10 lg:size-14 forced-colors:border forced-colors:border-[CanvasText]"
       >
         <CheckIcon className="hidden size-6 group-has-checked/opt:block" />
       </span>
