@@ -2,7 +2,7 @@ import { ArrowRightIcon, BellIcon, CheckIcon, MessageCircleIcon } from 'lucide-r
 import Link from 'next/link';
 import { Mascot } from '@/components/brand/mascot';
 import { Button } from '@/components/ui/button';
-import { STORE_PHASES } from '@/config/store-phases';
+import { STORE_PHASES, STORE_STAGES } from '@/config/store-phases';
 import { TEAM_WHATSAPP } from '@/config/support';
 import type { LogoConfig } from '@/features/brand/logo/config';
 import { logoPreviewSrc } from '@/features/brand/logo-preview';
@@ -58,11 +58,16 @@ type Hero = {
   note: string;
 };
 
+/** "Etapa 2 de 3 · Uns 10 minutos": o destaque diz em que pedaço do caminho ela está. */
+function stageEyebrow(stage: number, rest: string): string {
+  return `Etapa ${stage} de ${STORE_STAGES.length} · ${rest}`;
+}
+
 /** O que o destaque diz em cada momento da loja. */
 function heroFor(phase: number, conversation: ConversationStatus, brandStarted: boolean): Hero {
   if (phase === 1 && conversation !== 'enviada') {
     return {
-      eyebrow: 'Agora · 5 minutos',
+      eyebrow: stageEyebrow(1, 'Uns 5 minutos'),
       title: 'Conte sobre você e sua marca',
       text: 'Umas perguntas rápidas, uma por vez. Com elas, já preparamos ideias de nome, logo e texto pra sua loja.',
       action: {
@@ -74,9 +79,9 @@ function heroFor(phase: number, conversation: ConversationStatus, brandStarted: 
   }
   if (phase <= 2) {
     return {
-      eyebrow: 'Agora · 10 minutos',
+      eyebrow: stageEyebrow(2, 'Uns 10 minutos'),
       title: 'Crie a marca da sua loja',
-      text: 'Escolha o nome, monte o logo e escolha o texto da loja. As ideias já estão prontas.',
+      text: 'Escolha o nome, monte o logo e defina o texto da loja. As ideias já estão prontas.',
       action: {
         href: BRAND_PATH,
         label: brandStarted ? 'Continuar minha marca' : 'Criar minha marca',
@@ -94,7 +99,7 @@ function heroFor(phase: number, conversation: ConversationStatus, brandStarted: 
     };
   }
   return {
-    eyebrow: 'Em breve',
+    eyebrow: stageEyebrow(3, 'Em breve'),
     title: current?.title ?? '',
     text: current?.detail ?? '',
     note: 'Estamos preparando essa parte. Avisamos no WhatsApp quando ela abrir.',
@@ -137,7 +142,7 @@ function NextStep({
         )}
       </div>
       <div className="flex flex-1 flex-col gap-3">
-        <p className="inline-flex items-center gap-1.5 text-sm font-semibold tracking-wide text-link uppercase">
+        <p className="inline-flex items-center gap-1.5 text-sm font-semibold tracking-wide text-progress-text uppercase">
           {hero.action ? null : <BellIcon aria-hidden="true" className="size-4" />}
           {hero.eyebrow}
         </p>
@@ -186,50 +191,23 @@ function TalkToTeam() {
 }
 
 /**
- * O caminho em 3 etapas: uma barra só, contornada e dividida em 3, que enche de verde (as feitas
- * inteiras, a atual pela metade). Embaixo, o nome de cada etapa e o que tem nela. "Etapa 2 de 3"
- * no topo diz em palavras o que a barra desenha.
- * As etapas ficam na vertical no celular e lado a lado no computador, cada uma embaixo do seu terço.
+ * O caminho em 3 etapas, cada uma com a sua barra contornada: as feitas cheias de verde, a atual
+ * até onde ela chegou (stages.ts) e as próximas vazias. Embaixo da barra, o nome da etapa e o que
+ * tem nela. O caminho todo é verde, como o "Etapa 2 de 3" do destaque, que já diz em palavras
+ * onde ela está; o azul fica pro botão.
+ * Na vertical no celular e lado a lado no computador.
  * Num cartão igual ao do destaque: as duas caixas com a mesma largura e a mesma margem interna,
  * pra o começo e o fim de cada uma se alinharem.
  */
 function Path({ stages }: { stages: StageView[] }) {
-  const current = stages.findIndex((stage) => stage.status === 'current');
-  const filled = stages.reduce(
-    (sum, stage) => sum + (stage.status === 'done' ? 1 : stage.status === 'current' ? 0.5 : 0),
-    0,
-  );
   return (
     <section aria-labelledby="seu-caminho" className={cn(panelCard, 'gap-5')}>
-      <header className="flex items-baseline justify-between gap-4">
-        <h2
-          id="seu-caminho"
-          className="text-sm font-semibold tracking-wide text-muted-foreground uppercase"
-        >
-          Seu caminho
-        </h2>
-        <p className="text-sm font-semibold text-link">
-          {current === -1 ? 'Tudo pronto' : `Etapa ${current + 1} de ${stages.length}`}
-        </p>
-      </header>
-      {/* Só o desenho: o estado já está escrito no topo e no título de cada etapa. */}
-      <div
-        aria-hidden="true"
-        className="relative h-3.5 overflow-hidden rounded-full border border-muted-foreground bg-progress-track forced-colors:border-[CanvasText]"
+      <h2
+        id="seu-caminho"
+        className="text-sm font-semibold tracking-wide text-muted-foreground uppercase"
       >
-        <span
-          className="absolute inset-y-0 left-0 rounded-full bg-progress forced-colors:bg-[CanvasText]"
-          style={{ width: `${(filled / stages.length) * 100}%` }}
-        />
-        {/* As divisórias entre as etapas, por cima do verde. */}
-        {stages.slice(1).map((stage, index) => (
-          <span
-            key={stage.title}
-            className="absolute inset-y-0 w-0.5 -translate-x-1/2 bg-card"
-            style={{ left: `${((index + 1) / stages.length) * 100}%` }}
-          />
-        ))}
-      </div>
+        Seu caminho
+      </h2>
       <ol aria-label="As etapas da sua loja" className="flex flex-col gap-6 lg:grid lg:grid-cols-3">
         {stages.map((stage) => (
           <Stage key={stage.title} stage={stage} />
@@ -243,10 +221,20 @@ function Stage({ stage }: { stage: StageView }) {
   const { status } = stage;
   return (
     <li aria-current={status === 'current' ? 'step' : undefined} className="flex flex-col gap-1">
+      {/* A barra da etapa: só o desenho, o estado já está escrito no título. */}
+      <span
+        aria-hidden="true"
+        className="relative mb-2 h-2.5 overflow-hidden rounded-full border border-input bg-progress-track forced-colors:border-[CanvasText]"
+      >
+        <span
+          className="absolute inset-y-0 left-0 rounded-full bg-progress forced-colors:bg-[CanvasText]"
+          style={{ width: `${stage.fill * 100}%` }}
+        />
+      </span>
       <span
         className={cn(
           'inline-flex items-start gap-1.5 text-body font-semibold text-balance',
-          status === 'current' && 'text-link',
+          status === 'current' && 'text-progress-text',
           status === 'next' && 'text-muted-foreground',
         )}
       >
@@ -264,7 +252,7 @@ function Stage({ stage }: { stage: StageView }) {
       <span className="text-body text-pretty text-muted-foreground">{stage.detail}</span>
       {/* Na atual com várias fases, em que passo ela está: "Passo 2 de 5: Conexão com a Shopee". */}
       {status === 'current' && stage.step ? (
-        <span className="text-sm font-semibold text-pretty text-link">{stage.step}</span>
+        <span className="text-sm font-semibold text-pretty text-progress-text">{stage.step}</span>
       ) : null}
     </li>
   );

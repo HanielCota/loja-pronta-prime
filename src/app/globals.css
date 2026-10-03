@@ -42,6 +42,12 @@
   /* Trilho das barras de progresso (as etapas que faltam): 3:1 no fundo e no branco, pra barra
      não parecer só o pedaço azul (WCAG 1.4.11). */
   --track: #8a8a8f;
+  /* Barra do caminho da loja: verde esmeralda (3,9:1 no branco) num trilho claro (3,2:1 entre
+     os dois). O trilho escuro acima teria a mesma luminosidade do verde e o cheio sumiria. */
+  --progress: #15935a;
+  --progress-track: #e8e8ed;
+  /* O verde da barra mais escuro, pra texto (5,4:1 no branco). */
+  --progress-text: #0f7a46;
   --ring: #0071e3;
 }
 
@@ -83,6 +89,9 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-track: var(--track);
+  --color-progress: var(--progress);
+  --color-progress-track: var(--progress-track);
+  --color-progress-text: var(--progress-text);
   --color-ring: var(--ring);
 
   --radius-field: 12px;
