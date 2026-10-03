@@ -42,6 +42,7 @@ const SIZE_RANGE = {
   text: { min: 20, max: 400 },
   icon: { min: 40, max: 900 },
   shape: { min: 40, max: 1000 },
+  sticker: { min: 40, max: 900 },
 } as const;
 
 const ALIGNMENTS: { id: Alignment; label: string; icon: typeof CheckIcon }[] = [
@@ -117,9 +118,17 @@ export function PropertiesPanel({
         </div>
       </div>
 
-      <Swatches legend="Cor" value={selected.color} onSelect={(hex) => onChange({ color: hex })} />
+      {/* A figurinha tem as próprias cores: sem escolha de cor. */}
+      {selected.type === 'sticker' ? null : (
+        <Swatches
+          legend="Cor"
+          value={selected.color}
+          onSelect={(hex) => onChange({ color: hex } as Partial<SceneElement>)}
+        />
+      )}
       {/* 3:1 é o mínimo pra texto grande e desenhos (WCAG): abaixo disso, some de longe. */}
-      {selected.type !== 'shape' && contrast(selected.color, backdrop) < 3 ? (
+      {(selected.type === 'text' || selected.type === 'icon') &&
+      contrast(selected.color, backdrop) < 3 ? (
         <p className="-mt-3 flex items-start gap-1.5 text-body text-pretty text-destructive">
           <CircleAlertIcon aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
           Pouco contraste: fica difícil de ver. Escolha outra cor.

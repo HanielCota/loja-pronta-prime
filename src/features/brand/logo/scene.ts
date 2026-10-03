@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { LOGO_FONT_IDS } from './fonts';
 import { SCENE_ICON_IDS } from './icons';
+import { STICKER_IDS } from './stickers';
 
 /** Tela do logo: quadrada, como a foto de perfil da loja (a Shopee mostra num círculo). */
 export const SCENE_SIZE = 1000;
@@ -70,6 +71,17 @@ const iconElement = z.object({
 });
 
 /**
+ * Figurinha colorida (Fluent Emoji) num quadrado de `size`. Tem as próprias cores: não tem `color`
+ * e não muda com a cor do logo.
+ */
+const stickerElement = z.object({
+  ...common,
+  type: z.literal('sticker'),
+  sticker: z.enum(STICKER_IDS),
+  size: length,
+});
+
+/**
  * Forma: círculo cheio, anel (só o contorno, com `stroke` de espessura) ou retângulo de cantos
  * arredondados (`radius`).
  */
@@ -85,7 +97,7 @@ const shapeElement = z.object({
 });
 
 export const sceneElementSchema = z
-  .discriminatedUnion('type', [textElement, iconElement, shapeElement])
+  .discriminatedUnion('type', [textElement, iconElement, shapeElement, stickerElement])
   .refine((element) => element.type !== 'text' || element.source !== 'custom' || element.value, {
     message: 'Texto sem conteúdo',
   });
@@ -111,3 +123,9 @@ export type SceneElement = z.infer<typeof sceneElementSchema>;
 export type TextElement = z.infer<typeof textElement>;
 export type IconElement = z.infer<typeof iconElement>;
 export type ShapeElement = z.infer<typeof shapeElement>;
+export type StickerElement = z.infer<typeof stickerElement>;
+
+/** A cor da parte; a figurinha não tem (as cores são dela). */
+export function elementColor(element: SceneElement): string | undefined {
+  return element.type === 'sticker' ? undefined : element.color;
+}

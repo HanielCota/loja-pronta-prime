@@ -1,5 +1,7 @@
 import { SCENE_ICONS } from './icons';
+import { stickerLabel } from './stickers';
 import {
+  elementColor,
   MAX_ELEMENTS,
   SCENE_SIZE,
   type LogoScene,
@@ -34,6 +36,7 @@ export function elementSize(element: SceneElement, name: string, fonts: LogoFont
       return { width: box.x2 - box.x1, height: box.y2 - box.y1 };
     }
     case 'icon':
+    case 'sticker':
       return { width: element.size, height: element.size };
     case 'shape':
       return { width: element.width, height: element.height };
@@ -62,6 +65,8 @@ export function elementLabel(element: SceneElement): string {
       return `Desenho: ${SCENE_ICONS.find((icon) => icon.id === element.icon)?.label ?? ''}`;
     case 'shape':
       return { circle: 'Círculo', ring: 'Anel', rect: 'Retângulo' }[element.shape];
+    case 'sticker':
+      return `Figurinha: ${stickerLabel(element.sticker)}`;
   }
 }
 
@@ -101,6 +106,7 @@ export function scaleElement(element: SceneElement, factor: number): SceneElemen
         maxWidth: length(element.maxWidth),
       };
     case 'icon':
+    case 'sticker':
       return { ...element, size: length(element.size) };
     case 'shape':
       return {
@@ -120,8 +126,8 @@ export function scaleElement(element: SceneElement, factor: number): SceneElemen
 /** O tamanho principal do elemento, o que o controle "Tamanho" mostra e muda. */
 export function primarySize(element: SceneElement): number {
   if (element.type === 'text') return element.size;
-  if (element.type === 'icon') return element.size;
-  return element.width;
+  if (element.type === 'shape') return element.width;
+  return element.size;
 }
 
 /** O elemento com o tamanho principal em `value` (o resto acompanha na mesma proporção). */
@@ -202,7 +208,10 @@ export function mainColor(scene: LogoScene): string {
   const name = scene.elements.find(
     (element) => element.type === 'text' && element.source === 'name',
   );
-  const colors = [name, ...scene.elements].flatMap((element) => (element ? [element.color] : []));
+  const colors = [name, ...scene.elements].flatMap((element) => {
+    const color = element && elementColor(element);
+    return color ? [color] : [];
+  });
   return (
     colors.find((color) => color !== '#ffffff' && color !== scene.background) ??
     colors[0] ??

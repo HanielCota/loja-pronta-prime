@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { logoTemplates } from './config';
 import { inkOn } from './palette';
-import { logoSceneSchema, type LogoScene, type SceneElement } from './scene';
+import { elementColor, logoSceneSchema, type LogoScene, type SceneElement } from './scene';
 import {
   applyBackground,
   applyColor,
@@ -80,14 +80,14 @@ describe('sceneStyle em formatos com o nome branco', () => {
     expect(sceneStyle(scene).color).toBe(ROSA);
     // Trocar a cor muda o círculo; o nome continua branco.
     const blue = applyColor(scene, '#2f7de1');
-    expect(blue.elements.map((e) => e.color)).toEqual([inkOn('#2f7de1'), '#ffffff']);
+    expect(blue.elements.map((e) => elementColor(e))).toEqual([inkOn('#2f7de1'), '#ffffff']);
   });
 });
 
 describe('escolhas rápidas', () => {
   test('cor: troca a principal e deixa as outras como ela pôs', () => {
     const result = applyColor(SCENE, '#2f7de1');
-    expect(result.elements.map((e) => e.color)).toEqual([
+    expect(result.elements.map((e) => elementColor(e))).toEqual([
       inkOn('#2f7de1'),
       inkOn('#2f7de1'),
       '#1d1d1f',
@@ -111,8 +111,8 @@ describe('escolhas rápidas', () => {
   test('fundo colorido e de volta: as cores trocam de lugar e voltam iguais', () => {
     const colored = applyBackground(SCENE, true);
     expect(colored.background).toBe(ROSA);
-    expect(colored.elements[1]?.color).toBe('#ffffff');
-    expect(colored.elements[2]?.color).toBe('#1d1d1f');
+    expect(elementColor(colored.elements[1]!)).toBe('#ffffff');
+    expect(elementColor(colored.elements[2]!)).toBe('#1d1d1f');
     expect(sceneStyle(colored)).toMatchObject({ color: ROSA, colored: true });
     expect(applyBackground(colored, false)).toEqual(SCENE);
   });
@@ -120,7 +120,7 @@ describe('escolhas rápidas', () => {
   test('com fundo colorido, mudar a cor muda o fundo', () => {
     const result = applyColor(applyBackground(SCENE, true), '#3ba776');
     expect(result.background).toBe(inkOn('#3ba776'));
-    expect(result.elements[1]?.color).toBe('#ffffff');
+    expect(elementColor(result.elements[1]!)).toBe('#ffffff');
   });
 });
 

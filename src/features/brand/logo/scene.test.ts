@@ -3,6 +3,7 @@ import { logoTemplates, type LogoConfig } from './config';
 import { loadLogoFonts } from './fonts.server';
 import { configToScene } from './from-config';
 import { iconPaths, SCENE_ICONS } from './icons';
+import { stickerArt, STICKER_LIST } from './stickers';
 import { logoSceneSchema, MAX_ELEMENTS, type LogoScene, type TextElement } from './scene';
 import { renderSceneSvg } from './scene-render';
 import { drawText } from './text';
@@ -131,6 +132,30 @@ describe('renderSceneSvg', async () => {
     expect(logoSceneSchema.safeParse(scene([{ ...base, ...at, weight: 'neon' }])).success).toBe(
       false,
     );
+  });
+
+  test('figurinha: sai com as cores dela, só com formas; figurinha desconhecida não entra', () => {
+    const sticker = { id: 's', type: 'sticker', sticker: 'flor-cerejeira', size: 300 };
+    const at = { x: 500, y: 500, rotation: 0, opacity: 1 };
+    const parsed = logoSceneSchema.safeParse(scene([{ ...sticker, ...at }]));
+    expect(parsed.success).toBe(true);
+    const svg = renderSceneSvg(parsed.data!, 'Bella', fonts);
+    expect(svg).toContain('#FF6DC6');
+    expect(svg).not.toMatch(/<script|url\(|href|style=/i);
+    expect(
+      logoSceneSchema.safeParse(scene([{ ...sticker, ...at, sticker: 'nao-existe' }])).success,
+    ).toBe(false);
+  });
+
+  test('toda figurinha tem desenho, e nenhum traz nada além de formas e cores fixas', () => {
+    for (const { id } of STICKER_LIST) {
+      const art = stickerArt(id);
+      expect(art.length).toBeGreaterThan(0);
+      for (const [, tag] of art.matchAll(/<\/?([a-z]+)/g)) {
+        expect(['path', 'ellipse', 'circle', 'rect', 'g']).toContain(tag!);
+      }
+      expect(art).not.toMatch(/url\(|href|on[a-z]+=|style=/i);
+    }
   });
 
   test('todo desenho da lista tem os três estilos', () => {

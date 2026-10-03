@@ -49,8 +49,11 @@ export function paletteIdFor(ink: string) {
 const recolor = (scene: LogoScene, map: (color: string) => string): LogoScene => ({
   ...scene,
   background: map(scene.background),
-  elements: scene.elements.map(
-    (element) => ({ ...element, color: map(element.color) }) as SceneElement,
+  // As figurinhas ficam com as cores delas.
+  elements: scene.elements.map((element) =>
+    element.type === 'sticker'
+      ? element
+      : ({ ...element, color: map(element.color) } as SceneElement),
   ),
 });
 

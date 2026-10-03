@@ -1,12 +1,14 @@
 import type { Font } from 'opentype.js';
 import type { LogoFontId } from './fonts';
 import { ICON_VIEWBOX, iconPaths, type IconWeight } from './icons';
+import { stickerArt, STICKER_VIEWBOX } from './stickers';
 import {
   SCENE_SIZE,
   type IconElement,
   type LogoScene,
   type SceneElement,
   type ShapeElement,
+  type StickerElement,
   type TextElement,
 } from './scene';
 import { drawText, firstLetter, round } from './text';
@@ -40,6 +42,7 @@ export function renderElement(element: SceneElement, name: string, fonts: LogoFo
 export function renderElementBody(element: SceneElement, name: string, fonts: LogoFonts): string {
   if (element.type === 'text') return renderText(element, name, fonts);
   if (element.type === 'icon') return renderIcon(element);
+  if (element.type === 'sticker') return renderSticker(element);
   return renderShape(element);
 }
 
@@ -73,6 +76,13 @@ function renderIcon(element: IconElement): string {
   const half = element.size / 2;
   const scale = element.size / ICON_VIEWBOX;
   return `<g transform="translate(${round(-half)} ${round(-half)}) scale(${round(scale, 4)})" fill="${element.color}">${children}</g>`;
+}
+
+/** Figurinha (num quadrado de 32, com as cores dela) ampliada pro tamanho do elemento. */
+function renderSticker(element: StickerElement): string {
+  const half = element.size / 2;
+  const scale = element.size / STICKER_VIEWBOX;
+  return `<g transform="translate(${round(-half)} ${round(-half)}) scale(${round(scale, 4)})">${stickerArt(element.sticker)}</g>`;
 }
 
 function renderShape(element: ShapeElement): string {

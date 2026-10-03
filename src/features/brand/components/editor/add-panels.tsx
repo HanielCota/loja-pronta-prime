@@ -7,6 +7,13 @@ import { CUSTOM_TEXT_MAX } from '../../logo/scene';
 import type { LogoScene, TextElement } from '../../logo/scene';
 import type { LogoFontId } from '../../logo/fonts';
 import { ICON_GROUPS, SCENE_ICONS, type SceneIconId } from '../../logo/icons';
+import {
+  stickerArt,
+  STICKER_GROUPS,
+  STICKER_LIST,
+  STICKER_VIEWBOX,
+  type StickerId,
+} from '../../logo/stickers';
 import { IconGlyph } from './icon-glyph';
 import type { NewElement } from '../../logo/editor';
 
@@ -290,5 +297,45 @@ function ShapePreview({ element }: { element: NewElement }) {
         />
       )}
     </svg>
+  );
+}
+
+/**
+ * Pôr uma figurinha colorida (Fluent Emoji): os grupos, com as figurinhas nas cores delas. Uma
+ * figurinha não muda com a cor do logo: é pra enfeitar.
+ */
+export function AddStickers({ onAdd }: { onAdd: AddProps['onAdd'] }) {
+  return (
+    <div className="flex flex-col gap-4">
+      {STICKER_GROUPS.map((group) => (
+        <Group key={group.id} title={group.label}>
+          {STICKER_LIST.filter((sticker) => sticker.group === group.id).map((sticker) => (
+            <AddButton
+              key={sticker.id}
+              // "figurinha" no nome: há desenhos de uma cor com o mesmo nome (Osso, Coração...).
+              label={`figurinha ${sticker.label}`}
+              onClick={() =>
+                onAdd({ type: 'sticker', sticker: sticker.id, size: 260 }, sticker.label)
+              }
+            >
+              <StickerGlyph id={sticker.id} />
+            </AddButton>
+          ))}
+        </Group>
+      ))}
+    </div>
+  );
+}
+
+/** A figurinha em miniatura, nas cores dela. Só desenho: o nome vai no botão. */
+export function StickerGlyph({ id, className = 'size-9' }: { id: StickerId; className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox={`0 0 ${STICKER_VIEWBOX} ${STICKER_VIEWBOX}`}
+      className={className}
+      // O desenho foi conferido quando foi gerado (só formas e cores fixas).
+      dangerouslySetInnerHTML={{ __html: stickerArt(id) }}
+    />
   );
 }

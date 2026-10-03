@@ -34,7 +34,7 @@ import { MAX_VARIATIONS, SCENE_SIZE, type LogoScene, type SceneElement } from '.
 import type { LogoFonts } from '../../logo/scene-render';
 import { saveLogoScene } from '../../server/actions';
 import { EditorCanvas } from './editor-canvas';
-import { AddDrawings, AddTexts } from './add-panels';
+import { AddDrawings, AddStickers, AddTexts } from './add-panels';
 import { CheckDialog } from './check-dialog';
 import { HelpDialog } from './help-dialog';
 import { IdeasPanel } from './ideas-panel';
@@ -533,7 +533,13 @@ export function LogoEditor({
               {tool === 'desenhos' ? (
                 <>
                   <MainIconPicker scene={scene} recommended={recommended} onStyle={applyStyle} />
-                  <h3 className="-mb-3 text-body font-semibold">Pôr mais um desenho</h3>
+                  <section aria-labelledby="figurinhas-titulo" className="flex flex-col gap-4">
+                    <h3 id="figurinhas-titulo" className="text-body font-semibold">
+                      Figurinhas coloridas
+                    </h3>
+                    <AddStickers onAdd={add} />
+                  </section>
+                  <h3 className="-mb-3 text-body font-semibold">Desenhos de uma cor</h3>
                   <AddDrawings color={mainColor(scene)} onAdd={add} />
                 </>
               ) : null}

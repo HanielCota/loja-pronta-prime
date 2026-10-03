@@ -1,10 +1,15 @@
 'use client';
 
-import { CircleIcon, ShapesIcon, SparklesIcon, TypeIcon } from 'lucide-react';
+import { CircleIcon, ShapesIcon, SparklesIcon, StickerIcon, TypeIcon } from 'lucide-react';
 import { elementLabel } from '../../logo/editor';
-import type { LogoScene, SceneElement } from '../../logo/scene';
+import { elementColor, type LogoScene, type SceneElement } from '../../logo/scene';
 
-const ICONS = { text: TypeIcon, icon: SparklesIcon, shape: ShapesIcon } as const;
+const ICONS = {
+  text: TypeIcon,
+  icon: SparklesIcon,
+  shape: ShapesIcon,
+  sticker: StickerIcon,
+} as const;
 
 const TITLE_ID = 'partes-titulo';
 
@@ -57,11 +62,14 @@ function LayerButton({ element, onSelect }: { element: SceneElement; onSelect: (
         <Icon className="size-4" />
       </span>
       <span className="min-w-0 truncate">{elementLabel(element)}</span>
-      <span
-        aria-hidden="true"
-        className="ml-auto size-4 shrink-0 rounded-full ring-1 ring-foreground/20"
-        style={{ backgroundColor: element.color }}
-      />
+      {/* A cor da parte (a figurinha tem as dela: sem bolinha). */}
+      {elementColor(element) ? (
+        <span
+          aria-hidden="true"
+          className="ml-auto size-4 shrink-0 rounded-full ring-1 ring-foreground/20"
+          style={{ backgroundColor: elementColor(element) }}
+        />
+      ) : null}
     </button>
   );
 }

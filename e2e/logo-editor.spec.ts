@@ -80,8 +80,15 @@ test.describe('biblioteca, no computador', () => {
     await page.getByRole('button', { name: 'Adicionar Osso' }).click();
     await expect(drawn(page)).toHaveCount(3);
     await expect(page.getByRole('heading', { name: /Desenho: Osso/ })).toBeVisible();
-    await page.getByRole('radio', { name: 'Cheio' }).check({ force: true });
+    await page.getByText('Cheio', { exact: true }).click();
+    await expect(page.getByRole('radio', { name: 'Cheio' })).toBeChecked();
     await page.getByRole('button', { name: 'Pronto' }).click();
+
+    // Uma figurinha colorida: sem escolha de cor (as cores são dela).
+    await page.getByRole('button', { name: 'Adicionar figurinha Girassol' }).click();
+    await expect(page.getByRole('heading', { name: 'Figurinha: Girassol' })).toBeVisible();
+    await expect(page.getByRole('group', { name: 'Cor', exact: true })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Apagar' }).click();
 
     // Uma forma.
     await page.getByLabel('Buscar desenhos').fill('');

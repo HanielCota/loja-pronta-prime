@@ -130,7 +130,8 @@ export function checkLogo(scene: LogoScene, measure: Measure): LogoIssue[] {
   }
 
   for (const element of scene.elements) {
-    if (element.type === 'shape') continue;
+    // Formas são enfeite; figurinhas têm as próprias cores (várias, de propósito).
+    if (element.type === 'shape' || element.type === 'sticker') continue;
     const backdrop = backdropColor(scene, element.id, sizes);
     if (contrast(element.color, backdrop) >= MIN_CONTRAST) continue;
     const color = readableOn(backdrop);
