@@ -8,7 +8,7 @@ async function requestLink(page: Page, email: string) {
   await page.goto('/recuperar-senha');
   await page.getByLabel('Email da compra').fill(email);
   await page.getByRole('button', { name: 'Me enviar o link' }).click();
-  await expect(page.getByRole('heading', { name: 'Confere seu email' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Confira seu email' })).toBeVisible();
 }
 
 test('leva o email do login pra recuperação sem colocar na URL', async ({ page }) => {

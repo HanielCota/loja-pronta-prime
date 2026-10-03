@@ -27,9 +27,7 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
   test.slow();
   await signIn(page, studentEmail('conversa'), PASSWORD, '/loja-pronta');
   await expect(page).toHaveURL(/\/loja-pronta$/);
-  await expect(
-    page.getByRole('heading', { name: 'Conte pra gente sobre você e a sua marca' }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Conte sobre você e sua marca' })).toBeVisible();
   await expectNoA11yViolations(page);
   await page.getByRole('link', { name: 'Começar a conversa' }).click();
 
@@ -127,7 +125,7 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
     .getByRole('listitem');
   await expect(phases.nth(0)).toContainText('(concluída)');
   await expect(phases.nth(1)).toHaveAttribute('aria-current', 'step');
-  await expect(page.getByRole('heading', { name: 'Estamos criando a sua marca' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Estamos criando sua marca' })).toBeVisible();
 
   // Enviada, a conversa não abre de novo.
   await page.goto('/loja-pronta/conversa/vendas');
@@ -136,7 +134,7 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
   // Na escolha, com a loja nas mãos da equipe: o texto diz que ela será chamada, e nenhum cartão
   // é "recomendado" (o curso ainda não abriu).
   await page.goto('/');
-  await expect(page.getByText(/Sua loja está com a nossa equipe/)).toBeVisible();
+  await expect(page.getByText(/Sua loja está com a equipe/)).toBeVisible();
   await expect(
     page.getByRole('link', { name: /Sistema Loja Lucrativa/ }),
   ).not.toHaveAccessibleDescription(/Recomendado/);
@@ -195,8 +193,8 @@ test('pelo teclado, trocar a opção com as setas não avança sozinho', async (
   await page.goto('/loja-pronta/conversa/vendas');
   await page.getByRole('button', { name: 'Continuar' }).click();
   await answerAboutYou(page);
-  await page.getByText('Ainda não sei, me ajudem').click();
-  await expect(page.getByRole('checkbox', { name: 'Ainda não sei, me ajudem' })).toBeChecked();
+  await page.getByText('Ainda não decidi', { exact: true }).click();
+  await expect(page.getByRole('checkbox', { name: 'Ainda não decidi' })).toBeChecked();
   await expect(page.getByLabel('Nome da loja')).toBeDisabled();
   await page.getByRole('button', { name: 'Continuar' }).click();
   await expect(page).toHaveURL(step('estilo'));
