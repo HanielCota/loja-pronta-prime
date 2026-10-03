@@ -54,6 +54,9 @@
   --progress-text: #0f7a46;
   --ring: #0071e3;
 
+  /* Controle segmentado (as abas tipo iOS): trilho rebaixado e a opção escolhida em destaque. */
+  --segment: rgb(0 0 0 / 0.06);
+  --segment-thumb: #ffffff;
 
   --card-shadow: 0 2px 6px rgb(0 0 0 / 0.04), 0 16px 48px -12px rgb(0 0 0 / 0.12);
 }
@@ -102,6 +105,11 @@
   /* Anel de foco no azul claro: o azul do botão some no escuro. */
   --ring: #5aabff;
 
+  /* Trilho rebaixado (escurece o que estiver embaixo, cartão ou fundo) e a escolhida clara: com
+     a escolhida da cor do cartão, como no tema claro, ela não se destacava. Texto: 7,4:1 ou mais
+     no trilho e 8,1:1 na escolhida. */
+  --segment: rgb(0 0 0 / 0.25);
+  --segment-thumb: #4a4a4f;
 
   /* No grafite a sombra aparece pouco: ela dá o relevo, e o contorno fino separa o cartão do
      fundo, que tem quase o mesmo tom. */
@@ -150,6 +158,8 @@
   --color-progress-track: var(--progress-track);
   --color-progress-text: var(--progress-text);
   --color-ring: var(--ring);
+  --color-segment: var(--segment);
+  --color-segment-thumb: var(--segment-thumb);
 
   --radius-field: 12px;
   --radius-card: 28px;
