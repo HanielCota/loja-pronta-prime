@@ -75,20 +75,31 @@ export function stepTitle(step: Step): string {
   return `Pergunta ${questionNumber(step)} de ${QUESTION_COUNT}`;
 }
 
-/** No topo da conversa, curto (cabe no celular): "3 de 10", "Revisão", "Último passo". */
-export function stepLabel(step: Step): string {
-  return findQuestion(step) ? `${questionNumber(step)} de ${QUESTION_COUNT}` : stepTitle(step);
-}
-
-/** As três partes da conversa, nomeadas no topo. */
-const PARTS = ['Sobre você', 'Sua marca', 'Confirmar'] as const;
-
 /**
- * Onde a etapa fica no topo: a parte (Sobre você, Sua marca, Confirmar), pro nome em cima, e
- * quanto da conversa inteira já foi, contando a etapa atual (a 1ª de 12 enche um doze avos).
+ * O topo de cada etapa: o que está escrito ("Pergunta 3 de 10"), quantos tracinhos da barra já
+ * estão cheios (contando a etapa atual) e se já há respostas salvas. Sem nome de parte e sem
+ * número solto: "8 de 10" não diz 8 de quê, e "Sua marca" se confundia com a fase da marca.
  */
-export function stepProgress(step: Step): { section: string; progress: number } {
-  const progress = (STEPS.indexOf(step) + 1) / STEPS.length;
-  if (step === REVIEW_STEP || step === WHATSAPP_STEP) return { section: PARTS[2], progress };
-  return { section: PARTS[findQuestion(step)?.block === 'marca' ? 1 : 0], progress };
+export function stepHeader(step: Step): StepHeader {
+  const total = QUESTION_COUNT;
+  if (step === REVIEW_STEP)
+    return { label: 'Revisão das respostas', filled: total, total, saved: true };
+  if (step === WHATSAPP_STEP) return { label: 'Último passo', filled: total, total, saved: true };
+  const number = questionNumber(step);
+  const label =
+    number === total
+      ? 'Última pergunta'
+      : number === total - 1
+        ? `Pergunta ${number} de ${total} · falta só 1`
+        : `Pergunta ${number} de ${total}`;
+  return { label, filled: number, total, saved: number > 1 };
 }
+
+export type StepHeader = {
+  label: string;
+  /** Tracinhos cheios na barra (a etapa atual conta). */
+  filled: number;
+  total: number;
+  /** Já tem resposta salva: o topo avisa, pra ela sair sem medo de perder. */
+  saved: boolean;
+};
