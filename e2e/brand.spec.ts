@@ -85,10 +85,14 @@ test('marca completa: nome, modelo, estúdio, texto, revisão com mudança e log
   ]);
   expect(download.suggestedFilename()).toBe('logo-gatinhos-cia.png');
 
-  // Confirmada, a marca não abre de novo; o painel já está na fase 3.
+  // Confirmada, a marca não abre de novo; o painel já está na fase 3, com o nome e o logo dela.
   await page.goto('/loja-pronta/marca/nome');
   await expect(page).toHaveURL(/\/loja-pronta$/);
-  await expect(page.getByRole('heading', { name: 'Fase 3 de 7' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Gatinhos & Cia' })).toBeVisible();
+  await expectLogoLoaded(page, /^Logo da loja Gatinhos & Cia/);
+  await expect(
+    page.getByRole('list', { name: 'As etapas da sua loja' }).getByRole('listitem').nth(2),
+  ).toContainText('Passo 1 de 5: Conta na Shopee');
 });
 
 test('estúdio pelo teclado: Tab e setas mudam a cor, e Enter salva', async ({ page }) => {

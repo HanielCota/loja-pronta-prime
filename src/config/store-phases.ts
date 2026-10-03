@@ -45,3 +45,27 @@ export const STORE_PHASES = [
     needsStudent: false,
   },
 ] as const;
+
+/**
+ * As 3 etapas que a aluna vê: as 7 fases agrupadas com as palavras dela. A tela mostra o caminho
+ * em 3 etapas (menos coisa pra entender de uma vez); as fases continuam valendo por dentro.
+ * `detail`: uma linha curta (o destaque do painel é que explica a etapa atual).
+ * `phases`: os números das fases (1 a 7) de cada etapa.
+ */
+export const STORE_STAGES = [
+  {
+    title: 'Você conta sobre você',
+    detail: 'Umas perguntas rápidas',
+    phases: [1],
+  },
+  {
+    title: 'Você cria a marca',
+    detail: 'Nome, logo e texto',
+    phases: [2],
+  },
+  {
+    title: 'A loja vai pra Shopee',
+    detail: 'Conta, produtos e publicação',
+    phases: [3, 4, 5, 6, 7],
+  },
+] as const;
