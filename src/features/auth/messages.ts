@@ -20,7 +20,7 @@ export const VALIDATION_MESSAGES = {
   passwordTooLong: `Senha pode ter no máximo ${PASSWORD_MAX_LENGTH} caracteres`,
   currentPasswordRequired: 'Digite sua senha atual',
   nameRequired: 'Digite seu nome',
-  nameTooLong: 'Use no máximo 60 letras',
+  nameTooLong: 'Use no máximo 30 letras',
   resetLinkMissing: 'Abra o link que enviamos no seu email',
 } as const;
 

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { BrandCard } from '@/components/brand/brand-card';
 import { CardHeading } from '@/components/brand/card-heading';
+import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
 import type { ProductId } from '@/config/products';
 import { PRODUCTS } from '@/features/products/catalog';
@@ -15,7 +16,7 @@ import {
 } from '@/features/products/chooser';
 import { getStoreOverview } from '@/features/loja-pronta/server/overview';
 import { storeChooserCard } from '@/features/loja-pronta/store-card';
-import { firstName } from '@/features/products/names';
+import { greetingName } from '@/features/products/names';
 import { requireStudent } from '@/features/products/server/access';
 
 export const metadata: Metadata = {
@@ -33,7 +34,7 @@ export default async function HomePage() {
   if (products.length === 1 && onlyProduct) redirect(PRODUCTS[onlyProduct].path);
 
   const { user } = session;
-  const name = firstName(user.name);
+  const name = greetingName(user);
 
   if (products.length === 0) {
     return (
@@ -66,7 +67,8 @@ export default async function HomePage() {
   // Sem o cartão em volta: os produtos são os cartões, com o espaço da tela toda.
   return (
     <CenteredMemberPage account={user} wide>
-      <div className="flex flex-col">
+      <div className="flex flex-col gap-6">
+        <Logo expression="happy" />
         <CardHeading
           className="mb-0"
           title={name ? `Oi, ${name}! Pra onde vamos?` : 'Pra onde vamos?'}

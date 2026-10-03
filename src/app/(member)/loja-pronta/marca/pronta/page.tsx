@@ -12,7 +12,7 @@ import {
   panelCard,
   sectionTitleClass,
 } from '@/features/member/components/area-shell';
-import { firstName } from '@/features/products/names';
+import { greetingName } from '@/features/products/names';
 import { requireProduct } from '@/features/products/server/access';
 import { cn } from '@/lib/utils';
 
@@ -25,7 +25,7 @@ export default async function BrandDonePage() {
   const { session } = await requireProduct('loja-pronta', BRAND_DONE_PATH);
   const brand = await getBrand(session.user.id);
   if (!brand.completedAt || !brand.logo || !brand.name) redirect(BRAND_PATH);
-  const name = firstName(session.user.name);
+  const name = greetingName(session.user);
 
   return (
     <CenteredMemberPage

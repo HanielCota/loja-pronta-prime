@@ -27,7 +27,9 @@ async function profileSession() {
   return session;
 }
 
-/** Como ela quer ser chamada (a saudação usa o primeiro nome). */
+/**
+ * Como ela quer ser chamada, nas saudações. Fica à parte do nome completo da compra, que não muda.
+ */
 export async function updateName(
   _state: ProfileResult,
   formData: FormData,
@@ -52,14 +54,14 @@ export async function updateName(
   try {
     await db
       .update(user)
-      .set({ name: submission.value.name, updatedAt: new Date() })
+      .set({ preferredName: submission.value.name, updatedAt: new Date() })
       .where(eq(user.id, userId));
   } catch (error) {
     reportAuthError('troca do nome no perfil', error);
     return { submission: reject(submission, 'unknown') };
   }
 
-  // O nome aparece na barra do topo e na saudação de todas as telas de dentro.
+  // O nome aparece na saudação das telas de dentro.
   revalidatePath('/', 'layout');
   return { submission: submission.reply(), saved: true };
 }

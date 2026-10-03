@@ -43,8 +43,10 @@ export default async function BrandStepPage({ params, searchParams }: PageProps)
 
   return (
     <ConversationLayout
+      account={student.session.user}
       header={brandStepHeader(passo, Boolean(brand.name))}
       savedLabel="Escolhas salvas"
+      wide={passo === 'ajustar'}
       backHref={
         editing ? brandStepPath('revisao') : revising ? '/loja-pronta' : previousBrandPath(passo)
       }
@@ -64,6 +66,7 @@ export default async function BrandStepPage({ params, searchParams }: PageProps)
         <LogoStudio
           initial={brand.logo}
           base={templates[brand.logo.template] ?? brand.logo}
+          storeName={brand.name ?? ''}
           editing={editing}
         />
       ) : null}

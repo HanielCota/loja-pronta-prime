@@ -1,9 +1,9 @@
-import { firstName } from '../names';
+import { greetingName } from '../names';
 import { AreaShell, greeting } from '@/features/member/components/area-shell';
 import { SllCourseCard, SllToolsCard } from './sll-cards';
 
 type SllAreaProps = {
-  user: { name: string; email: string };
+  user: { name: string; email: string; preferredName?: string | null | undefined };
   /** Primeira vez nesta área: "Boas-vindas"; depois, "Oi". */
   firstVisit: boolean;
   /** Tem os dois produtos: o topo leva de volta pra escolha. */
@@ -23,7 +23,7 @@ export function SllArea({ user, firstVisit, hasChoice }: SllAreaProps) {
       // As aulas ainda não estão no ar: o título diz isso, sem mandar ela "começar" algo fechado.
       title="As aulas abrem em breve"
       intro={greeting(
-        firstName(user.name),
+        greetingName(user),
         firstVisit,
         'O curso começa pela trilha de boas-vindas. Você recebe um aviso quando ela abrir.',
       )}

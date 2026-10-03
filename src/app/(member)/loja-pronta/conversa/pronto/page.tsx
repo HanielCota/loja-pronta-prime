@@ -15,7 +15,7 @@ import {
   sectionTitleClass,
   panelCard,
 } from '@/features/member/components/area-shell';
-import { firstName } from '@/features/products/names';
+import { greetingName } from '@/features/products/names';
 import { requireProduct } from '@/features/products/server/access';
 import { cn } from '@/lib/utils';
 
@@ -28,7 +28,7 @@ export default async function ConversationDonePage() {
   const { session } = await requireProduct('loja-pronta', DONE_PATH);
   const { completedAt, whatsapp } = await getOnboarding(session.user.id);
   if (!completedAt) redirect(CONVERSATION_PATH);
-  const name = firstName(session.user.name);
+  const name = greetingName(session.user);
 
   const next: ReactNode[] = [
     'Escolher o nome da loja.',

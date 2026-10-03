@@ -14,7 +14,7 @@ import type { LogoConfig } from '@/features/brand/logo/config';
 import { logoPreviewSrc } from '@/features/brand/logo-preview';
 import { BRAND_PATH, brandStepPath } from '@/features/brand/steps';
 import { AreaShell, panelCard } from '@/features/member/components/area-shell';
-import { firstName } from '@/features/products/names';
+import { greetingName } from '@/features/products/names';
 import { cn } from '@/lib/utils';
 import { storeStages, type StageView } from '../stages';
 import { canReviseDonePhases } from '../editing';
@@ -23,7 +23,7 @@ import type { ConversationStatus } from '../store-phase';
 import { whatsappLink } from '../whatsapp';
 
 type StorePanelProps = {
-  user: { name: string; email: string };
+  user: { name: string; email: string; preferredName?: string | null | undefined };
   /** Tem os dois produtos: o topo leva de volta pra escolha. */
   hasChoice: boolean;
   phase: number;
@@ -39,7 +39,8 @@ type StorePanelProps = {
  * vertical. Com a marca pronta, o título é o nome da loja.
  */
 export function StorePanel({ user, hasChoice, phase, conversation, brand }: StorePanelProps) {
-  const name = firstName(user.name);
+  // Com os dois produtos, ela chega aqui pela escolha de área, que já disse "Oi": sem repetir.
+  const name = hasChoice ? '' : greetingName(user);
   return (
     <AreaShell
       account={user}
@@ -73,38 +74,37 @@ type Hero = {
   text: string;
   action?: { href: string; label: string } | undefined;
   /** Linha menor ao lado do botão (ou no lugar dele). */
-  note: string;
+  note?: string | undefined;
 };
 
-/** "Etapa 2 de 3 · Uns 10 minutos": o destaque diz em que pedaço do caminho ela está. */
-function stageEyebrow(stage: number, rest: string): string {
-  return `Etapa ${stage} de ${STORE_STAGES.length} · ${rest}`;
+/** "Etapa 2 de 3": o destaque diz em que pedaço do caminho ela está. */
+function stageEyebrow(stage: number, rest?: string): string {
+  const base = `Etapa ${stage} de ${STORE_STAGES.length}`;
+  return rest ? `${base} · ${rest}` : base;
 }
 
 /** O que o destaque diz em cada momento da loja. */
 function heroFor(phase: number, conversation: ConversationStatus, brandStarted: boolean): Hero {
   if (phase === 1 && conversation !== 'enviada') {
     return {
-      eyebrow: stageEyebrow(1, 'Uns 5 minutos'),
+      eyebrow: stageEyebrow(1),
       title: 'Conte sobre você e sua marca',
       text: 'Umas perguntas rápidas, uma por vez. Com elas, já preparamos ideias de nome, logo e texto pra sua loja.',
       action: {
         href: CONVERSATION_PATH,
         label: conversation === 'em-andamento' ? 'Continuar a conversa' : 'Começar a conversa',
       },
-      note: 'Dá pra parar e continuar depois.',
     };
   }
   if (phase <= 2) {
     return {
-      eyebrow: stageEyebrow(2, 'Uns 10 minutos'),
+      eyebrow: stageEyebrow(2),
       title: 'Crie a marca da sua loja',
       text: 'Escolha o nome, monte o logo e defina o texto da loja. As ideias já estão prontas.',
       action: {
         href: BRAND_PATH,
         label: brandStarted ? 'Continuar minha marca' : 'Criar minha marca',
       },
-      note: 'Dá pra parar e continuar depois.',
     };
   }
   const current = STORE_PHASES[phase - 1];
@@ -176,7 +176,9 @@ function NextStep({
                 <ArrowRightIcon aria-hidden="true" />
               </Link>
             </Button>
-            <p className="text-sm text-pretty text-muted-foreground">{hero.note}</p>
+            {hero.note ? (
+              <p className="text-sm text-pretty text-muted-foreground">{hero.note}</p>
+            ) : null}
           </div>
         ) : (
           <p className="text-body text-pretty text-muted-foreground">{hero.note}</p>

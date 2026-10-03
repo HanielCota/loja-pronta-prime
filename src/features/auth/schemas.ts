@@ -38,7 +38,8 @@ export const changePasswordSchema = z.object({
   password,
 });
 
-export const NAME_MAX_LENGTH = 60;
+/** Como ela quer ser chamada: curto, pra caber na saudação do título sem virar um parágrafo. */
+export const NAME_MAX_LENGTH = 30;
 
 export const profileNameSchema = z.object({
   name: z
