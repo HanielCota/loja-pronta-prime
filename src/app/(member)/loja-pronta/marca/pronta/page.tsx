@@ -28,7 +28,10 @@ export default async function BrandDonePage() {
   const name = firstName(session.user.name);
 
   return (
-    <CenteredMemberPage back={{ href: '/loja-pronta', label: 'Voltar à Loja Pronta' }}>
+    <CenteredMemberPage
+      account={session.user}
+      back={{ href: '/loja-pronta', label: 'Voltar à Loja Pronta' }}
+    >
       <div className="flex flex-col items-center gap-6">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img

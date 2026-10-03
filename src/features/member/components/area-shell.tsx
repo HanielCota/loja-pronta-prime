@@ -1,8 +1,8 @@
 import { ChevronLeftIcon } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { SignOutButton } from '@/features/auth/components/sign-out-button';
 import { cn } from '@/lib/utils';
+import { MemberNavbar, type NavbarAccount } from './member-navbar';
 
 /** Cartão branco das áreas; no alto contraste, a borda desenha o que a sombra desenhava. */
 export const panelCard =
@@ -20,6 +20,8 @@ export function greeting(name: string, firstVisit: boolean, rest: string): strin
 }
 
 type AreaShellProps = {
+  /** Quem está logada (a barra do topo). */
+  account: NavbarAccount;
   /** Tem os dois produtos: o topo leva de volta pra escolha. */
   hasChoice: boolean;
   /** Nome do produto, em cima do título (sem ele, o título fala sozinho). */
@@ -32,13 +34,14 @@ type AreaShellProps = {
 };
 
 /**
- * Moldura das áreas dos produtos (Loja Pronta e SLL): voltar no topo, o nome do produto e onde ela
- * está, o conteúdo e, no fim, o sair.
+ * Moldura das áreas dos produtos (Loja Pronta e SLL): a barra do topo, o voltar, o nome do produto
+ * e onde ela está, e o conteúdo.
  */
-export function AreaShell({ hasChoice, product, title, intro, children }: AreaShellProps) {
+export function AreaShell({ account, hasChoice, product, title, intro, children }: AreaShellProps) {
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-[1040px] flex-col gap-8 px-4 pt-4 pb-12 sm:px-6 sm:pt-6">
-      <TopBar back={hasChoice ? { href: '/', label: 'Voltar ao início' } : undefined} />
+    <div className="mx-auto flex min-h-dvh w-full max-w-[1040px] flex-col gap-6 px-4 pt-2 pb-12 sm:px-6 sm:pt-4">
+      <MemberNavbar account={account} />
+      <BackLink back={hasChoice ? { href: '/', label: 'Voltar ao início' } : undefined} />
       <main className="flex flex-col gap-8">
         <div className="flex flex-col gap-2">
           {product ? (
@@ -51,19 +54,15 @@ export function AreaShell({ hasChoice, product, title, intro, children }: AreaSh
         </div>
         {children}
       </main>
-      <Footer />
     </div>
   );
 }
 
-/**
- * Topo das telas de dentro (região própria): voltar, quando houver pra onde. Sem ele, não há topo:
- * o sair fica no rodapé, longe da ação principal da tela.
- */
-function TopBar({ back }: { back?: { href: string; label: string } | undefined }) {
+/** Voltar, logo abaixo da barra do topo, quando houver pra onde. */
+function BackLink({ back }: { back?: { href: string; label: string } | undefined }) {
   if (!back) return null;
   return (
-    <header className="flex min-h-11 items-center">
+    <nav aria-label="Voltar" className="flex min-h-11 items-center">
       {/* Sutil, mas com cara de botão: a seta azul num círculo branco é o que chama o olho, e o
           texto escuro diz o que faz. Sem moldura em volta de tudo, não disputa com o título. A área
           de toque (44px) pega o texto e o círculo juntos. */}
@@ -79,39 +78,29 @@ function TopBar({ back }: { back?: { href: string; label: string } | undefined }
         </span>
         <span className="underline-offset-4 group-hover:underline">{back.label}</span>
       </Link>
-    </header>
-  );
-}
-
-/**
- * Rodapé das telas de dentro: o sair, em cinza, depois de todo o conteúdo. Sair é raro e, tocado
- * sem querer, custa digitar a senha de novo: aqui ele não disputa atenção com o que ela veio fazer.
- * Nas telas curtas, fica no pé da tela; nas longas, no fim da página.
- */
-function Footer() {
-  return (
-    <footer className="mt-auto flex justify-center pt-4">
-      <SignOutButton />
-    </footer>
+    </nav>
   );
 }
 
 /**
  * Telas de dentro com o conteúdo no meio (a escolha de área, o aviso de acesso não liberado): o
- * mesmo topo e rodapé das áreas, e o conteúdo centralizado no espaço que sobra.
+ * mesmo topo das áreas, e o conteúdo centralizado no espaço que sobra.
  */
 export function CenteredMemberPage({
+  account,
   children,
   wide,
   back,
 }: {
+  account: NavbarAccount;
   children: ReactNode;
   wide?: boolean;
   back?: { href: string; label: string } | undefined;
 }) {
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-[1040px] flex-col px-4 pt-4 pb-8 sm:px-6 sm:pt-6">
-      <TopBar back={back} />
+    <div className="mx-auto flex min-h-dvh w-full max-w-[1040px] flex-col px-4 pt-2 pb-8 sm:px-6 sm:pt-4">
+      <MemberNavbar account={account} />
+      <BackLink back={back} />
       <main
         className={cn(
           'mx-auto flex w-full flex-1 flex-col justify-center gap-6 py-8 sm:py-12',
@@ -120,7 +109,6 @@ export function CenteredMemberPage({
       >
         {children}
       </main>
-      <Footer />
     </div>
   );
 }

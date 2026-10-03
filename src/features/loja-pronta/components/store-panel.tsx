@@ -1,6 +1,5 @@
 import { ArrowRightIcon, BellIcon, CheckIcon, MessageCircleIcon } from 'lucide-react';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
 import { Mascot } from '@/components/brand/mascot';
 import { Button } from '@/components/ui/button';
 import { STORE_PHASES } from '@/config/store-phases';
@@ -17,7 +16,7 @@ import type { ConversationStatus } from '../store-phase';
 import { whatsappLink } from '../whatsapp';
 
 type StorePanelProps = {
-  user: { name: string };
+  user: { name: string; email: string };
   /** Tem os dois produtos: o topo leva de volta pra escolha. */
   hasChoice: boolean;
   phase: number;
@@ -36,6 +35,7 @@ export function StorePanel({ user, hasChoice, phase, conversation, brand }: Stor
   const name = firstName(user.name);
   return (
     <AreaShell
+      account={user}
       hasChoice={hasChoice}
       title={
         brand.name ?? (name ? `Oi, ${name}! Vamos montar sua loja?` : 'Vamos montar sua loja?')
@@ -185,96 +185,86 @@ function TalkToTeam() {
 }
 
 /**
- * O caminho em 3 etapas: as feitas com ✓, a atual marcada com "Você está aqui" e as próximas
- * esmaecidas. Na vertical no celular e na horizontal no computador, com a linha entre elas
- * enchendo de azul conforme ela avança.
+ * O caminho em 3 etapas: uma barra só, contornada e dividida em 3, que enche de verde (as feitas
+ * inteiras, a atual pela metade). Embaixo, o nome de cada etapa e o que tem nela. "Etapa 2 de 3"
+ * no topo diz em palavras o que a barra desenha.
+ * As etapas ficam na vertical no celular e lado a lado no computador, cada uma embaixo do seu terço.
  * Num cartão igual ao do destaque: as duas caixas com a mesma largura e a mesma margem interna,
  * pra o começo e o fim de cada uma se alinharem.
  */
 function Path({ stages }: { stages: StageView[] }) {
+  const current = stages.findIndex((stage) => stage.status === 'current');
+  const filled = stages.reduce(
+    (sum, stage) => sum + (stage.status === 'done' ? 1 : stage.status === 'current' ? 0.5 : 0),
+    0,
+  );
   return (
     <section aria-labelledby="seu-caminho" className={cn(panelCard, 'gap-5')}>
-      <h2
-        id="seu-caminho"
-        className="text-sm font-semibold tracking-wide text-muted-foreground uppercase"
+      <header className="flex items-baseline justify-between gap-4">
+        <h2
+          id="seu-caminho"
+          className="text-sm font-semibold tracking-wide text-muted-foreground uppercase"
+        >
+          Seu caminho
+        </h2>
+        <p className="text-sm font-semibold text-link">
+          {current === -1 ? 'Tudo pronto' : `Etapa ${current + 1} de ${stages.length}`}
+        </p>
+      </header>
+      {/* Só o desenho: o estado já está escrito no topo e no título de cada etapa. */}
+      <div
+        aria-hidden="true"
+        className="relative h-3.5 overflow-hidden rounded-full border border-muted-foreground bg-progress-track forced-colors:border-[CanvasText]"
       >
-        Seu caminho
-      </h2>
-      <ol
-        aria-label="As etapas da sua loja"
-        className="flex flex-col lg:grid lg:grid-cols-3 lg:gap-6"
-      >
-        {stages.map((stage, index) => (
-          <Stage
+        <span
+          className="absolute inset-y-0 left-0 rounded-full bg-progress forced-colors:bg-[CanvasText]"
+          style={{ width: `${(filled / stages.length) * 100}%` }}
+        />
+        {/* As divisórias entre as etapas, por cima do verde. */}
+        {stages.slice(1).map((stage, index) => (
+          <span
             key={stage.title}
-            stage={stage}
-            number={index + 1}
-            last={index === stages.length - 1}
+            className="absolute inset-y-0 w-0.5 -translate-x-1/2 bg-card"
+            style={{ left: `${((index + 1) / stages.length) * 100}%` }}
           />
+        ))}
+      </div>
+      <ol aria-label="As etapas da sua loja" className="flex flex-col gap-6 lg:grid lg:grid-cols-3">
+        {stages.map((stage) => (
+          <Stage key={stage.title} stage={stage} />
         ))}
       </ol>
     </section>
   );
 }
 
-function Stage({ stage, number, last }: { stage: StageView; number: number; last: boolean }) {
+function Stage({ stage }: { stage: StageView }) {
   const { status } = stage;
   return (
-    <li
-      aria-current={status === 'current' ? 'step' : undefined}
-      className="relative flex gap-4 pb-8 last:pb-0 lg:flex-col lg:gap-4 lg:pb-0"
-    >
-      {/* A linha até a próxima etapa: azul quando esta já foi feita. */}
-      {last ? null : (
-        <span
-          aria-hidden="true"
-          className={cn(
-            'absolute top-11 bottom-1 left-[19px] w-0.5 rounded-full lg:top-[19px] lg:right-[-12px] lg:bottom-auto lg:left-14 lg:h-0.5 lg:w-auto',
-            status === 'done' ? 'bg-primary forced-colors:bg-[CanvasText]' : 'bg-track',
-          )}
-        />
-      )}
+    <li aria-current={status === 'current' ? 'step' : undefined} className="flex flex-col gap-1">
       <span
-        aria-hidden="true"
         className={cn(
-          'relative grid size-10 shrink-0 place-items-center rounded-full text-body font-semibold',
-          status === 'done' && 'bg-primary text-primary-foreground',
-          status === 'current' && 'bg-primary text-primary-foreground ring-4 ring-primary-soft',
-          status === 'next' && 'bg-card text-muted-foreground ring-1 ring-border',
-          'forced-colors:border forced-colors:border-[CanvasText]',
+          'inline-flex items-start gap-1.5 text-body font-semibold text-balance',
+          status === 'current' && 'text-link',
+          status === 'next' && 'text-muted-foreground',
         )}
       >
-        {status === 'done' ? <CheckIcon className="size-5" /> : number}
-      </span>
-      <div className="flex flex-col gap-1 pt-2 lg:pt-0">
-        <span
-          className={cn(
-            'text-body font-semibold text-balance',
-            status === 'current' && 'text-link',
-            status === 'next' && 'text-muted-foreground',
-          )}
-        >
+        {status === 'done' ? (
+          <CheckIcon aria-hidden="true" className="mt-1 size-4 shrink-0 text-progress" />
+        ) : null}
+        <span>
           {stage.title}
           <span className="sr-only">
             {/* A atual já é anunciada pelo aria-current ("etapa atual"). */}
             {status === 'done' ? ' (feita)' : status === 'next' ? ' (a seguir)' : ''}
           </span>
         </span>
-        {/* Na atual, só onde ela está: o destaque já explica a etapa. */}
-        {status === 'current' ? (
-          <StageBadge>{stage.step ?? 'Você está aqui'}</StageBadge>
-        ) : (
-          <span className="text-body text-pretty text-muted-foreground">{stage.detail}</span>
-        )}
-      </div>
+      </span>
+      <span className="text-body text-pretty text-muted-foreground">{stage.detail}</span>
+      {/* Na atual com várias fases, em que passo ela está: "Passo 2 de 5: Conexão com a Shopee". */}
+      {status === 'current' && stage.step ? (
+        <span className="text-sm font-semibold text-pretty text-link">{stage.step}</span>
+      ) : null}
     </li>
-  );
-}
-
-function StageBadge({ children }: { children: ReactNode }) {
-  return (
-    <span className="self-start rounded-xl bg-primary-soft px-3 py-1 text-sm font-semibold text-pretty text-link forced-colors:border forced-colors:border-[Highlight]">
-      {children}
-    </span>
   );
 }
