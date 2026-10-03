@@ -5,7 +5,7 @@ import { PRODUCT_IDS, type ProductId } from '@/config/products';
 import { authHref } from '@/features/auth/links';
 import { getSessionState, needsFirstPassword } from '@/features/auth/server/session';
 import { db } from '@/server/db';
-import { stores, studentProducts } from '@/server/db/schema';
+import { studentProducts } from '@/server/db/schema';
 import { PRODUCTS } from '../catalog';
 
 type StudentProducts = {
@@ -79,13 +79,4 @@ export async function requireProduct(product: ProductId, path: string = PRODUCTS
   const firstVisitedAt = student.firstVisits[product];
   const firstVisit = !firstVisitedAt || firstVisitedAt >= student.session.session.createdAt;
   return { ...student, firstVisit };
-}
-
-/** Fase da loja da aluna na Loja Pronta (1 a 7). Sem loja cadastrada ainda, é a primeira. */
-export async function getStorePhase(userId: string): Promise<number> {
-  const [store] = await db
-    .select({ phase: stores.phase })
-    .from(stores)
-    .where(eq(stores.userId, userId));
-  return store?.phase ?? 1;
 }

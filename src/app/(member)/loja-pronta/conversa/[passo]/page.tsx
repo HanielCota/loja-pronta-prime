@@ -3,12 +3,12 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ONBOARDING_BLOCKS, ONBOARDING_QUESTIONS } from '@/config/onboarding';
-import { ConversationLayout } from '@/features/onboarding/components/conversation-layout';
-import { FocusOnArrival } from '@/features/onboarding/components/focus-on-arrival';
-import { MascotBubble } from '@/features/onboarding/components/mascot-bubble';
-import { QuestionForm } from '@/features/onboarding/components/question-form';
-import { WhatsappForm } from '@/features/onboarding/components/whatsapp-form';
-import { requireConversation } from '@/features/onboarding/server/conversation';
+import { ConversationLayout } from '@/features/loja-pronta/components/conversation-layout';
+import { FocusOnArrival } from '@/features/loja-pronta/components/focus-on-arrival';
+import { MascotBubble } from '@/features/loja-pronta/components/mascot-bubble';
+import { QuestionForm } from '@/features/loja-pronta/components/question-form';
+import { WhatsappForm } from '@/features/loja-pronta/components/whatsapp-form';
+import { requireConversation } from '@/features/loja-pronta/server/conversation';
 import {
   canOpen,
   findQuestion,
@@ -22,8 +22,8 @@ import {
   stepProgress,
   WHATSAPP_STEP,
   type Step,
-} from '@/features/onboarding/steps';
-import { answerText } from '@/features/onboarding/answers';
+} from '@/features/loja-pronta/steps';
+import { answerText } from '@/features/loja-pronta/answers';
 import { sectionTitleClass, panelCard } from '@/features/member/components/area-shell';
 import { getParam, type SearchParams } from '@/lib/search-params';
 import { cn } from '@/lib/utils';

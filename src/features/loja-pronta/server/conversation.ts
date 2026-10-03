@@ -2,14 +2,11 @@ import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import type { OnboardingAnswers } from '@/config/onboarding';
 import { getActiveSession, needsFirstPassword } from '@/features/auth/server/session';
-import {
-  getStorePhase,
-  getStudentProducts,
-  requireProduct,
-} from '@/features/products/server/access';
+import { getStudentProducts, requireProduct } from '@/features/products/server/access';
 import { db } from '@/server/db';
 import { storeOnboarding } from '@/server/db/schema';
 import { cleanAnswers } from '../answers';
+import { getStorePhase } from './store';
 
 export type Onboarding = {
   answers: OnboardingAnswers;

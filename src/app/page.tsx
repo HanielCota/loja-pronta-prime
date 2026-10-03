@@ -9,10 +9,9 @@ import { STORE_PHASES } from '@/config/store-phases';
 import { PRODUCTS } from '@/features/products/catalog';
 import { CenteredMemberPage } from '@/features/member/components/area-shell';
 import { ProductChooser, type ProductStatus } from '@/features/products/components/product-chooser';
-import { getOnboarding } from '@/features/onboarding/server/conversation';
-import { displayedPhase } from '@/features/products/store-phase';
+import { getStoreOverview } from '@/features/loja-pronta/server/overview';
 import { firstName } from '@/features/products/names';
-import { getStorePhase, requireStudent } from '@/features/products/server/access';
+import { requireStudent } from '@/features/products/server/access';
 
 export const metadata: Metadata = {
   title: 'Início',
@@ -61,11 +60,7 @@ export default async function HomePage() {
   let primary: ProductId | undefined;
   let storeWithTeam = false;
   if (products.includes('loja-pronta')) {
-    const [storePhase, onboarding] = await Promise.all([
-      getStorePhase(user.id),
-      getOnboarding(user.id),
-    ]);
-    const phase = displayedPhase(storePhase, Boolean(onboarding.completedAt));
+    const { phase } = await getStoreOverview(user.id);
     const current = STORE_PHASES[phase - 1];
     status['loja-pronta'] = {
       caption: `Fase ${phase} de ${STORE_PHASES.length}`,

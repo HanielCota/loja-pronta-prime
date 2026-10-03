@@ -5,9 +5,9 @@ import type { ReactNode } from 'react';
 import { CardHeading } from '@/components/brand/card-heading';
 import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
-import { getOnboarding } from '@/features/onboarding/server/conversation';
-import { CONVERSATION_PATH, DONE_PATH } from '@/features/onboarding/steps';
-import { formatWhatsapp } from '@/features/onboarding/whatsapp';
+import { getOnboarding } from '@/features/loja-pronta/server/conversation';
+import { CONVERSATION_PATH, DONE_PATH } from '@/features/loja-pronta/steps';
+import { formatWhatsapp } from '@/features/loja-pronta/whatsapp';
 import {
   CenteredMemberPage,
   sectionTitleClass,
