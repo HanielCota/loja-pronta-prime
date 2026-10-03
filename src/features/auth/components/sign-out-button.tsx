@@ -3,6 +3,7 @@
 import { LogOutIcon } from 'lucide-react';
 import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
+import { listCard } from '@/features/member/list-card';
 import { cn } from '@/lib/utils';
 import { signOut } from '../server/sign-out';
 
@@ -35,6 +36,33 @@ function SubmitButton() {
         <LogOutIcon aria-hidden="true" className="size-4" />
       </span>
       <span className="underline-offset-4 group-hover:underline">Sair da conta</span>
+    </Button>
+  );
+}
+
+/**
+ * O sair no fim do perfil, como nos Ajustes do iPhone: uma linha sozinha, em vermelho, separada do
+ * resto pra ninguém tocar sem querer.
+ */
+export function SignOutRow() {
+  return (
+    <form action={signOut} className={listCard}>
+      <SignOutRowButton />
+    </form>
+  );
+}
+
+function SignOutRowButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button
+      type="submit"
+      variant="ghost"
+      loading={pending}
+      loadingText="Saindo…"
+      className="rounded-none font-semibold text-destructive hover:bg-muted hover:text-destructive focus-visible:-outline-offset-2"
+    >
+      Sair da conta
     </Button>
   );
 }

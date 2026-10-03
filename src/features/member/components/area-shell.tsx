@@ -31,6 +31,10 @@ type AreaShellProps = {
   title: string;
   /** A saudação e o que a página mostra (opcional). */
   intro?: string | undefined;
+  /** Cabeçalho próprio no lugar do título (o perfil mostra quem ela é); o título fica na trilha. */
+  header?: ReactNode;
+  /** Uma coluna estreita, de lista de ajustes (o perfil), em vez da largura das áreas. */
+  narrow?: boolean;
   children: ReactNode;
 };
 
@@ -47,12 +51,19 @@ export function AreaShell({
   crumb,
   title,
   intro,
+  header,
+  narrow,
   children,
 }: AreaShellProps) {
   return (
     <div className="flex min-h-dvh flex-col">
       <MemberNavbar account={account} />
-      <main className="mx-auto flex w-full max-w-[1040px] flex-col gap-8 px-4 pt-6 pb-12 sm:px-6 sm:pt-8">
+      <main
+        className={cn(
+          'mx-auto flex w-full flex-col gap-8 px-4 pt-6 pb-12 sm:px-6 sm:pt-8',
+          narrow ? 'max-w-[688px]' : 'max-w-[1040px]',
+        )}
+      >
         <div className="flex flex-col gap-2">
           {/* Com pra onde voltar, a trilha já diz em que produto ela está: o nome não se repete. */}
           {hasChoice ? (
@@ -60,10 +71,14 @@ export function AreaShell({
           ) : product ? (
             <p className="text-body font-medium text-muted-foreground">{product}</p>
           ) : null}
-          <h1 className="text-title font-semibold text-balance sm:text-title-lg">{title}</h1>
-          {intro ? (
-            <p className="max-w-[60ch] text-body text-pretty text-muted-foreground">{intro}</p>
-          ) : null}
+          {header ?? (
+            <>
+              <h1 className="text-title font-semibold text-balance sm:text-title-lg">{title}</h1>
+              {intro ? (
+                <p className="max-w-[60ch] text-body text-pretty text-muted-foreground">{intro}</p>
+              ) : null}
+            </>
+          )}
         </div>
         {children}
       </main>
