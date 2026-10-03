@@ -180,7 +180,7 @@ function AppearanceRows() {
         id="tema-escuro"
         icon={<MoonIcon />}
         label="Tema escuro"
-        description="Fundo preto, mais confortável à noite."
+        description="Fundo escuro, mais confortável à noite."
         checked={theme === 'dark'}
         onCheckedChange={(checked) => setPreference(checked ? 'dark' : 'light')}
       />

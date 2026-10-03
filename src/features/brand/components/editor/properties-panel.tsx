@@ -185,11 +185,11 @@ export function PropertiesPanel({
           </Field>
           <fieldset className="flex flex-col gap-2">
             <legend className="mb-2 text-sm font-semibold">Linhas</legend>
-            <div className="grid grid-cols-3 gap-1 rounded-xl bg-black/[0.06] p-1">
+            <div className="grid grid-cols-3 gap-1 rounded-xl bg-segment p-1">
               {[1, 2, 3].map((lines) => (
                 <label
                   key={lines}
-                  className="flex min-h-10 cursor-pointer items-center justify-center rounded-lg text-body font-semibold text-muted-foreground has-checked:bg-card has-checked:text-foreground has-checked:shadow-sm has-focus-visible:outline-2 has-focus-visible:outline-ring has-focus-visible:outline-solid forced-colors:has-checked:border-2 forced-colors:has-checked:border-[Highlight]"
+                  className="flex min-h-10 cursor-pointer items-center justify-center rounded-lg text-body font-semibold text-muted-foreground has-checked:bg-segment-thumb has-checked:text-foreground has-checked:shadow-sm has-focus-visible:outline-2 has-focus-visible:outline-ring has-focus-visible:outline-solid forced-colors:has-checked:border-2 forced-colors:has-checked:border-[Highlight]"
                 >
                   <input
                     type="radio"

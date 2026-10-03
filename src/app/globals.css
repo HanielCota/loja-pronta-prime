@@ -54,50 +54,66 @@
   --progress-text: #0f7a46;
   --ring: #0071e3;
 
+  /* Controle segmentado (as abas tipo iOS): trilho rebaixado e a opção escolhida em destaque. */
+  --segment: rgb(0 0 0 / 0.06);
+  --segment-thumb: #ffffff;
+
   --card-shadow: 0 2px 6px rgb(0 0 0 / 0.04), 0 16px 48px -12px rgb(0 0 0 / 0.12);
 }
 
 /*
- * Tema escuro, nos tons do modo escuro da Apple: fundo preto, cartões grafite. Os contrastes são
- * medidos sobre o cartão (#1c1c1e), o fundo mais claro em que o texto aparece.
+ * Tema escuro em grafite, não em preto: o preto puro cansa a vista (o texto claro "vaza" no fundo
+ * escuro demais) e deixa os cartões sem relevo. A altura vem do tom: fundo, cartão e realce, cada
+ * um um degrau mais claro, num cinza levemente azulado que conversa com o azul da marca. Os
+ * contrastes valem no cartão (#2a2a2e) e no realce (#36363b), os fundos mais claros com texto.
  */
 .dark {
   color-scheme: dark;
 
-  --background: #000000;
+  --background: #1f1f22;
   --foreground: #f5f5f7;
-  --card: #1c1c1e;
+  --card: #2a2a2e;
 
   /* O azul do botão fica o mesmo: o branco em cima continua com 4,7:1. */
   --primary: #0071e3;
   --primary-hover: #0068d6;
-  --primary-soft: #0f3157;
+  /* Um pouco mais claro que no preto, pra não parecer um buraco no grafite. */
+  --primary-soft: #163a63;
   --primary-foreground: #ffffff;
-  /* Azul claro pra texto: 6,5:1 no cartão e 5,2:1 no azul escuro do botão claro. */
-  --link: #4da3ff;
+  /* Azul claro pra texto: 5,9:1 no cartão, 5:1 no realce e 4,8:1 no azul escuro do botão claro. */
+  --link: #5aabff;
 
   /* Cinza do hover e dos destaques sobre o cartão. */
-  --muted: #2c2c2e;
-  /* 6,6:1 no cartão, 5,4:1 no cinza do hover. */
-  --muted-foreground: #a1a1a6;
+  --muted: #36363b;
+  /* 6,5:1 no cartão, 5,4:1 no realce. */
+  --muted-foreground: #aeaeb2;
 
-  --destructive: #ff6961;
-  --destructive-soft: #3b1513;
+  /* 5,9:1 no cartão, 4,9:1 no realce e 6,1:1 no fundo dos alertas. */
+  --destructive: #ff8077;
+  --destructive-soft: #3f1d1c;
   --warning: #ff9f0a;
 
-  --border: #38383a;
-  /* Borda de campo: 5,2:1 no cartão. */
+  --border: #48484d;
+  /* Borda de campo: 4,4:1 no cartão. */
   --input: #8e8e93;
-  /* Trilho das barras: 4:1 no cartão. */
-  --track: #7c7c80;
+  /* Trilho das barras: 4:1 no cartão, 3,3:1 no realce. */
+  --track: #86868b;
   --progress: #30d158;
-  --progress-track: #3a3a3c;
+  /* 4,6:1 entre o verde e o trilho. */
+  --progress-track: #46464b;
   --progress-text: #30d158;
-  /* Anel de foco mais claro: o azul do botão some no preto. */
-  --ring: #4da3ff;
+  /* Anel de foco no azul claro: o azul do botão some no escuro. */
+  --ring: #5aabff;
 
-  /* Sombra não aparece no preto: um contorno fino separa o cartão do fundo. */
-  --card-shadow: 0 0 0 1px rgb(255 255 255 / 0.08);
+  /* Trilho rebaixado (escurece o que estiver embaixo, cartão ou fundo) e a escolhida clara: com
+     a escolhida da cor do cartão, como no tema claro, ela não se destacava. Texto: 7,4:1 ou mais
+     no trilho e 8,1:1 na escolhida. */
+  --segment: rgb(0 0 0 / 0.25);
+  --segment-thumb: #4a4a4f;
+
+  /* No grafite a sombra aparece pouco: ela dá o relevo, e o contorno fino separa o cartão do
+     fundo, que tem quase o mesmo tom. */
+  --card-shadow: 0 0 0 1px rgb(255 255 255 / 0.06), 0 16px 48px -12px rgb(0 0 0 / 0.5);
 }
 
 @theme inline {
@@ -142,6 +158,8 @@
   --color-progress-track: var(--progress-track);
   --color-progress-text: var(--progress-text);
   --color-ring: var(--ring);
+  --color-segment: var(--segment);
+  --color-segment-thumb: var(--segment-thumb);
 
   --radius-field: 12px;
   --radius-card: 28px;

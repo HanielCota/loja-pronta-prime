@@ -459,11 +459,11 @@ export function LogoEditor({
 
         <fieldset className="lg:hidden">
           <legend className="sr-only">Mostrar embaixo do logo</legend>
-          <div className="grid grid-cols-2 gap-1 rounded-xl bg-black/[0.06] p-1">
+          <div className="grid grid-cols-2 gap-1 rounded-xl bg-segment p-1">
             {MOBILE_TABS.map((tab) => (
               <label
                 key={tab.id}
-                className="flex min-h-11 cursor-pointer items-center justify-center rounded-lg text-body font-semibold text-muted-foreground has-checked:bg-card has-checked:text-foreground has-checked:shadow-sm has-focus-visible:outline-2 has-focus-visible:outline-ring has-focus-visible:outline-solid forced-colors:has-checked:border-2 forced-colors:has-checked:border-[Highlight]"
+                className="flex min-h-11 cursor-pointer items-center justify-center rounded-lg text-body font-semibold text-muted-foreground has-checked:bg-segment-thumb has-checked:text-foreground has-checked:shadow-sm has-focus-visible:outline-2 has-focus-visible:outline-ring has-focus-visible:outline-solid forced-colors:has-checked:border-2 forced-colors:has-checked:border-[Highlight]"
               >
                 <input
                   type="radio"
