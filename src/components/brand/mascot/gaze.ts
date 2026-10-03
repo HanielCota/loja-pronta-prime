@@ -75,6 +75,8 @@ export function gazeFor(
   if (active instanceof HTMLInputElement && TEXT_INPUT_TYPES.has(active.type)) {
     return active.type === 'password' ? LOOK_AWAY : lookAt(face, caretPoint(active));
   }
+  // Texto livre (várias linhas): olha pro campo, como quem acompanha o que está sendo escrito.
+  if (active instanceof HTMLTextAreaElement) return lookAt(face, center(active));
   if (
     active instanceof HTMLInputElement ||
     active instanceof HTMLButtonElement ||

@@ -16,6 +16,8 @@ export function Logo({ className, expression, compact }: LogoProps) {
       <Mascot
         className={cn('shrink-0', compact ? 'size-20 short:size-16' : 'size-33 short:size-20')}
         displaySize={compact ? 80 : undefined}
+        // Grande, ele é o primeiro e maior elemento da tela: carrega antes do resto.
+        preload={!compact}
         expression={expression}
       />
       {/* Sem o nome na tela; leitores de tela ainda anunciam a marca. */}

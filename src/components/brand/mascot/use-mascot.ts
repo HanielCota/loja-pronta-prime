@@ -88,6 +88,7 @@ export function useMascot(
     let slowLidsUntil = 0;
     /** Depois de desmontado, atualizações atrasadas (timers) não fazem mais nada. */
     let disposed = false;
+    let onScreen = true;
 
     // ---------- Expressão e olhar ----------
 
@@ -168,7 +169,9 @@ export function useMascot(
      * medir a tela a cada evento.
      */
     function requestUpdate() {
-      if (disposed || queuedUpdate) return;
+      // Fora da tela (rolou a página): não mede nem anima a cada movimento do mouse. O ponteiro
+      // continua sendo guardado, e o olhar se acerta ao voltar a aparecer.
+      if (disposed || queuedUpdate || !onScreen) return;
       queuedUpdate = requestAnimationFrame(() => {
         queuedUpdate = 0;
         update();
@@ -280,7 +283,10 @@ export function useMascot(
     };
     const onInput = (event: Event) => {
       onActivity();
-      if (!(event.target instanceof HTMLInputElement)) return update();
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) {
+        return update();
+      }
       // Digitando: fica feliz e "perdoa" o erro anterior.
       reasons.delete('error');
       setReason('typing', 'happy', HAPPY_AFTER_TYPING_MS);
@@ -342,6 +348,12 @@ export function useMascot(
     update();
     updateRef.current = update;
 
+    const visibility = new IntersectionObserver(([entry]) => {
+      onScreen = entry?.isIntersecting ?? true;
+      if (onScreen) update();
+    });
+    visibility.observe(root);
+
     return () => {
       disposed = true;
       updateRef.current = undefined;
@@ -351,6 +363,7 @@ export function useMascot(
         window.clearTimeout(timer);
       }
       typeObserver.disconnect();
+      visibility.disconnect();
       stopSignals();
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerdown', onActivity);

@@ -32,6 +32,8 @@ type MascotProps = {
   expression?: Expression;
   /** Maior tamanho em que ele aparece na tela (px), pra baixar a arte na medida certa. */
   displaySize?: number;
+  /** É o maior elemento da tela (ex.: o login): a arte é pedida antes de tudo. */
+  preload?: boolean;
 };
 
 /**
@@ -47,6 +49,7 @@ export function Mascot({
   className,
   expression = 'neutral',
   displaySize = DEFAULT_DISPLAY_SIZE,
+  preload = false,
 }: MascotProps) {
   const closedEyesImage = useMemo(() => imageSet(mascotClosedEyes, displaySize), [displaySize]);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -63,7 +66,13 @@ export function Mascot({
       data-slot="mascot"
       data-expression={expression}
       aria-hidden="true"
-      className={cn('group/mascot relative touch-manipulation select-none', className)}
+      // forced-color-adjust: no alto contraste do Windows, as cores das pupilas, da boca e das
+      // bochechas seriam trocadas pelas do sistema (e as pupilas sumiriam). É uma ilustração
+      // decorativa (aria-hidden): mantém as cores próprias, como uma imagem.
+      className={cn(
+        'group/mascot relative touch-manipulation [forced-color-adjust:none] select-none',
+        className,
+      )}
     >
       <div
         ref={faceRef}
@@ -89,6 +98,7 @@ export function Mascot({
           sizes={`${displaySize}px`}
           quality={IMAGE_QUALITY}
           loading="eager"
+          preload={preload}
           draggable={false}
           className="pointer-events-none select-none"
         />
