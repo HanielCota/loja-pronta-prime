@@ -7,7 +7,7 @@ import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { useBrandPending } from './brand-form';
 
 /** Campo do nome escrito por ela, com quantas letras ainda cabem (o limite é o da Shopee). */
-export function OwnNameField({ initial, max }: { initial: string; max: number }) {
+export function OwnNameField({ id, initial, max }: { id: string; initial: string; max: number }) {
   const [value, setValue] = useState(initial);
   const pending = useBrandPending();
   const counterId = useId();
@@ -16,7 +16,7 @@ export function OwnNameField({ initial, max }: { initial: string; max: number })
   return (
     <>
       <FloatingLabelInput
-        id="nome-proprio"
+        id={id}
         name="name"
         label="Nome da loja"
         autoComplete="off"

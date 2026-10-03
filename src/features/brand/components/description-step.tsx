@@ -30,7 +30,7 @@ export function DescriptionStep({
     <>
       <MascotBubble
         title="Escolha o texto da sua loja"
-        help="É o que as clientes leem no perfil da loja na Shopee. Toque no que mais gostar."
+        help="É o que as clientes leem no perfil da loja na Shopee. Escolha o que mais gostar."
         titleId={TITLE_ID}
       />
       <FocusOnArrival targetId={TITLE_ID} />
