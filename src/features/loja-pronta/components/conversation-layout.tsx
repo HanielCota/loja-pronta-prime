@@ -1,4 +1,4 @@
-import { CheckIcon, ChevronLeftIcon, DoorOpenIcon } from 'lucide-react';
+import { ChevronLeftIcon, DoorOpenIcon } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { MemberNavbar, type NavbarAccount } from '@/features/member/components/member-navbar';
@@ -10,8 +10,6 @@ type ConversationLayoutProps = {
   account: NavbarAccount;
   /** O que o topo diz e mostra (ver stepHeader e brandStepHeader). */
   header: StepHeader;
-  /** O aviso de que nada se perde ("Respostas salvas", "Escolhas salvas"). */
-  savedLabel: string;
   /** Pra onde o "Voltar" leva. */
   backHref: string;
   /**
@@ -28,10 +26,9 @@ const topLink =
 /**
  * Moldura das telas passo a passo (conversa e marca), pensada pra quem tem pouca prática:
  * - "Voltar" escrito, não só a setinha (muita gente não sabe o que a seta faz);
- * - "Sair e continuar depois" ("Sair", fora do computador) e, quando já tem algo salvo,
- *   "✓ Respostas salvas": sair sem medo;
- * - "Pergunta 3 de 10" (não "3 de 10") e uma barra com um tracinho por pergunta, pra contar
- *   quanto falta.
+ * - "Sair e continuar depois" ("Sair", fora do computador): sair sem medo;
+ * - "Pergunta 3 de 10" (não "3 de 10") no meio, e embaixo uma barra com um tracinho por pergunta,
+ *   pra ver quanto falta. Nada de letra miúda: o resto quem diz é o título da página.
  * O conteúdo fica numa coluna, centralizado na vertical a partir do tablet (no celular, perto do
  * topo, pra caber sem rolar), e mais larga no computador. Tudo são links de verdade: funciona sem
  * JavaScript.
@@ -39,7 +36,6 @@ const topLink =
 export function ConversationLayout({
   account,
   header,
-  savedLabel,
   backHref,
   width = 'normal',
   children,
@@ -54,74 +50,53 @@ export function ConversationLayout({
       {/* Um <nav>, não <header>: o topo da página já é a barra (um só "banner" pro leitor de tela).
           E dentro de uma região: o voltar, o sair e onde ela está não ficam soltos na página.
           Uma faixa só: voltar, onde ela está (com a barra embaixo) e sair, pro conteúdo subir. */}
-      <nav aria-label="Etapa atual" className={cn(column, 'pt-3')}>
-        <div className="flex items-center gap-2 sm:gap-4">
-          <Link href={backHref} className={cn(topLink, '-ml-2 pr-3 pl-1.5 text-foreground')}>
+      {/* Um <nav>, não <header>: o topo da página já é a barra (um só "banner" pro leitor de tela).
+          Uma linha (voltar, onde ela está e sair) e a barra de progresso embaixo, na largura toda. */}
+      <nav aria-label="Etapa atual" className={cn(column, 'gap-2 pt-3')}>
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+          <Link
+            href={backHref}
+            className={cn(topLink, '-ml-2 justify-self-start pr-3 pl-1.5 text-foreground')}
+          >
             <ChevronLeftIcon aria-hidden="true" className="size-5" />
             Voltar
           </Link>
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-            {/* Sem "·" entre os dois: no celular, o aviso desce pra linha de baixo e o ponto
-                ficaria sobrando no começo dela. O ✓ já separa. */}
-            <p className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm">
-              <span className="font-semibold">
-                {header.label}
-                {/* O nome da etapa vai junto pro leitor de tela (na tela, ele está embaixo da barra). */}
-                {header.names?.[header.filled - 1] ? (
-                  <span className="sr-only">: {header.names[header.filled - 1]}</span>
-                ) : null}
-              </span>
-              {header.saved ? (
-                <span className="inline-flex items-center gap-1 text-muted-foreground">
-                  <CheckIcon aria-hidden="true" className="size-4" />
-                  {savedLabel}
-                </span>
-              ) : null}
-            </p>
-            {/* O progresso já está escrito acima; os tracinhos são só o desenho dele. */}
-            <div aria-hidden="true" className="flex gap-1">
-              {Array.from({ length: header.total }, (_, index) => (
-                <span
-                  key={index}
-                  className={cn(
-                    'h-1.5 flex-1 rounded-full border border-transparent',
-                    index < header.filled
-                      ? 'bg-progress forced-colors:bg-[CanvasText]'
-                      : 'border-input bg-progress-track forced-colors:border-[CanvasText]',
-                  )}
-                />
-              ))}
-            </div>
-            {header.names ? (
-              <div aria-hidden="true" className="flex gap-1">
-                {header.names.map((name, index) => (
-                  <span
-                    key={name}
-                    className={cn(
-                      'flex-1 truncate text-xs',
-                      index === header.filled - 1
-                        ? 'font-semibold text-foreground'
-                        : 'text-muted-foreground',
-                    )}
-                  >
-                    {name}
-                  </span>
-                ))}
-              </div>
+          <p className="text-center text-body font-semibold text-balance">
+            {header.label}
+            {/* O nome da etapa vai junto pro leitor de tela (na tela, o título já diz). */}
+            {header.names?.[header.filled - 1] ? (
+              <span className="sr-only">: {header.names[header.filled - 1]}</span>
             ) : null}
-          </div>
-          {/* Fora do computador, só "Sair" na tela (cabe ao lado da barra); o nome completo
-              continua pro leitor de tela, começando pelo que está escrito. */}
+          </p>
+          {/* Fora do computador, só "Sair" na tela; o nome completo continua pro leitor de tela,
+              começando pelo que está escrito. */}
           <Link
             href="/loja-pronta"
             aria-label="Sair e continuar depois"
-            className={cn(topLink, '-mr-2 px-3 text-muted-foreground hover:text-foreground')}
+            className={cn(
+              topLink,
+              '-mr-2 justify-self-end px-3 text-muted-foreground hover:text-foreground',
+            )}
           >
             {/* No celular bem pequeno (320px), só o texto: o ícone não cabe junto. */}
             <DoorOpenIcon aria-hidden="true" className="hidden size-5 min-[360px]:block" />
             <span className="lg:hidden">Sair</span>
             <span className="hidden lg:inline">Sair e continuar depois</span>
           </Link>
+        </div>
+        {/* O progresso já está escrito acima; os tracinhos são só o desenho dele. */}
+        <div aria-hidden="true" className="flex gap-1.5">
+          {Array.from({ length: header.total }, (_, index) => (
+            <span
+              key={index}
+              className={cn(
+                'h-1.5 flex-1 rounded-full border border-transparent transition-colors duration-300 motion-reduce:transition-none',
+                index < header.filled
+                  ? 'bg-progress forced-colors:bg-[CanvasText]'
+                  : 'bg-progress-track forced-colors:border-[CanvasText]',
+              )}
+            />
+          ))}
         </div>
       </nav>
       <main

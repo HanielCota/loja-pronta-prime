@@ -39,7 +39,7 @@ test('marca confirmada: ela muda o nome e volta pro painel na mesma fase', async
   await expectNoA11yViolations(page);
   await page.getByRole('link', { name: 'Mudar o nome' }).click();
   await page.getByLabel('Nome da loja').fill('Patinhas & Cia');
-  await page.getByRole('button', { name: 'Usar esse nome' }).click();
+  await page.getByRole('button', { name: 'Continuar com “Patinhas & Cia”' }).click();
   await expect(page).toHaveURL(/\/marca\/revisao$/);
   await expect(page.getByText('Patinhas & Cia', { exact: true })).toBeVisible();
 

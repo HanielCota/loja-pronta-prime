@@ -27,18 +27,21 @@ test('marca completa: nome, modelo, estúdio, texto, revisão com mudança e log
   await expect(page.getByRole('heading', { name: 'Crie a marca da sua loja' })).toBeVisible();
   await page.getByRole('link', { name: /Criar minha marca/ }).click();
 
-  // Nome: o da conversa vem primeiro; nome comprido demais avisa quantas letras tem.
+  // Nome: o da conversa já vem no cartão; passar do limite avisa ali, e uma ideia volta a ele.
   await expect(page).toHaveURL(step('nome'));
-  await expect(
-    page.getByRole('heading', { name: 'Esse vai ser o nome da sua loja?' }),
-  ).toBeVisible();
-  await expect(page.getByText('Patinhas da Ana', { exact: true })).toBeVisible();
-  await expect(page.getByText('O nome que você escolheu na conversa')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Qual o nome da sua loja?' })).toBeVisible();
+  const name = page.getByLabel('Nome da loja');
+  await expect(name).toHaveValue('Patinhas da Ana');
+  await expect(page.getByRole('radio', { name: 'Patinhas da Ana' })).toBeChecked();
   await expectNoA11yViolations(page);
-  await page.getByLabel('Nome da loja').fill('Um nome comprido demais pra caber na Shopee');
-  await page.getByRole('button', { name: 'Usar esse nome' }).click();
-  await expect(page.getByRole('main').getByRole('alert')).toContainText('Use até 30 letras');
-  await page.getByRole('button', { name: 'Sim, quero esse nome' }).click();
+  await name.fill('Um nome comprido demais pra caber na Shopee');
+  await expect(page.getByText('Passou 13 letras do limite da Shopee.')).toBeVisible();
+  await name.press('Enter');
+  await expect(page.getByText('Use até 30 letras. Esse nome tem 43.')).toBeVisible();
+  await expect(name).toBeFocused();
+  await page.getByText('Patinhas da Ana', { exact: true }).click();
+  await expect(name).toHaveValue('Patinhas da Ana');
+  await page.getByRole('button', { name: 'Continuar com “Patinhas da Ana”' }).click();
 
   // Logo: direto no editor, já com um modelo montado com as respostas dela, na aba Estilo; um
   // toque muda o logo inteiro e desfazer volta.
@@ -73,7 +76,7 @@ test('marca completa: nome, modelo, estúdio, texto, revisão com mudança e log
   await page.getByRole('link', { name: 'Mudar o nome' }).click();
   await expect(page).toHaveURL(/\/marca\/nome\?editar=1$/);
   await page.getByLabel('Nome da loja').fill('Gatinhos & Cia');
-  await page.getByRole('button', { name: 'Usar esse nome' }).click();
+  await page.getByRole('button', { name: 'Continuar com “Gatinhos & Cia”' }).click();
   await expect(page).toHaveURL(step('revisao'));
   await expect(page.getByRole('main')).toContainText('Gatinhos & Cia');
 
@@ -103,7 +106,7 @@ test('marca completa: nome, modelo, estúdio, texto, revisão com mudança e log
 test('logo pelo teclado: as setas mudam a cor, e Enter salva', async ({ page }) => {
   await signIn(page, studentEmail('marcateclado'), PASSWORD, '/loja-pronta/marca');
   await expect(page).toHaveURL(step('nome'));
-  await page.getByRole('button', { name: 'Sim, quero esse nome' }).press('Enter');
+  await page.getByRole('button', { name: /^Continuar com/ }).press('Enter');
   await expect(page).toHaveURL(step('ajustar'));
 
   // As setas trocam a cor (e não mexem no logo, que é das setas fora dos campos).

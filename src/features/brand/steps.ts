@@ -59,26 +59,22 @@ export function previousBrandPath(step: BrandStep): string {
   return previous ? brandStepPath(previous) : '/loja-pronta';
 }
 
-/** O nome curto de cada passo, embaixo da barra do topo. */
+/** O nome curto de cada passo (o leitor de tela ouve junto com "Passo 1 de 3"). */
 const STEP_NAMES = ['Nome', 'Logo', 'Texto'] as const;
 
 export function brandStepTitle(step: BrandStep): string {
   return TITLES[step];
 }
 
-/**
- * O topo de cada passo: "Passo 2 de 3" (ou a revisão), a barra e se já há escolhas salvas (o nome
- * é a primeira; vale também no passo 1, quando ela volta da revisão pra mudar o nome).
- */
-export function brandStepHeader(step: BrandStep, hasChoices: boolean): StepHeader {
+/** O topo de cada passo: "Passo 2 de 3" (ou a revisão) e a barra. */
+export function brandStepHeader(step: BrandStep): StepHeader {
   const total = BRAND_STEPS.length - 1;
-  if (step === 'revisao') return { label: 'Revisão da marca', filled: total, total, saved: true };
+  if (step === 'revisao') return { label: 'Revisão da marca', filled: total, total };
   const number = BRAND_STEPS.indexOf(step) + 1;
   return {
     label: `Passo ${number} de ${total}`,
     filled: number,
     total,
-    saved: hasChoices,
     names: STEP_NAMES,
   };
 }
