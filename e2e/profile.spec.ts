@@ -13,6 +13,8 @@ test('o menu da conta leva ao perfil, e o nome novo aparece na hora', async ({ p
   await page.getByRole('menuitem', { name: 'Meu perfil' }).click();
   await expect(page).toHaveURL(/\/perfil$/);
   await expect(page.getByRole('heading', { name: 'Seu perfil' })).toBeVisible();
+  // O email com que ela entra fica no cartão da conta.
+  await expect(page.getByRole('region', { name: 'Sua conta' })).toContainText(email);
   await expectNoA11yViolations(page);
 
   const name = page.getByLabel('Seu nome');
@@ -55,4 +57,13 @@ test('trocar a senha pede a atual e vale no próximo login', async ({ page }) =>
   await expect(page).toHaveURL(/\/entrar$/);
   await signIn(page, email, 'minha loja vai bombar');
   await expect(page).toHaveURL(/\/$/);
+});
+
+test('quem esqueceu a senha atual vai pra recuperação com o email preenchido', async ({ page }) => {
+  const email = studentEmail('perfilnome');
+  await signIn(page, email, PASSWORD, '/perfil');
+  await expect(page).toHaveURL(/\/perfil$/);
+  await page.getByRole('link', { name: 'Esqueceu a senha atual?' }).click();
+  await expect(page).toHaveURL(/\/recuperar-senha\?next=%2Fperfil$/);
+  await expect(page.getByLabel('Email da compra')).toHaveValue(email);
 });
