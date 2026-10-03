@@ -71,9 +71,15 @@ export function StorePanel({ user, firstVisit, hasChoice, phase, conversation }:
         </div>
       </div>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      {/* No computador, a jornada fica à direita e o "Como funciona" preenche a coluna da
+          esquerda, embaixo da ação; a jornada estica até o fim, pras duas colunas terminarem juntas.
+          No celular, um embaixo do outro: ação, jornada, como funciona. */}
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:grid-rows-[auto_1fr]">
         <NextStepCard phase={phase} conversation={conversation} />
-        <JourneyCard phase={phase} />
+        <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-stretch lg:*:h-full">
+          <JourneyCard phase={phase} />
+        </div>
+        <HowItWorksCard />
       </div>
     </AreaShell>
   );
@@ -181,6 +187,49 @@ function ActionCard({
         {title}
       </h2>
       {children}
+    </section>
+  );
+}
+
+/** O serviço em três passos, pra iniciante saber o que esperar de cada lado. */
+const HOW_IT_WORKS = [
+  {
+    title: 'Você conta sobre você',
+    detail: 'Seu perfil e o jeito da sua marca, aqui na plataforma.',
+  },
+  {
+    title: 'A equipe monta sua loja',
+    detail: 'Cria o logo e a descrição, escolhe os produtos e publica tudo na Shopee.',
+  },
+  {
+    title: 'Você acompanha cada fase',
+    detail:
+      'Quando for a sua vez (escolher o logo, conectar a Shopee), a equipe avisa no WhatsApp.',
+  },
+] as const;
+
+function HowItWorksCard() {
+  return (
+    <section aria-labelledby="como-funciona" className={cn(panelCard, 'gap-4')}>
+      <h2 id="como-funciona" className={sectionTitleClass}>
+        Como funciona
+      </h2>
+      <ol className="flex flex-col gap-4">
+        {HOW_IT_WORKS.map((step, index) => (
+          <li key={step.title} className="flex gap-3">
+            <span
+              aria-hidden="true"
+              className="grid size-7 shrink-0 place-items-center rounded-full bg-primary-soft text-sm font-semibold text-link forced-colors:border forced-colors:border-[CanvasText]"
+            >
+              {index + 1}
+            </span>
+            <span className="flex flex-col gap-0.5">
+              <span className="text-body font-semibold">{step.title}</span>
+              <span className="text-body text-pretty text-muted-foreground">{step.detail}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
     </section>
   );
 }

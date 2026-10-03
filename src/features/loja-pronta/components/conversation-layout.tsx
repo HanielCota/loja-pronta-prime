@@ -21,7 +21,7 @@ type ConversationLayoutProps = {
  * Moldura das telas da conversa: no topo, voltar, onde ela está e "Continuar depois" (discreto:
  * a pergunta é o que importa); embaixo, uma barra fina com o progresso da conversa inteira. O
  * conteúdo fica numa coluna, centralizado na vertical a partir do tablet (no celular, perto do
- * topo, pra caber sem rolar). Tudo são links de verdade: funciona sem JavaScript.
+ * topo, pra caber sem rolar), e mais larga no computador, pra pergunta não ficar perdida na tela. Tudo são links de verdade: funciona sem JavaScript.
  */
 export function ConversationLayout({
   part,
@@ -32,7 +32,7 @@ export function ConversationLayout({
 }: ConversationLayoutProps) {
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="mx-auto flex w-full max-w-[560px] flex-col gap-2 px-4 pt-3 sm:px-6">
+      <header className="mx-auto flex w-full max-w-[560px] flex-col gap-2 px-4 pt-3 sm:px-6 lg:max-w-[680px]">
         <div className="flex items-center gap-1">
           <Link
             href={backHref}
@@ -63,7 +63,7 @@ export function ConversationLayout({
           />
         </div>
       </header>
-      <main className="mx-auto flex w-full max-w-[560px] flex-1 flex-col gap-8 px-4 pt-8 pb-10 sm:justify-center sm:px-6 sm:py-12">
+      <main className="mx-auto flex w-full max-w-[560px] flex-1 flex-col gap-8 px-4 pt-8 pb-10 sm:justify-center sm:px-6 sm:py-12 lg:max-w-[680px]">
         {children}
       </main>
     </div>

@@ -17,13 +17,13 @@ type MascotBubbleProps = {
 export function MascotBubble({ title, help, titleId, helpId }: MascotBubbleProps) {
   return (
     <div className="flex flex-col items-center gap-4 text-center">
-      <Mascot expression="happy" displaySize={96} className="size-20 sm:size-24" />
+      <Mascot expression="happy" displaySize={128} className="size-20 sm:size-24 lg:size-32" />
       <div className="flex flex-col gap-2">
         {/* tabIndex -1: recebe o foco ao chegar na etapa (FocusOnArrival), sem entrar no Tab. */}
         <h1
           id={titleId}
           tabIndex={-1}
-          className="text-title font-semibold text-balance outline-none sm:text-title-lg"
+          className="text-title font-semibold text-balance outline-none sm:text-title-lg lg:text-title-xl"
         >
           {title}
         </h1>

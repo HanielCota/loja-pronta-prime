@@ -103,7 +103,7 @@ export function CenteredMemberPage({
       <main
         className={cn(
           'mx-auto flex w-full flex-1 flex-col justify-center gap-6 py-8 sm:py-12',
-          wide ? 'max-w-[880px]' : 'max-w-[480px] lg:max-w-[640px]',
+          wide ? 'max-w-none' : 'max-w-[480px] lg:max-w-[640px]',
         )}
       >
         {children}
