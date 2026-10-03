@@ -2,11 +2,11 @@
 
 ## Em uma frase
 
-A Loja Pronta Prime ([lojaprontaprime.com](https://lojaprontaprime.com)) é uma área de membros para mulheres iniciantes que querem ganhar uma renda vendendo na Shopee. Ela oferece um curso com ferramentas e um serviço em que a equipe monta a loja para a aluna.
+A Loja Pronta Prime ([lojaprontaprime.com](https://lojaprontaprime.com)) é uma área de membros para mulheres iniciantes que querem ganhar uma renda vendendo na Shopee. Ela oferece um curso com ferramentas e uma montagem de loja automática, passo a passo, em que a própria aluna cria a loja com tudo já preparado.
 
 ## O problema que resolve
 
-Muitas mulheres querem vender online, mas não sabem escolher o que vender, criar anúncios, precificar considerando as taxas da Shopee, nem montar a identidade da loja (nome, logo, descrição). A plataforma resolve isso de duas formas: ensinando, ou fazendo por ela.
+Muitas mulheres querem vender online, mas não sabem escolher o que vender, criar anúncios, precificar considerando as taxas da Shopee, nem montar a identidade da loja (nome, logo, descrição). A plataforma resolve isso de duas formas: ensinando, ou levando ela pela mão, um passo de cada vez.
 
 ## Para quem é
 
@@ -31,29 +31,43 @@ Curso em vídeo com ferramentas, para a aluna aprender e vender por conta própr
 
 ### Loja Pronta
 
-Serviço em que a equipe monta a loja da aluna, e ela acompanha cada etapa.
+A aluna monta a própria loja na Shopee pela plataforma, sem equipe: tudo é automático e passo a passo, com uma decisão por tela e ideias já prontas. O público é muito iniciante (muitas mal sabem usar o computador), então nada pode exigir conhecimento técnico.
 
-A aluna passa por uma jornada em fases, da primeira conversa até a loja no ar:
+A jornada tem 7 fases, da primeira conversa até a loja no ar:
 
-1. Conversa inicial para conhecer o perfil e as preferências da aluna (detalhes abaixo).
-2. Geração, por IA, de opções de logo e de descrição da loja, e escolha da aluna.
-3. Conexão da loja com a Shopee.
-4. Verificação de identidade.
-5. Definição do fornecedor e dos produtos (dropshipping).
-6. Publicação dos produtos pela equipe.
-7. Loja no ar e acompanhamento nas semanas seguintes.
+1. **Conversa inicial:** o perfil e as preferências da aluna (detalhes abaixo).
+2. **Sua marca:** ela escolhe o nome, monta o logo num estúdio e escolhe o texto da loja (detalhes abaixo).
+3. **Conta na Shopee:** ela abre a conta de vendedora (CPF, documento, selfie, conta bancária) com um passo a passo guiado. Só ela pode fazer isso: a Shopee exige a própria pessoa.
+4. **Conexão com a Shopee:** um botão liga a conta dela à plataforma (autorização da Shopee Open Platform).
+5. **Produtos:** a plataforma sugere produtos do fornecedor (dropshipping), com o preço já calculado com as taxas da Shopee.
+6. **Publicação:** a plataforma publica a marca e os produtos na loja dela, pela API da Shopee.
+7. **Loja no ar:** acompanhamento das vendas.
 
-A aluna sempre sabe em que fase está.
+A aluna sempre sabe em que fase está. Fases sem tela ainda aparecem como "em breve", com aviso no WhatsApp quando abrirem.
+
+Pendências de fora: as fases 3 a 7 ainda não têm telas. A 3 precisa de prints ou vídeo das telas atuais da Shopee; a 4 e a 6, do cadastro de parceiro na Shopee Open Platform; a 5, do nome e da API do fornecedor. Os limites de nome (30) e de texto da loja (500) em `src/config/brand.ts` precisam ser confirmados na Central do Vendedor.
 
 #### Conversa inicial (fase 1)
 
 Feita na própria plataforma, uma pergunta por tela, com o mascote "fazendo" cada pergunta. Leva uns 5 minutos e dá para parar e continuar depois: cada resposta fica salva.
 
 - **Sobre você:** se já vendeu pela internet, o que a motivou, o que mais a preocupa, que tipo de produto gostaria de vender (até 3) e quanto tempo tem por semana.
-- **Sua marca:** nome da loja (ou "ainda não sei", e a equipe sugere), estilo, cor principal (ou "deixo com a equipe"), como quer que as clientes se sintam (até 3) e um toque pessoal opcional.
-- **Confirmar:** revisão de todas as respostas, com edição, e o WhatsApp em que a equipe vai falar com ela.
+- **Sua marca:** nome da loja (ou "ainda não decidi", e a plataforma sugere), estilo, cor principal (ou "escolho depois"), como quer que as clientes se sintam (até 3) e um toque pessoal opcional.
+- **Confirmar:** revisão de todas as respostas, com edição, e o WhatsApp em que ela recebe os avisos de cada fase.
 
-Ao enviar, a loja passa para a fase 2 e a equipe começa a criar o logo e a descrição. A promessa mostrada à aluna é de aviso no WhatsApp em até 24 horas.
+Ao enviar, a loja passa para a fase 2 e ela já pode criar a marca.
+
+#### Sua marca (fase 2)
+
+Mesmo formato da conversa: um passo por tela, tudo salvo a cada escolha. Leva uns 10 minutos.
+
+1. **Nome:** o nome que ela deu na conversa e 6 ideias montadas com as respostas dela (categorias, estilo e o nome dela), ou um nome escrito por ela. Cada nome é um botão: um toque escolhe e segue.
+2. **Modelo do logo:** 6 logos prontos, um por formato (ícone em cima, ícone ao lado, selo redondo, inicial em destaque, só o nome e faixa), já com o nome, a letra do estilo, a cor e um ícone da categoria.
+3. **Estúdio:** ela muda a cor (12, com fundo branco ou colorido), o desenho (29 ícones ou nenhum), a letra (6 fontes) e o formato, vendo o logo mudar na hora e como ele fica no círculo da Shopee. Tem "Desfazer" e "Voltar ao modelo".
+4. **Texto da loja:** 3 textos prontos com as respostas dela, ou um escrito por ela.
+5. **Revisão:** logo, nome e texto juntos, cada um com "Mudar". Ao confirmar, a loja passa para a fase 3 e ela pode baixar o logo em PNG (1000×1000).
+
+Não há IA de imagem: o logo é desenhado pela plataforma a partir dos modelos, então sai igual na tela e no arquivo.
 
 Pendências: as categorias de produto ainda são uma lista provisória (devem vir do catálogo de fornecedores) e o vídeo de boas-vindas da Pri, que existia no sistema antigo, fica para quando houver o vídeo.
 
@@ -75,9 +89,10 @@ Não existe cadastro público: só entra quem comprou ou quem a equipe liberou m
 
 ## O que a equipe interna faz
 
+A equipe não participa da montagem das lojas. No painel administrativo (ainda a construir), ela:
+
 - Vê todas as lojas e a fase de cada uma.
 - Consulta o histórico de cada loja.
-- Revisa a qualidade das imagens e logos gerados por IA.
 - Libera ou remove acessos manualmente, registrando o motivo.
 - Acompanha quantas compradoras chegaram a entrar na plataforma.
 - Configura o sistema por tela, sem mexer em arquivos técnicos.
@@ -86,7 +101,7 @@ Não existe cadastro público: só entra quem comprou ou quem a equipe liberou m
 
 - **Aluna:** cliente final que comprou um dos produtos.
 - **SLL:** Sistema Loja Lucrativa, o curso com ferramentas.
-- **Loja Pronta:** serviço em que a equipe monta a loja da aluna.
+- **Loja Pronta:** produto em que a aluna monta a loja na Shopee pela plataforma, passo a passo e de forma automática.
 - **Shopee:** marketplace onde as lojas vendem.
 - **Dropshipping:** venda sem estoque próprio; o fornecedor envia o produto ao cliente.
 - **Hotmart:** plataforma onde os produtos são vendidos.
