@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckIcon, ChevronRightIcon } from 'lucide-react';
+import { CircleCheckIcon, CircleIcon } from 'lucide-react';
 import { createContext, useActionState, useContext, useEffect, useId, type ReactNode } from 'react';
 import { upsetMascot } from '@/components/brand/mascot';
 import { FieldError } from '@/components/ui/field';
@@ -70,6 +70,8 @@ type ChoiceButtonProps = {
 /**
  * Uma opção que já é o botão de enviar: um toque escolhe e segue, sem "marcar e depois
  * continuar" (menos passos pra quem tem pouca prática). Sem JavaScript, funciona igual.
+ * Todas com o mesmo sinal de escolha (a bolinha, que fica marcada na salva), não uma seta, que
+ * daria a ideia de abrir outra tela.
  */
 export function ChoiceButton({
   name,
@@ -91,9 +93,9 @@ export function ChoiceButton({
         if (pending) event.preventDefault();
       }}
       className={cn(
-        'group flex min-h-16 w-full cursor-pointer items-center gap-3 rounded-2xl border-[1.5px] bg-card px-4 py-3 text-left text-body font-medium transition-[background-color,border-color,transform] duration-100 outline-none active:scale-[0.98] motion-reduce:active:scale-100',
+        'group flex min-h-16 w-full cursor-pointer items-center gap-3 rounded-3xl border-[1.5px] bg-card px-5 py-3 text-left text-body font-medium shadow-card transition-[background-color,border-color,transform] duration-100 outline-none active:scale-[0.98] motion-reduce:active:scale-100',
         'hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid',
-        selected ? 'border-primary bg-primary-soft' : 'border-input',
+        selected ? 'border-primary bg-primary-soft' : 'border-transparent',
         media && 'flex-col items-stretch p-3 text-center',
         'aria-disabled:cursor-wait forced-colors:border-[ButtonText]',
         className,
@@ -101,15 +103,22 @@ export function ChoiceButton({
     >
       {media}
       <span className={cn('flex flex-1 flex-col gap-0.5', media && 'items-center')}>
-        <span className="text-pretty">{label}</span>
+        <span className="text-pretty">
+          {label}
+          {/* A bolinha marcada é só desenho: o leitor de tela ouve qual é a salva. */}
+          {selected ? <span className="sr-only"> (escolha salva)</span> : null}
+        </span>
         {detail ? (
           <span className="text-sm font-normal text-muted-foreground">{detail}</span>
         ) : null}
       </span>
       {media ? null : selected ? (
-        <CheckIcon aria-hidden="true" className="size-5 shrink-0 text-link" />
+        <CircleCheckIcon aria-hidden="true" className="size-6 shrink-0 text-link" />
       ) : (
-        <ChevronRightIcon aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />
+        <CircleIcon
+          aria-hidden="true"
+          className="size-6 shrink-0 text-muted-foreground group-hover:text-link"
+        />
       )}
     </button>
   );
