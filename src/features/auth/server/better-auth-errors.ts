@@ -7,6 +7,7 @@ const BETTER_AUTH_CODES: Record<string, AuthErrorCode> = {
   EMAIL_NOT_VERIFIED: 'email_not_confirmed',
   BANNED_USER: 'account_disabled',
   INVALID_TOKEN: 'reset_link_invalid',
+  INVALID_PASSWORD: 'wrong_current_password',
 };
 
 export function toAuthErrorCode(error: unknown): AuthErrorCode {

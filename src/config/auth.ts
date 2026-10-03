@@ -28,4 +28,8 @@ export const RATE_LIMITS_PER_MINUTE = {
   resetPerIp: 10,
   /** Criar a senha no primeiro acesso (já logada): por conta. */
   firstPasswordPerUser: 5,
+  /** Trocar a senha no perfil (pede a atual): por conta, pra ninguém adivinhar a atual. */
+  changePasswordPerUser: 5,
+  /** Trocar o nome no perfil: por conta. */
+  profileNamePerUser: 10,
 } as const;

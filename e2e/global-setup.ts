@@ -73,6 +73,9 @@ const STUDENTS: Student[] = [
   { kind: 'redefinirnaoconfirmada', emailVerified: false, banned: false },
   { kind: 'falharede', emailVerified: true, banned: false },
   { kind: 'apinome', emailVerified: true, banned: false },
+  // Perfil (e2e/profile.spec.ts): cada uma no seu teste, porque nome e senha mudam.
+  { kind: 'perfilnome', emailVerified: true, banned: false },
+  { kind: 'perfilsenha', emailVerified: true, banned: false },
   // Marca da loja (fase 2): a conversa já enviada.
   {
     kind: 'marca',
