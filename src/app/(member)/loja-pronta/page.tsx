@@ -22,7 +22,12 @@ export default async function Page() {
       hasChoice={products.length > 1}
       phase={phase}
       conversation={conversation}
-      brand={{ name: brand.name, logo: brand.logo, started: Boolean(brand.name) }}
+      brand={{
+        name: brand.name,
+        logo: brand.logo,
+        started: Boolean(brand.name),
+        confirmed: Boolean(brand.completedAt),
+      }}
     />
   );
 }

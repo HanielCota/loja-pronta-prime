@@ -85,9 +85,11 @@ test('marca completa: nome, modelo, estúdio, texto, revisão com mudança e log
   ]);
   expect(download.suggestedFilename()).toBe('logo-gatinhos-cia.png');
 
-  // Confirmada, a marca não abre de novo; o painel já está na fase 3, com o nome e o logo dela.
-  await page.goto('/loja-pronta/marca/nome');
-  await expect(page).toHaveURL(/\/loja-pronta$/);
+  // Confirmada, a marca reabre só pra rever (e2e/revise.spec.ts); o painel já está na fase 3, com
+  // o nome e o logo dela.
+  await page.goto('/loja-pronta/marca');
+  await expect(page).toHaveURL(/\/marca\/revisao$/);
+  await page.goto('/loja-pronta');
   await expect(page.getByRole('heading', { level: 1, name: 'Gatinhos & Cia' })).toBeVisible();
   await expectLogoLoaded(page, /^Logo da loja Gatinhos & Cia/);
   await expect(

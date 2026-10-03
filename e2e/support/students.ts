@@ -37,7 +37,10 @@ export type StudentKind =
   | 'marca'
   | 'marcateclado'
   | 'perfilnome'
-  | 'perfilsenha';
+  | 'perfilsenha'
+  | 'revisaconversa'
+  | 'revisamarca'
+  | 'revisatravada';
 
 /** Id desta execução, definido no global-setup: cada execução usa alunas próprias. */
 export function runId(): string {

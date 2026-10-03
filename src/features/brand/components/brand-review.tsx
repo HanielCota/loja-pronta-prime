@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
 import { FocusOnArrival } from '@/features/loja-pronta/components/focus-on-arrival';
 import { MascotBubble } from '@/features/loja-pronta/components/mascot-bubble';
 import { StickyAction } from '@/features/loja-pronta/components/sticky-action';
@@ -14,21 +15,30 @@ import { FinishButton } from './finish-button';
 
 const TITLE_ID = 'revisao-marca-titulo';
 
-/** Passo 5: a marca inteira junta, cada parte com "Mudar", e a confirmação. */
+/**
+ * Passo 5: a marca inteira junta, cada parte com "Mudar", e a confirmação. `revising`: a marca já
+ * foi confirmada e ela voltou pra rever; cada mudança já fica salva, e o botão só leva de volta.
+ */
 export function BrandReview({
   name,
   logo,
   description,
+  revising = false,
 }: {
   name: string;
   logo: LogoConfig;
   description: string;
+  revising?: boolean;
 }) {
   return (
     <>
       <MascotBubble
-        title="Confira sua marca"
-        help="Se quiser mudar alguma coisa, toque em Mudar."
+        title={revising ? 'Sua marca' : 'Confira sua marca'}
+        help={
+          revising
+            ? 'Toque em Mudar pra trocar alguma parte. O que você muda já fica salvo.'
+            : 'Se quiser mudar alguma coisa, toque em Mudar.'
+        }
         titleId={TITLE_ID}
       />
       <FocusOnArrival targetId={TITLE_ID} />
@@ -55,11 +65,19 @@ export function BrandReview({
           </Row>
         </dl>
       </section>
-      <BrandForm action={finishBrand}>
+      {revising ? (
         <StickyAction>
-          <FinishButton />
+          <Button asChild>
+            <Link href="/loja-pronta">Voltar pra Loja Pronta</Link>
+          </Button>
         </StickyAction>
-      </BrandForm>
+      ) : (
+        <BrandForm action={finishBrand}>
+          <StickyAction>
+            <FinishButton />
+          </StickyAction>
+        </BrandForm>
+      )}
     </>
   );
 }
