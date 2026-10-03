@@ -1,84 +1,54 @@
 'use client';
 
 import { CircleIcon, ShapesIcon, SparklesIcon, TypeIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { elementLabel } from '../../logo/editor';
 import type { LogoScene, SceneElement } from '../../logo/scene';
 
 const ICONS = { text: TypeIcon, icon: SparklesIcon, shape: ShapesIcon } as const;
 
-export const LAYERS_TITLE_ID = 'camadas-titulo';
+const TITLE_ID = 'partes-titulo';
 
 /**
- * As camadas, da mais da frente pra mais de trás (como no quadro). É também o jeito de escolher
- * um elemento pelo teclado ou pelo leitor de tela, que não arrastam no quadro.
+ * As partes do logo, da mais da frente pra mais de trás (como no quadro). Tocar numa abre ela no
+ * painel. É também o jeito de escolher uma parte pelo teclado ou pelo leitor de tela, que não
+ * arrastam no quadro.
  */
 export function LayersPanel({
   scene,
-  selectedId,
   onSelect,
-  className,
 }: {
   scene: LogoScene;
-  selectedId: string | null;
-  onSelect: (id: string | null) => void;
-  className?: string;
+  onSelect: (id: string) => void;
 }) {
   const layers = scene.elements.toReversed();
   return (
-    <section
-      aria-labelledby={LAYERS_TITLE_ID}
-      className={cn('flex flex-col gap-3 rounded-card bg-card p-4 shadow-card', className)}
-    >
-      <h2 id={LAYERS_TITLE_ID} tabIndex={-1} className="text-body font-semibold outline-none">
-        Camadas
+    <section aria-labelledby={TITLE_ID} className="flex flex-col gap-3">
+      <h2 id={TITLE_ID} className="text-body font-semibold">
+        Partes do logo
       </h2>
       {layers.length ? (
         <ul className="flex flex-col gap-1">
           {layers.map((element) => (
             <li key={element.id}>
-              <LayerButton
-                element={element}
-                selected={element.id === selectedId}
-                onSelect={() => onSelect(element.id === selectedId ? null : element.id)}
-              />
+              <LayerButton element={element} onSelect={() => onSelect(element.id)} />
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-muted-foreground">O logo está vazio.</p>
+        <p className="text-body text-muted-foreground">O logo está vazio.</p>
       )}
-      <p className="text-sm text-pretty text-muted-foreground">
-        A de cima fica na frente das outras.
-      </p>
     </section>
   );
 }
 
-function LayerButton({
-  element,
-  selected,
-  onSelect,
-}: {
-  element: SceneElement;
-  selected: boolean;
-  onSelect: () => void;
-}) {
+function LayerButton({ element, onSelect }: { element: SceneElement; onSelect: () => void }) {
   const Icon =
     element.type === 'shape' && element.shape !== 'rect' ? CircleIcon : ICONS[element.type];
   return (
     <button
       type="button"
-      aria-pressed={selected}
       onClick={onSelect}
-      className={cn(
-        'flex min-h-11 w-full items-center gap-2.5 rounded-xl border-[1.5px] px-3 text-left text-body outline-none',
-        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid',
-        selected
-          ? 'border-primary bg-primary-soft font-semibold'
-          : 'border-transparent hover:bg-muted',
-        'forced-colors:aria-pressed:border-[Highlight]',
-      )}
+      className="flex min-h-12 w-full items-center gap-2.5 rounded-xl border-[1.5px] border-input px-3 text-left text-body outline-none hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid forced-colors:border-[ButtonText]"
     >
       <span
         aria-hidden="true"

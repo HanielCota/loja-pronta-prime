@@ -3,11 +3,11 @@
 import { EditorDialog } from './editor-dialog';
 
 const TOUCH = [
-  ['Escolher uma parte', 'Toque nela no quadro, ou escolha em Camadas'],
+  ['Escolher uma parte', 'Toque nela no quadro, ou escolha na aba Partes'],
   ['Mover', 'Arraste a parte escolhida (no meio, ela encaixa sozinha)'],
   ['Mudar o tamanho', 'Arraste uma bolinha dos cantos, ou use dois dedos'],
   ['Girar', 'Arraste a bolinha de cima, ou gire dois dedos'],
-  ['Soltar a parte escolhida', 'Toque no fundo do logo'],
+  ['Soltar a parte escolhida', 'Toque em Pronto, ou no fundo do logo'],
 ] as const;
 
 const KEYS = [

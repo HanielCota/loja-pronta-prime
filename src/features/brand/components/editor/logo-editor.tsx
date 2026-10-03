@@ -1,16 +1,6 @@
 'use client';
 
-import {
-  CircleDashedIcon,
-  CircleHelpIcon,
-  CopyIcon,
-  MaximizeIcon,
-  MinusIcon,
-  PlusIcon,
-  Redo2Icon,
-  Trash2Icon,
-  Undo2Icon,
-} from 'lucide-react';
+import { CircleHelpIcon, EyeIcon, Redo2Icon, Undo2Icon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { nodMascot } from '@/components/brand/mascot';
 import { cn } from '@/lib/utils';
@@ -21,6 +11,7 @@ import {
   duplicateElement,
   elementLabel,
   findElement,
+  mainColor,
   NUDGE,
   NUDGE_LARGE,
   record,
@@ -41,12 +32,14 @@ import { MAX_VARIATIONS, SCENE_SIZE, type LogoScene, type SceneElement } from '.
 import type { LogoFonts } from '../../logo/scene-render';
 import { saveLogoScene } from '../../server/actions';
 import { EditorCanvas } from './editor-canvas';
-import { LAYERS_TITLE_ID } from './layers-panel';
-import { LEFT_PANEL_ID, LeftPanel } from './left-panel';
-import { PropertiesPanel } from './properties-panel';
+import { AddDrawings, AddTexts } from './add-panels';
 import { HelpDialog } from './help-dialog';
+import { LayersPanel } from './layers-panel';
+import { PropertiesPanel } from './properties-panel';
 import { PreviewDialog } from './preview-dialog';
 import { SaveBar } from './save-bar';
+import { MainIconPicker, StylePanel, TemplatesPanel } from './style-tab';
+import { TOOLS, ToolRail, type ToolId } from './tool-rail';
 import { sceneDataUrl, VariationsStrip } from './variations-strip';
 
 /** O que a tela mostra do salvamento automático. */
@@ -58,14 +51,8 @@ const clampToCanvas = (value: number) => Math.min(SCENE_SIZE, Math.max(0, value)
 /** Quanto esperar depois da última mudança pra salvar (não a cada pixel do arraste). */
 const AUTOSAVE_DELAY = 900;
 
-const ZOOMS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
-
-/** No celular, o que aparece embaixo do quadro. */
-const MOBILE_TABS = [
-  { id: 'adicionar', label: 'Montar' },
-  { id: 'editar', label: 'Editar' },
-] as const;
-type MobileTab = (typeof MOBILE_TABS)[number]['id'];
+/** O painel do menu: o foco volta pra ele quando o conteúdo troca. */
+const PANEL_ID = 'painel-do-logo';
 
 type LogoEditorProps = {
   /** A cena salva, ou o modelo escolhido virado cena (configToScene). */
@@ -83,10 +70,12 @@ type LogoEditorProps = {
 };
 
 /**
- * O editor livre do logo, no computador e no celular: camadas à esquerda, o quadro no meio (selecionar, arrastar, mudar o
- * tamanho e girar com as alças) e o elemento selecionado à direita. Tudo também pelo teclado:
- * as camadas escolhem o elemento, as setas movem, Delete apaga, Ctrl+Z desfaz. Cada mudança é
- * salva sozinha; "Salvar e continuar" segue pro próximo passo.
+ * O editor do logo, estilo Canva e pensado pra quem tem pouca prática: à esquerda, o menu (Estilo,
+ * Modelos, Desenhos, Textos, Partes, Versões, cada um com o nome escrito) e o painel do item
+ * escolhido; à direita, o logo grande com Desfazer, Refazer e "Ver como fica" em cima e o botão
+ * de seguir embaixo. Abre no Estilo. Tocar numa parte do logo mostra só ela no painel, com
+ * "Pronto" pra voltar. Tudo também pelo teclado: as partes escolhem, as setas movem, Delete apaga,
+ * Ctrl+Z desfaz. Cada mudança é salva sozinha.
  */
 export function LogoEditor({
   initialScene,
@@ -100,13 +89,11 @@ export function LogoEditor({
   const [variations, setVariations] = useState(initialVariations);
   const [previewing, setPreviewing] = useState(false);
   const [helping, setHelping] = useState(false);
-  const [showCircle, setShowCircle] = useState(false);
-  const [mobileTab, setMobileTab] = useState<MobileTab>('adicionar');
+  const [tool, setTool] = useState<ToolId>('estilo');
   const [history, setHistory] = useState<History>({ past: [], future: [] });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [fonts, setFonts] = useState<LogoFonts | null>(null);
   const [fontsFailed, setFontsFailed] = useState(false);
-  const [zoomIndex, setZoomIndex] = useState(ZOOMS.indexOf(1));
   const [announcement, setAnnouncement] = useState('');
   // O que já está salvo no servidor: diferente da cena na tela, falta salvar.
   const [savedScene, setSavedScene] = useState(initialScene);
@@ -199,8 +186,6 @@ export function LogoEditor({
 
   function select(id: string | null) {
     setSelectedId(id);
-    // No celular, escolher um elemento abre o painel dele.
-    if (id) setMobileTab('editar');
     const element = findElement(scene, id);
     setAnnouncement(element ? `${elementLabel(element)} selecionado` : 'Nada selecionado');
   }
@@ -209,10 +194,9 @@ export function LogoEditor({
     if (!selected) return;
     commit(removeElement(scene, selected.id));
     setSelectedId(null);
-    setMobileTab('adicionar');
-    setAnnouncement(`${elementLabel(selected)} apagado. Ctrl+Z desfaz.`);
-    // O botão da camada sumiu: o foco vai pro título das camadas, não pro começo da página.
-    (document.getElementById(LAYERS_TITLE_ID) ?? document.getElementById(LEFT_PANEL_ID))?.focus();
+    setAnnouncement(`${elementLabel(selected)} apagado. Desfazer traz de volta.`);
+    // O painel da parte sumiu: o foco vai pro painel, não pro começo da página.
+    focusPanel();
   }
 
   function add(element: NewElement, label: string) {
@@ -223,7 +207,6 @@ export function LogoEditor({
     }
     commit(result.scene);
     setSelectedId(result.id);
-    setMobileTab('editar');
     setAnnouncement(`${label} adicionado no meio do logo`);
     nodMascot();
   }
@@ -231,7 +214,7 @@ export function LogoEditor({
   /** Uma escolha da aba Estilo (cor, fundo, letra, desenho, formato): muda o logo todo. */
   function applyStyle(next: LogoScene, message: string) {
     commit(next);
-    setAnnouncement(`${message}. Ctrl+Z desfaz.`);
+    setAnnouncement(`${message}. Desfazer volta.`);
     nodMascot();
   }
 
@@ -243,19 +226,19 @@ export function LogoEditor({
     setVariations(result.variations);
     setHistory({ past: [], future: [] });
     setSelectedId(null);
-    setAnnouncement(`Variação ${index + 1} no quadro. A anterior ficou guardada no lugar dela.`);
+    setAnnouncement(`Versão ${index + 1} no quadro. A de antes ficou guardada no lugar dela.`);
   }
 
   function newVariation() {
     const next = addVariation(scene, variations, MAX_VARIATIONS);
     if (!next) return;
     setVariations(next);
-    setAnnouncement('Cópia guardada. Pode mexer à vontade: a de antes está nas variações.');
+    setAnnouncement('Cópia guardada. Pode mexer à vontade: a de antes está nas versões guardadas.');
   }
 
   function removeVariation(index: number) {
     setVariations(variations.filter((_, i) => i !== index));
-    setAnnouncement(`Variação ${index + 1} apagada`);
+    setAnnouncement(`Versão ${index + 1} apagada`);
   }
 
   function duplicateSelected() {
@@ -268,6 +251,18 @@ export function LogoEditor({
     commit(result.scene);
     setSelectedId(result.id);
     setAnnouncement(`${elementLabel(selected)} duplicado`);
+  }
+
+  /** Um item do menu: solta a parte escolhida (se tinha) e mostra o painel dele. */
+  function chooseTool(next: ToolId) {
+    setTool(next);
+    setSelectedId(null);
+  }
+
+  /** Solta a parte escolhida e volta pro painel do menu. */
+  function done() {
+    select(null);
+    focusPanel();
   }
 
   function undoLast() {
@@ -353,185 +348,134 @@ export function LogoEditor({
     return () => window.removeEventListener('keydown', listener);
   }, []);
 
-  const zoom = ZOOMS[zoomIndex] ?? 1;
-
   return (
-    <div data-logo-editor className="flex flex-col gap-4">
+    <div
+      data-logo-editor
+      className="grid grid-cols-1 gap-4 lg:min-h-[max(540px,calc(100dvh-14rem))] lg:grid-cols-[minmax(0,500px)_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)_auto] lg:gap-x-8 xl:grid-cols-[minmax(0,560px)_minmax(0,1fr)]"
+    >
       <p aria-live="polite" className="sr-only">
         {announcement}
       </p>
-      {/* Computador: três colunas (adicionar, quadro, elemento). Celular: o quadro preso no topo
-          e, embaixo, "Adicionar" ou "Editar" (escolher um elemento abre o "Editar"). */}
-      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[272px_minmax(0,1fr)_300px] lg:gap-5 xl:grid-cols-[300px_minmax(0,1fr)_320px]">
-        <section
-          aria-label="Quadro do logo"
-          className="sticky -top-px z-20 -mx-4 flex min-w-0 flex-col gap-2 bg-background/95 px-4 pt-2 pb-2 backdrop-blur-md sm:-mx-6 sm:px-6 lg:static lg:col-start-2 lg:row-start-1 lg:m-0 lg:gap-3 lg:bg-transparent lg:p-0 lg:backdrop-blur-none"
-        >
-          <div
-            role="toolbar"
-            aria-label="Ferramentas"
-            className="flex flex-wrap items-center gap-1 rounded-2xl border border-border bg-card px-2 py-1 shadow-sm lg:py-1.5"
+      {/* No celular, o logo (com os botões de cima) fica preso no topo enquanto ela rola as
+          escolhas embaixo. */}
+      <section
+        aria-label="Quadro do logo"
+        className="sticky -top-px z-20 -mx-4 flex min-w-0 flex-col gap-3 bg-background/95 px-4 py-2 backdrop-blur-md sm:-mx-6 sm:px-6 lg:static lg:col-start-2 lg:row-start-1 lg:m-0 lg:min-h-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none"
+      >
+        <div className="flex flex-wrap items-center justify-center gap-1.5">
+          <ToolButton onClick={undoLast} disabled={!history.past.length} shortcut="Control+Z">
+            <Undo2Icon aria-hidden="true" />
+            Desfazer
+          </ToolButton>
+          <ToolButton
+            onClick={redoLast}
+            disabled={!history.future.length}
+            shortcut="Control+Shift+Z"
           >
-            <ToolButton
-              label="Desfazer (Ctrl+Z)"
-              onClick={undoLast}
-              disabled={!history.past.length}
-            >
-              <Undo2Icon />
-            </ToolButton>
-            <ToolButton
-              label="Refazer (Ctrl+Shift+Z)"
-              onClick={redoLast}
-              disabled={!history.future.length}
-            >
-              <Redo2Icon />
-            </ToolButton>
-            {/* No celular, o zoom é com os dedos (do navegador): os botões ficam no computador. */}
-            <span className="hidden items-center gap-1 lg:flex">
-              <span aria-hidden="true" className="mx-1 h-6 w-px bg-border" />
-              <ToolButton
-                label="Diminuir o zoom"
-                onClick={() => setZoomIndex((index) => Math.max(0, index - 1))}
-                disabled={zoomIndex === 0}
-              >
-                <MinusIcon />
-              </ToolButton>
-              <output
-                aria-label="Zoom"
-                className="w-14 text-center text-sm font-semibold tabular-nums"
-              >
-                {Math.round(zoom * 100)}%
-              </output>
-              <ToolButton
-                label="Aumentar o zoom"
-                onClick={() => setZoomIndex((index) => Math.min(ZOOMS.length - 1, index + 1))}
-                disabled={zoomIndex === ZOOMS.length - 1}
-              >
-                <PlusIcon />
-              </ToolButton>
-              <ToolButton
-                label="Ajustar à tela"
-                onClick={() => setZoomIndex(ZOOMS.indexOf(1))}
-                disabled={zoom === 1}
-              >
-                <MaximizeIcon />
-              </ToolButton>
-            </span>
-            <span aria-hidden="true" className="mx-1 h-6 w-px bg-border" />
-            <ToolButton
-              label="Mostrar o círculo da Shopee"
-              onClick={() => setShowCircle((value) => !value)}
-              pressed={showCircle}
-            >
-              <CircleDashedIcon />
-            </ToolButton>
-            <ToolButton label="Ajuda: como usar o editor" onClick={() => setHelping(true)}>
-              <CircleHelpIcon />
-            </ToolButton>
-            <span className="flex-1" />
-            <ToolButton label="Duplicar (Ctrl+D)" onClick={duplicateSelected} disabled={!selected}>
-              <CopyIcon />
-            </ToolButton>
-            <ToolButton label="Apagar (Delete)" onClick={removeSelected} disabled={!selected}>
-              <Trash2Icon />
-            </ToolButton>
-          </div>
-
-          <EditorCanvas
-            scene={scene}
-            name={name}
-            fonts={fonts}
-            fontsFailed={fontsFailed}
-            sizes={sizes}
-            selectedId={selectedId}
-            zoom={zoom}
-            showCircle={showCircle}
-            onSelect={select}
-            onBeginGesture={beginGesture}
-            onLive={live}
-            onEndGesture={endGesture}
-          />
-        </section>
-
-        <fieldset className="lg:hidden">
-          <legend className="sr-only">Mostrar embaixo do logo</legend>
-          <div className="grid grid-cols-2 gap-1 rounded-xl bg-segment p-1">
-            {MOBILE_TABS.map((tab) => (
-              <label
-                key={tab.id}
-                className="flex min-h-11 cursor-pointer items-center justify-center rounded-lg text-body font-semibold text-muted-foreground has-checked:bg-segment-thumb has-checked:text-foreground has-checked:shadow-sm has-focus-visible:outline-2 has-focus-visible:outline-ring has-focus-visible:outline-solid forced-colors:has-checked:border-2 forced-colors:has-checked:border-[Highlight]"
-              >
-                <input
-                  type="radio"
-                  name="painel-celular"
-                  value={tab.id}
-                  checked={mobileTab === tab.id}
-                  onChange={() => setMobileTab(tab.id)}
-                  className="sr-only"
-                />
-                {tab.label}
-              </label>
-            ))}
-          </div>
-        </fieldset>
-
-        <LeftPanel
+            <Redo2Icon aria-hidden="true" />
+            {/* No celular, só a setinha (o nome continua pro leitor de tela): tudo cabe numa
+                linha. Desfazer, o mais usado, fica escrito. */}
+            <span className="max-sm:sr-only">Refazer</span>
+          </ToolButton>
+          <ToolButton onClick={() => setPreviewing(true)} disabled={!fonts}>
+            <EyeIcon aria-hidden="true" />
+            Ver como fica
+          </ToolButton>
+          {/* A ajuda é mais do mouse e do teclado: no celular, os três de cima cabem numa linha. */}
+          <ToolButton onClick={() => setHelping(true)} className="max-sm:hidden">
+            <CircleHelpIcon aria-hidden="true" />
+            Ajuda
+          </ToolButton>
+        </div>
+        <EditorCanvas
           scene={scene}
-          selectedId={selectedId}
-          onSelect={select}
-          onAdd={add}
-          recommended={recommended}
-          templates={templates}
           name={name}
           fonts={fonts}
-          onStyle={applyStyle}
-          className={cn(
-            'lg:sticky lg:top-4 lg:col-start-1 lg:row-span-2 lg:row-start-1',
-            mobileTab !== 'adicionar' && 'max-lg:hidden',
-          )}
-        />
-
-        <PropertiesPanel
-          scene={scene}
-          selected={selected}
-          size={selected ? sizes.get(selected.id) : undefined}
-          backdrop={selected ? backdropColor(scene, selected.id, sizes) : scene.background}
-          onChange={updateSelected}
-          onCommitScene={commit}
+          fontsFailed={fontsFailed}
+          sizes={sizes}
+          selectedId={selectedId}
+          onSelect={select}
           onBeginGesture={beginGesture}
+          onLive={live}
           onEndGesture={endGesture}
-          onRemove={removeSelected}
-          className={cn(
-            'lg:sticky lg:top-4 lg:col-start-3 lg:row-span-2 lg:row-start-1',
-            mobileTab !== 'editar' && 'max-lg:hidden',
-          )}
         />
+      </section>
 
-        <div className="flex flex-col gap-3 lg:col-start-2 lg:row-start-2">
-          <VariationsStrip
-            scene={scene}
-            variations={variations}
-            name={name}
-            fonts={fonts}
-            onChoose={chooseVariation}
-            onAdd={newVariation}
-            onRemove={removeVariation}
-          />
-          <p className="text-sm text-pretty text-muted-foreground">
-            Toque num elemento pra escolher. Arraste pra mover, use as bolinhas dos cantos pra mudar
-            o tamanho e a de cima pra girar (no celular, dá também com dois dedos). Pelo teclado:
-            escolha nas camadas e use as setas.
-          </p>
+      {/* O menu e o painel dele, um cartão só (como no Canva). No computador, à esquerda, na
+          altura da janela (o painel rola por dentro). A altura do editor é mínima, não fixa: com
+          zoom ou alto contraste, o lado do logo cresce e empurra, em vez de passar por cima. */}
+      <div className="flex min-w-0 flex-col overflow-hidden rounded-card bg-card shadow-card lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:grid lg:h-[max(540px,calc(100dvh-14rem))] lg:grid-cols-[104px_minmax(0,1fr)] lg:self-start forced-colors:border forced-colors:border-[CanvasText]">
+        <div className="border-b border-border p-2 lg:overflow-y-auto lg:border-r lg:border-b-0">
+          <ToolRail value={tool} onChange={chooseTool} />
+        </div>
+        <div
+          id={PANEL_ID}
+          tabIndex={-1}
+          className="flex min-h-0 flex-col gap-6 p-5 outline-none lg:overflow-y-auto lg:p-7"
+        >
+          {selected ? (
+            <PropertiesPanel
+              scene={scene}
+              selected={selected}
+              size={sizes.get(selected.id)}
+              backdrop={backdropColor(scene, selected.id, sizes)}
+              onChange={updateSelected}
+              onCommitScene={commit}
+              onBeginGesture={beginGesture}
+              onEndGesture={endGesture}
+              onRemove={removeSelected}
+              onDuplicate={duplicateSelected}
+              onDone={done}
+            />
+          ) : (
+            <>
+              <h2 className="text-title font-semibold">
+                {TOOLS.find((item) => item.id === tool)?.label}
+              </h2>
+              {tool === 'estilo' ? (
+                <StylePanel scene={scene} name={name} fonts={fonts} onStyle={applyStyle} />
+              ) : null}
+              {tool === 'modelos' ? (
+                <TemplatesPanel
+                  scene={scene}
+                  name={name}
+                  fonts={fonts}
+                  templates={templates}
+                  onStyle={applyStyle}
+                />
+              ) : null}
+              {tool === 'desenhos' ? (
+                <>
+                  <MainIconPicker scene={scene} recommended={recommended} onStyle={applyStyle} />
+                  <h3 className="-mb-3 text-body font-semibold">Pôr mais um desenho</h3>
+                  <AddDrawings color={mainColor(scene)} onAdd={add} />
+                </>
+              ) : null}
+              {tool === 'textos' ? (
+                <AddTexts scene={scene} color={mainColor(scene)} onAdd={add} />
+              ) : null}
+              {tool === 'partes' ? <LayersPanel scene={scene} onSelect={select} /> : null}
+              {tool === 'versoes' ? (
+                <VariationsStrip
+                  scene={scene}
+                  variations={variations}
+                  name={name}
+                  fonts={fonts}
+                  onChoose={chooseVariation}
+                  onAdd={newVariation}
+                  onRemove={removeVariation}
+                />
+              ) : null}
+            </>
+          )}
         </div>
       </div>
 
-      <SaveBar
-        scene={scene}
-        variations={variations}
-        editing={editing}
-        saveState={saveState}
-        onPreview={() => setPreviewing(true)}
-      />
+      {/* No celular, preso embaixo da tela: o botão de seguir está sempre à mão. */}
+      <div className="sticky bottom-0 z-20 -mx-4 bg-background/95 px-4 pt-2 pb-3 backdrop-blur-md sm:-mx-6 sm:px-6 lg:static lg:col-start-2 lg:row-start-2 lg:mx-auto lg:w-full lg:max-w-[560px] lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
+        <SaveBar scene={scene} variations={variations} editing={editing} saveState={saveState} />
+      </div>
+
       <HelpDialog open={helping} onClose={() => setHelping(false)} />
       <PreviewDialog
         open={previewing}
@@ -543,30 +487,35 @@ export function LogoEditor({
   );
 }
 
+/** Põe o foco no painel (depois que o conteúdo dele trocou), pro leitor de tela e o teclado. */
+function focusPanel() {
+  requestAnimationFrame(() => document.getElementById(PANEL_ID)?.focus({ preventScroll: true }));
+}
+
+/** Um botão em cima do logo, com o nome escrito (não só o ícone). */
 function ToolButton({
-  label,
   onClick,
   disabled,
-  pressed,
+  shortcut,
+  className,
   children,
 }: {
-  label: string;
   onClick: () => void;
   disabled?: boolean;
-  /** Botão que liga e desliga (como o círculo da Shopee). */
-  pressed?: boolean;
+  className?: string;
+  /** O atalho do teclado, pro leitor de tela. */
+  shortcut?: string;
   children: React.ReactNode;
 }) {
   return (
     <button
       type="button"
-      aria-label={label}
-      aria-pressed={pressed}
-      title={label}
       onClick={onClick}
       disabled={disabled}
+      aria-keyshortcuts={shortcut}
       className={cn(
-        'grid size-11 place-items-center rounded-xl text-foreground outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-solid disabled:text-muted-foreground disabled:opacity-50 aria-pressed:bg-primary-soft aria-pressed:text-link [&_svg]:size-5',
+        'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full bg-card px-3 text-body font-semibold text-foreground shadow-card transition-[background-color,transform] duration-100 outline-none hover:bg-primary-soft hover:text-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid active:scale-[0.97] disabled:opacity-50 disabled:shadow-none disabled:hover:bg-card disabled:hover:text-foreground motion-reduce:active:scale-100 forced-colors:border forced-colors:border-[ButtonText] [&_svg]:size-5',
+        className,
       )}
     >
       {children}

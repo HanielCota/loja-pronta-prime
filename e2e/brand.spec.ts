@@ -55,13 +55,14 @@ test('marca completa: nome, modelo, estúdio, texto, revisão com mudança e log
   await page.getByRole('button', { name: /^Desfazer/ }).click();
   await expect(color.getByLabel('Verde')).toBeChecked();
   await color.getByLabel('Turquesa').check({ force: true });
+  await page.getByRole('radio', { name: 'Desenhos' }).check({ force: true });
   await page.getByRole('button', { name: 'Coração', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Coração', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
   await expectNoA11yViolations(page);
-  await page.getByRole('button', { name: 'Salvar e continuar' }).click();
+  await page.getByRole('button', { name: 'Gostei, continuar' }).click();
 
   // Texto: 3 prontos com o nome da loja.
   await expect(page).toHaveURL(step('descricao'));
@@ -114,7 +115,7 @@ test('logo pelo teclado: as setas mudam a cor, e Enter salva', async ({ page }) 
   await color.getByLabel('Verde').focus();
   await page.keyboard.press('ArrowRight');
   await expect(color.getByLabel('Terracota')).toBeChecked();
-  await page.getByRole('button', { name: 'Salvar e continuar' }).press('Enter');
+  await page.getByRole('button', { name: 'Gostei, continuar' }).press('Enter');
   await expect(page).toHaveURL(step('descricao'));
 });
 

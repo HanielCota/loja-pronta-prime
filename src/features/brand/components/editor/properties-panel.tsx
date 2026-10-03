@@ -10,10 +10,12 @@ import {
   BringToFrontIcon,
   CheckIcon,
   CircleAlertIcon,
+  CopyIcon,
   SendToBackIcon,
   Trash2Icon,
 } from 'lucide-react';
 import { useId, type ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
   alignElement,
@@ -50,7 +52,7 @@ const ALIGNMENTS: { id: Alignment; label: string; icon: typeof CheckIcon }[] = [
 
 type PropertiesPanelProps = {
   scene: LogoScene;
-  selected: SceneElement | undefined;
+  selected: SceneElement;
   size: Size | undefined;
   /** A cor atrás do elemento (a forma embaixo dele ou o fundo), pro aviso de contraste. */
   backdrop: string;
@@ -59,12 +61,14 @@ type PropertiesPanelProps = {
   onBeginGesture: (holdSave?: boolean) => void;
   onEndGesture: () => void;
   onRemove: () => void;
-  className?: string;
+  onDuplicate: () => void;
+  /** "Pronto": solta a parte e volta pro painel de antes. */
+  onDone: () => void;
 };
 
 /**
- * À direita: o elemento escolhido (cor, letra, tamanho, transparência, giro, posição e camada)
- * ou, sem nenhum, o fundo do logo. Deslizar um controle conta como uma mudança só no histórico.
+ * A parte escolhida, no painel ao lado do logo: cor, letra, tamanho, transparência, giro, posição
+ * e camada, com "Pronto" pra voltar. Deslizar um controle conta como uma mudança só no histórico.
  */
 export function PropertiesPanel({
   scene,
@@ -76,60 +80,46 @@ export function PropertiesPanel({
   onBeginGesture,
   onEndGesture,
   onRemove,
-  className,
+  onDuplicate,
+  onDone,
 }: PropertiesPanelProps) {
-  const shell = cn('flex flex-col gap-5 rounded-card bg-card p-4 shadow-card', className);
   const slider = { onBeginGesture, onEndGesture };
-
-  if (!selected) {
-    return (
-      <section aria-labelledby="propriedades-titulo" className={shell}>
-        <h2 id="propriedades-titulo" className="text-body font-semibold">
-          Nenhuma parte escolhida
-        </h2>
-        <p className="-mt-3 text-sm text-pretty text-muted-foreground">
-          Pra mudar o logo inteiro (cor, letra, desenho), use a aba Estilo. Pra mudar só uma parte,
-          toque nela no quadro ou escolha nas camadas.
-        </p>
-        {/* Avançado: o Estilo já põe o fundo na cor do logo; aqui dá pra escolher outra. */}
-        <Swatches
-          legend="Só a cor do fundo"
-          value={scene.background}
-          onSelect={(hex) => onCommitScene({ ...scene, background: hex })}
-        />
-      </section>
-    );
-  }
 
   const range = SIZE_RANGE[selected.type];
   const index = scene.elements.findIndex((element) => element.id === selected.id);
 
   return (
-    <section aria-labelledby="propriedades-titulo" className={shell}>
-      <div className="flex items-center gap-2">
-        <h2 id="propriedades-titulo" className="min-w-0 flex-1 text-body font-semibold">
-          <span className="block text-sm font-normal text-muted-foreground">
-            Elemento selecionado
-          </span>
-          <span className="block truncate">{elementLabel(selected)}</span>
-        </h2>
-        <button
-          type="button"
-          onClick={onRemove}
-          aria-label={`Apagar ${elementLabel(selected)}`}
-          className="grid size-11 shrink-0 place-items-center rounded-xl text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-solid"
-        >
-          <Trash2Icon aria-hidden="true" className="size-5" />
-        </button>
+    <section aria-labelledby="propriedades-titulo" className="flex flex-col gap-6">
+      <div className="-mt-1 flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <h2 id="propriedades-titulo" className="min-w-0 flex-1 truncate text-body font-semibold">
+            {elementLabel(selected)}
+          </h2>
+          <Button type="button" size="inline" className="w-auto px-5" onClick={onDone}>
+            <CheckIcon aria-hidden="true" />
+            Pronto
+          </Button>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <LayerAction
+            label="Duplicar"
+            icon={<CopyIcon aria-hidden="true" className="size-4" />}
+            onClick={onDuplicate}
+          />
+          <LayerAction
+            label="Apagar"
+            icon={<Trash2Icon aria-hidden="true" className="size-4" />}
+            onClick={onRemove}
+          />
+        </div>
       </div>
 
       <Swatches legend="Cor" value={selected.color} onSelect={(hex) => onChange({ color: hex })} />
       {/* 3:1 é o mínimo pra texto grande e desenhos (WCAG): abaixo disso, some de longe. */}
       {selected.type !== 'shape' && contrast(selected.color, backdrop) < 3 ? (
-        <p className="-mt-2 flex items-start gap-1.5 text-sm text-pretty text-destructive">
+        <p className="-mt-3 flex items-start gap-1.5 text-body text-pretty text-destructive">
           <CircleAlertIcon aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-          Pouco contraste com o que está atrás: fica difícil de ver. Tente uma cor mais escura ou
-          mais clara.
+          Pouco contraste: fica difícil de ver. Escolha outra cor.
         </p>
       ) : null}
 
@@ -154,7 +144,7 @@ export function PropertiesPanel({
       ) : null}
 
       {selected.type === 'icon' ? (
-        <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-semibold">
+        <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-body font-semibold">
           Desenho cheio
           <input
             type="checkbox"
@@ -186,7 +176,7 @@ export function PropertiesPanel({
             )}
           </Field>
           <fieldset className="flex flex-col gap-2">
-            <legend className="mb-2 text-sm font-semibold">Linhas</legend>
+            <legend className="mb-2 text-body font-semibold">Linhas</legend>
             <div className="grid grid-cols-3 gap-1 rounded-xl bg-segment p-1">
               {[1, 2, 3].map((lines) => (
                 <label
@@ -240,7 +230,7 @@ export function PropertiesPanel({
       />
 
       <fieldset>
-        <legend className="mb-2 text-sm font-semibold">Posição</legend>
+        <legend className="mb-2 text-body font-semibold">Posição</legend>
         <div className="grid grid-cols-6 gap-1">
           {ALIGNMENTS.map(({ id, label, icon: Icon }) => (
             <button
@@ -261,7 +251,7 @@ export function PropertiesPanel({
       </fieldset>
 
       <fieldset>
-        <legend className="mb-2 text-sm font-semibold">Camada</legend>
+        <legend className="mb-2 text-body font-semibold">Camada</legend>
         <div className="grid grid-cols-2 gap-2">
           <LayerAction
             label="Pra frente"
@@ -285,7 +275,7 @@ function Field({ label, children }: { label: string; children: (id: string) => R
   const id = useId();
   return (
     <div className="flex flex-col gap-2">
-      <label htmlFor={id} className="text-sm font-semibold">
+      <label htmlFor={id} className="text-body font-semibold">
         {label}
       </label>
       {children(id)}
@@ -306,7 +296,7 @@ function Swatches({
   const name = useId();
   return (
     <fieldset>
-      <legend className="mb-2 text-sm font-semibold">{legend}</legend>
+      <legend className="mb-2 text-body font-semibold">{legend}</legend>
       <div className="grid grid-cols-7 gap-1.5">
         {SWATCHES.map((color) => (
           <label
@@ -370,7 +360,7 @@ function Slider({
   const clamp = (number: number) => Math.min(max, Math.max(min, number));
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-semibold">
+      <label htmlFor={id} className="text-body font-semibold">
         {label}
       </label>
       <div className="flex items-center gap-3">
@@ -424,7 +414,7 @@ function LayerAction({
 }: {
   label: string;
   icon: ReactNode;
-  disabled: boolean;
+  disabled?: boolean;
   onClick: () => void;
 }) {
   return (
@@ -432,7 +422,7 @@ function LayerAction({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border-[1.5px] border-input bg-card px-2 text-sm font-semibold outline-none hover:border-primary focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-solid disabled:opacity-50"
+      className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border-[1.5px] border-input bg-card px-2 text-body font-semibold outline-none hover:border-primary focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-solid disabled:opacity-50 forced-colors:border-[ButtonText]"
     >
       {icon}
       {label}
