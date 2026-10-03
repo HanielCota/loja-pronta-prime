@@ -9,13 +9,14 @@ import type { LogoScene, TextElement } from '../../logo/scene';
 import { LOGO_FONTS, type LogoFontId } from '../../logo/fonts';
 import { ICON_GROUPS, SCENE_ICONS, type SceneIconId } from '../../logo/icons';
 import { mainColor, type NewElement } from '../../logo/editor';
-import { logoPreviewSrc } from '../../logo-preview';
+import type { LogoFonts } from '../../logo/scene-render';
 import { LayersPanel } from './layers-panel';
+import { StyleTab } from './style-tab';
 
 const TABS = [
+  { id: 'estilo', label: 'Estilo' },
   { id: 'elementos', label: 'Elementos' },
   { id: 'texto', label: 'Texto' },
-  { id: 'modelos', label: 'Modelos' },
   { id: 'camadas', label: 'Camadas' },
 ] as const;
 type TabId = (typeof TABS)[number]['id'];
@@ -96,15 +97,20 @@ type LeftPanelProps = {
   onAdd: (element: NewElement, label: string) => void;
   /** Os desenhos que combinam com as categorias dela. */
   recommended: SceneIconId[];
-  /** Os modelos prontos do estúdio, pra recomeçar de um. */
+  /** Os modelos prontos do estúdio (os formatos da aba Estilo). */
   templates: LogoConfig[];
-  onApplyTemplate: (template: LogoConfig) => void;
+  /** O nome da loja e as letras, pras amostras da aba Estilo. */
+  name: string;
+  fonts: LogoFonts | null;
+  /** Uma escolha da aba Estilo, que muda o logo todo. */
+  onStyle: (scene: LogoScene, announcement: string) => void;
   className?: string;
 };
 
 /**
- * À esquerda: o que dá pra pôr no logo (desenhos, formas, textos), os modelos pra recomeçar e as
- * camadas. As abas são botões de opção (as setas trocam de aba sem mexer no logo).
+ * À esquerda: o estilo do logo todo (o jeito fácil, aberto primeiro), o que dá pra pôr no logo
+ * (desenhos, formas, textos) e as camadas. As abas são botões de opção (as setas trocam de aba sem
+ * mexer no logo).
  */
 export function LeftPanel({
   scene,
@@ -113,10 +119,12 @@ export function LeftPanel({
   onAdd,
   recommended,
   templates,
-  onApplyTemplate,
+  name: storeName,
+  fonts,
+  onStyle,
   className,
 }: LeftPanelProps) {
-  const [tab, setTab] = useState<TabId>('elementos');
+  const [tab, setTab] = useState<TabId>('estilo');
   const name = useId();
   const color = mainColor(scene);
 
@@ -156,8 +164,15 @@ export function LeftPanel({
           <ElementsTab color={color} recommended={recommended} onAdd={onAdd} />
         ) : null}
         {tab === 'texto' ? <TextTab scene={scene} color={color} onAdd={onAdd} /> : null}
-        {tab === 'modelos' ? (
-          <TemplatesTab templates={templates} onApply={onApplyTemplate} />
+        {tab === 'estilo' ? (
+          <StyleTab
+            scene={scene}
+            name={storeName}
+            fonts={fonts}
+            recommended={recommended}
+            templates={templates}
+            onStyle={onStyle}
+          />
         ) : null}
         {tab === 'camadas' ? (
           <LayersPanel
@@ -322,44 +337,6 @@ function TextTab({
         A letra do texto novo é a mesma do nome ({LOGO_FONTS.find((f) => f.id === font)?.label}). Dá
         pra trocar depois, à direita.
       </p>
-    </div>
-  );
-}
-
-function TemplatesTab({
-  templates,
-  onApply,
-}: {
-  templates: LogoConfig[];
-  onApply: (template: LogoConfig) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-3">
-      <p className="text-sm text-pretty text-muted-foreground">
-        Recomece de um modelo. O que você montou some, mas Ctrl+Z traz de volta.
-      </p>
-      <ul className="grid grid-cols-2 gap-2">
-        {templates.map((template, index) => (
-          <li key={template.template}>
-            <button
-              type="button"
-              onClick={() => onApply(template)}
-              aria-label={`Recomeçar do modelo ${index + 1}`}
-              className="block w-full overflow-hidden rounded-xl border-[1.5px] border-input bg-card outline-none hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={logoPreviewSrc(template)}
-                alt=""
-                width={160}
-                height={160}
-                loading="lazy"
-                className="aspect-square w-full"
-              />
-            </button>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }

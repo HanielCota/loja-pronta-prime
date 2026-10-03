@@ -9,7 +9,7 @@ const CENTER = SCENE_SIZE / 2;
 const still = { rotation: 0, opacity: 1 } as const;
 
 /**
- * O logo do estúdio guiado (versão 1: formato, letra, cor, ícone e fundo) como cena, com cada
+ * Um modelo de logo (versão 1: formato, letra, cor, ícone e fundo) como cena, com cada
  * coisa no lugar em que o formato a põe. É o que o editor livre abre, e o desenho dos logos v1 sai
  * daqui (renderLogoSvg), então os dois são sempre iguais.
  *

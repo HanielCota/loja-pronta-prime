@@ -17,7 +17,7 @@ export function logoPreviewSrc(config: LogoConfig): string {
 
 /**
  * O logo salvo, como ele está: a cena do editor livre (desenhada no servidor; `v` muda a cada
- * mudança salva, pro cache não mostrar a de antes) ou o do estúdio guiado.
+ * mudança salva, pro cache não mostrar a de antes) ou, antes de ela passar pelo editor, o modelo.
  */
 export function savedLogoSrc(brand: {
   logo: LogoConfig;

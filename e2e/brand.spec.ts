@@ -5,6 +5,12 @@ import { PASSWORD, studentEmail } from './support/students';
 const step = (name: string) => new RegExp(`/loja-pronta/marca/${name}(\\?.*)?$`);
 
 /** Prévia do logo carregada de verdade (a imagem desenhada no servidor). */
+/** As partes do logo desenhadas no quadro do editor (aparecem quando as letras carregam). */
+const drawn = (page: Page) =>
+  page
+    .getByRole('img', { name: /^Seu logo, com/ })
+    .locator(':scope > g[transform]:not([aria-hidden])');
+
 async function expectLogoLoaded(page: Page, alt: RegExp) {
   const image = page.getByRole('img', { name: alt }).first();
   await expect(image).toBeVisible();
@@ -35,27 +41,25 @@ test('marca completa: nome, modelo, estúdio, texto, revisão com mudança e log
   await expect(page.getByRole('main').getByRole('alert')).toContainText('Use até 30 letras');
   await page.getByRole('button', { name: /Patinhas da Ana/ }).click();
 
-  // Modelo: 6 logos prontos, com o nome dela.
-  await expect(page).toHaveURL(step('modelo'));
-  await expect(page.getByRole('main').getByRole('button')).toHaveCount(6);
-  await expectNoA11yViolations(page);
-  await page.getByRole('button', { name: 'Selo redondo' }).click();
-
-  // Estúdio: a prévia muda na hora; desfazer volta o último toque.
+  // Logo: direto no editor, já com um modelo montado com as respostas dela, na aba Estilo; um
+  // toque muda o logo inteiro e desfazer volta.
   await expect(page).toHaveURL(step('ajustar'));
-  await expectLogoLoaded(page, /^Seu logo: Selo redondo/);
-  await expect(page.getByRole('button', { name: 'Desfazer' })).toBeDisabled();
-  await expect(page.getByRole('button', { name: 'Voltar ao modelo' })).toBeDisabled();
-  await page.getByText('Lilás', { exact: true }).click();
-  await expect(page.getByRole('img', { name: /cor lilás/ })).toBeVisible();
-  await page.getByText('Desfazer').click();
-  await expect(page.getByRole('img', { name: /cor verde/ })).toBeVisible();
-  await page.getByText('Turquesa', { exact: true }).click();
-  await page.getByText('Desenho', { exact: true }).first().click();
-  await page.getByText('Gato', { exact: true }).click();
-  await expect(page.getByRole('img', { name: /cor turquesa, desenho de gato/ })).toBeVisible();
+  await expect(drawn(page)).not.toHaveCount(0);
+  const color = page.getByRole('group', { name: 'Cor', exact: true });
+  await expect(color.getByLabel('Verde')).toBeChecked();
+  await expect(page.getByRole('button', { name: /^Desfazer/ })).toBeDisabled();
+  await color.getByLabel('Lilás').check({ force: true });
+  await expect(color.getByLabel('Lilás')).toBeChecked();
+  await page.getByRole('button', { name: /^Desfazer/ }).click();
+  await expect(color.getByLabel('Verde')).toBeChecked();
+  await color.getByLabel('Turquesa').check({ force: true });
+  await page.getByRole('button', { name: 'Coração', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Coração', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
   await expectNoA11yViolations(page);
-  await page.getByRole('button', { name: 'Gostei, continuar' }).click();
+  await page.getByRole('button', { name: 'Salvar e continuar' }).click();
 
   // Texto: 3 prontos com o nome da loja.
   await expect(page).toHaveURL(step('descricao'));
@@ -97,20 +101,18 @@ test('marca completa: nome, modelo, estúdio, texto, revisão com mudança e log
   ).toContainText('Passo 1 de 5: Conta na Shopee');
 });
 
-test('estúdio pelo teclado: Tab e setas mudam a cor, e Enter salva', async ({ page }) => {
+test('logo pelo teclado: as setas mudam a cor, e Enter salva', async ({ page }) => {
   await signIn(page, studentEmail('marcateclado'), PASSWORD, '/loja-pronta/marca');
   await expect(page).toHaveURL(step('nome'));
   await page.getByRole('button', { name: /Patinhas da Ana/ }).press('Enter');
-  await expect(page).toHaveURL(step('modelo'));
-  await page.getByRole('button', { name: 'Ícone em cima' }).press('Enter');
   await expect(page).toHaveURL(step('ajustar'));
 
-  const green = page.getByRole('radio', { name: 'Verde' });
-  await green.focus();
+  // As setas trocam a cor (e não mexem no logo, que é das setas fora dos campos).
+  const color = page.getByRole('group', { name: 'Cor', exact: true });
+  await color.getByLabel('Verde').focus();
   await page.keyboard.press('ArrowRight');
-  await expect(page.getByRole('radio', { name: 'Terracota' })).toBeChecked();
-  await expect(page.getByRole('img', { name: /cor terracota/ })).toBeVisible();
-  await page.getByRole('button', { name: 'Gostei, continuar' }).press('Enter');
+  await expect(color.getByLabel('Terracota')).toBeChecked();
+  await page.getByRole('button', { name: 'Salvar e continuar' }).press('Enter');
   await expect(page).toHaveURL(step('descricao'));
 });
 

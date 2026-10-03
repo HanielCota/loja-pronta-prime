@@ -1,7 +1,6 @@
 'use client';
 
-import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, CircleAlertIcon, EyeIcon } from 'lucide-react';
-import Link from 'next/link';
+import { ArrowRightIcon, CheckIcon, CircleAlertIcon, EyeIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { LogoScene } from '../../logo/scene';
 import { finishLogoEditor } from '../../server/actions';
@@ -15,21 +14,19 @@ const STATUS: Record<SaveState, { text: string; icon: typeof CheckIcon | null }>
 };
 
 /**
- * Embaixo do editor: voltar pro Modo fácil, se está tudo salvo e "Salvar e continuar" (um
+ * Embaixo do editor: se está tudo salvo, "Pré-visualizar" e "Salvar e continuar" (um
  * formulário de verdade, com a cena como está, que segue pro próximo passo).
  */
 export function SaveBar({
   scene,
   variations,
   editing,
-  easyHref,
   saveState,
   onPreview,
 }: {
   scene: LogoScene;
   variations: LogoScene[];
   editing: boolean;
-  easyHref: string;
   saveState: SaveState;
   onPreview: () => void;
 }) {
@@ -41,12 +38,6 @@ export function SaveBar({
       <input type="hidden" name="scene" value={JSON.stringify(scene)} />
       <input type="hidden" name="variations" value={JSON.stringify(variations)} />
       <div className="flex flex-wrap items-center gap-x-2 gap-y-2 rounded-card border border-border bg-card/95 p-3 shadow-card backdrop-blur-md sm:gap-x-4">
-        <Button asChild variant="ghost" size="inline" className="px-3 text-foreground">
-          <Link href={easyHref}>
-            <ArrowLeftIcon aria-hidden="true" className="size-5" />
-            <span className="max-sm:sr-only">Modo fácil</span>
-          </Link>
-        </Button>
         <output
           className={
             // No celular, numa linha só com os botões: o status fica pro leitor de tela, e o erro
