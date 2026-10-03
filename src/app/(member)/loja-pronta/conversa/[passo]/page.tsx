@@ -10,7 +10,6 @@ import { QuestionForm } from '@/features/onboarding/components/question-form';
 import { WhatsappForm } from '@/features/onboarding/components/whatsapp-form';
 import { requireConversation } from '@/features/onboarding/server/conversation';
 import {
-  answerText,
   canOpen,
   findQuestion,
   isStep,
@@ -24,6 +23,7 @@ import {
   WHATSAPP_STEP,
   type Step,
 } from '@/features/onboarding/steps';
+import { answerText } from '@/features/onboarding/answers';
 import { sectionTitleClass, panelCard } from '@/features/member/components/area-shell';
 import { getParam, type SearchParams } from '@/lib/search-params';
 import { cn } from '@/lib/utils';

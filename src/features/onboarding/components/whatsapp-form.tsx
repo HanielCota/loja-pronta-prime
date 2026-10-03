@@ -8,7 +8,7 @@ import { FieldError } from '@/components/ui/field';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { submitWithoutReset } from '@/lib/forms';
 import { finishConversation } from '../server/actions';
-import { parseWhatsapp } from '../steps';
+import { parseWhatsapp } from '../whatsapp';
 
 /**
  * Última etapa: o WhatsApp em que a equipe avisa de cada fase. Sem máscara no campo (máscaras

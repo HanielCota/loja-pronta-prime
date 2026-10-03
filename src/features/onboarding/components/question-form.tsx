@@ -10,7 +10,7 @@ import { PERSONAL_TOUCH_MAX, STORE_NAME_MAX, type OnboardingQuestion } from '@/c
 import { submitWithoutReset } from '@/lib/forms';
 import { cn } from '@/lib/utils';
 import { saveAnswer } from '../server/actions';
-import { UNKNOWN_NAME } from '../steps';
+import { UNKNOWN_NAME } from '../answers';
 
 type QuestionFormProps = {
   question: OnboardingQuestion;

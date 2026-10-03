@@ -6,7 +6,8 @@ import { CardHeading } from '@/components/brand/card-heading';
 import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
 import { getOnboarding } from '@/features/onboarding/server/conversation';
-import { CONVERSATION_PATH, DONE_PATH, formatWhatsapp } from '@/features/onboarding/steps';
+import { CONVERSATION_PATH, DONE_PATH } from '@/features/onboarding/steps';
+import { formatWhatsapp } from '@/features/onboarding/whatsapp';
 import {
   CenteredMemberPage,
   sectionTitleClass,

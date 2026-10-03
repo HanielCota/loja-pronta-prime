@@ -9,7 +9,7 @@ import {
 } from '@/features/products/server/access';
 import { db } from '@/server/db';
 import { storeOnboarding } from '@/server/db/schema';
-import { cleanAnswers } from '../steps';
+import { cleanAnswers } from '../answers';
 
 export type Onboarding = {
   answers: OnboardingAnswers;

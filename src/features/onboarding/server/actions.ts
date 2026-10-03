@@ -9,12 +9,12 @@ import {
   findQuestion,
   isStep,
   nextStep,
-  parseAnswer,
-  parseWhatsapp,
   resumeStep,
   REVIEW_STEP,
   stepPath,
 } from '../steps';
+import { parseAnswer } from '../answers';
+import { parseWhatsapp } from '../whatsapp';
 import { getOnboarding, requireConversationAction } from './conversation';
 
 /** Resposta pra tela quando algo não passa (sem erro, a action redireciona). */
