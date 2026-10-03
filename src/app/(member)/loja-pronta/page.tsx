@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { savedLogoSrc } from '@/features/brand/logo-preview';
+import { brandLogoSrc } from '@/features/brand/steps';
 import { getBrand } from '@/features/brand/server/brand';
 import { StorePanel } from '@/features/loja-pronta/components/store-panel';
 import { getStoreOverview } from '@/features/loja-pronta/server/overview';
@@ -25,7 +25,7 @@ export default async function Page() {
       conversation={conversation}
       brand={{
         name: brand.name,
-        logoSrc: brand.logo ? savedLogoSrc({ ...brand, logo: brand.logo }) : null,
+        logoSrc: brand.logoImage ? brandLogoSrc(brand) : null,
         started: Boolean(brand.name),
         confirmed: Boolean(brand.completedAt),
       }}

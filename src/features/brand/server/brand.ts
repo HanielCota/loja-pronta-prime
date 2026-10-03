@@ -7,59 +7,46 @@ import { getStorePhase } from '@/features/loja-pronta/server/store';
 import { getStudentProducts, requireProduct } from '@/features/products/server/access';
 import { db } from '@/server/db';
 import { storeBrand } from '@/server/db/schema';
-import { logoConfigSchema } from '../logo/config';
-import { logoSceneSchema, logoVariationsSchema, type LogoScene } from '../logo/scene';
-import type { BrandDraft } from '../steps';
+import { brandStepPath, type BrandDraft } from '../steps';
 
-/**
- * `logoScene`: o logo do editor livre, quando ela usou (vale no lugar do `logo`). `updatedAt`:
- * muda a cada escolha salva, pra imagem do logo salvo não vir velha do cache.
- */
+/** `updatedAt`: muda a cada escolha salva, pra imagem do logo salvo não vir velha do cache. */
 export type Brand = BrandDraft & {
-  logoScene: LogoScene | null;
-  /** As outras versões do editor livre (sem nenhuma: lista vazia). */
-  logoVariations: LogoScene[];
   completedAt: Date | null;
   updatedAt: Date | null;
 };
 
 const EMPTY: Brand = {
   name: null,
-  logo: null,
-  logoScene: null,
-  logoVariations: [],
+  logoImage: null,
   description: null,
   completedAt: null,
   updatedAt: null,
 };
 
-/**
- * A marca como está (sem linha: nada escolhido ainda). Logo (ou cena) que não vale mais conta como
- * sem logo; cena sem modelo embaixo não vale.
- */
+/** A marca como está (sem linha: nada escolhido ainda). */
 export async function getBrand(userId: string): Promise<Brand> {
   const [row] = await db
     .select({
       name: storeBrand.name,
-      logo: storeBrand.logo,
-      logoScene: storeBrand.logoScene,
-      logoVariations: storeBrand.logoVariations,
+      logoImage: storeBrand.logoImage,
       description: storeBrand.description,
       completedAt: storeBrand.completedAt,
       updatedAt: storeBrand.updatedAt,
     })
     .from(storeBrand)
     .where(eq(storeBrand.userId, userId));
-  if (!row) return EMPTY;
-  const logo = logoConfigSchema.safeParse(row.logo);
-  const scene = logoSceneSchema.safeParse(row.logoScene);
-  const variations = logoVariationsSchema.safeParse(row.logoVariations);
-  return {
-    ...row,
-    logo: logo.success ? logo.data : null,
-    logoScene: logo.success && scene.success ? scene.data : null,
-    logoVariations: logo.success && variations.success ? variations.data : [],
-  };
+  return row ?? EMPTY;
+}
+
+/**
+ * O logo escolhido no chat (a chave da imagem dela). Fica aqui, fora das Server Actions: quem
+ * chama já conferiu o acesso e que a imagem é dela (ver logo-chat/server/actions).
+ */
+export async function setBrandLogo(userId: string, logoImage: string) {
+  await db
+    .insert(storeBrand)
+    .values({ userId, logoImage })
+    .onConflictDoUpdate({ target: storeBrand.userId, set: { logoImage } });
 }
 
 /**
@@ -71,12 +58,21 @@ function isBrandTurn(storePhase: number, conversationSent: boolean, brand: Brand
 }
 
 /**
- * Como ela pode abrir a marca: criando (na vez dela) ou revendo (já confirmada, antes da
- * publicação: cada mudança fica salva, sem voltar de fase). Fora disso, nada.
+ * Como ela pode abrir a marca: criando (na vez dela), revendo (já confirmada, antes da
+ * publicação: cada mudança fica salva, sem voltar de fase) ou só o logo (marca confirmada antes
+ * do chat do logo, que ficou sem imagem quando o logo antigo saiu: em qualquer fase, ela cria o
+ * logo de novo, e só ele). Fora disso, nada.
  */
-function brandAccess(storePhase: number, conversationSent: boolean, brand: Brand) {
+type BrandAccess = 'creating' | 'revising' | 'logo-only';
+
+function brandAccess(
+  storePhase: number,
+  conversationSent: boolean,
+  brand: Brand,
+): BrandAccess | null {
   if (isBrandTurn(storePhase, conversationSent, brand)) return 'creating';
   if (conversationSent && brand.completedAt && canReviseDonePhases(storePhase)) return 'revising';
+  if (conversationSent && brand.completedAt && !brand.logoImage) return 'logo-only';
   return null;
 }
 
@@ -91,11 +87,22 @@ export async function requireBrandStudio(path: string) {
   ]);
   const access = brandAccess(phase, Boolean(onboarding.completedAt), brand);
   if (!access) redirect('/loja-pronta');
-  return { student, answers: onboarding.answers, brand, revising: access === 'revising' };
+  if (access === 'logo-only' && path !== brandStepPath('logo')) redirect(brandStepPath('logo'));
+  return {
+    student,
+    answers: onboarding.answers,
+    brand,
+    // Só o logo também é rever: escolher volta pro painel, não pros outros passos.
+    revising: access !== 'creating',
+    logoOnly: access === 'logo-only',
+  };
 }
 
-/** Mesma regra, pras Server Actions (que podem ser chamadas direto). */
-export async function requireBrandAction() {
+/**
+ * Mesma regra, pras Server Actions (que podem ser chamadas direto). `logo`: a action é do chat do
+ * logo (a única que vale no acesso "só o logo").
+ */
+export async function requireBrandAction({ logo = false }: { logo?: boolean } = {}) {
   const session = await getActiveSession();
   if (!session || needsFirstPassword(session.user)) redirect('/entrar');
   const userId = session.user.id;
@@ -107,12 +114,14 @@ export async function requireBrandAction() {
   ]);
   const access = brandAccess(phase, Boolean(onboarding.completedAt), brand);
   if (!products.includes('loja-pronta') || !access) redirect('/loja-pronta');
+  if (access === 'logo-only' && !logo) redirect('/loja-pronta');
   return {
     userId,
     studentName: session.user.name,
     answers: onboarding.answers,
     brand,
-    revising: access === 'revising',
+    revising: access !== 'creating',
+    logoOnly: access === 'logo-only',
   };
 }
 
@@ -130,5 +139,5 @@ export async function getOwnBrandForImage() {
     getBrand(userId),
   ]);
   if (!products.includes('loja-pronta') || !onboarding.completedAt) return null;
-  return { answers: onboarding.answers, brand };
+  return { userId, brand };
 }

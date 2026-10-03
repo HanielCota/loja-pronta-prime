@@ -4,9 +4,13 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { CardHeading } from '@/components/brand/card-heading';
 import { Button } from '@/components/ui/button';
-import { LOGO_DOWNLOAD_PATH, savedLogoSrc } from '@/features/brand/logo-preview';
 import { getBrand } from '@/features/brand/server/brand';
-import { BRAND_DONE_PATH, BRAND_PATH } from '@/features/brand/steps';
+import {
+  BRAND_DONE_PATH,
+  BRAND_PATH,
+  brandLogoSrc,
+  LOGO_DOWNLOAD_PATH,
+} from '@/features/brand/steps';
 import {
   CenteredMemberPage,
   panelCard,
@@ -24,7 +28,7 @@ export const metadata: Metadata = {
 export default async function BrandDonePage() {
   const { session } = await requireProduct('loja-pronta', BRAND_DONE_PATH);
   const brand = await getBrand(session.user.id);
-  if (!brand.completedAt || !brand.logo || !brand.name) redirect(BRAND_PATH);
+  if (!brand.completedAt || !brand.logoImage || !brand.name) redirect(BRAND_PATH);
   const name = greetingName(session.user);
 
   return (
@@ -39,7 +43,7 @@ export default async function BrandDonePage() {
       <div className="flex flex-col items-center gap-6">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={savedLogoSrc({ ...brand, logo: brand.logo })}
+          src={brandLogoSrc(brand)}
           alt={`Logo da loja ${brand.name}`}
           width={220}
           height={220}

@@ -24,7 +24,7 @@ export function BrandReview({
   revising = false,
 }: {
   name: string;
-  /** A imagem do logo salvo (savedLogoSrc). */
+  /** A imagem do logo salvo (brandLogoSrc). */
   logoSrc: string;
   description: string;
   revising?: boolean;
@@ -46,7 +46,7 @@ export function BrandReview({
           Sua marca
         </h2>
         <dl className="divide-y divide-border">
-          <Row label="Logo" href={`${brandStepPath('ajustar')}?editar=1`} what="o logo">
+          <Row label="Logo" href={`${brandStepPath('logo')}?editar=1`} what="o logo">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={logoSrc}

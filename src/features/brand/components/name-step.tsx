@@ -3,7 +3,7 @@ import type { OnboardingAnswers } from '@/config/onboarding';
 import { FocusOnArrival } from '@/features/loja-pronta/components/focus-on-arrival';
 import { MascotBubble } from '@/features/loja-pronta/components/mascot-bubble';
 import { parseBrandName } from '../fields';
-import { fontForStyle } from '../logo/fonts';
+import { fontForStyle } from '../fonts';
 import { BRAND_PATH } from '../steps';
 import { saveBrandName } from '../server/actions';
 import { nameSuggestions } from '../suggestions';

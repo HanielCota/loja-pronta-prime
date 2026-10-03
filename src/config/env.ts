@@ -23,6 +23,31 @@ const envSchema = z.object({
    * confiar num valor que o atacante inventa.
    */
   TRUSTED_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
+  /** Chat do logo (DeepSeek). Sem a chave, o chat responde que está fora do ar. */
+  DEEPSEEK_API_KEY: z.string().min(1).optional(),
+  /** Imagem do logo (OpenAI). Sem a chave, gerar o logo responde que está fora do ar. */
+  OPENAI_API_KEY: z.string().min(1).optional(),
+  /**
+   * "1": o chat e a imagem respondem de mentira, sem chamar ninguém (testes e2e: sem custo, sem
+   * depender da internet). Nunca em produção.
+   */
+  AI_FAKE: z
+    .enum(['0', '1'])
+    .default('0')
+    .refine((value) => value === '0' || process.env.NODE_ENV !== 'production', {
+      error: 'AI_FAKE não pode ser ligado em produção',
+    }),
+  /**
+   * Onde os arquivos ficam: "s3" (o bucket) ou "local" (uma pasta do projeto, só fora de
+   * produção). Sem dizer: s3 quando o bucket está configurado, senão local.
+   */
+  STORAGE_DRIVER: z.enum(['s3', 'local']).optional(),
+  S3_ENDPOINT: z.url().optional(),
+  S3_REGION: z.string().min(1).default('us-east-1'),
+  S3_FORCE_PATH_STYLE: z.enum(['true', 'false']).default('false'),
+  S3_BUCKET: z.string().min(1).optional(),
+  S3_ACCESS_KEY_ID: z.string().min(1).optional(),
+  S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
 });
 
 type Env = z.infer<typeof envSchema>;
@@ -37,6 +62,9 @@ const BUILD_PLACEHOLDERS: Env = {
   BETTER_AUTH_SECRET: 'valor-de-build-nunca-usado-em-requisicoes',
   BETTER_AUTH_URL: 'http://localhost:3000',
   TRUSTED_PROXY_HOPS: 1,
+  AI_FAKE: '0',
+  S3_REGION: 'us-east-1',
+  S3_FORCE_PATH_STYLE: 'false',
 };
 
 function loadEnv(): Env {

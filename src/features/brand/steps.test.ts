@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { brandStepHeader, canOpenBrandStep, resumeBrandStep } from './steps';
 
-const EMPTY = { name: null, logo: null, description: null };
+const EMPTY = { name: null, logoImage: null, description: null };
 
 describe('passos da marca', () => {
   test('topo: "Passo N de 3" e a barra', () => {
@@ -11,7 +11,7 @@ describe('passos da marca', () => {
       total: 3,
       names: ['Nome', 'Logo', 'Texto'],
     });
-    expect(brandStepHeader('ajustar')).toMatchObject({ label: 'Passo 2 de 3', filled: 2 });
+    expect(brandStepHeader('logo')).toMatchObject({ label: 'Passo 2 de 3', filled: 2 });
     expect(brandStepHeader('revisao')).toMatchObject({
       label: 'Revisão da marca',
       filled: 3,
@@ -22,10 +22,17 @@ describe('passos da marca', () => {
 
   test('continua de onde parou e não pula passo', () => {
     expect(resumeBrandStep(EMPTY)).toBe('nome');
-    // Com o nome, direto pro logo (o primeiro modelo entra junto com o nome).
-    expect(resumeBrandStep({ ...EMPTY, name: 'Bella' })).toBe('ajustar');
-    expect(canOpenBrandStep('ajustar', EMPTY)).toBe(false);
-    expect(canOpenBrandStep('ajustar', { ...EMPTY, name: 'Bella' })).toBe(true);
+    // Com o nome, o chat do logo; com o logo, o texto; com tudo, a revisão.
+    expect(resumeBrandStep({ ...EMPTY, name: 'Bella' })).toBe('logo');
+    expect(resumeBrandStep({ ...EMPTY, name: 'Bella', logoImage: 'logos/a/b.png' })).toBe(
+      'descricao',
+    );
+    expect(
+      resumeBrandStep({ name: 'Bella', logoImage: 'logos/a/b.png', description: 'Texto' }),
+    ).toBe('revisao');
+    expect(canOpenBrandStep('logo', EMPTY)).toBe(false);
+    expect(canOpenBrandStep('logo', { ...EMPTY, name: 'Bella' })).toBe(true);
+    expect(canOpenBrandStep('descricao', { ...EMPTY, name: 'Bella' })).toBe(false);
     expect(canOpenBrandStep('nome', EMPTY)).toBe(true);
   });
 });
