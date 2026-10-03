@@ -5,7 +5,9 @@ import { redirect } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { LogoEditor } from '@/features/brand/components/editor/logo-editor';
 import { loadLogoFonts } from '@/features/brand/logo/fonts.server';
+import { logoTemplates } from '@/features/brand/logo/config';
 import { configToScene } from '@/features/brand/logo/from-config';
+import { iconsForCategories } from '@/features/brand/logo/icons';
 import { requireBrandStudio } from '@/features/brand/server/brand';
 import {
   brandStepHeader,
@@ -32,13 +34,14 @@ export default async function LogoEditorPage({
   searchParams: Promise<SearchParams>;
 }) {
   const query = await searchParams;
-  const { student, brand, revising } = await requireBrandStudio(LOGO_EDITOR_PATH);
+  const { student, answers, brand, revising } = await requireBrandStudio(LOGO_EDITOR_PATH);
   if (!brand.logo || !canOpenBrandStep('ajustar', brand)) {
     redirect(brandStepPath(resumeBrandStep(brand)));
   }
   const editing = revising || getParam(query.editar) === '1';
   const name = brand.name ?? '';
   const scene = brand.logoScene ?? configToScene(brand.logo, name, await loadLogoFonts());
+  const categories = Array.isArray(answers.categorias) ? answers.categorias : [];
   const easyHref = `${brandStepPath('ajustar')}${editing ? '?editar=1' : ''}`;
 
   return (
@@ -53,7 +56,14 @@ export default async function LogoEditorPage({
       <h1 className="-mb-2 text-xl font-semibold text-balance">Editor livre do logo</h1>
       {/* O editor precisa de espaço pros painéis: no celular, por enquanto, o Modo fácil. */}
       <div className="hidden lg:block">
-        <LogoEditor initialScene={scene} name={name} editing={editing} easyHref={easyHref} />
+        <LogoEditor
+          initialScene={scene}
+          name={name}
+          editing={editing}
+          easyHref={easyHref}
+          recommended={iconsForCategories(categories)}
+          templates={logoTemplates(answers)}
+        />
       </div>
       <div className="flex flex-col items-start gap-4 rounded-card bg-card p-6 shadow-card lg:hidden">
         <MonitorIcon aria-hidden="true" className="size-8 text-link" />

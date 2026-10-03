@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { nodMascot } from '@/components/brand/mascot';
 import { cn } from '@/lib/utils';
 import {
+  addElement,
   duplicateElement,
   elementLabel,
   findElement,
@@ -24,15 +25,20 @@ import {
   replaceElement,
   undo,
   type History,
+  type NewElement,
   elementSize,
   type Size,
 } from '../../logo/editor';
+import type { LogoConfig } from '../../logo/config';
 import { loadLogoFontsInBrowser } from '../../logo/fonts.client';
+import { configToScene } from '../../logo/from-config';
+import type { SceneIconId } from '../../logo/icons';
 import { SCENE_SIZE, type LogoScene, type SceneElement } from '../../logo/scene';
 import type { LogoFonts } from '../../logo/scene-render';
 import { saveLogoScene } from '../../server/actions';
 import { EditorCanvas } from './editor-canvas';
-import { LAYERS_TITLE_ID, LayersPanel } from './layers-panel';
+import { LAYERS_TITLE_ID } from './layers-panel';
+import { LEFT_PANEL_ID, LeftPanel } from './left-panel';
 import { PropertiesPanel } from './properties-panel';
 import { SaveBar } from './save-bar';
 
@@ -56,6 +62,10 @@ type LogoEditorProps = {
   editing: boolean;
   /** O estúdio guiado ("Modo fácil"). */
   easyHref: string;
+  /** Desenhos que combinam com as categorias dela ("Recomendados"). */
+  recommended: SceneIconId[];
+  /** Os modelos do estúdio, pra recomeçar de um. */
+  templates: LogoConfig[];
 };
 
 /**
@@ -64,7 +74,14 @@ type LogoEditorProps = {
  * as camadas escolhem o elemento, as setas movem, Delete apaga, Ctrl+Z desfaz. Cada mudança é
  * salva sozinha; "Salvar e continuar" segue pro próximo passo.
  */
-export function LogoEditor({ initialScene, name, editing, easyHref }: LogoEditorProps) {
+export function LogoEditor({
+  initialScene,
+  name,
+  editing,
+  easyHref,
+  recommended,
+  templates,
+}: LogoEditorProps) {
   const [scene, setScene] = useState(initialScene);
   const [history, setHistory] = useState<History>({ past: [], future: [] });
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -122,10 +139,17 @@ export function LogoEditor({ initialScene, name, editing, easyHref }: LogoEditor
     [scene],
   );
 
-  const beginGesture = useCallback(() => {
-    gestureStart.current = scene;
-    setGesturing(true);
-  }, [scene]);
+  /**
+   * Começo de uma mudança contínua. `holdSave`: segura o salvamento até o fim (arrastar, deslizar);
+   * digitar um texto não segura, pra nada se perder se ela sair da página no meio.
+   */
+  const beginGesture = useCallback(
+    (holdSave = true) => {
+      gestureStart.current = scene;
+      setGesturing(holdSave);
+    },
+    [scene],
+  );
 
   /** Durante o gesto: muda na hora, sem entrar no histórico. */
   const live = useCallback((next: LogoScene) => setScene(next), []);
@@ -162,7 +186,26 @@ export function LogoEditor({ initialScene, name, editing, easyHref }: LogoEditor
     setSelectedId(null);
     setAnnouncement(`${elementLabel(selected)} apagado. Ctrl+Z desfaz.`);
     // O botão da camada sumiu: o foco vai pro título das camadas, não pro começo da página.
-    document.getElementById(LAYERS_TITLE_ID)?.focus();
+    (document.getElementById(LAYERS_TITLE_ID) ?? document.getElementById(LEFT_PANEL_ID))?.focus();
+  }
+
+  function add(element: NewElement, label: string) {
+    const result = addElement(scene, element);
+    if (!result) {
+      setAnnouncement('O logo já tem elementos demais. Apague algum pra pôr outro.');
+      return;
+    }
+    commit(result.scene);
+    setSelectedId(result.id);
+    setAnnouncement(`${label} adicionado no meio do logo`);
+    nodMascot();
+  }
+
+  function applyTemplate(template: LogoConfig) {
+    if (!fonts) return;
+    commit(configToScene(template, name, fonts));
+    setSelectedId(null);
+    setAnnouncement('Modelo aplicado. Ctrl+Z desfaz.');
   }
 
   function duplicateSelected() {
@@ -267,11 +310,15 @@ export function LogoEditor({ initialScene, name, editing, easyHref }: LogoEditor
       <p aria-live="polite" className="sr-only">
         {announcement}
       </p>
-      <div className="grid grid-cols-[240px_minmax(0,1fr)_300px] items-start gap-5 xl:grid-cols-[260px_minmax(0,1fr)_320px]">
-        <LayersPanel
+      <div className="grid grid-cols-[272px_minmax(0,1fr)_300px] items-start gap-5 xl:grid-cols-[300px_minmax(0,1fr)_320px]">
+        <LeftPanel
           scene={scene}
           selectedId={selectedId}
           onSelect={select}
+          onAdd={add}
+          recommended={recommended}
+          templates={templates}
+          onApplyTemplate={applyTemplate}
           className="sticky top-4"
         />
 
