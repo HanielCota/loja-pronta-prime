@@ -46,7 +46,7 @@ describe('etapas', () => {
     expect(resumeStep({})).toBe('vendas');
     expect(resumeStep({ vendas: 'Nunca vendi', dificuldade: 'Medo de errar' })).toBe('motivacao');
     expect(resumeStep(ALL_ANSWERED)).toBe(REVIEW_STEP);
-    // Nome "a equipe sugere" (null) e toque pulado ('') contam como respondidos.
+    // Nome "ainda não decidi" (null) e toque pulado ('') contam como respondidos.
     expect(resumeStep({ ...ALL_ANSWERED, nome: null })).toBe(REVIEW_STEP);
   });
 
@@ -68,11 +68,11 @@ describe('etapas', () => {
   });
 
   test('barra de progresso: a conversa inteira, etapa a etapa, e a parte de cada uma', () => {
-    expect(stepProgress('vendas')).toEqual({ part: 0, progress: 1 / STEPS.length });
-    expect(stepProgress('tempo').part).toBe(0);
-    expect(stepProgress('nome').part).toBe(1);
-    expect(stepProgress(REVIEW_STEP).part).toBe(2);
-    expect(stepProgress(WHATSAPP_STEP)).toEqual({ part: 2, progress: 1 });
+    expect(stepProgress('vendas')).toEqual({ section: 'Sobre você', progress: 1 / STEPS.length });
+    expect(stepProgress('tempo').section).toBe('Sobre você');
+    expect(stepProgress('nome').section).toBe('Sua marca');
+    expect(stepProgress(REVIEW_STEP).section).toBe('Confirmar');
+    expect(stepProgress(WHATSAPP_STEP)).toEqual({ section: 'Confirmar', progress: 1 });
   });
 });
 

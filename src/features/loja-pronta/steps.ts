@@ -80,12 +80,15 @@ export function stepLabel(step: Step): string {
   return findQuestion(step) ? `${questionNumber(step)} de ${QUESTION_COUNT}` : stepTitle(step);
 }
 
+/** As três partes da conversa, nomeadas no topo. */
+const PARTS = ['Sobre você', 'Sua marca', 'Confirmar'] as const;
+
 /**
  * Onde a etapa fica no topo: a parte (Sobre você, Sua marca, Confirmar), pro nome em cima, e
  * quanto da conversa inteira já foi, contando a etapa atual (a 1ª de 12 enche um doze avos).
  */
-export function stepProgress(step: Step): { part: 0 | 1 | 2; progress: number } {
+export function stepProgress(step: Step): { section: string; progress: number } {
   const progress = (STEPS.indexOf(step) + 1) / STEPS.length;
-  if (step === REVIEW_STEP || step === WHATSAPP_STEP) return { part: 2, progress };
-  return { part: findQuestion(step)?.block === 'marca' ? 1 : 0, progress };
+  if (step === REVIEW_STEP || step === WHATSAPP_STEP) return { section: PARTS[2], progress };
+  return { section: PARTS[findQuestion(step)?.block === 'marca' ? 1 : 0], progress };
 }
