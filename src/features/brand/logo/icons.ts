@@ -131,7 +131,7 @@ export type LogoIconId = (typeof LOGO_ICONS)[number]['id'];
 export const LOGO_ICON_IDS = LOGO_ICONS.map((icon) => icon.id) as [LogoIconId, ...LogoIconId[]];
 
 /**
- * Desenhos a mais, só do editor livre (o estúdio guiado fica com a lista curta de cima, pra não
+ * Desenhos a mais, só do editor (os modelos e a escolha da conversa usam a lista curta de cima, pra não
  * virar uma parede de opções). Mesmo traço do Lucide.
  */
 const EDITOR_ONLY_ICONS = [

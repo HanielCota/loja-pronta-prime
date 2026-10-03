@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { db } from '@/server/db';
 import { storeBrand, stores } from '@/server/db/schema';
 import { parseBrandDescription, parseBrandName } from '../fields';
-import { logoConfigSchema, logoTemplates } from '../logo/config';
+import { logoTemplates } from '../logo/config';
 import { logoSceneSchema, logoVariationsSchema, type LogoScene } from '../logo/scene';
 import { BRAND_DONE_PATH, brandStepPath } from '../steps';
 import { requireBrandAction } from './brand';
@@ -62,23 +62,6 @@ export async function chooseLogoTemplate(
   redirect(`${brandStepPath('ajustar')}${formData.get('editing') || revising ? '?editar=1' : ''}`);
 }
 
-/** O logo como ficou no estúdio. */
-export async function saveLogo(_state: BrandResult, formData: FormData): Promise<BrandResult> {
-  const { userId, revising } = await requireBrandAction();
-  const parsed = logoConfigSchema.safeParse({
-    template: Number(formData.get('template')),
-    layout: formData.get('layout'),
-    font: formData.get('font'),
-    color: formData.get('color'),
-    icon: formData.get('icon') === 'nenhum' ? null : formData.get('icon'),
-    background: formData.get('background'),
-  });
-  if (!parsed.success) return { error: 'Não conseguimos salvar o logo. Recarregue a página.' };
-  // Salvo no estúdio guiado: o logo volta a ser o dele (a cena do editor livre sai).
-  await saveBrand(userId, { logo: parsed.data, logoScene: null });
-  after(formData, revising, 'descricao');
-}
-
 export async function saveBrandDescription(
   _state: BrandResult,
   formData: FormData,
@@ -119,7 +102,7 @@ async function saveScene(userId: string, scene: LogoScene, variations: LogoScene
 
 /**
  * Salvamento automático do editor livre, a cada mudança (sem sair da tela). Só por cima de um
- * modelo: a cena precisa do logo do estúdio guiado embaixo.
+ * modelo: a cena precisa do modelo escolhido embaixo.
  */
 export async function saveLogoScene(scene: string, variations: string): Promise<BrandResult> {
   const { userId, brand } = await requireBrandAction();

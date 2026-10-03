@@ -36,7 +36,6 @@ import {
 } from '../../logo/editor';
 import type { LogoConfig } from '../../logo/config';
 import { loadLogoFontsInBrowser } from '../../logo/fonts.client';
-import { configToScene } from '../../logo/from-config';
 import type { SceneIconId } from '../../logo/icons';
 import { MAX_VARIATIONS, SCENE_SIZE, type LogoScene, type SceneElement } from '../../logo/scene';
 import type { LogoFonts } from '../../logo/scene-render';
@@ -63,13 +62,13 @@ const ZOOMS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 
 /** No celular, o que aparece embaixo do quadro. */
 const MOBILE_TABS = [
-  { id: 'adicionar', label: 'Adicionar' },
+  { id: 'adicionar', label: 'Montar' },
   { id: 'editar', label: 'Editar' },
 ] as const;
 type MobileTab = (typeof MOBILE_TABS)[number]['id'];
 
 type LogoEditorProps = {
-  /** A cena salva, ou a do estúdio guiado convertida (configToScene). */
+  /** A cena salva, ou o modelo escolhido virado cena (configToScene). */
   initialScene: LogoScene;
   /** As outras versões guardadas. */
   initialVariations: LogoScene[];
@@ -77,8 +76,6 @@ type LogoEditorProps = {
   name: string;
   /** Veio da revisão: "Salvar e continuar" volta pra ela. */
   editing: boolean;
-  /** O estúdio guiado ("Modo fácil"). */
-  easyHref: string;
   /** Desenhos que combinam com as categorias dela ("Recomendados"). */
   recommended: SceneIconId[];
   /** Os modelos do estúdio, pra recomeçar de um. */
@@ -96,7 +93,6 @@ export function LogoEditor({
   initialVariations,
   name,
   editing,
-  easyHref,
   recommended,
   templates,
 }: LogoEditorProps) {
@@ -232,11 +228,11 @@ export function LogoEditor({
     nodMascot();
   }
 
-  function applyTemplate(template: LogoConfig) {
-    if (!fonts) return;
-    commit(configToScene(template, name, fonts));
-    setSelectedId(null);
-    setAnnouncement('Modelo aplicado. Ctrl+Z desfaz.');
+  /** Uma escolha da aba Estilo (cor, fundo, letra, desenho, formato): muda o logo todo. */
+  function applyStyle(next: LogoScene, message: string) {
+    commit(next);
+    setAnnouncement(`${message}. Ctrl+Z desfaz.`);
+    nodMascot();
   }
 
   /** Troca pra uma versão guardada; o histórico recomeça (desfazer não mistura as versões). */
@@ -486,7 +482,9 @@ export function LogoEditor({
           onAdd={add}
           recommended={recommended}
           templates={templates}
-          onApplyTemplate={applyTemplate}
+          name={name}
+          fonts={fonts}
+          onStyle={applyStyle}
           className={cn(
             'lg:sticky lg:top-4 lg:col-start-1 lg:row-span-2 lg:row-start-1',
             mobileTab !== 'adicionar' && 'max-lg:hidden',
@@ -531,7 +529,6 @@ export function LogoEditor({
         scene={scene}
         variations={variations}
         editing={editing}
-        easyHref={easyHref}
         saveState={saveState}
         onPreview={() => setPreviewing(true)}
       />

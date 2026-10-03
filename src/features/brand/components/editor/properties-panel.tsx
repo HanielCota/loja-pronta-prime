@@ -85,16 +85,18 @@ export function PropertiesPanel({
     return (
       <section aria-labelledby="propriedades-titulo" className={shell}>
         <h2 id="propriedades-titulo" className="text-body font-semibold">
-          Fundo do logo
+          Nenhuma parte escolhida
         </h2>
+        <p className="-mt-3 text-sm text-pretty text-muted-foreground">
+          Pra mudar o logo inteiro (cor, letra, desenho), use a aba Estilo. Pra mudar só uma parte,
+          toque nela no quadro ou escolha nas camadas.
+        </p>
+        {/* Avançado: o Estilo já põe o fundo na cor do logo; aqui dá pra escolher outra. */}
         <Swatches
-          legend="Cor do fundo"
+          legend="Só a cor do fundo"
           value={scene.background}
           onSelect={(hex) => onCommitScene({ ...scene, background: hex })}
         />
-        <p className="text-sm text-pretty text-muted-foreground">
-          Pra mudar uma parte do logo, toque nela no quadro ou escolha nas camadas.
-        </p>
       </section>
     );
   }

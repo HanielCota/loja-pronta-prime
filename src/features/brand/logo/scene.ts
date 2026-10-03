@@ -91,7 +91,7 @@ export const sceneElementSchema = z
 
 /**
  * O logo como cena (versão 2): o fundo e os elementos, do mais de trás pro mais da frente. É o
- * que o editor livre muda; os logos do estúdio guiado (versão 1, LogoConfig) viram cena com
+ * que o editor muda; os modelos de logo (versão 1, LogoConfig) viram cena com
  * configToScene.
  */
 export const logoSceneSchema = z.object({

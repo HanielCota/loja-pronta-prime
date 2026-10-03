@@ -7,8 +7,6 @@ import type { LogoConfig } from './logo/config';
  */
 export const BRAND_PATH = '/loja-pronta/marca';
 export const BRAND_DONE_PATH = `${BRAND_PATH}/pronta`;
-/** O editor livre do logo (fora da sequência: abre do estúdio, "Editar livremente"). */
-export const LOGO_EDITOR_PATH = `${BRAND_PATH}/editor`;
 
 export const BRAND_STEPS = ['nome', 'modelo', 'ajustar', 'descricao', 'revisao'] as const;
 export type BrandStep = (typeof BRAND_STEPS)[number];

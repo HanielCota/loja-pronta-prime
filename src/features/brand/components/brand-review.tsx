@@ -7,7 +7,7 @@ import { StickyAction } from '@/features/loja-pronta/components/sticky-action';
 import { panelCard, sectionTitleClass } from '@/features/member/components/area-shell';
 import { cn } from '@/lib/utils';
 import { finishBrand } from '../server/actions';
-import { brandStepPath, LOGO_EDITOR_PATH } from '../steps';
+import { brandStepPath } from '../steps';
 import { BrandForm } from './brand-form';
 import { FinishButton } from './finish-button';
 
@@ -20,15 +20,12 @@ const TITLE_ID = 'revisao-marca-titulo';
 export function BrandReview({
   name,
   logoSrc,
-  freeEdited = false,
   description,
   revising = false,
 }: {
   name: string;
   /** A imagem do logo salvo (savedLogoSrc). */
   logoSrc: string;
-  /** Montado no editor livre: "Mudar" volta pra ele, não pro estúdio guiado. */
-  freeEdited?: boolean;
   description: string;
   revising?: boolean;
 }) {
@@ -49,11 +46,7 @@ export function BrandReview({
           Sua marca
         </h2>
         <dl className="divide-y divide-border">
-          <Row
-            label="Logo"
-            href={`${freeEdited ? LOGO_EDITOR_PATH : brandStepPath('ajustar')}?editar=1`}
-            what="o logo"
-          >
+          <Row label="Logo" href={`${brandStepPath('ajustar')}?editar=1`} what="o logo">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={logoSrc}

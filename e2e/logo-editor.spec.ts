@@ -13,10 +13,9 @@ const placement = (page: Page, index: number) =>
 test.describe('no computador', () => {
   test.use({ viewport: { width: 1440, height: 1000 } });
 
-  test('editor livre: escolhe, arrasta, gira, apaga, desfaz e salva', async ({ page }) => {
+  test('editor: escolhe, arrasta, gira, apaga, desfaz e salva', async ({ page }) => {
     await signIn(page, studentEmail('editorlivre'), PASSWORD, '/loja-pronta/marca/ajustar');
-    await page.getByRole('link', { name: /Editar livremente/ }).click();
-    await expect(page).toHaveURL(/\/loja-pronta\/marca\/editor$/);
+    await expect(page).toHaveURL(/\/loja-pronta\/marca\/ajustar$/);
     await expect(drawn(page)).toHaveCount(2);
     await page.getByRole('radio', { name: 'Camadas' }).check({ force: true });
     await expect(layers(page)).toHaveCount(2);
@@ -60,21 +59,18 @@ test.describe('no computador', () => {
 
     await page.getByRole('button', { name: 'Salvar e continuar' }).click();
     await expect(page).toHaveURL(/\/loja-pronta\/marca\/descricao$/);
-
-    // De volta ao Modo fácil, o aviso de que salvar ali troca o logo.
-    await page.goto('/loja-pronta/marca/ajustar');
-    await expect(page.getByText(/montado no editor livre/)).toBeVisible();
   });
 });
 
 test.describe('biblioteca, no computador', () => {
   test.use({ viewport: { width: 1440, height: 1000 } });
 
-  test('adiciona desenho, forma e texto, busca e recomeça de um modelo', async ({ page }) => {
-    await signIn(page, studentEmail('editorbiblioteca'), PASSWORD, '/loja-pronta/marca/editor');
+  test('adiciona desenho, forma e texto, busca e recomeça de um formato', async ({ page }) => {
+    await signIn(page, studentEmail('editorbiblioteca'), PASSWORD, '/loja-pronta/marca/ajustar');
     await expect(drawn(page)).toHaveCount(2);
 
     // Um desenho dos recomendados (ela vende pra pets), já escolhido e cheio.
+    await page.getByRole('radio', { name: 'Elementos' }).check({ force: true });
     await page.getByRole('button', { name: 'Adicionar Osso' }).first().click();
     await expect(drawn(page)).toHaveCount(3);
     await expect(page.getByRole('heading', { name: /Desenho: Osso/ })).toBeVisible();
@@ -97,9 +93,9 @@ test.describe('biblioteca, no computador', () => {
     await expect(drawn(page)).toHaveCount(5);
     await expectNoA11yViolations(page);
 
-    // Recomeçar de um modelo troca tudo; Ctrl+Z traz o de antes.
-    await page.getByRole('radio', { name: 'Modelos' }).check({ force: true });
-    await page.getByRole('button', { name: 'Recomeçar do modelo 3' }).click();
+    // Um formato da aba Estilo arruma tudo de novo; Ctrl+Z traz o de antes.
+    await page.getByRole('radio', { name: 'Estilo' }).check({ force: true });
+    await page.getByRole('button', { name: 'Selo redondo' }).click();
     await expect(drawn(page)).not.toHaveCount(5);
     await page.keyboard.press('Control+z');
     await expect(drawn(page)).toHaveCount(5);
@@ -111,7 +107,7 @@ test.describe('conferir, no computador', () => {
   test.use({ viewport: { width: 1440, height: 1000 } });
 
   test('variações, contraste, círculo da Shopee e pré-visualizar', async ({ page }) => {
-    await signIn(page, studentEmail('editorvariacoes'), PASSWORD, '/loja-pronta/marca/editor');
+    await signIn(page, studentEmail('editorvariacoes'), PASSWORD, '/loja-pronta/marca/ajustar');
     await expect(drawn(page)).toHaveCount(2);
 
     // Uma cópia guardada; mexer na do quadro não muda a guardada.
@@ -159,13 +155,12 @@ test.describe('conferir, no computador', () => {
 test.describe('no celular', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-  test('o editor livre funciona: adicionar abre o painel do elemento', async ({ page }) => {
+  test('o editor funciona: adicionar abre o painel do elemento', async ({ page }) => {
     await signIn(page, studentEmail('editorcelular'), PASSWORD, '/loja-pronta/marca/ajustar');
-    await page.getByRole('link', { name: /Editar livremente/ }).click();
-    await expect(page).toHaveURL(/\/loja-pronta\/marca\/editor$/);
     await expect(drawn(page)).not.toHaveCount(0);
 
     // Tocar num desenho adiciona e já mostra o painel "Editar" dele.
+    await page.getByRole('radio', { name: 'Elementos' }).check({ force: true });
     await page.getByRole('button', { name: 'Adicionar Coração' }).first().tap();
     await expect(page.getByRole('radio', { name: 'Editar' })).toBeChecked();
     await expect(page.getByRole('heading', { name: /Desenho: Coração/ })).toBeVisible();
