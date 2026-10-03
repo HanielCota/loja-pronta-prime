@@ -281,12 +281,14 @@ src/
 ├─ features/
 │  ├─ auth/              Access screens: components, schemas and messages
 │  │  └─ server/         Server Actions and server-side rules
-│  ├─ onboarding/        Loja Pronta first conversation (questions, review, WhatsApp)
-│  │  └─ server/         Answers storage and Server Actions
-│  └─ products/          Area chooser and product areas (SLL, Loja Pronta)
+│  ├─ loja-pronta/       Loja Pronta: first conversation, store panel and phases
+│  │  └─ server/         Answers storage, store phase and Server Actions
+│  ├─ member/            Frame shared by the signed-in screens (top bar, cards)
+│  └─ products/          Product catalog, area chooser and the SLL area
 │     └─ server/         Which products each student has, page access rules
-├─ config/               Access rules and validated environment (Zod)
-├─ lib/                  Utilities (cn, search params)
+├─ config/               Access rules, validated environment (Zod) and product content
+│                        (questions, phases), read by the database schema too
+├─ lib/                  Utilities (cn, search params, form submit)
 ├─ server/               Server infrastructure: auth, database, request
 └─ types/                Type declarations (imported images)
 ```

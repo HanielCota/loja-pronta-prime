@@ -5,13 +5,14 @@ import type { ReactNode } from 'react';
 import { CardHeading } from '@/components/brand/card-heading';
 import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
-import { getOnboarding } from '@/features/onboarding/server/conversation';
-import { CONVERSATION_PATH, DONE_PATH, formatWhatsapp } from '@/features/onboarding/steps';
+import { getOnboarding } from '@/features/loja-pronta/server/conversation';
+import { CONVERSATION_PATH, DONE_PATH } from '@/features/loja-pronta/steps';
+import { formatWhatsapp } from '@/features/loja-pronta/whatsapp';
 import {
   CenteredMemberPage,
   sectionTitleClass,
   panelCard,
-} from '@/features/products/components/area-shell';
+} from '@/features/member/components/area-shell';
 import { firstName } from '@/features/products/names';
 import { requireProduct } from '@/features/products/server/access';
 import { cn } from '@/lib/utils';

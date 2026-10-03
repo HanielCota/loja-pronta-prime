@@ -1,6 +1,6 @@
 import { CalculatorIcon, LockIcon, MessagesSquareIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { panelCard, sectionTitleClass } from './area-shell';
+import { panelCard, sectionTitleClass } from '@/features/member/components/area-shell';
 
 const PATH = [
   { title: 'Trilha de boas-vindas', detail: 'Como o curso funciona.', locked: false },

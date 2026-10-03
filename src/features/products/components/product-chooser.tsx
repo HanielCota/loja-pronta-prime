@@ -3,22 +3,10 @@ import Link from 'next/link';
 import type { ProductId } from '@/config/products';
 import { cn } from '@/lib/utils';
 import { PRODUCTS } from '../catalog';
+import type { ProductStatus } from '../chooser';
 
 /** Ordem na escolha: a Loja Pronta vem primeiro (a fase 1 dela depende da aluna). */
 const ORDER: ProductId[] = ['loja-pronta', 'sll'];
-
-/**
- * Onde ela está num produto: a etapa ("Fase 3 de 7"), o nome dela, a barra de etapas (quando
- * há) e o que acontece agora. Com `detail`, o bloco troca o resumo do produto por ele: quem já
- * comprou precisa saber o que vem a seguir, não o que o produto é.
- */
-export type ProductStatus = {
-  /** Linha pequena acima ("Fase 1 de 7"). */
-  caption?: string;
-  label: string;
-  bar?: { step: number; total: number };
-  detail?: string;
-};
 
 type ProductChooserProps = {
   products: ProductId[];

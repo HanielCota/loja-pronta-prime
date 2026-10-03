@@ -2,7 +2,8 @@ import { getFormProps, useForm, type SubmissionResult } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod/v4';
 import { useActionState, useMemo, useState } from 'react';
 import type { z } from 'zod';
-import { submitWithoutReset } from './enhanced-submit';
+import { submitWithoutReset } from '@/lib/forms';
+import { rememberEmail } from './email-storage';
 
 /**
  * Validação "gentil" em todos os formulários de acesso: o erro aparece ao sair do campo
@@ -36,10 +37,19 @@ export function useAuthForm<Schema extends z.ZodObject, Result extends ActionRes
   const formProps = {
     ...getFormProps(form),
     action,
-    onSubmit: submitWithoutReset(form.onSubmit, action),
+    onSubmit: submitWithoutReset(form.onSubmit, action, { beforeSend: rememberTypedEmail }),
   };
 
   return { state, form, fields, pending, responseKey, formProps };
+}
+
+/**
+ * Se o envio falhar (internet caiu), a tela é recriada (ActionErrorBoundary) e o email digitado
+ * volta sozinho, sem ela ter que digitar de novo.
+ */
+function rememberTypedEmail(formData: FormData) {
+  const email = formData.get('email');
+  if (typeof email === 'string' && email) rememberEmail(email);
 }
 
 /**

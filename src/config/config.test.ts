@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { PRODUCTS } from '@/features/products/catalog';
 import { firstName } from '@/features/products/names';
-import { displayedPhase } from '@/features/products/store-phase';
 import { ONBOARDING_BLOCKS, ONBOARDING_QUESTIONS } from './onboarding';
 import { PRODUCT_IDS } from './products';
 import { STORE_PHASES } from './store-phases';
@@ -33,13 +32,5 @@ describe('firstName', () => {
     expect(firstName('Ana')).toBe('Ana');
     expect(firstName('')).toBe('');
     expect(firstName('   ')).toBe('');
-  });
-});
-
-describe('displayedPhase', () => {
-  test('conversa enviada com a loja ainda na fase 1: ela já vê a fase 2', () => {
-    expect(displayedPhase(1, true)).toBe(2);
-    expect(displayedPhase(1, false)).toBe(1);
-    expect(displayedPhase(3, true)).toBe(3);
   });
 });

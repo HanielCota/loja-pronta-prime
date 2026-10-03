@@ -3,12 +3,16 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { STORE_PHASES } from '@/config/store-phases';
-import { CONVERSATION_PATH, QUESTION_COUNT } from '@/features/onboarding/steps';
+import { CONVERSATION_PATH, QUESTION_COUNT } from '../steps';
+import type { ConversationStatus } from '../store-phase';
 import { cn } from '@/lib/utils';
-import { firstName } from '../names';
-import { AreaShell, sectionTitleClass, greeting, panelCard } from './area-shell';
-
-export type ConversationStatus = 'nao-comecou' | 'em-andamento' | 'enviada';
+import { firstName } from '@/features/products/names';
+import {
+  AreaShell,
+  sectionTitleClass,
+  greeting,
+  panelCard,
+} from '@/features/member/components/area-shell';
 
 type StorePanelProps = {
   user: { name: string };

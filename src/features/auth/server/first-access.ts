@@ -8,7 +8,7 @@ import { consumeAttempt } from '@/server/auth/rate-limit';
 import { reportAuthError } from '@/server/auth/report-error';
 import { db } from '@/server/db';
 import { account, user } from '@/server/db/schema';
-import { ENHANCED_SUBMIT_FIELD } from '../enhanced-submit';
+import { ENHANCED_SUBMIT_FIELD } from '@/lib/forms';
 import { firstPasswordSchema } from '../schemas';
 import { resolvePostLoginPath } from './post-login';
 import { getActiveSession, needsFirstPassword } from './session';
