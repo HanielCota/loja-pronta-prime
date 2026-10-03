@@ -45,15 +45,17 @@ export function choiceCounter(question: OnboardingQuestion, selected: number): s
 }
 
 /**
- * Nota fixa abaixo do campo: o aviso de que tocar já segue (WCAG 3.2.2: avisar antes de mudar
- * de página) ou quanto texto ainda cabe. Sem nota: vazio.
+ * Linha logo abaixo da pergunta: a ajuda dela ou, na escolha única, o aviso de que tocar já segue
+ * (WCAG 3.2.2: avisar antes de mudar de página, e aqui ela lê antes de escolher).
  */
-export function fieldNote(question: OnboardingQuestion, draft: Draft, editing: boolean): string {
-  if (advancesOnTap(question)) {
-    return editing
-      ? 'Ao tocar numa opção, você volta pra revisão.'
-      : 'Ao tocar numa opção, você segue pra próxima pergunta.';
-  }
+export function questionHelp(question: OnboardingQuestion, editing: boolean): string | undefined {
+  if (question.help) return question.help;
+  if (!advancesOnTap(question)) return undefined;
+  return editing ? 'Toque numa opção pra voltar à revisão.' : 'Toque numa opção pra seguir.';
+}
+
+/** Nota fixa abaixo do campo de texto livre: quanto texto ainda cabe. Sem nota: vazio. */
+export function fieldNote(question: OnboardingQuestion, draft: Draft): string {
   if (question.kind === 'longtext') {
     return `${draft.text.length} de ${PERSONAL_TOUCH_MAX} caracteres`;
   }

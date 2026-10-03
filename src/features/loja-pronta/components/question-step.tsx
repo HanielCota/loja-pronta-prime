@@ -1,4 +1,5 @@
 import type { AnswerValue, OnboardingQuestion } from '@/config/onboarding';
+import { questionHelp } from '../answer-rules';
 import { FocusOnArrival } from './focus-on-arrival';
 import { MascotBubble } from './mascot-bubble';
 import { QuestionForm } from './question/question-form';
@@ -14,10 +15,11 @@ type QuestionStepProps = {
 
 /** Uma pergunta: o mascote fazendo a pergunta e o formulário da resposta. */
 export function QuestionStep({ question, saved, editing }: QuestionStepProps) {
-  const helpId = question.help ? HELP_ID : undefined;
+  const help = questionHelp(question, editing);
+  const helpId = help ? HELP_ID : undefined;
   return (
     <>
-      <MascotBubble title={question.ask} help={question.help} titleId={TITLE_ID} helpId={helpId} />
+      <MascotBubble title={question.ask} help={help} titleId={TITLE_ID} helpId={helpId} />
       <FocusOnArrival targetId={TITLE_ID} />
       {/* `key`: ao trocar de pergunta, o formulário começa do zero (sem a escolha da anterior). */}
       <QuestionForm

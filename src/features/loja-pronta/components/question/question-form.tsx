@@ -99,7 +99,7 @@ export function QuestionForm({ question, saved, editing, titleId, helpId }: Ques
     if (single) autoAdvance.afterChoice();
   }
 
-  const note = fieldNote(question, draft, editing);
+  const note = fieldNote(question, draft);
   const describedBy =
     [helpId, note && noteId, error && errorId].filter(Boolean).join(' ') || undefined;
   const button = submitButton(question, draft, editing);
