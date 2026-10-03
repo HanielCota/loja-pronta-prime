@@ -64,14 +64,20 @@ function TopBar({ back }: { back?: { href: string; label: string } | undefined }
   if (!back) return null;
   return (
     <header className="flex min-h-11 items-center">
-      {/* Com cara de botão (fundo, borda, letra escura) e dizendo o que faz: um "‹ Início" cinza
-          passava por texto pra quem tem pouca prática. */}
+      {/* Sutil, mas com cara de botão: a seta azul num círculo branco é o que chama o olho, e o
+          texto escuro diz o que faz. Sem moldura em volta de tudo, não disputa com o título. A área
+          de toque (44px) pega o texto e o círculo juntos. */}
       <Link
         href={back.href}
-        className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border bg-card py-2 pr-4 pl-3 text-body font-semibold text-foreground shadow-sm transition-colors duration-100 outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid forced-colors:border-[ButtonText]"
+        className="group -ml-1 inline-flex min-h-11 items-center gap-2.5 rounded-full py-1 pr-3 pl-1 text-body font-semibold text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid"
       >
-        <ChevronLeftIcon aria-hidden="true" className="size-5" />
-        {back.label}
+        <span className="flex size-9 items-center justify-center rounded-full border border-border bg-card text-primary shadow-sm transition-colors duration-150 group-hover:border-primary/30 group-hover:bg-primary-soft group-active:scale-95 motion-safe:transition-[color,background-color,border-color,transform] forced-colors:border-[ButtonText]">
+          <ChevronLeftIcon
+            aria-hidden="true"
+            className="size-5 transition-transform duration-150 motion-safe:group-hover:-translate-x-0.5"
+          />
+        </span>
+        <span className="underline-offset-4 group-hover:underline">{back.label}</span>
       </Link>
     </header>
   );
