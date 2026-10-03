@@ -40,27 +40,30 @@ export function SaveBar({
     <BrandForm action={finishLogoEditor} editing={editing} className="sticky bottom-3 z-20">
       <input type="hidden" name="scene" value={JSON.stringify(scene)} />
       <input type="hidden" name="variations" value={JSON.stringify(variations)} />
-      <div className="flex flex-wrap items-center gap-4 rounded-card border border-border bg-card/95 p-3 shadow-card backdrop-blur-md">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-2 rounded-card border border-border bg-card/95 p-3 shadow-card backdrop-blur-md sm:gap-x-4">
         <Button asChild variant="ghost" size="inline" className="px-3 text-foreground">
           <Link href={easyHref}>
             <ArrowLeftIcon aria-hidden="true" className="size-5" />
-            Modo fácil
+            <span className="max-sm:sr-only">Modo fácil</span>
           </Link>
         </Button>
         <output
           className={
+            // No celular, numa linha só com os botões: o status fica pro leitor de tela, e o erro
+            // desce pra uma linha própria (esse tem que aparecer).
             saveState === 'error'
-              ? 'flex items-center gap-1.5 text-sm font-semibold text-destructive'
-              : 'flex items-center gap-1.5 text-sm text-muted-foreground'
+              ? 'flex items-center gap-1.5 text-sm font-semibold text-destructive max-sm:order-last max-sm:w-full'
+              : 'flex items-center gap-1.5 text-sm text-muted-foreground max-sm:sr-only'
           }
         >
           {Icon ? <Icon aria-hidden="true" className="size-4" /> : null}
           {status.text}
         </output>
-        <span className="flex-1" />
-        <Button type="button" variant="soft" onClick={onPreview} className="w-auto px-6">
+        <span className="flex-1 max-sm:hidden" />
+        {/* No celular, só o olho (o nome continua pro leitor de tela). */}
+        <Button type="button" variant="soft" onClick={onPreview} className="w-auto px-4 sm:px-6">
           <EyeIcon aria-hidden="true" />
-          Pré-visualizar
+          <span className="max-sm:sr-only">Pré-visualizar</span>
         </Button>
         <ContinueButton />
       </div>
@@ -71,7 +74,12 @@ export function SaveBar({
 function ContinueButton() {
   const pending = useBrandPending();
   return (
-    <Button type="submit" loading={pending} loadingText="Salvando…" className="w-auto px-8">
+    <Button
+      type="submit"
+      loading={pending}
+      loadingText="Salvando…"
+      className="w-auto px-8 max-sm:flex-1 max-sm:px-4"
+    >
       Salvar e continuar
       {pending ? null : <ArrowRightIcon aria-hidden="true" />}
     </Button>

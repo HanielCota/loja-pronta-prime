@@ -171,7 +171,7 @@ export function LogoStudio({
               Seu logo foi montado no editor livre. Se salvar aqui, ele volta a ser o do Modo fácil.{' '}
               <Link
                 href={editorHref}
-                className="hidden font-semibold text-link underline underline-offset-4 lg:inline"
+                className="font-semibold text-link underline underline-offset-4"
               >
                 Continuar no editor livre
               </Link>
@@ -371,10 +371,10 @@ export function LogoStudio({
           ))}
         </ol>
 
-        {/* O editor livre precisa de tela grande: no celular, o Modo fácil é o caminho. */}
+        {/* Pra quem quer mais liberdade: mover, girar e mudar o tamanho de cada parte. */}
         <Link
           href={editorHref}
-          className="hidden min-h-14 items-center gap-3 rounded-2xl border border-dashed border-input px-4 text-body outline-none hover:border-primary hover:bg-primary-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid lg:col-start-2 lg:row-start-3 lg:flex"
+          className="flex min-h-14 items-center gap-3 rounded-2xl border border-dashed border-input px-4 text-body outline-none hover:border-primary hover:bg-primary-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid lg:col-start-2 lg:row-start-3"
         >
           <MoveIcon aria-hidden="true" className="size-5 shrink-0 text-link" />
           <span className="flex-1">

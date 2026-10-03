@@ -1,8 +1,5 @@
-import { MonitorIcon } from 'lucide-react';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Button } from '@/components/ui/button';
 import { LogoEditor } from '@/features/brand/components/editor/logo-editor';
 import { loadLogoFonts } from '@/features/brand/logo/fonts.server';
 import { logoTemplates } from '@/features/brand/logo/config';
@@ -26,7 +23,7 @@ export const metadata: Metadata = {
 /**
  * O editor livre do logo: a mesma etapa do estúdio (passo 3), pra quem quer mexer em cada parte
  * (mover, mudar o tamanho, girar, camadas). Abre a cena salva ou, na primeira vez, o logo do
- * estúdio guiado convertido. No celular, por enquanto, ele leva de volta pro Modo fácil.
+ * estúdio guiado convertido. Funciona no computador e no celular.
  */
 export default async function LogoEditorPage({
   searchParams,
@@ -54,8 +51,7 @@ export default async function LogoEditorPage({
     >
       {/* Título curto: o espaço da tela é do quadro (o "Tudo salvo" da barra diz que nada se perde). */}
       <h1 className="-mb-2 text-xl font-semibold text-balance">Editor livre do logo</h1>
-      {/* O editor precisa de espaço pros painéis: no celular, por enquanto, o Modo fácil. */}
-      <div className="hidden lg:block">
+      <div>
         <LogoEditor
           initialScene={scene}
           initialVariations={brand.logoVariations}
@@ -65,16 +61,6 @@ export default async function LogoEditorPage({
           recommended={iconsForCategories(categories)}
           templates={logoTemplates(answers)}
         />
-      </div>
-      <div className="flex flex-col items-start gap-4 rounded-card bg-card p-6 shadow-card lg:hidden">
-        <MonitorIcon aria-hidden="true" className="size-8 text-link" />
-        <p className="text-body text-pretty">
-          O editor livre funciona no computador, com a tela maior. No celular, use o Modo fácil: dá
-          pra mudar a cor, o desenho, a letra, o formato e o fundo.
-        </p>
-        <Button asChild>
-          <Link href={easyHref}>Voltar pro Modo fácil</Link>
-        </Button>
       </div>
     </ConversationLayout>
   );
