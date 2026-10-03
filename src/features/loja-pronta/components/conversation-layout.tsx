@@ -13,8 +13,8 @@ type ConversationLayoutProps = {
   /** Pra onde o "Voltar" leva. */
   backHref: string;
   /**
-   * Largura no computador: `normal` (perguntas), `wide` (o estúdio, a largura da barra do topo) ou
-   * `editor` (o editor livre, que precisa de espaço pros painéis dos lados).
+   * Largura do conteúdo no computador: `normal` (perguntas), `wide` (a da barra do topo) ou
+   * `editor` (o editor do logo, mais largo que a barra: o painel e o quadro precisam de espaço).
    */
   width?: 'normal' | 'wide' | 'editor';
   children: ReactNode;
@@ -52,7 +52,12 @@ export function ConversationLayout({
           Uma faixa só: voltar, onde ela está (com a barra embaixo) e sair, pro conteúdo subir. */}
       {/* Um <nav>, não <header>: o topo da página já é a barra (um só "banner" pro leitor de tela).
           Uma linha (voltar, onde ela está e sair) e a barra de progresso embaixo, na largura toda. */}
-      <nav aria-label="Etapa atual" className={cn(column, 'gap-2 pt-3')}>
+      {/* Na largura da barra do topo (o voltar embaixo da marca, o sair embaixo da conta), não na
+          do conteúdo. */}
+      <nav
+        aria-label="Etapa atual"
+        className="mx-auto flex w-full max-w-[1040px] flex-col gap-2 px-4 pt-3 sm:px-6"
+      >
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
           <Link
             href={backHref}
