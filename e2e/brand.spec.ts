@@ -64,11 +64,25 @@ test('marca completa: nome, modelo, estúdio, texto, revisão com mudança e log
   await expectNoA11yViolations(page);
   await page.getByRole('button', { name: 'Gostei, continuar' }).click();
 
-  // Texto: 3 prontos com o nome da loja.
+  // Texto: já vem um pronto no cartão; um jeito de falar troca o texto, "Outro texto" traz
+  // outra versão do mesmo jeito, e vazio não segue.
   await expect(page).toHaveURL(step('descricao'));
-  await expect(page.getByRole('main').getByRole('button', { name: /Texto \d/ })).toHaveCount(3);
+  const description = page.getByLabel('Texto da loja');
+  await expect(description).toHaveValue(/Patinhas da Ana/);
+  await expect(page.getByRole('radio', { name: 'Carinhoso' })).toBeChecked();
   await expectNoA11yViolations(page);
-  await page.getByRole('button', { name: /Texto 2/ }).click();
+  await page.getByText('Direto', { exact: true }).click();
+  await expect(page.getByRole('radio', { name: 'Direto' })).toBeChecked();
+  const direct = await description.inputValue();
+  await page.getByRole('button', { name: /^Outro texto/ }).click();
+  await expect(description).not.toHaveValue(direct);
+  await expect(page.getByRole('radio', { name: 'Direto' })).toBeChecked();
+  await page.getByRole('button', { name: 'Apagar' }).click();
+  await page.getByRole('button', { name: 'Continuar com esse texto' }).click();
+  await expect(page.getByText('Escolha um dos textos ou escreva o seu.')).toBeVisible();
+  await expect(description).toBeFocused();
+  await page.getByText('Direto', { exact: true }).click();
+  await page.getByRole('button', { name: 'Continuar com esse texto' }).click();
 
   // Revisão: mudar o nome volta pra revisão, já com o novo.
   await expect(page).toHaveURL(step('revisao'));
