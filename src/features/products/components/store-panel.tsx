@@ -6,7 +6,12 @@ import { STORE_PHASES } from '@/config/store-phases';
 import { CONVERSATION_PATH, QUESTION_COUNT } from '@/features/onboarding/steps';
 import { cn } from '@/lib/utils';
 import { firstName } from '../names';
-import { AreaShell, sectionTitleClass, greeting, panelCard } from './area-shell';
+import {
+  AreaShell,
+  sectionTitleClass,
+  greeting,
+  panelCard,
+} from '@/features/member/components/area-shell';
 
 export type ConversationStatus = 'nao-comecou' | 'em-andamento' | 'enviada';
 

@@ -1,5 +1,5 @@
 import { firstName } from '../names';
-import { AreaShell, greeting } from './area-shell';
+import { AreaShell, greeting } from '@/features/member/components/area-shell';
 import { SllCourseCard, SllToolsCard } from './sll-cards';
 
 type SllAreaProps = {

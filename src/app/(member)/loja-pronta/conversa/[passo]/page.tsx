@@ -24,7 +24,7 @@ import {
   WHATSAPP_STEP,
   type Step,
 } from '@/features/onboarding/steps';
-import { sectionTitleClass, panelCard } from '@/features/products/components/area-shell';
+import { sectionTitleClass, panelCard } from '@/features/member/components/area-shell';
 import { getParam, type SearchParams } from '@/lib/search-params';
 import { cn } from '@/lib/utils';
 

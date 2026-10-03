@@ -11,7 +11,7 @@ import {
   CenteredMemberPage,
   sectionTitleClass,
   panelCard,
-} from '@/features/products/components/area-shell';
+} from '@/features/member/components/area-shell';
 import { firstName } from '@/features/products/names';
 import { requireProduct } from '@/features/products/server/access';
 import { cn } from '@/lib/utils';

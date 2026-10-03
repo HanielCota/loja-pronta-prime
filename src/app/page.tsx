@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import type { ProductId } from '@/config/products';
 import { STORE_PHASES } from '@/config/store-phases';
 import { PRODUCTS } from '@/features/products/catalog';
-import { CenteredMemberPage } from '@/features/products/components/area-shell';
+import { CenteredMemberPage } from '@/features/member/components/area-shell';
 import { ProductChooser, type ProductStatus } from '@/features/products/components/product-chooser';
 import { getOnboarding } from '@/features/onboarding/server/conversation';
 import { displayedPhase } from '@/features/products/store-phase';
