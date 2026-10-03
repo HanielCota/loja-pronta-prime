@@ -101,6 +101,11 @@ export const logoSceneSchema = z.object({
 });
 
 export type LogoScene = z.infer<typeof logoSceneSchema>;
+
+/** Quantas versões guardadas, além da que está no quadro. */
+export const MAX_VARIATIONS = 5;
+
+export const logoVariationsSchema = z.array(logoSceneSchema).max(MAX_VARIATIONS);
 export type SceneElement = z.infer<typeof sceneElementSchema>;
 export type TextElement = z.infer<typeof textElement>;
 export type IconElement = z.infer<typeof iconElement>;

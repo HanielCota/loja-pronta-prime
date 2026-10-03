@@ -6,7 +6,7 @@ import { db } from '@/server/db';
 import { storeBrand, stores } from '@/server/db/schema';
 import { parseBrandDescription, parseBrandName } from '../fields';
 import { logoConfigSchema, logoTemplates } from '../logo/config';
-import { logoSceneSchema, type LogoScene } from '../logo/scene';
+import { logoSceneSchema, logoVariationsSchema, type LogoScene } from '../logo/scene';
 import { BRAND_DONE_PATH, brandStepPath } from '../steps';
 import { requireBrandAction } from './brand';
 
@@ -90,11 +90,14 @@ export async function saveBrandDescription(
   after(formData, revising, 'revisao');
 }
 
-/** Lê e confere a cena que o editor manda (JSON). Inválida: nada. */
-function parseScene(value: unknown) {
-  if (typeof value !== 'string' || value.length > 100_000) return undefined;
+/** Lê e confere um JSON que o editor manda (a cena ou as variações). Inválido: nada. */
+function parseJson<T>(
+  value: unknown,
+  schema: { safeParse: (input: unknown) => { success: boolean; data?: T } },
+) {
+  if (typeof value !== 'string' || value.length > 600_000) return undefined;
   try {
-    const parsed = logoSceneSchema.safeParse(JSON.parse(value));
+    const parsed = schema.safeParse(JSON.parse(value));
     return parsed.success ? parsed.data : undefined;
   } catch {
     return undefined;
@@ -107,19 +110,23 @@ const SCENE_ERROR = 'Não conseguimos salvar o logo. Recarregue a página.';
  * Grava a cena do editor livre. Só atualiza (a linha já existe: a cena vai por cima do logo do
  * estúdio); um upsert esbarraria na regra "cena só com logo embaixo" antes de achar a linha.
  */
-async function saveScene(userId: string, scene: LogoScene) {
-  await db.update(storeBrand).set({ logoScene: scene }).where(eq(storeBrand.userId, userId));
+async function saveScene(userId: string, scene: LogoScene, variations: LogoScene[]) {
+  await db
+    .update(storeBrand)
+    .set({ logoScene: scene, logoVariations: variations })
+    .where(eq(storeBrand.userId, userId));
 }
 
 /**
  * Salvamento automático do editor livre, a cada mudança (sem sair da tela). Só por cima de um
  * modelo: a cena precisa do logo do estúdio guiado embaixo.
  */
-export async function saveLogoScene(scene: string): Promise<BrandResult> {
+export async function saveLogoScene(scene: string, variations: string): Promise<BrandResult> {
   const { userId, brand } = await requireBrandAction();
-  const parsed = parseScene(scene);
-  if (!parsed || !brand.logo) return { error: SCENE_ERROR };
-  await saveScene(userId, parsed);
+  const parsed = parseJson(scene, logoSceneSchema);
+  const others = parseJson(variations, logoVariationsSchema);
+  if (!parsed || !others || !brand.logo) return { error: SCENE_ERROR };
+  await saveScene(userId, parsed, others);
   return undefined;
 }
 
@@ -129,9 +136,10 @@ export async function finishLogoEditor(
   formData: FormData,
 ): Promise<BrandResult> {
   const { userId, brand, revising } = await requireBrandAction();
-  const parsed = parseScene(formData.get('scene'));
-  if (!parsed || !brand.logo) return { error: SCENE_ERROR };
-  await saveScene(userId, parsed);
+  const parsed = parseJson(formData.get('scene'), logoSceneSchema);
+  const others = parseJson(formData.get('variations'), logoVariationsSchema);
+  if (!parsed || !others || !brand.logo) return { error: SCENE_ERROR };
+  await saveScene(userId, parsed, others);
   after(formData, revising, 'descricao');
 }
 

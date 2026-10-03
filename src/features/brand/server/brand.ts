@@ -8,7 +8,7 @@ import { getStudentProducts, requireProduct } from '@/features/products/server/a
 import { db } from '@/server/db';
 import { storeBrand } from '@/server/db/schema';
 import { logoConfigSchema } from '../logo/config';
-import { logoSceneSchema, type LogoScene } from '../logo/scene';
+import { logoSceneSchema, logoVariationsSchema, type LogoScene } from '../logo/scene';
 import type { BrandDraft } from '../steps';
 
 /**
@@ -17,6 +17,8 @@ import type { BrandDraft } from '../steps';
  */
 export type Brand = BrandDraft & {
   logoScene: LogoScene | null;
+  /** As outras versões do editor livre (sem nenhuma: lista vazia). */
+  logoVariations: LogoScene[];
   completedAt: Date | null;
   updatedAt: Date | null;
 };
@@ -25,6 +27,7 @@ const EMPTY: Brand = {
   name: null,
   logo: null,
   logoScene: null,
+  logoVariations: [],
   description: null,
   completedAt: null,
   updatedAt: null,
@@ -40,6 +43,7 @@ export async function getBrand(userId: string): Promise<Brand> {
       name: storeBrand.name,
       logo: storeBrand.logo,
       logoScene: storeBrand.logoScene,
+      logoVariations: storeBrand.logoVariations,
       description: storeBrand.description,
       completedAt: storeBrand.completedAt,
       updatedAt: storeBrand.updatedAt,
@@ -49,10 +53,12 @@ export async function getBrand(userId: string): Promise<Brand> {
   if (!row) return EMPTY;
   const logo = logoConfigSchema.safeParse(row.logo);
   const scene = logoSceneSchema.safeParse(row.logoScene);
+  const variations = logoVariationsSchema.safeParse(row.logoVariations);
   return {
     ...row,
     logo: logo.success ? logo.data : null,
     logoScene: logo.success && scene.success ? scene.data : null,
+    logoVariations: logo.success && variations.success ? variations.data : [],
   };
 }
 

@@ -298,3 +298,52 @@ export function redo(
   if (!next) return undefined;
   return { history: { past: [...history.past, scene], future: rest }, scene: next };
 }
+
+/**
+ * A cor que fica atrás do elemento: a da forma mais da frente, entre as de trás dele, que cobre
+ * o centro dele; sem nenhuma, o fundo. Serve pro aviso de pouco contraste (texto branco numa faixa
+ * colorida não é problema, mesmo com o fundo branco).
+ */
+export function backdropColor(scene: LogoScene, id: string, sizes: Map<string, Size>): string {
+  const index = scene.elements.findIndex((element) => element.id === id);
+  const target = scene.elements[index];
+  if (!target) return scene.background;
+  for (let behind = index - 1; behind >= 0; behind--) {
+    const shape = scene.elements[behind];
+    if (!shape || shape.type !== 'shape' || shape.shape === 'ring') continue;
+    const size = sizes.get(shape.id);
+    if (!size) continue;
+    const half = rotatedHalfExtents(size, shape.rotation);
+    const dx = Math.abs(target.x - shape.x);
+    const dy = Math.abs(target.y - shape.y);
+    const inside =
+      shape.shape === 'circle'
+        ? (dx / half.width) ** 2 + (dy / half.height) ** 2 <= 1
+        : dx <= half.width && dy <= half.height;
+    if (inside) return shape.color;
+  }
+  return scene.background;
+}
+
+/**
+ * As versões do logo: a do quadro e as guardadas. Trocar põe a do quadro no lugar da escolhida;
+ * "nova" guarda uma cópia da do quadro (e ela continua mexendo na cópia).
+ */
+export function switchVariation(
+  current: LogoScene,
+  variations: LogoScene[],
+  index: number,
+): { scene: LogoScene; variations: LogoScene[] } | undefined {
+  const chosen = variations[index];
+  if (!chosen) return undefined;
+  return { scene: chosen, variations: variations.map((item, i) => (i === index ? current : item)) };
+}
+
+export function addVariation(
+  current: LogoScene,
+  variations: LogoScene[],
+  max: number,
+): LogoScene[] | undefined {
+  if (variations.length >= max) return undefined;
+  return [...variations, current];
+}

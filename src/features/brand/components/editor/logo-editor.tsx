@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  CircleDashedIcon,
   CopyIcon,
   MaximizeIcon,
   MinusIcon,
@@ -14,6 +15,8 @@ import { nodMascot } from '@/components/brand/mascot';
 import { cn } from '@/lib/utils';
 import {
   addElement,
+  addVariation,
+  backdropColor,
   duplicateElement,
   elementLabel,
   findElement,
@@ -23,6 +26,7 @@ import {
   redo,
   removeElement,
   replaceElement,
+  switchVariation,
   undo,
   type History,
   type NewElement,
@@ -33,14 +37,16 @@ import type { LogoConfig } from '../../logo/config';
 import { loadLogoFontsInBrowser } from '../../logo/fonts.client';
 import { configToScene } from '../../logo/from-config';
 import type { SceneIconId } from '../../logo/icons';
-import { SCENE_SIZE, type LogoScene, type SceneElement } from '../../logo/scene';
+import { MAX_VARIATIONS, SCENE_SIZE, type LogoScene, type SceneElement } from '../../logo/scene';
 import type { LogoFonts } from '../../logo/scene-render';
 import { saveLogoScene } from '../../server/actions';
 import { EditorCanvas } from './editor-canvas';
 import { LAYERS_TITLE_ID } from './layers-panel';
 import { LEFT_PANEL_ID, LeftPanel } from './left-panel';
 import { PropertiesPanel } from './properties-panel';
+import { PreviewDialog } from './preview-dialog';
 import { SaveBar } from './save-bar';
+import { sceneDataUrl, VariationsStrip } from './variations-strip';
 
 /** O que a tela mostra do salvamento automático. */
 export type SaveState = 'saved' | 'saving' | 'error';
@@ -56,6 +62,8 @@ const ZOOMS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 type LogoEditorProps = {
   /** A cena salva, ou a do estúdio guiado convertida (configToScene). */
   initialScene: LogoScene;
+  /** As outras versões guardadas. */
+  initialVariations: LogoScene[];
   /** O nome da loja, pros textos que seguem o nome. */
   name: string;
   /** Veio da revisão: "Salvar e continuar" volta pra ela. */
@@ -76,6 +84,7 @@ type LogoEditorProps = {
  */
 export function LogoEditor({
   initialScene,
+  initialVariations,
   name,
   editing,
   easyHref,
@@ -83,6 +92,9 @@ export function LogoEditor({
   templates,
 }: LogoEditorProps) {
   const [scene, setScene] = useState(initialScene);
+  const [variations, setVariations] = useState(initialVariations);
+  const [previewing, setPreviewing] = useState(false);
+  const [showCircle, setShowCircle] = useState(false);
   const [history, setHistory] = useState<History>({ past: [], future: [] });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [fonts, setFonts] = useState<LogoFonts | null>(null);
@@ -91,6 +103,7 @@ export function LogoEditor({
   const [announcement, setAnnouncement] = useState('');
   // O que já está salvo no servidor: diferente da cena na tela, falta salvar.
   const [savedScene, setSavedScene] = useState(initialScene);
+  const [savedVariations, setSavedVariations] = useState(initialVariations);
   const [saveFailed, setSaveFailed] = useState(false);
   // Um gesto (arrastar, deslizar) vira uma entrada só no histórico: a cena de antes dele.
   const gestureStart = useRef<LogoScene | null>(null);
@@ -108,18 +121,21 @@ export function LogoEditor({
 
   // Salva sozinho um pouco depois da última mudança (nunca no meio de um arraste).
   useEffect(() => {
-    if (scene === savedScene || gesturing) return;
+    if ((scene === savedScene && variations === savedVariations) || gesturing) return;
     const timer = setTimeout(() => {
-      saveLogoScene(JSON.stringify(scene))
+      saveLogoScene(JSON.stringify(scene), JSON.stringify(variations))
         .then((result) => {
           setSaveFailed(Boolean(result?.error));
-          if (!result?.error) setSavedScene(scene);
+          if (result?.error) return;
+          setSavedScene(scene);
+          setSavedVariations(variations);
         })
         .catch(() => setSaveFailed(true));
     }, AUTOSAVE_DELAY);
     return () => clearTimeout(timer);
-  }, [scene, savedScene, gesturing]);
-  const saveState: SaveState = saveFailed ? 'error' : scene === savedScene ? 'saved' : 'saving';
+  }, [scene, variations, savedScene, savedVariations, gesturing]);
+  const saved = scene === savedScene && variations === savedVariations;
+  const saveState: SaveState = saveFailed ? 'error' : saved ? 'saved' : 'saving';
 
   const sizes = useMemo(() => {
     const map = new Map<string, Size>();
@@ -206,6 +222,29 @@ export function LogoEditor({
     commit(configToScene(template, name, fonts));
     setSelectedId(null);
     setAnnouncement('Modelo aplicado. Ctrl+Z desfaz.');
+  }
+
+  /** Troca pra uma versão guardada; o histórico recomeça (desfazer não mistura as versões). */
+  function chooseVariation(index: number) {
+    const result = switchVariation(scene, variations, index);
+    if (!result) return;
+    setScene(result.scene);
+    setVariations(result.variations);
+    setHistory({ past: [], future: [] });
+    setSelectedId(null);
+    setAnnouncement(`Variação ${index + 1} no quadro. A anterior ficou guardada no lugar dela.`);
+  }
+
+  function newVariation() {
+    const next = addVariation(scene, variations, MAX_VARIATIONS);
+    if (!next) return;
+    setVariations(next);
+    setAnnouncement('Cópia guardada. Pode mexer à vontade: a de antes está nas variações.');
+  }
+
+  function removeVariation(index: number) {
+    setVariations(variations.filter((_, i) => i !== index));
+    setAnnouncement(`Variação ${index + 1} apagada`);
   }
 
   function duplicateSelected() {
@@ -370,6 +409,14 @@ export function LogoEditor({
             >
               <MaximizeIcon />
             </ToolButton>
+            <span aria-hidden="true" className="mx-1 h-6 w-px bg-border" />
+            <ToolButton
+              label="Mostrar o círculo da Shopee"
+              onClick={() => setShowCircle((value) => !value)}
+              pressed={showCircle}
+            >
+              <CircleDashedIcon />
+            </ToolButton>
             <span className="flex-1" />
             <ToolButton label="Duplicar (Ctrl+D)" onClick={duplicateSelected} disabled={!selected}>
               <CopyIcon />
@@ -387,10 +434,20 @@ export function LogoEditor({
             sizes={sizes}
             selectedId={selectedId}
             zoom={zoom}
+            showCircle={showCircle}
             onSelect={select}
             onBeginGesture={beginGesture}
             onLive={live}
             onEndGesture={endGesture}
+          />
+          <VariationsStrip
+            scene={scene}
+            variations={variations}
+            name={name}
+            fonts={fonts}
+            onChoose={chooseVariation}
+            onAdd={newVariation}
+            onRemove={removeVariation}
           />
           <p className="text-sm text-pretty text-muted-foreground">
             Toque num elemento pra escolher. Arraste pra mover, use as bolinhas dos cantos pra mudar
@@ -402,6 +459,7 @@ export function LogoEditor({
           scene={scene}
           selected={selected}
           size={selected ? sizes.get(selected.id) : undefined}
+          backdrop={selected ? backdropColor(scene, selected.id, sizes) : scene.background}
           onChange={updateSelected}
           onCommitScene={commit}
           onBeginGesture={beginGesture}
@@ -411,7 +469,20 @@ export function LogoEditor({
         />
       </div>
 
-      <SaveBar scene={scene} editing={editing} easyHref={easyHref} saveState={saveState} />
+      <SaveBar
+        scene={scene}
+        variations={variations}
+        editing={editing}
+        easyHref={easyHref}
+        saveState={saveState}
+        onPreview={() => setPreviewing(true)}
+      />
+      <PreviewDialog
+        open={previewing}
+        src={previewing && fonts ? sceneDataUrl(scene, name, fonts) : null}
+        storeName={name}
+        onClose={() => setPreviewing(false)}
+      />
     </div>
   );
 }
@@ -420,22 +491,26 @@ function ToolButton({
   label,
   onClick,
   disabled,
+  pressed,
   children,
 }: {
   label: string;
   onClick: () => void;
   disabled?: boolean;
+  /** Botão que liga e desliga (como o círculo da Shopee). */
+  pressed?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <button
       type="button"
       aria-label={label}
+      aria-pressed={pressed}
       title={label}
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'grid size-11 place-items-center rounded-xl text-foreground outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-solid disabled:text-muted-foreground disabled:opacity-50 [&_svg]:size-5',
+        'grid size-11 place-items-center rounded-xl text-foreground outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-solid disabled:text-muted-foreground disabled:opacity-50 aria-pressed:bg-primary-soft aria-pressed:text-link [&_svg]:size-5',
       )}
     >
       {children}
