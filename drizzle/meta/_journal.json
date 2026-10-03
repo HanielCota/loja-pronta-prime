@@ -57,6 +57,13 @@
       "when": 1791054801727,
       "tag": "0007_concerned_korath",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791058112716,
+      "tag": "0008_medical_firebrand",
+      "breakpoints": true
     }
   ]
 }

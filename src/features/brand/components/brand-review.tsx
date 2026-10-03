@@ -6,10 +6,8 @@ import { MascotBubble } from '@/features/loja-pronta/components/mascot-bubble';
 import { StickyAction } from '@/features/loja-pronta/components/sticky-action';
 import { panelCard, sectionTitleClass } from '@/features/member/components/area-shell';
 import { cn } from '@/lib/utils';
-import type { LogoConfig } from '../logo/config';
-import { logoPreviewSrc } from '../logo-preview';
 import { finishBrand } from '../server/actions';
-import { brandStepPath, type BrandStep } from '../steps';
+import { brandStepPath, LOGO_EDITOR_PATH } from '../steps';
 import { BrandForm } from './brand-form';
 import { FinishButton } from './finish-button';
 
@@ -21,12 +19,16 @@ const TITLE_ID = 'revisao-marca-titulo';
  */
 export function BrandReview({
   name,
-  logo,
+  logoSrc,
+  freeEdited = false,
   description,
   revising = false,
 }: {
   name: string;
-  logo: LogoConfig;
+  /** A imagem do logo salvo (savedLogoSrc). */
+  logoSrc: string;
+  /** Montado no editor livre: "Mudar" volta pra ele, não pro estúdio guiado. */
+  freeEdited?: boolean;
   description: string;
   revising?: boolean;
 }) {
@@ -47,20 +49,24 @@ export function BrandReview({
           Sua marca
         </h2>
         <dl className="divide-y divide-border">
-          <Row label="Logo" step="ajustar" what="o logo">
+          <Row
+            label="Logo"
+            href={`${freeEdited ? LOGO_EDITOR_PATH : brandStepPath('ajustar')}?editar=1`}
+            what="o logo"
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={logoPreviewSrc(logo)}
+              src={logoSrc}
               alt={`Logo da loja ${name}`}
               width={160}
               height={160}
               className="mt-1 size-36 rounded-2xl border border-border"
             />
           </Row>
-          <Row label="Nome da loja" step="nome" what="o nome">
+          <Row label="Nome da loja" href={`${brandStepPath('nome')}?editar=1`} what="o nome">
             {name}
           </Row>
-          <Row label="Texto da loja" step="descricao" what="o texto">
+          <Row label="Texto da loja" href={`${brandStepPath('descricao')}?editar=1`} what="o texto">
             <span className="font-normal">{description}</span>
           </Row>
         </dl>
@@ -84,12 +90,12 @@ export function BrandReview({
 
 function Row({
   label,
-  step,
+  href,
   what,
   children,
 }: {
   label: string;
-  step: BrandStep;
+  href: string;
   what: string;
   children: ReactNode;
 }) {
@@ -99,7 +105,7 @@ function Row({
       <dd className="col-start-1 text-body font-semibold text-pretty wrap-anywhere">{children}</dd>
       <dd className="col-start-2 row-span-2 row-start-1">
         <Link
-          href={`${brandStepPath(step)}?editar=1`}
+          href={href}
           className="inline-flex min-h-11 items-center rounded-full px-2 font-semibold text-link outline-none hover:underline focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-solid"
         >
           Mudar<span className="sr-only"> {what}</span>

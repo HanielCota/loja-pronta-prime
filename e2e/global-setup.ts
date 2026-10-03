@@ -17,6 +17,8 @@ type Student = {
   conversationSent?: boolean;
   /** Marca já confirmada (nome, o primeiro modelo de logo e um texto de exemplo). */
   brandDone?: boolean;
+  /** Marca começada: nome e o primeiro modelo de logo, sem texto (está no estúdio). */
+  brandStarted?: boolean;
 };
 
 /** Respostas de exemplo da conversa, pras alunas que já começam na fase da marca. */
@@ -124,6 +126,16 @@ const STUDENTS: Student[] = [
     storePhase: 2,
     conversationSent: true,
   },
+  // Editor livre (e2e/logo-editor.spec.ts): nome e modelo escolhidos, no estúdio.
+  {
+    kind: 'editorlivre',
+    emailVerified: true,
+    banned: false,
+    products: ['loja-pronta'],
+    storePhase: 2,
+    conversationSent: true,
+    brandStarted: true,
+  },
 ];
 
 /** Cria as alunas desta execução pela mesma API que a integração com a Hotmart vai usar. */
@@ -165,6 +177,12 @@ export default async function globalSetup() {
         `insert into store_onboarding (user_id, answers, whatsapp, completed_at)
          values ($1, $2, '11987654321', now())`,
         [user.id, JSON.stringify(SENT_ANSWERS)],
+      );
+    }
+    if (student.brandStarted) {
+      await database().query(
+        `insert into store_brand (user_id, name, logo) values ($1, 'Patinhas da Ana', $2)`,
+        [user.id, JSON.stringify(logoTemplates(SENT_ANSWERS)[0])],
       );
     }
     if (student.brandDone) {
