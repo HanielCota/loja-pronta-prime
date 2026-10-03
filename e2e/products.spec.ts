@@ -65,7 +65,9 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
       timeout: 1000,
     });
   }).toPass();
-  await expect(page.getByRole('link', { name: /^Entrar, Sistema Loja Lucrativa/ })).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: /^Ver o que vem aí, Sistema Loja Lucrativa/ }),
+  ).toBeVisible();
   // A loja dela está na fase 1, que depende dela: o texto de cima diz isso, em vez do genérico
   // "Continue de onde parou".
   await expect(page.getByText('Sua loja está esperando por você.')).toBeVisible();

@@ -11,10 +11,18 @@ export type ProductStatus = {
   label: string;
   bar?: { step: number; total: number } | undefined;
   detail?: string | undefined;
+  /** Texto do botão no lugar de "Entrar"/"Continuar", quando a área ainda não tem o que fazer. */
+  cta?: string | undefined;
 };
 
-/** O SLL ainda não tem aulas no ar: o cartão diz isso, em vez de mandar ela começar. */
-export const SLL_CHOOSER_STATUS: ProductStatus = { label: 'As aulas abrem em breve' };
+/**
+ * O SLL ainda não tem aulas no ar: o cartão diz isso, e o botão promete só o que a área mostra
+ * (o que vem aí), em vez de mandar ela entrar.
+ */
+export const SLL_CHOOSER_STATUS: ProductStatus = {
+  label: 'As aulas abrem em breve',
+  cta: 'Ver o que vem aí',
+};
 
 type HeadlineInput = {
   /** Situação da Loja Pronta, quando ela tem o produto. */
