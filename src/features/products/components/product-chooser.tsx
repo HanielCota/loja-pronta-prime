@@ -17,15 +17,14 @@ type ProductChooserProps = {
   lastArea?: ProductId | undefined;
   /** Andamento de cada produto (quando há), mostrado no bloco dele. */
   status?: Partial<Record<ProductId, ProductStatus>> | undefined;
-  /** Produto que leva o botão cheio. Sem ele, vale a última área aberta (ou o primeiro). */
+  /** Produto recomendado (dito ao leitor de tela). Sem ele, vale a última área aberta (ou o primeiro). */
   primary?: ProductId | undefined;
 };
 
 /**
  * Escolha da área, pra quem tem os dois produtos: um cartão por produto, lado a lado no
  * computador e um embaixo do outro no celular. Cada cartão é um link de verdade (abre em outra
- * aba, funciona sem JavaScript) com área de toque grande; só um leva o botão cheio, pra ficar
- * claro por onde seguir.
+ * aba, funciona sem JavaScript) com área de toque grande e o mesmo botão cheio.
  *
  * Leitor de tela: o link se chama pelo que faz ("Entrar, Loja Pronta") e o resto do cartão vira
  * a descrição, pra o nome continuar curto. O nome do produto é um título, pra quem navega
@@ -75,14 +74,10 @@ export function ProductChooser({ products, lastArea, status, primary }: ProductC
                 )}
               </span>
               {current ? <StatusBlock {...current} id={`${id}-andamento`} /> : null}
+              {/* O mesmo botão cheio nos dois cartões: o recomendado só muda pro leitor de tela. */}
               <span
                 aria-hidden="true"
-                className={cn(
-                  'mt-auto inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border border-transparent text-body font-semibold transition-colors duration-100',
-                  isMain
-                    ? 'bg-primary text-primary-foreground group-hover/product:bg-primary-hover forced-colors:border-[LinkText]'
-                    : 'bg-primary-soft text-link forced-colors:border-[CanvasText]',
-                )}
+                className="mt-auto inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border border-transparent bg-primary text-body font-semibold text-primary-foreground transition-colors duration-100 group-hover/product:bg-primary-hover forced-colors:border-[LinkText]"
               >
                 {verb}
                 <ArrowRightIcon
@@ -103,12 +98,12 @@ function StatusBlock({ caption, label, bar, detail, id }: ProductStatus & { id: 
   return (
     <span id={id} className="flex flex-col gap-2">
       {bar ? (
-        <span aria-hidden="true" className="flex gap-1">
+        <span aria-hidden="true" className="flex gap-1.5">
           {Array.from({ length: bar.total }, (_, index) => (
             <span
               key={index}
               className={cn(
-                'h-1.5 flex-1 rounded-full border border-transparent',
+                'h-2.5 flex-1 rounded-full border border-transparent',
                 index < bar.step
                   ? 'bg-progress forced-colors:bg-[CanvasText]'
                   : 'border-input bg-progress-track forced-colors:border-[CanvasText]',
