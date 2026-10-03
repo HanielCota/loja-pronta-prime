@@ -2,7 +2,7 @@
 export const THEME_STORAGE_KEY = 'theme';
 
 /** Cor da barra do navegador no celular, a mesma do fundo de cada tema. */
-export const THEME_COLORS = { light: '#f5f5f7', dark: '#000000' } as const;
+export const THEME_COLORS = { light: '#f5f5f7', dark: '#1f1f22' } as const;
 
 /** O tema na tela. */
 export type Theme = keyof typeof THEME_COLORS;

@@ -110,11 +110,11 @@ test('aparência: automático segue o aparelho, e o escuro fixo continua ao reca
   await expect(html).toHaveClass(/\bdark\b/);
   await expect(dark).toBeChecked();
   await expect(automatic).toBeChecked();
-  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#000000');
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#1f1f22');
   await expectNoA11yViolations(page);
 
   // Mexer no escuro desliga o automático. A linha inteira é o alvo, não só a bolinha.
-  await page.getByText('Fundo preto, mais confortável à noite.').click();
+  await page.getByText('Fundo escuro, mais confortável à noite.').click();
   await expect(dark).not.toBeChecked();
   await expect(automatic).not.toBeChecked();
   await expect(html).not.toHaveClass(/\bdark\b/);
