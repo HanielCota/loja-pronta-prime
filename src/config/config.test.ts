@@ -1,9 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import { PRODUCTS } from '@/features/products/catalog';
+import { parseWhatsapp } from '@/features/loja-pronta/whatsapp';
 import { firstName } from '@/features/products/names';
 import { ONBOARDING_BLOCKS, ONBOARDING_QUESTIONS } from './onboarding';
 import { PRODUCT_IDS } from './products';
 import { STORE_PHASES } from './store-phases';
+import { TEAM_WHATSAPP } from './support';
 
 describe('configuração', () => {
   test('7 fases da loja (o banco confere 1 a 7 com essa mesma lista)', () => {
@@ -22,6 +24,10 @@ describe('configuração', () => {
     for (const question of ONBOARDING_QUESTIONS) {
       expect(Object.keys(ONBOARDING_BLOCKS)).toContain(question.block);
     }
+  });
+
+  test('WhatsApp da equipe: vazio, ou só os dígitos com DDD', () => {
+    if (TEAM_WHATSAPP) expect(parseWhatsapp(TEAM_WHATSAPP)).toBe(TEAM_WHATSAPP);
   });
 });
 
