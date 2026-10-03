@@ -98,7 +98,7 @@ export function ProductChooser({ products, lastArea, status, primary }: ProductC
   );
 }
 
-/** Um traço por etapa (os feitos e o atual em azul), a etapa atual e o que acontece nela. */
+/** Um traço por etapa (os feitos e o atual em verde, como o caminho da loja), a etapa atual e o que acontece nela. */
 function StatusBlock({ caption, label, bar, detail, id }: ProductStatus & { id: string }) {
   return (
     <span id={id} className="flex flex-col gap-2">
@@ -110,8 +110,8 @@ function StatusBlock({ caption, label, bar, detail, id }: ProductStatus & { id: 
               className={cn(
                 'h-1.5 flex-1 rounded-full border border-transparent',
                 index < bar.step
-                  ? 'bg-primary forced-colors:bg-[CanvasText]'
-                  : 'bg-track forced-colors:border-[CanvasText]',
+                  ? 'bg-progress forced-colors:bg-[CanvasText]'
+                  : 'border-input bg-progress-track forced-colors:border-[CanvasText]',
               )}
             />
           ))}

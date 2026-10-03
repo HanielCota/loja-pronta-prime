@@ -68,8 +68,8 @@ export function ConversationLayout({
               className={cn(
                 'h-1.5 flex-1 rounded-full border border-transparent',
                 index < header.filled
-                  ? 'bg-primary forced-colors:bg-[CanvasText]'
-                  : 'bg-track forced-colors:border-[CanvasText]',
+                  ? 'bg-progress forced-colors:bg-[CanvasText]'
+                  : 'border-input bg-progress-track forced-colors:border-[CanvasText]',
               )}
             />
           ))}

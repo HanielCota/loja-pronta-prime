@@ -26,6 +26,12 @@ describe('etapas', () => {
     expect(stages[1]?.step).toBeUndefined();
   });
 
+  test('a barra enche até o meio do passo atual, não até a metade da etapa', () => {
+    expect(storeStages(3).map((stage) => stage.fill)).toEqual([1, 1, 0.1]);
+    expect(storeStages(4)[2]?.fill).toBe(0.3);
+    expect(storeStages(2).map((stage) => stage.fill)).toEqual([1, 0.5, 0]);
+  });
+
   test('loja no ar: tudo feito', () => {
     expect(storeStages(STORE_PHASES.length).every((stage) => stage.status === 'done')).toBe(true);
   });
