@@ -12,7 +12,7 @@ type OptionFieldProps = {
   max: number;
   /** O título da pergunta nomeia o grupo; ajuda, nota e erro o descrevem. */
   labelledBy: string;
-  describedBy?: string;
+  describedBy?: string | undefined;
   invalid: boolean;
   onChoose: (value: string, checked: boolean) => void;
 };
@@ -90,7 +90,7 @@ function OptionRow({
   children,
 }: {
   label: string;
-  description?: string;
+  description?: string | undefined;
   children: ReactNode;
 }) {
   return (

@@ -1,4 +1,4 @@
-import type { OnboardingQuestion } from '@/config/onboarding';
+import type { AnswerValue, OnboardingQuestion } from '@/config/onboarding';
 import { FocusOnArrival } from './focus-on-arrival';
 import { MascotBubble } from './mascot-bubble';
 import { QuestionForm } from './question/question-form';
@@ -8,7 +8,7 @@ const HELP_ID = 'pergunta-ajuda';
 
 type QuestionStepProps = {
   question: OnboardingQuestion;
-  saved: string | string[] | null | undefined;
+  saved: AnswerValue | undefined;
   editing: boolean;
 };
 

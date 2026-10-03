@@ -14,7 +14,7 @@ type StudentProducts = {
   /** Quando ela abriu cada área pela primeira vez (as que nunca abriu ficam de fora). */
   firstVisits: Partial<Record<ProductId, Date>>;
   /** A área que ela abriu por último, se já abriu alguma. */
-  lastArea?: ProductId;
+  lastArea?: ProductId | undefined;
 };
 
 export async function getStudentProducts(userId: string): Promise<StudentProducts> {

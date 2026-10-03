@@ -18,7 +18,7 @@ import { AuthStatus } from './auth-status';
 import { EmailField } from './email-field';
 
 type RecoverPasswordProps = {
-  next?: string;
+  next?: string | undefined;
 };
 
 export function RecoverPassword(props: RecoverPasswordProps) {
@@ -91,7 +91,7 @@ function ResetLinkSent({
   onUseAnotherEmail,
 }: {
   email: string;
-  next?: string;
+  next?: string | undefined;
   onUseAnotherEmail: () => void;
 }) {
   return (
@@ -123,7 +123,7 @@ function ResetLinkSent({
   );
 }
 
-function BackToLogin({ email, next }: { email: string; next?: string }) {
+function BackToLogin({ email, next }: { email: string; next?: string | undefined }) {
   return (
     <Button asChild variant="link" size="inline" className="self-center">
       <Link href={authHref('/entrar', next)} onClick={() => rememberEmail(email)}>

@@ -15,7 +15,7 @@ import { PasswordStrengthMeter } from './password-strength-meter';
 type FirstAccessFormProps = {
   /** Email da conta: vai num campo escondido pro gerenciador de senhas salvar o par certo. */
   email: string;
-  next?: string;
+  next?: string | undefined;
 };
 
 export function FirstAccessForm({ email, next }: FirstAccessFormProps) {

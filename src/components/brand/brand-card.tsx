@@ -5,7 +5,7 @@ import type { Expression } from './mascot';
 type BrandCardProps = {
   children: ReactNode;
   /** Expressão de repouso do mascote no topo do cartão. */
-  expression?: Expression;
+  expression?: Expression | undefined;
   /** Mascote menor, pras telas de dentro da área da aluna. */
   compact?: boolean;
 };

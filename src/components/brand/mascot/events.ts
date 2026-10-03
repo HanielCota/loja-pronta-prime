@@ -13,7 +13,7 @@ export type MascotSignal =
    * Deu errado. `grumpy`: erro causado pela tentativa (fecha a cara e balança a cabeça);
    * `worried`: o resto (fica preocupado com a pessoa). `target`: pra onde ele olha.
    */
-  | { type: 'upset'; mood: 'grumpy' | 'worried'; target?: Element }
+  | { type: 'upset'; mood: 'grumpy' | 'worried'; target?: Element | undefined }
   /** Desconfiado (ex.: email com cara de digitado errado) até `active` voltar a ser falso. */
   | { type: 'doubt'; active: boolean }
   /** Aceno de aprovação (ex.: o email ficou completo). */

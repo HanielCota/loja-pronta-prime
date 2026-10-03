@@ -2,7 +2,7 @@ import { CircleAlertIcon } from 'lucide-react';
 import { FieldError } from '@/components/ui/field';
 
 /** Primeira mensagem de erro do campo, ligada ao input pelo `id` (aria-describedby). */
-export function FieldErrorMessage({ id, errors }: { id: string; errors?: string[] }) {
+export function FieldErrorMessage({ id, errors }: { id: string; errors?: string[] | undefined }) {
   const message = errors?.[0];
   if (!message) return null;
 

@@ -16,7 +16,7 @@ export const ONBOARDING_BLOCKS = {
   marca: 'Sua marca',
 } as const;
 
-export type OnboardingBlock = keyof typeof ONBOARDING_BLOCKS;
+type OnboardingBlock = keyof typeof ONBOARDING_BLOCKS;
 
 type Option = { label: string; description?: string; color?: string };
 
@@ -29,7 +29,8 @@ type BaseQuestion = {
   label: string;
 };
 
-export type OnboardingQuestion =
+/** Formato de uma pergunta na lista (o `id` é qualquer texto aqui; ver OnboardingQuestion). */
+type QuestionDefinition =
   | (BaseQuestion & { kind: 'single'; options: readonly Option[] })
   | (BaseQuestion & {
       kind: 'multi';
@@ -42,7 +43,7 @@ export type OnboardingQuestion =
   | (BaseQuestion & { kind: 'longtext' });
 
 /** Texto da opção "deixo com a equipe" na pergunta da cor. */
-export const COLOR_UP_TO_TEAM = 'Deixo com a equipe';
+const COLOR_UP_TO_TEAM = 'Deixo com a equipe';
 
 export const ONBOARDING_QUESTIONS = [
   {
@@ -181,15 +182,21 @@ export const ONBOARDING_QUESTIONS = [
     help: 'Um símbolo, uma lembrança ou um nome de família. É opcional.',
     label: 'Toque pessoal',
   },
-] as const satisfies readonly OnboardingQuestion[];
+] as const satisfies readonly QuestionDefinition[];
 
 export type OnboardingQuestionId = (typeof ONBOARDING_QUESTIONS)[number]['id'];
 
+/** Uma pergunta da conversa, com o `id` restrito às perguntas que existem. */
+export type OnboardingQuestion = QuestionDefinition & { id: OnboardingQuestionId };
+
 /**
- * Respostas guardadas: o texto da opção (uma ou várias); no nome, `null` = "a equipe sugere";
- * no toque pessoal, texto vazio = pulou. Pergunta sem chave = ainda não respondida.
+ * Uma resposta guardada: o texto da opção (uma ou várias); no nome, `null` = "a equipe sugere";
+ * no toque pessoal, texto vazio = pulou.
  */
-export type OnboardingAnswers = Partial<Record<OnboardingQuestionId, string | string[] | null>>;
+export type AnswerValue = string | string[] | null;
+
+/** Respostas guardadas, por pergunta. Pergunta sem chave = ainda não respondida. */
+export type OnboardingAnswers = Partial<Record<OnboardingQuestionId, AnswerValue>>;
 
 /** Tamanhos máximos dos textos livres. */
 export const STORE_NAME_MAX = 60;

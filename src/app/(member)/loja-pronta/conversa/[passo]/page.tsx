@@ -52,11 +52,7 @@ export default async function ConversationStepPage({ params, searchParams }: Pag
       {passo === REVIEW_STEP ? <ReviewStep answers={answers} /> : null}
       {passo === WHATSAPP_STEP ? <WhatsappStep /> : null}
       {question ? (
-        <QuestionStep
-          question={question}
-          saved={answers[question.id as keyof typeof answers]}
-          editing={editing}
-        />
+        <QuestionStep question={question} saved={answers[question.id]} editing={editing} />
       ) : null}
     </ConversationLayout>
   );

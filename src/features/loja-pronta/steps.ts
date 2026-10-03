@@ -25,8 +25,10 @@ export function stepPath(step: Step, { editing = false } = {}): string {
   return `${CONVERSATION_PATH}/${step}${editing ? '?editar=1' : ''}`;
 }
 
+const STEP_SET: ReadonlySet<string> = new Set(STEPS);
+
 export function isStep(value: string): value is Step {
-  return (STEPS as string[]).includes(value);
+  return STEP_SET.has(value);
 }
 
 export function findQuestion(step: Step): OnboardingQuestion | undefined {
@@ -60,8 +62,8 @@ export function previousPath(step: Step, { editing = false } = {}): string {
 }
 
 /** Número da pergunta (1 a 10), pra "Pergunta 3 de 10". */
-export function questionNumber(step: Step): number {
-  return QUESTION_IDS.indexOf(step as OnboardingQuestionId) + 1;
+function questionNumber(step: Step): number {
+  return QUESTION_IDS.findIndex((id) => id === step) + 1;
 }
 
 export const QUESTION_COUNT = QUESTION_IDS.length;

@@ -17,7 +17,7 @@ import { AuthStatus } from './auth-status';
 import { PasswordField } from './password-field';
 import { PasswordStrengthMeter } from './password-strength-meter';
 
-export function ResetPasswordForm({ token, next }: { token: string; next?: string }) {
+export function ResetPasswordForm({ token, next }: { token: string; next?: string | undefined }) {
   const { state, form, fields, pending, responseKey, formProps } = useAuthForm(
     resetPasswordSchema,
     resetPassword,
@@ -58,7 +58,7 @@ export function ResetPasswordForm({ token, next }: { token: string; next?: strin
   );
 }
 
-export function InvalidResetLink({ next }: { next?: string }) {
+export function InvalidResetLink({ next }: { next?: string | undefined }) {
   return (
     <div className="flex flex-col gap-5">
       <h1 className="sr-only">Link de redefinição de senha</h1>
@@ -68,7 +68,7 @@ export function InvalidResetLink({ next }: { next?: string }) {
   );
 }
 
-function RequestNewLink({ next }: { next?: string }) {
+function RequestNewLink({ next }: { next?: string | undefined }) {
   return (
     <Button asChild>
       <Link href={authHref('/recuperar-senha', next)}>Pedir um link novo</Link>
@@ -76,7 +76,7 @@ function RequestNewLink({ next }: { next?: string }) {
   );
 }
 
-function PasswordChanged({ next }: { next?: string }) {
+function PasswordChanged({ next }: { next?: string | undefined }) {
   useEffect(() => celebrateMascot(), []);
 
   return (

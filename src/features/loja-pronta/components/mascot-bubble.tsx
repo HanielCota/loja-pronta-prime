@@ -3,10 +3,10 @@ import { Mascot } from '@/components/brand/mascot';
 type MascotBubbleProps = {
   /** A pergunta: é o título da página. */
   title: string;
-  help?: string;
+  help?: string | undefined;
   /** Ids do título e da ajuda, pro formulário apontar pra eles (nome e descrição do grupo). */
   titleId: string;
-  helpId?: string;
+  helpId?: string | undefined;
 };
 
 /**

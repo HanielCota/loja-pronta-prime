@@ -2,7 +2,7 @@ import { useEffect, useRef, type RefObject } from 'react';
 import { BOUNCE, JUMP, NOD, PRESS, SHAKE, blinkMotion } from './body-motions';
 import { onMascotSignal, type MascotSignal } from './events';
 import { EXPRESSIONS, toFaceState, type Expression, type FaceState } from './face';
-import { createFaceRenderer } from './face-renderer';
+import { createFaceRenderer, type FaceRenderer } from './face-renderer';
 import { IDLE, focusedPasswordField, gazeFor, type Gaze } from './gaze';
 import { createReasons, type Reason } from './reasons';
 import { springStep } from './spring';
@@ -53,10 +53,15 @@ export function useMascot(
   }, [baseExpression]);
 
   useEffect(() => {
-    const root = rootRef.current;
-    const face = faceRef.current;
-    const renderer = face && createFaceRenderer(face);
-    if (!root || !face || !renderer) return;
+    const rootElement = rootRef.current;
+    const faceElement = faceRef.current;
+    const faceRenderer = faceElement && createFaceRenderer(faceElement);
+    if (!rootElement || !faceElement || !faceRenderer) return;
+    // Já sem nulo, com o tipo explícito: as funções declaradas abaixo usam estas constantes, e o
+    // TypeScript não leva a checagem acima pra dentro delas.
+    const root: HTMLElement = rootElement;
+    const face: HTMLElement = faceElement;
+    const renderer: FaceRenderer = faceRenderer;
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     const reasons = createReasons();
@@ -136,7 +141,7 @@ export function useMascot(
         (key) => (slowLids && key.startsWith('lid') ? SLOW_LID_RESPONSE : FACE_RESPONSE),
         dt,
       );
-      renderer!.render(gaze, faceState);
+      renderer.render(gaze, faceState);
       frame = gazeSettled && faceSettled ? 0 : requestAnimationFrame(step);
     }
 
@@ -144,9 +149,9 @@ export function useMascot(
     function update() {
       if (disposed) return;
       current = reasons.current(baseRef.current);
-      root!.dataset.expression = current;
+      root.dataset.expression = current;
       scheduleReasonExpiry();
-      gazeTarget = gazeFor(face!, currentAttention(), pointer);
+      gazeTarget = gazeFor(face, currentAttention(), pointer);
       faceTarget = toFaceState(EXPRESSIONS[current], eyeOverride());
 
       if (reducedMotion.matches) {
@@ -155,7 +160,7 @@ export function useMascot(
         Object.assign(gazeVelocity, { x: 0, y: 0 });
         for (const key of Object.keys(faceVelocity) as Array<keyof FaceState>)
           faceVelocity[key] = 0;
-        renderer!.render(gaze, faceState);
+        renderer.render(gaze, faceState);
         return;
       }
       if (!frame) {
@@ -186,13 +191,13 @@ export function useMascot(
       keyframes: Keyframe[];
       options: KeyframeAnimationOptions;
     }) {
-      return reducedMotion.matches ? undefined : root!.animate(keyframes, options);
+      return reducedMotion.matches ? undefined : root.animate(keyframes, options);
     }
 
     function blink() {
       if (!reducedMotion.matches && !document.hidden && current !== 'asleep' && !eyeOverride()) {
         const twice = Math.random() < 0.2;
-        renderer!.lids.forEach((lid, index) => {
+        renderer.lids.forEach((lid, index) => {
           const { keyframes, options } = blinkMotion(
             index === 0 ? faceState.lid0 : faceState.lid1,
             twice,
