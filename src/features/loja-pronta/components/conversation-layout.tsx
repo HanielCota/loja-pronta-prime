@@ -26,7 +26,8 @@ const topLink =
 /**
  * Moldura das telas passo a passo (conversa e marca), pensada pra quem tem pouca prática:
  * - "Voltar" escrito, não só a setinha (muita gente não sabe o que a seta faz);
- * - "Sair e continuar depois" ("Sair", fora do computador): sair sem medo;
+ * - "Terminar depois" ("Sair", fora do computador): sair sem medo de perder o que fez (e sem
+ *   parecer mais um "Continuar", como os botões de seguir);
  * - "Pergunta 3 de 10" (não "3 de 10") no meio, e embaixo uma barra com um tracinho por pergunta,
  *   pra ver quanto falta. Nada de letra miúda: o resto quem diz é o título da página.
  * O conteúdo fica numa coluna, centralizado na vertical a partir do tablet (no celular, perto do
@@ -73,11 +74,10 @@ export function ConversationLayout({
               <span className="sr-only">: {header.names[header.filled - 1]}</span>
             ) : null}
           </p>
-          {/* Fora do computador, só "Sair" na tela; o nome completo continua pro leitor de tela,
-              começando pelo que está escrito. */}
+          {/* Fora do computador, só "Sair" na tela (o resto vai pro leitor de tela, depois do que
+              está escrito). O nome lido é sempre o que aparece, sem rótulo à parte. */}
           <Link
             href="/loja-pronta"
-            aria-label="Sair e continuar depois"
             className={cn(
               topLink,
               '-mr-2 justify-self-end px-3 text-muted-foreground hover:text-foreground',
@@ -85,8 +85,10 @@ export function ConversationLayout({
           >
             {/* No celular bem pequeno (320px), só o texto: o ícone não cabe junto. */}
             <DoorOpenIcon aria-hidden="true" className="hidden size-5 min-[360px]:block" />
-            <span className="lg:hidden">Sair</span>
-            <span className="hidden lg:inline">Sair e continuar depois</span>
+            <span className="lg:hidden">
+              Sair<span className="sr-only"> e terminar depois</span>
+            </span>
+            <span className="hidden lg:inline">Terminar depois</span>
           </Link>
         </div>
         {/* O progresso já está escrito acima; os tracinhos são só o desenho dele. */}
