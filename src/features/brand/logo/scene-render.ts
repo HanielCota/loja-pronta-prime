@@ -30,15 +30,17 @@ export function renderSceneSvg(scene: LogoScene, name: string, fonts: LogoFonts)
 
 /** Um elemento, desenhado em volta do (0, 0) e levado pro lugar dele (girado, se for o caso). */
 export function renderElement(element: SceneElement, name: string, fonts: LogoFonts): string {
-  const body =
-    element.type === 'text'
-      ? renderText(element, name, fonts)
-      : element.type === 'icon'
-        ? renderIcon(element)
-        : renderShape(element);
+  const body = renderElementBody(element, name, fonts);
   const rotate = element.rotation ? ` rotate(${round(element.rotation)})` : '';
   const opacity = element.opacity < 1 ? ` opacity="${round(element.opacity, 2)}"` : '';
   return `<g transform="translate(${round(element.x)} ${round(element.y)})${rotate}"${opacity}>${body}</g>`;
+}
+
+/** O desenho do elemento em volta do (0, 0), sem levar pro lugar (o editor põe por cima as alças). */
+export function renderElementBody(element: SceneElement, name: string, fonts: LogoFonts): string {
+  if (element.type === 'text') return renderText(element, name, fonts);
+  if (element.type === 'icon') return renderIcon(element);
+  return renderShape(element);
 }
 
 /** O que o texto diz: o nome da loja, a inicial dele ou o texto dela. */
