@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 /** Cartão branco das áreas; no alto contraste, a borda desenha o que a sombra desenhava. */
 export const panelCard =
   'flex flex-col rounded-card bg-card p-6 shadow-card sm:p-8 forced-colors:border forced-colors:border-[CanvasText]';
-/** Título de seção dentro de um cartão ("Sua jornada", "Ferramentas"). */
+/** Título de seção dentro de um cartão ("Ferramentas", "Seu caminho no curso"). */
 export const sectionTitleClass = 'text-body font-semibold text-foreground';
 
 /**
@@ -24,7 +24,7 @@ type AreaShellProps = {
   hasChoice: boolean;
   /** Nome do produto, em cima do título. */
   product: string;
-  /** Onde ela está no produto ("Sua loja está na fase 1 de 7"). */
+  /** O assunto da área (o nome da loja, "As aulas abrem em breve"). */
   title: string;
   /** A saudação e o que a página mostra. */
   intro: string;

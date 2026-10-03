@@ -3,7 +3,7 @@ import { expectNoA11yViolations, signIn } from './support/auth';
 import { PASSWORD, studentEmail } from './support/students';
 
 const SLL = /As aulas abrem em breve/;
-const LOJA_PRONTA = /Sua loja está na fase/;
+const LOJA_PRONTA = /^Sua loja$/;
 
 test('depois de criar a senha no primeiro acesso, escolhe entre a Loja Pronta e o SLL', async ({
   page,
@@ -31,13 +31,15 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
   // (incluindo qual é o recomendado) vem como descrição.
   await expect(page.getByRole('heading', { level: 2, name: 'Loja Pronta' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Entrar, Loja Pronta' })).toHaveAccessibleDescription(
-    /^Recomendado agora\. Sua loja na Shopee, passo a passo Fase 1 de 7 Conversa inicial Conte sobre você/,
+    /^Recomendado agora\. Sua loja na Shopee, passo a passo Etapa 1 de 3 Você conta sobre você Conte sobre você/,
   );
   // A Loja Pronta vem primeiro.
   await expect(page.getByRole('main').getByRole('link').first()).toContainText('Loja Pronta');
   // O bloco da Loja Pronta mostra a fase da loja.
-  await expect(page.getByRole('link', { name: /Loja Pronta/ })).toContainText('Fase 1 de 7');
-  await expect(page.getByRole('link', { name: /Loja Pronta/ })).toContainText('Conversa inicial');
+  await expect(page.getByRole('link', { name: /Loja Pronta/ })).toContainText('Etapa 1 de 3');
+  await expect(page.getByRole('link', { name: /Loja Pronta/ })).toContainText(
+    'Você conta sobre você',
+  );
   // E o que acontece agora, no lugar do resumo do produto.
   await expect(page.getByRole('link', { name: /Loja Pronta/ })).toContainText(
     'Conte sobre você e sua marca',
@@ -116,22 +118,22 @@ test('sem nenhum produto: avisa que o acesso ainda não foi liberado', async ({ 
   await expect(page).toHaveURL(/\/$/);
 });
 
-test('Loja Pronta mostra a fase da loja e todas as fases', async ({ page }) => {
+test('Loja Pronta mostra o que fazer agora e o caminho em 3 etapas', async ({ page }) => {
   await signIn(page, studentEmail('lojafase3'), PASSWORD);
   await expect(page).toHaveURL(/\/loja-pronta$/);
-  await expect(page.getByRole('heading', { name: 'Fase 3 de 7' })).toBeVisible();
+  // Sem marca ainda: o título é "Sua loja".
+  await expect(page.getByRole('heading', { level: 1, name: 'Sua loja' })).toBeVisible();
 
-  const phases = page
-    .getByRole('list', { name: 'Todas as fases da sua loja' })
-    .getByRole('listitem');
-  await expect(phases).toHaveCount(7);
-  await expect(phases.nth(0)).toContainText('(concluída)');
-  await expect(phases.nth(2)).toHaveAttribute('aria-current', 'step');
-  await expect(phases.nth(2)).toContainText('Conta na Shopee');
+  const stages = page.getByRole('list', { name: 'As etapas da sua loja' }).getByRole('listitem');
+  await expect(stages).toHaveCount(3);
+  await expect(stages.nth(0)).toContainText('(feita)');
+  await expect(stages.nth(1)).toContainText('(feita)');
+  await expect(stages.nth(2)).toHaveAttribute('aria-current', 'step');
+  await expect(stages.nth(2)).toContainText('Passo 1 de 5: Conta na Shopee');
   // Fase ainda sem tela: avisa que está chegando, sem pedir nada.
   await expect(page.getByRole('heading', { name: 'Conta na Shopee' })).toBeVisible();
-  await expect(page.getByText(/Você recebe um aviso no WhatsApp quando ela abrir/)).toBeVisible();
-  await expect(phases.nth(3)).toContainText('(a seguir)');
+  await expect(page.getByText(/Avisamos no WhatsApp quando ela abrir/)).toBeVisible();
+  await expect(page.getByRole('main').getByRole('link')).toHaveCount(0);
   await expectNoA11yViolations(page);
 });
 

@@ -119,13 +119,10 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
 
   // A loja foi pra fase 2: a vez da marca.
   await page.getByRole('link', { name: 'Fazer depois' }).click();
-  await expect(page.getByRole('heading', { name: 'Fase 2 de 7' })).toBeVisible();
-  // A jornada concorda com o cartão: a conversa concluída, a fase 2 como a atual.
-  const phases = page
-    .getByRole('list', { name: 'Todas as fases da sua loja' })
-    .getByRole('listitem');
-  await expect(phases.nth(0)).toContainText('(concluída)');
-  await expect(phases.nth(1)).toHaveAttribute('aria-current', 'step');
+  // O caminho concorda com o destaque: a conversa feita, a marca como a etapa atual.
+  const stages = page.getByRole('list', { name: 'As etapas da sua loja' }).getByRole('listitem');
+  await expect(stages.nth(0)).toContainText('(feita)');
+  await expect(stages.nth(1)).toHaveAttribute('aria-current', 'step');
   await expect(page.getByRole('heading', { name: 'Crie a marca da sua loja' })).toBeVisible();
 
   // Enviada, a conversa não abre de novo.

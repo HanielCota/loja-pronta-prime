@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { getBrand } from '@/features/brand/server/brand';
 import { StorePanel } from '@/features/loja-pronta/components/store-panel';
 import { getStoreOverview } from '@/features/loja-pronta/server/overview';
 import { PRODUCTS } from '@/features/products/catalog';
@@ -11,7 +12,10 @@ export const metadata: Metadata = {
 /** Área do produto: só pra quem tem o produto (os outros voltam pro início). */
 export default async function Page() {
   const { session, products, firstVisit } = await requireProduct('loja-pronta');
-  const { phase, conversation } = await getStoreOverview(session.user.id);
+  const [{ phase, conversation }, brand] = await Promise.all([
+    getStoreOverview(session.user.id),
+    getBrand(session.user.id),
+  ]);
   return (
     <StorePanel
       user={session.user}
@@ -19,6 +23,7 @@ export default async function Page() {
       hasChoice={products.length > 1}
       phase={phase}
       conversation={conversation}
+      brand={{ name: brand.name, logo: brand.logo, started: Boolean(brand.name) }}
     />
   );
 }
