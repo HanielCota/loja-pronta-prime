@@ -16,7 +16,7 @@ export const ONBOARDING_BLOCKS = {
   marca: 'Sua marca',
 } as const;
 
-export type OnboardingBlock = keyof typeof ONBOARDING_BLOCKS;
+type OnboardingBlock = keyof typeof ONBOARDING_BLOCKS;
 
 type Option = { label: string; description?: string; color?: string };
 
@@ -42,7 +42,7 @@ export type OnboardingQuestion =
   | (BaseQuestion & { kind: 'longtext' });
 
 /** Texto da opção "deixo com a equipe" na pergunta da cor. */
-export const COLOR_UP_TO_TEAM = 'Deixo com a equipe';
+const COLOR_UP_TO_TEAM = 'Deixo com a equipe';
 
 export const ONBOARDING_QUESTIONS = [
   {

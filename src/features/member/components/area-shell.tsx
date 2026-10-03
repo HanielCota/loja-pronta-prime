@@ -55,7 +55,7 @@ export function AreaShell({ hasChoice, product, title, intro, children }: AreaSh
  * Topo das telas de dentro (região própria): voltar à esquerda, quando houver pra onde, e sair à
  * direita. O mesmo lugar em todas as telas da aluna.
  */
-export function TopBar({ back }: { back?: { href: string; label: string } }) {
+function TopBar({ back }: { back?: { href: string; label: string } }) {
   return (
     <header className="flex min-h-11 items-center justify-between gap-4">
       {back ? (

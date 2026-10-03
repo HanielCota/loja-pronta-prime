@@ -60,7 +60,7 @@ export function previousPath(step: Step, { editing = false } = {}): string {
 }
 
 /** Número da pergunta (1 a 10), pra "Pergunta 3 de 10". */
-export function questionNumber(step: Step): number {
+function questionNumber(step: Step): number {
   return QUESTION_IDS.indexOf(step as OnboardingQuestionId) + 1;
 }
 

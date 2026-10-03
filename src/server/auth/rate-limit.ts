@@ -9,7 +9,7 @@ const CLEANUP_CHANCE = 0.01;
 /** Acima disso, o contador em memória descarta os vencidos antes de crescer mais. */
 const MEMORY_PRUNE_SIZE = 10_000;
 
-export type RateLimitScope = keyof typeof RATE_LIMITS_PER_MINUTE;
+type RateLimitScope = keyof typeof RATE_LIMITS_PER_MINUTE;
 
 /**
  * Conta a tentativa no Postgres numa instrução só: insere ou soma, e recomeça do 1 quando a
