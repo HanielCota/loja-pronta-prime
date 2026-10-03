@@ -59,6 +59,13 @@ const AUTOSAVE_DELAY = 900;
 
 const ZOOMS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 
+/** No celular, o que aparece embaixo do quadro. */
+const MOBILE_TABS = [
+  { id: 'adicionar', label: 'Adicionar' },
+  { id: 'editar', label: 'Editar' },
+] as const;
+type MobileTab = (typeof MOBILE_TABS)[number]['id'];
+
 type LogoEditorProps = {
   /** A cena salva, ou a do estúdio guiado convertida (configToScene). */
   initialScene: LogoScene;
@@ -77,7 +84,7 @@ type LogoEditorProps = {
 };
 
 /**
- * O editor livre do logo: camadas à esquerda, o quadro no meio (selecionar, arrastar, mudar o
+ * O editor livre do logo, no computador e no celular: camadas à esquerda, o quadro no meio (selecionar, arrastar, mudar o
  * tamanho e girar com as alças) e o elemento selecionado à direita. Tudo também pelo teclado:
  * as camadas escolhem o elemento, as setas movem, Delete apaga, Ctrl+Z desfaz. Cada mudança é
  * salva sozinha; "Salvar e continuar" segue pro próximo passo.
@@ -95,6 +102,7 @@ export function LogoEditor({
   const [variations, setVariations] = useState(initialVariations);
   const [previewing, setPreviewing] = useState(false);
   const [showCircle, setShowCircle] = useState(false);
+  const [mobileTab, setMobileTab] = useState<MobileTab>('adicionar');
   const [history, setHistory] = useState<History>({ past: [], future: [] });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [fonts, setFonts] = useState<LogoFonts | null>(null);
@@ -192,6 +200,8 @@ export function LogoEditor({
 
   function select(id: string | null) {
     setSelectedId(id);
+    // No celular, escolher um elemento abre o painel dele.
+    if (id) setMobileTab('editar');
     const element = findElement(scene, id);
     setAnnouncement(element ? `${elementLabel(element)} selecionado` : 'Nada selecionado');
   }
@@ -200,6 +210,7 @@ export function LogoEditor({
     if (!selected) return;
     commit(removeElement(scene, selected.id));
     setSelectedId(null);
+    setMobileTab('adicionar');
     setAnnouncement(`${elementLabel(selected)} apagado. Ctrl+Z desfaz.`);
     // O botão da camada sumiu: o foco vai pro título das camadas, não pro começo da página.
     (document.getElementById(LAYERS_TITLE_ID) ?? document.getElementById(LEFT_PANEL_ID))?.focus();
@@ -213,6 +224,7 @@ export function LogoEditor({
     }
     commit(result.scene);
     setSelectedId(result.id);
+    setMobileTab('editar');
     setAnnouncement(`${label} adicionado no meio do logo`);
     nodMascot();
   }
@@ -345,27 +357,21 @@ export function LogoEditor({
   const zoom = ZOOMS[zoomIndex] ?? 1;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div data-logo-editor className="flex flex-col gap-4">
       <p aria-live="polite" className="sr-only">
         {announcement}
       </p>
-      <div className="grid grid-cols-[272px_minmax(0,1fr)_300px] items-start gap-5 xl:grid-cols-[300px_minmax(0,1fr)_320px]">
-        <LeftPanel
-          scene={scene}
-          selectedId={selectedId}
-          onSelect={select}
-          onAdd={add}
-          recommended={recommended}
-          templates={templates}
-          onApplyTemplate={applyTemplate}
-          className="sticky top-4"
-        />
-
-        <section aria-label="Quadro do logo" className="flex min-w-0 flex-col gap-3">
+      {/* Computador: três colunas (adicionar, quadro, elemento). Celular: o quadro preso no topo
+          e, embaixo, "Adicionar" ou "Editar" (escolher um elemento abre o "Editar"). */}
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[272px_minmax(0,1fr)_300px] lg:gap-5 xl:grid-cols-[300px_minmax(0,1fr)_320px]">
+        <section
+          aria-label="Quadro do logo"
+          className="sticky -top-px z-20 -mx-4 flex min-w-0 flex-col gap-2 bg-background/95 px-4 pt-2 pb-2 backdrop-blur-md sm:-mx-6 sm:px-6 lg:static lg:col-start-2 lg:row-start-1 lg:m-0 lg:gap-3 lg:bg-transparent lg:p-0 lg:backdrop-blur-none"
+        >
           <div
             role="toolbar"
             aria-label="Ferramentas"
-            className="flex flex-wrap items-center gap-1 rounded-2xl border border-border bg-card px-2 py-1.5 shadow-sm"
+            className="flex flex-wrap items-center gap-1 rounded-2xl border border-border bg-card px-2 py-1 shadow-sm lg:py-1.5"
           >
             <ToolButton
               label="Desfazer (Ctrl+Z)"
@@ -381,34 +387,37 @@ export function LogoEditor({
             >
               <Redo2Icon />
             </ToolButton>
-            <span aria-hidden="true" className="mx-1 h-6 w-px bg-border" />
-            <ToolButton
-              label="Diminuir o zoom"
-              onClick={() => setZoomIndex((index) => Math.max(0, index - 1))}
-              disabled={zoomIndex === 0}
-            >
-              <MinusIcon />
-            </ToolButton>
-            <output
-              aria-label="Zoom"
-              className="w-14 text-center text-sm font-semibold tabular-nums"
-            >
-              {Math.round(zoom * 100)}%
-            </output>
-            <ToolButton
-              label="Aumentar o zoom"
-              onClick={() => setZoomIndex((index) => Math.min(ZOOMS.length - 1, index + 1))}
-              disabled={zoomIndex === ZOOMS.length - 1}
-            >
-              <PlusIcon />
-            </ToolButton>
-            <ToolButton
-              label="Ajustar à tela"
-              onClick={() => setZoomIndex(ZOOMS.indexOf(1))}
-              disabled={zoom === 1}
-            >
-              <MaximizeIcon />
-            </ToolButton>
+            {/* No celular, o zoom é com os dedos (do navegador): os botões ficam no computador. */}
+            <span className="hidden items-center gap-1 lg:flex">
+              <span aria-hidden="true" className="mx-1 h-6 w-px bg-border" />
+              <ToolButton
+                label="Diminuir o zoom"
+                onClick={() => setZoomIndex((index) => Math.max(0, index - 1))}
+                disabled={zoomIndex === 0}
+              >
+                <MinusIcon />
+              </ToolButton>
+              <output
+                aria-label="Zoom"
+                className="w-14 text-center text-sm font-semibold tabular-nums"
+              >
+                {Math.round(zoom * 100)}%
+              </output>
+              <ToolButton
+                label="Aumentar o zoom"
+                onClick={() => setZoomIndex((index) => Math.min(ZOOMS.length - 1, index + 1))}
+                disabled={zoomIndex === ZOOMS.length - 1}
+              >
+                <PlusIcon />
+              </ToolButton>
+              <ToolButton
+                label="Ajustar à tela"
+                onClick={() => setZoomIndex(ZOOMS.indexOf(1))}
+                disabled={zoom === 1}
+              >
+                <MaximizeIcon />
+              </ToolButton>
+            </span>
             <span aria-hidden="true" className="mx-1 h-6 w-px bg-border" />
             <ToolButton
               label="Mostrar o círculo da Shopee"
@@ -440,20 +449,43 @@ export function LogoEditor({
             onLive={live}
             onEndGesture={endGesture}
           />
-          <VariationsStrip
-            scene={scene}
-            variations={variations}
-            name={name}
-            fonts={fonts}
-            onChoose={chooseVariation}
-            onAdd={newVariation}
-            onRemove={removeVariation}
-          />
-          <p className="text-sm text-pretty text-muted-foreground">
-            Toque num elemento pra escolher. Arraste pra mover, use as bolinhas dos cantos pra mudar
-            o tamanho e a de cima pra girar. Pelo teclado: escolha nas camadas e use as setas.
-          </p>
         </section>
+
+        <fieldset className="lg:hidden">
+          <legend className="sr-only">Mostrar embaixo do logo</legend>
+          <div className="grid grid-cols-2 gap-1 rounded-xl bg-black/[0.06] p-1">
+            {MOBILE_TABS.map((tab) => (
+              <label
+                key={tab.id}
+                className="flex min-h-11 cursor-pointer items-center justify-center rounded-lg text-body font-semibold text-muted-foreground has-checked:bg-card has-checked:text-foreground has-checked:shadow-sm has-focus-visible:outline-2 has-focus-visible:outline-ring has-focus-visible:outline-solid forced-colors:has-checked:border-2 forced-colors:has-checked:border-[Highlight]"
+              >
+                <input
+                  type="radio"
+                  name="painel-celular"
+                  value={tab.id}
+                  checked={mobileTab === tab.id}
+                  onChange={() => setMobileTab(tab.id)}
+                  className="sr-only"
+                />
+                {tab.label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <LeftPanel
+          scene={scene}
+          selectedId={selectedId}
+          onSelect={select}
+          onAdd={add}
+          recommended={recommended}
+          templates={templates}
+          onApplyTemplate={applyTemplate}
+          className={cn(
+            'lg:sticky lg:top-4 lg:col-start-1 lg:row-span-2 lg:row-start-1',
+            mobileTab !== 'adicionar' && 'max-lg:hidden',
+          )}
+        />
 
         <PropertiesPanel
           scene={scene}
@@ -465,8 +497,28 @@ export function LogoEditor({
           onBeginGesture={beginGesture}
           onEndGesture={endGesture}
           onRemove={removeSelected}
-          className="sticky top-4"
+          className={cn(
+            'lg:sticky lg:top-4 lg:col-start-3 lg:row-span-2 lg:row-start-1',
+            mobileTab !== 'editar' && 'max-lg:hidden',
+          )}
         />
+
+        <div className="flex flex-col gap-3 lg:col-start-2 lg:row-start-2">
+          <VariationsStrip
+            scene={scene}
+            variations={variations}
+            name={name}
+            fonts={fonts}
+            onChoose={chooseVariation}
+            onAdd={newVariation}
+            onRemove={removeVariation}
+          />
+          <p className="text-sm text-pretty text-muted-foreground">
+            Toque num elemento pra escolher. Arraste pra mover, use as bolinhas dos cantos pra mudar
+            o tamanho e a de cima pra girar (no celular, dá também com dois dedos). Pelo teclado:
+            escolha nas camadas e use as setas.
+          </p>
+        </div>
       </div>
 
       <SaveBar

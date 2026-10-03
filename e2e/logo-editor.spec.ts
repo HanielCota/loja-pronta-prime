@@ -150,12 +150,24 @@ test.describe('conferir, no computador', () => {
 });
 
 test.describe('no celular', () => {
-  test.use({ viewport: { width: 390, height: 844 } });
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-  test('o editor livre explica que é pro computador e leva pro Modo fácil', async ({ page }) => {
-    await signIn(page, studentEmail('editorlivre'), PASSWORD, '/loja-pronta/marca/editor');
-    await expect(page.getByText(/funciona no computador/)).toBeVisible();
-    await page.getByRole('link', { name: 'Voltar pro Modo fácil' }).click();
-    await expect(page).toHaveURL(/\/loja-pronta\/marca\/ajustar$/);
+  test('o editor livre funciona: adicionar abre o painel do elemento', async ({ page }) => {
+    await signIn(page, studentEmail('editorcelular'), PASSWORD, '/loja-pronta/marca/ajustar');
+    await page.getByRole('link', { name: /Editar livremente/ }).click();
+    await expect(page).toHaveURL(/\/loja-pronta\/marca\/editor$/);
+    await expect(drawn(page)).not.toHaveCount(0);
+
+    // Tocar num desenho adiciona e já mostra o painel "Editar" dele.
+    await page.getByRole('button', { name: 'Adicionar Coração' }).first().tap();
+    await expect(page.getByRole('radio', { name: 'Editar' })).toBeChecked();
+    await expect(page.getByRole('heading', { name: /Desenho: Coração/ })).toBeVisible();
+    await page.getByLabel('Tamanho').last().fill('300');
+    await expectNoA11yViolations(page);
+
+    // Numa linha só, o "Salvar e continuar" fica à mão.
+    await expect(page.getByText('Tudo salvo')).toBeAttached({ timeout: 10_000 });
+    await page.getByRole('button', { name: 'Salvar e continuar' }).tap();
+    await expect(page).toHaveURL(/\/loja-pronta\/marca\/(descricao|revisao)$/);
   });
 });

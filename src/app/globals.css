@@ -215,3 +215,15 @@
     display: none;
   }
 }
+
+/* Editor livre do logo: o que recebe foco não fica escondido atrás da barra de salvar (presa
+   embaixo) nem, no celular, atrás do quadro (preso em cima). WCAG 2.4.11. */
+html:has([data-logo-editor]) {
+  scroll-padding-bottom: 7rem;
+}
+
+@media (width < 64rem) {
+  html:has([data-logo-editor]) {
+    scroll-padding-top: calc(34dvh + 8rem);
+  }
+}
