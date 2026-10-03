@@ -43,10 +43,6 @@ type EditorCanvasProps = {
   fontsFailed: boolean;
   sizes: Map<string, Size>;
   selectedId: string | null;
-  /** 1 = o quadro na largura da coluna. */
-  zoom: number;
-  /** Escurece o que fica fora do círculo em que a Shopee mostra o logo. */
-  showCircle: boolean;
   onSelect: (id: string | null) => void;
   onBeginGesture: () => void;
   onLive: (scene: LogoScene) => void;
@@ -65,8 +61,6 @@ export function EditorCanvas({
   fontsFailed,
   sizes,
   selectedId,
-  zoom,
-  showCircle,
   onSelect,
   onBeginGesture,
   onLive,
@@ -77,7 +71,7 @@ export function EditorCanvas({
   const [guides, setGuides] = useState({ vertical: false, horizontal: false });
   // Os dedos (ou o mouse) na tela agora, pra reconhecer a pinça com dois dedos.
   const [pointers] = useState(() => new Map<number, Point>());
-  // Quantos pixels da tela vale uma unidade do logo: as alças ficam do mesmo tamanho com zoom.
+  // Quantos pixels da tela vale uma unidade do logo: as alças ficam do mesmo tamanho na tela.
   const [unit, setUnit] = useState(0.6);
 
   useEffect(() => {
@@ -181,20 +175,15 @@ export function EditorCanvas({
   const handleTouch = 22 / unit;
 
   return (
-    <div className="overflow-auto rounded-card border border-border bg-[#e8e8ed] p-2 [--canvas-max:34dvh] lg:p-4 lg:[--canvas-max:calc(100dvh-420px)] dark:bg-muted forced-colors:border-[CanvasText]">
-      {/* 100% = até 640px; acima disso, o quadro rola. */}
-      <div
-        className="mx-auto"
-        style={{
-          // Em 100%, cabe na janela (no computador, com o topo e a barra de salvar à vista; no
-          // celular, em até um terço da altura, pra sobrar espaço pros controles); acima, rola.
-          width: zoom <= 1 ? `min(${640 * zoom}px, 100%, var(--canvas-max))` : `${640 * zoom}px`,
-        }}
-      >
+    <div>
+      {/* O logo grande, sem moldura: cabe na janela no computador (com o topo e os botões de
+          baixo à vista) e, no celular, em menos de um terço da altura, pra sobrar espaço pras
+          escolhas. */}
+      <div className="mx-auto w-[min(640px,100%,30dvh)] lg:w-[min(640px,100%,calc(100dvh-360px))]">
         <svg
           ref={svgRef}
           viewBox={`0 0 ${SCENE_SIZE} ${SCENE_SIZE}`}
-          className="block aspect-square w-full touch-none rounded-lg bg-card shadow-card select-none"
+          className="block aspect-square w-full touch-none rounded-3xl bg-card shadow-card select-none forced-colors:border forced-colors:border-[CanvasText]"
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
@@ -204,7 +193,7 @@ export function EditorCanvas({
             if (!drag && pointers.size <= 1) onSelect(null);
           }}
         >
-          <title>{`Seu logo, com ${scene.elements.length} elementos. Use a lista de camadas pra escolher um.`}</title>
+          <title>{`Seu logo, com ${scene.elements.length} elementos. Use a lista de partes pra escolher um.`}</title>
           <rect width={SCENE_SIZE} height={SCENE_SIZE} fill={scene.background} />
           {fonts
             ? scene.elements.map((element) => {
@@ -257,26 +246,6 @@ export function EditorCanvas({
               className="stroke-[#ff2d87]"
               strokeWidth={2 / unit}
             />
-          ) : null}
-
-          {showCircle ? (
-            // O que fica fora do círculo some no perfil da Shopee: escurecido e sem pegar cliques.
-            <g aria-hidden="true" pointerEvents="none">
-              <path
-                d={`M0 0H${SCENE_SIZE}V${SCENE_SIZE}H0Z M${SCENE_SIZE / 2} 0a${SCENE_SIZE / 2} ${SCENE_SIZE / 2} 0 1 0 0.01 0Z`}
-                fillRule="evenodd"
-                fill="rgb(0 0 0 / 0.45)"
-              />
-              <circle
-                cx={SCENE_SIZE / 2}
-                cy={SCENE_SIZE / 2}
-                r={SCENE_SIZE / 2 - 1 / unit}
-                fill="none"
-                stroke="white"
-                strokeDasharray={`${8 / unit} ${6 / unit}`}
-                strokeWidth={2 / unit}
-              />
-            </g>
           ) : null}
 
           {selected && selectedSize ? (

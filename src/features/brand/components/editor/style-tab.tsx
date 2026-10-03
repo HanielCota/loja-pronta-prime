@@ -22,29 +22,28 @@ import {
 import { drawText } from '../../logo/text';
 import { sceneDataUrl } from './variations-strip';
 
-type StyleTabProps = {
+type StyleProps = {
   scene: LogoScene;
-  name: string;
-  fonts: LogoFonts | null;
-  recommended: SceneIconId[];
-  /** Os modelos do estúdio: cada formato sai com a cor, a letra e o desenho de agora. */
-  templates: LogoConfig[];
-  /** Uma escolha que muda o logo todo (entra no histórico: Ctrl+Z desfaz). */
+  /** Uma escolha que muda o logo todo (entra no histórico: Desfazer volta). */
   onStyle: (scene: LogoScene, announcement: string) => void;
 };
 
 /**
- * A aba "Estilo", o jeito fácil de montar o logo: cor, fundo, letra, desenho e formato, cada um
- * com um toque e valendo pro logo inteiro. O que ela arrumou à mão continua (menos no formato,
- * que recomeça a arrumação, e Ctrl+Z traz de volta).
+ * O Estilo, o jeito fácil de montar o logo (o editor abre nele): cor, fundo e letra, cada um com
+ * um toque e valendo pro logo inteiro, sem desfazer o que ela arrumou à mão. Sem letra miúda: o
+ * nome de cada letra vai pro leitor de tela, e a amostra fala por si.
  */
-export function StyleTab({ scene, name, fonts, recommended, templates, onStyle }: StyleTabProps) {
+export function StylePanel({
+  scene,
+  name,
+  fonts,
+  onStyle,
+}: StyleProps & { name: string; fonts: LogoFonts | null }) {
   const style = sceneStyle(scene);
   const storeName = name.trim() || NAME_FALLBACK;
-  const icons = [...new Set([...recommended, ...(ICON_GROUPS[0]?.icons ?? [])])].slice(0, 15);
 
   return (
-    <div className="flex flex-col gap-5">
+    <>
       <Choices legend="Cor" columns="grid-cols-6">
         {(group) =>
           LOGO_COLORS.map((color) => (
@@ -109,69 +108,80 @@ export function StyleTab({ scene, name, fonts, recommended, templates, onStyle }
               label={font.label}
               checked={style.font === font.id}
               onSelect={() => onStyle(applyFont(scene, font.id), `Letra ${font.label}`)}
-              className="flex-col gap-1 py-2"
+              className="min-h-16 px-3 py-3"
             >
               <FontSample font={font.id} text={storeName} fonts={fonts} />
-              <span className="text-xs text-muted-foreground">{font.label}</span>
             </Option>
           ))
         }
       </Choices>
-
-      <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-semibold">Desenho</h2>
-        <div className="grid grid-cols-4 gap-1.5">
-          <IconChoice
-            label="Sem desenho"
-            pressed={style.icon === null}
-            onClick={() => onStyle(removeIcons(scene), 'Sem desenho')}
-          >
-            <BanIcon aria-hidden="true" className="size-6" />
-          </IconChoice>
-          {icons.map((id) => {
-            const icon = SCENE_ICONS.find((item) => item.id === id);
-            if (!icon) return null;
-            return (
-              <IconChoice
-                key={id}
-                label={icon.label}
-                pressed={style.icon === id}
-                onClick={() => onStyle(applyIcon(scene, id), `Desenho ${icon.label}`)}
-              >
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  className="size-7"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.75}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  {icon.node.map(([tag, attrs], index) =>
-                    createElement(tag, { key: index, ...attrs }),
-                  )}
-                </svg>
-              </IconChoice>
-            );
-          })}
-        </div>
-        <p className="text-sm text-pretty text-muted-foreground">Mais desenhos na aba Elementos.</p>
-      </section>
-
-      <Formats scene={scene} name={name} fonts={fonts} templates={templates} onStyle={onStyle} />
-    </div>
+    </>
   );
 }
 
-/** Os formatos, já com o estilo de agora; escolher um recomeça a arrumação. */
-function Formats({
+/**
+ * O desenho principal do logo: tocar num troca ele (ou tira, em "Sem desenho"). Os recomendados
+ * (das categorias dela) vêm primeiro.
+ */
+export function MainIconPicker({
+  scene,
+  recommended,
+  onStyle,
+}: StyleProps & { recommended: SceneIconId[] }) {
+  const style = sceneStyle(scene);
+  const icons = [...new Set([...recommended, ...(ICON_GROUPS[0]?.icons ?? [])])].slice(0, 11);
+
+  return (
+    <section className="flex flex-col gap-2">
+      <h3 className="text-body font-semibold">O desenho do logo</h3>
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(4rem,1fr))] gap-2">
+        <IconChoice
+          label="Sem desenho"
+          pressed={style.icon === null}
+          onClick={() => onStyle(removeIcons(scene), 'Sem desenho')}
+        >
+          <BanIcon aria-hidden="true" className="size-6" />
+        </IconChoice>
+        {icons.map((id) => {
+          const icon = SCENE_ICONS.find((item) => item.id === id);
+          if (!icon) return null;
+          return (
+            <IconChoice
+              key={id}
+              label={icon.label}
+              pressed={style.icon === id}
+              onClick={() => onStyle(applyIcon(scene, id), `Desenho ${icon.label}`)}
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className="size-7"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.75}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                {icon.node.map(([tag, attrs], index) =>
+                  createElement(tag, { key: index, ...attrs }),
+                )}
+              </svg>
+            </IconChoice>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+/** Os modelos (formatos), já com o estilo de agora; escolher um recomeça a arrumação. */
+export function TemplatesPanel({
   scene,
   name,
   fonts,
   templates,
   onStyle,
-}: Pick<StyleTabProps, 'scene' | 'name' | 'fonts' | 'templates' | 'onStyle'>) {
+}: StyleProps & { name: string; fonts: LogoFonts | null; templates: LogoConfig[] }) {
   // Só as quatro partes do estilo (não a cena inteira): arrastar uma parte não redesenha os seis.
   const { color, font, icon, colored } = sceneStyle(scene);
   const options = useMemo(
@@ -192,33 +202,27 @@ function Formats({
   );
 
   return (
-    <section className="flex flex-col gap-2">
-      <h2 className="text-sm font-semibold">Formato</h2>
-      <p className="text-sm text-pretty text-muted-foreground">
-        Arruma tudo de novo nesse formato. Ctrl+Z desfaz.
-      </p>
-      <ul className="grid grid-cols-2 gap-2">
-        {options.map((option) => (
-          <li key={option.template.template}>
-            <button
-              type="button"
-              onClick={() => onStyle(option.scene, `Formato ${option.label}`)}
-              className="flex w-full flex-col items-center gap-1 rounded-xl border-[1.5px] border-input bg-card p-1.5 text-xs text-muted-foreground outline-none hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={option.src}
-                alt=""
-                width={120}
-                height={120}
-                className="aspect-square w-full rounded-lg"
-              />
-              {option.label}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </section>
+    <ul className="grid grid-cols-2 gap-3 xl:grid-cols-3">
+      {options.map((option) => (
+        <li key={option.template.template}>
+          <button
+            type="button"
+            onClick={() => onStyle(option.scene, `Formato ${option.label}`)}
+            aria-label={option.label}
+            className="block w-full rounded-2xl border-[1.5px] border-input bg-card p-1.5 outline-none hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid forced-colors:border-[ButtonText]"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={option.src}
+              alt=""
+              width={120}
+              height={120}
+              className="aspect-square w-full rounded-xl"
+            />
+          </button>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -235,8 +239,8 @@ function Choices({
   const name = useId();
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="mb-2 text-sm font-semibold">{legend}</legend>
-      <div className={cn('grid gap-1.5', columns)}>{children(name)}</div>
+      <legend className="mb-2 text-body font-semibold">{legend}</legend>
+      <div className={cn('grid gap-2', columns)}>{children(name)}</div>
     </fieldset>
   );
 }
@@ -259,7 +263,7 @@ function Option({
   return (
     <label
       className={cn(
-        'flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border-[1.5px] border-input bg-card px-2 text-sm font-semibold has-checked:border-primary has-checked:bg-primary-soft has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring has-focus-visible:outline-solid forced-colors:has-checked:border-[Highlight]',
+        'flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border-[1.5px] border-input bg-card px-2 text-body font-semibold has-checked:border-primary has-checked:bg-primary-soft has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring has-focus-visible:outline-solid forced-colors:has-checked:border-[Highlight]',
         className,
       )}
     >
@@ -315,13 +319,13 @@ function FontSample({
     () => (fonts ? drawText(fonts[font], text, { lines: 1, size: 100, maxWidth: 4000 }) : null),
     [fonts, font, text],
   );
-  if (!block) return <span className="h-7 w-full rounded bg-muted" aria-hidden="true" />;
+  if (!block) return <span className="h-8 w-full rounded bg-muted" aria-hidden="true" />;
   const { x1, y1, x2, y2 } = block.box;
   return (
     <svg
       aria-hidden="true"
       viewBox={`${x1} ${y1} ${x2 - x1} ${y2 - y1}`}
-      className="h-7 w-full"
+      className="h-8 w-full"
       preserveAspectRatio="xMidYMid meet"
     >
       <path d={block.d} fill="currentColor" />

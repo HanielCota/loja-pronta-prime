@@ -3,26 +3,11 @@
 import { SearchIcon } from 'lucide-react';
 import { createElement, useId, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import type { LogoConfig } from '../../logo/config';
 import { CUSTOM_TEXT_MAX } from '../../logo/scene';
 import type { LogoScene, TextElement } from '../../logo/scene';
-import { LOGO_FONTS, type LogoFontId } from '../../logo/fonts';
+import type { LogoFontId } from '../../logo/fonts';
 import { ICON_GROUPS, SCENE_ICONS, type SceneIconId } from '../../logo/icons';
-import { mainColor, type NewElement } from '../../logo/editor';
-import type { LogoFonts } from '../../logo/scene-render';
-import { LayersPanel } from './layers-panel';
-import { StyleTab } from './style-tab';
-
-const TABS = [
-  { id: 'estilo', label: 'Estilo' },
-  { id: 'elementos', label: 'Elementos' },
-  { id: 'texto', label: 'Texto' },
-  { id: 'camadas', label: 'Camadas' },
-] as const;
-type TabId = (typeof TABS)[number]['id'];
-
-/** Pra onde o foco volta quando o elemento escolhido some (ver logo-editor). */
-export const LEFT_PANEL_ID = 'painel-adicionar';
+import type { NewElement } from '../../logo/editor';
 
 /** As formas da biblioteca, já no tamanho em que entram. */
 const SHAPES: { label: string; element: (color: string) => NewElement }[] = [
@@ -90,112 +75,15 @@ const SHAPES: { label: string; element: (color: string) => NewElement }[] = [
 /** Sem acento e em minúsculas, pra busca achar "maca" em "Maçã". */
 const plain = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 
-type LeftPanelProps = {
-  scene: LogoScene;
-  selectedId: string | null;
-  onSelect: (id: string | null) => void;
+type AddProps = {
+  /** A cor principal do logo: o que entra já vem nela. */
+  color: string;
   onAdd: (element: NewElement, label: string) => void;
-  /** Os desenhos que combinam com as categorias dela. */
-  recommended: SceneIconId[];
-  /** Os modelos prontos do estúdio (os formatos da aba Estilo). */
-  templates: LogoConfig[];
-  /** O nome da loja e as letras, pras amostras da aba Estilo. */
-  name: string;
-  fonts: LogoFonts | null;
-  /** Uma escolha da aba Estilo, que muda o logo todo. */
-  onStyle: (scene: LogoScene, announcement: string) => void;
-  className?: string;
 };
 
-/**
- * À esquerda: o estilo do logo todo (o jeito fácil, aberto primeiro), o que dá pra pôr no logo
- * (desenhos, formas, textos) e as camadas. As abas são botões de opção (as setas trocam de aba sem
- * mexer no logo).
- */
-export function LeftPanel({
-  scene,
-  selectedId,
-  onSelect,
-  onAdd,
-  recommended,
-  templates,
-  name: storeName,
-  fonts,
-  onStyle,
-  className,
-}: LeftPanelProps) {
-  const [tab, setTab] = useState<TabId>('estilo');
-  const name = useId();
-  const color = mainColor(scene);
-
-  return (
-    <div
-      id={LEFT_PANEL_ID}
-      tabIndex={-1}
-      className={cn(
-        'flex flex-col gap-3 rounded-card bg-card p-3 shadow-card outline-none',
-        className,
-      )}
-    >
-      <fieldset>
-        <legend className="sr-only">Mostrar</legend>
-        <div className="grid grid-cols-2 gap-1 rounded-xl bg-segment p-1">
-          {TABS.map((item) => (
-            <label
-              key={item.id}
-              className="flex min-h-10 cursor-pointer items-center justify-center rounded-lg px-2 text-sm font-semibold text-muted-foreground has-checked:bg-segment-thumb has-checked:text-foreground has-checked:shadow-sm has-focus-visible:outline-2 has-focus-visible:outline-ring has-focus-visible:outline-solid forced-colors:has-checked:border-2 forced-colors:has-checked:border-[Highlight]"
-            >
-              <input
-                type="radio"
-                name={name}
-                value={item.id}
-                checked={tab === item.id}
-                onChange={() => setTab(item.id)}
-                className="sr-only"
-              />
-              {item.label}
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      <div className="max-h-[calc(100dvh-260px)] min-h-0 overflow-y-auto px-1 pb-1">
-        {tab === 'elementos' ? (
-          <ElementsTab color={color} recommended={recommended} onAdd={onAdd} />
-        ) : null}
-        {tab === 'texto' ? <TextTab scene={scene} color={color} onAdd={onAdd} /> : null}
-        {tab === 'estilo' ? (
-          <StyleTab
-            scene={scene}
-            name={storeName}
-            fonts={fonts}
-            recommended={recommended}
-            templates={templates}
-            onStyle={onStyle}
-          />
-        ) : null}
-        {tab === 'camadas' ? (
-          <LayersPanel
-            scene={scene}
-            selectedId={selectedId}
-            onSelect={onSelect}
-            className="p-1 shadow-none"
-          />
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function ElementsTab({
-  color,
-  recommended,
-  onAdd,
-}: {
-  color: string;
-  recommended: SceneIconId[];
-  onAdd: LeftPanelProps['onAdd'];
-}) {
+/** Pôr mais um desenho ou uma forma: a busca (sem acento) e os grupos (os recomendados já estão
+ * no "desenho do logo", logo acima). */
+export function AddDrawings({ color, onAdd }: AddProps) {
   const [query, setQuery] = useState('');
   const searchId = useId();
   const term = plain(query.trim());
@@ -240,11 +128,6 @@ function ElementsTab({
         </Group>
       ) : (
         <>
-          <Group title="Recomendados pra você">
-            {recommended.map((icon) => (
-              <IconButton key={icon} id={icon} onClick={() => add(icon)} />
-            ))}
-          </Group>
           <Group title="Formas">
             {SHAPES.map((shape) => (
               <AddButton
@@ -269,15 +152,8 @@ function ElementsTab({
   );
 }
 
-function TextTab({
-  scene,
-  color,
-  onAdd,
-}: {
-  scene: LogoScene;
-  color: string;
-  onAdd: LeftPanelProps['onAdd'];
-}) {
+/** Pôr um texto: um dela, o nome da loja ou a inicial, na mesma letra do nome. */
+export function AddTexts({ scene, color, onAdd }: AddProps & { scene: LogoScene }) {
   const [value, setValue] = useState('');
   const inputId = useId();
   const nameText = scene.elements.find(
@@ -298,7 +174,7 @@ function TextTab({
           setValue('');
         }}
       >
-        <label htmlFor={inputId} className="text-sm font-semibold">
+        <label htmlFor={inputId} className="text-body font-semibold">
           Escreva um texto
         </label>
         <input
@@ -333,10 +209,6 @@ function TextTab({
           <span className="text-body font-semibold">Inicial</span>
         </AddButton>
       </Group>
-      <p className="text-sm text-pretty text-muted-foreground">
-        A letra do texto novo é a mesma do nome ({LOGO_FONTS.find((f) => f.id === font)?.label}). Dá
-        pra trocar depois, à direita.
-      </p>
     </div>
   );
 }
@@ -345,10 +217,10 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
   return (
     <section aria-labelledby={id} className="flex flex-col gap-2">
-      <h2 id={id} className="text-sm font-semibold">
+      <h2 id={id} className="text-body font-semibold">
         {title}
       </h2>
-      <div className="grid grid-cols-4 gap-1.5">{children}</div>
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(4rem,1fr))] gap-2">{children}</div>
     </section>
   );
 }

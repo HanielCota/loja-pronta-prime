@@ -1,6 +1,6 @@
 'use client';
 
-import { PlusIcon, XIcon } from 'lucide-react';
+import { PlusIcon, Trash2Icon } from 'lucide-react';
 import { useMemo } from 'react';
 import { MAX_VARIATIONS, type LogoScene } from '../../logo/scene';
 import { renderSceneSvg, type LogoFonts } from '../../logo/scene-render';
@@ -11,9 +11,8 @@ export function sceneDataUrl(scene: LogoScene, name: string, fonts: LogoFonts): 
 }
 
 /**
- * Embaixo do quadro: a versão em que ela está mexendo e as guardadas. Tocar numa guardada troca
- * (a do quadro vai pro lugar dela); "Nova variação" guarda uma cópia pra ela testar outra ideia
- * sem perder a de agora.
+ * As versões: a que está no quadro e as guardadas. Tocar numa guardada troca (a do quadro vai pro
+ * lugar dela); "Guardar" guarda uma cópia pra ela testar outra ideia sem perder a de agora.
  */
 export function VariationsStrip({
   scene,
@@ -43,56 +42,55 @@ export function VariationsStrip({
   const full = variations.length >= MAX_VARIATIONS;
 
   return (
-    <section aria-labelledby="variacoes-titulo" className="flex flex-col gap-2">
-      <h2 id="variacoes-titulo" className="text-sm font-semibold">
-        Variações
-      </h2>
-      <ul className="flex flex-wrap gap-2">
+    <section aria-label="Versões guardadas" className="flex flex-col gap-5">
+      <p className="-mt-3 text-body text-pretty text-muted-foreground">
+        Vai testar outra ideia? Guarde uma cópia antes. Pra voltar, é só tocar nela.
+      </p>
+      <button
+        type="button"
+        onClick={onAdd}
+        disabled={full}
+        className="inline-flex min-h-14 items-center justify-center gap-2 rounded-full bg-primary-soft px-6 text-body font-semibold text-link transition-[background-color,transform] duration-100 outline-none hover:bg-primary/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid active:scale-[0.97] disabled:opacity-50 motion-reduce:active:scale-100 forced-colors:border-2 forced-colors:border-[ButtonText]"
+      >
+        <PlusIcon aria-hidden="true" className="size-5" />
+        Guardar uma cópia
+      </button>
+      {full ? (
+        <p className="-mt-2 text-body text-pretty text-muted-foreground">
+          Dá pra guardar até {MAX_VARIATIONS} versões. Apague uma pra guardar outra.
+        </p>
+      ) : null}
+      <ul className="grid grid-cols-2 gap-3">
         <li>
-          <figure className="flex flex-col items-center gap-1">
+          <figure className="flex flex-col gap-2">
             <Thumb src={current} className="border-primary ring-2 ring-primary" />
-            <figcaption className="text-xs font-semibold">Esta</figcaption>
+            <figcaption className="text-center text-body font-semibold">No quadro agora</figcaption>
           </figure>
         </li>
         {others.map((src, index) => (
-          <li key={index} className="group relative">
+          <li key={index} className="relative">
             <button
               type="button"
               onClick={() => onChoose(index)}
-              aria-label={`Trocar pra variação ${index + 1}`}
-              className="flex flex-col items-center gap-1 rounded-xl outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid"
+              aria-label={`Trocar pra versão ${index + 1}`}
+              className="group flex w-full flex-col gap-2 rounded-2xl outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid"
             >
               <Thumb src={src} className="border-input group-hover:border-primary" />
-              <span className="text-xs text-muted-foreground">{index + 1}</span>
+              <span className="text-center text-body text-muted-foreground group-hover:text-link">
+                Versão {index + 1}
+              </span>
             </button>
             <button
               type="button"
               onClick={() => onRemove(index)}
-              aria-label={`Apagar variação ${index + 1}`}
-              className="absolute -top-2 -right-2 grid size-7 place-items-center rounded-full border border-border bg-card text-muted-foreground shadow-sm outline-none hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-solid"
+              aria-label={`Apagar versão ${index + 1}`}
+              className="absolute top-2 right-2 grid size-11 place-items-center rounded-full bg-card/90 text-foreground shadow-card outline-none hover:text-destructive focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-solid forced-colors:border forced-colors:border-[ButtonText]"
             >
-              <XIcon aria-hidden="true" className="size-4" />
+              <Trash2Icon aria-hidden="true" className="size-5" />
             </button>
           </li>
         ))}
-        <li>
-          <button
-            type="button"
-            onClick={onAdd}
-            disabled={full}
-            className="flex size-16 flex-col items-center justify-center gap-0.5 rounded-xl border-[1.5px] border-dashed border-input text-xs font-semibold text-link outline-none hover:border-primary hover:bg-primary-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid disabled:opacity-50"
-          >
-            <PlusIcon aria-hidden="true" className="size-5" />
-            Nova
-            <span className="sr-only"> variação</span>
-          </button>
-        </li>
       </ul>
-      {full ? (
-        <p className="text-sm text-muted-foreground">
-          Dá pra guardar até {MAX_VARIATIONS} variações. Apague uma pra criar outra.
-        </p>
-      ) : null}
     </section>
   );
 }
@@ -103,11 +101,13 @@ function Thumb({ src, className }: { src: string | null; className?: string }) {
     <img
       src={src}
       alt=""
-      width={64}
-      height={64}
-      className={`size-16 rounded-xl border-[1.5px] bg-card ${className ?? ''}`}
+      width={200}
+      height={200}
+      className={`aspect-square w-full rounded-2xl border-[1.5px] bg-card ${className ?? ''}`}
     />
   ) : (
-    <span className={`block size-16 rounded-xl border-[1.5px] bg-muted ${className ?? ''}`} />
+    <span
+      className={`block aspect-square w-full rounded-2xl border-[1.5px] bg-muted ${className ?? ''}`}
+    />
   );
 }
