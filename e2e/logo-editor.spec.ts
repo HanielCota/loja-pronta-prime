@@ -104,7 +104,7 @@ test.describe('biblioteca, no computador', () => {
 
     // Um modelo arruma tudo de novo; Desfazer traz o de antes.
     await tool(page, 'Modelos').check({ force: true });
-    await page.getByRole('button', { name: 'Selo redondo' }).click();
+    await page.getByRole('button', { name: 'Selo redondo', exact: true }).click();
     await expect(drawn(page)).not.toHaveCount(5);
     await page.getByRole('button', { name: 'Desfazer' }).click();
     await expect(drawn(page)).toHaveCount(5);
@@ -157,6 +157,54 @@ test.describe('conferir, no computador', () => {
     await page.reload();
     await tool(page, 'Versões').check({ force: true });
     await expect(page.getByRole('button', { name: 'Trocar pra versão 1' })).toBeVisible();
+  });
+});
+
+test.describe('ajuda pra acertar, no computador', () => {
+  test.use({ viewport: { width: 1440, height: 1000 } });
+
+  test('ideias prontas, recomeçar e a conferência antes de seguir', async ({ page }) => {
+    await signIn(page, studentEmail('editorideias'), PASSWORD, '/loja-pronta/marca/ajustar');
+    await expect(drawn(page)).toHaveCount(2);
+    const logo = () => canvas(page).innerHTML();
+
+    // "Me mostra ideias prontas" leva às ideias; uma ideia troca o logo inteiro.
+    await page.getByRole('button', { name: 'Me mostra ideias prontas' }).click();
+    await expect(tool(page, 'Modelos')).toBeChecked();
+    const ideas = page.getByRole('region', { name: 'Ideias prontas pra você' }).getByRole('button');
+    await expect(ideas.first()).toBeVisible();
+    const first = await ideas.first().getAttribute('aria-label');
+    await page.getByRole('button', { name: 'Outras ideias' }).click();
+    await expect(ideas.first()).not.toHaveAttribute('aria-label', first!);
+    const before = await logo();
+    await ideas.nth(2).click();
+    await expect.poll(logo).not.toBe(before);
+    await expectNoA11yViolations(page);
+
+    // Recomeçar do zero volta ao primeiro modelo; Desfazer traz a ideia.
+    const idea = await logo();
+    await page.getByRole('button', { name: 'Recomeçar do zero' }).click();
+    await expect.poll(logo).not.toBe(idea);
+    await page.getByRole('button', { name: 'Desfazer' }).click();
+    await expect.poll(logo).toBe(idea);
+
+    // O nome enorme e torto sai do círculo da Shopee: a conferência segura e conserta.
+    await tool(page, 'Partes').check({ force: true });
+    await page.getByRole('button', { name: 'Nome da loja', exact: true }).click();
+    await page.getByLabel('Tamanho').last().fill('380');
+    await page.getByLabel('Giro (°)').fill('20');
+    await page.getByRole('button', { name: 'Pronto' }).click();
+    await page.getByRole('button', { name: 'Gostei, continuar' }).click();
+    const check = page.getByRole('dialog', { name: 'Antes de seguir, vale arrumar' });
+    await expect(check.getByText(/cortado no círculo da Shopee/)).toBeVisible();
+    await expect(page).toHaveURL(/\/marca\/ajustar$/);
+    await expectNoA11yViolations(page);
+    await check.getByRole('button', { name: 'Trazer pra dentro' }).click();
+    const ok = page.getByRole('dialog', { name: 'Tudo certo com seu logo!' });
+    await expect(ok).toBeVisible();
+    await expect(page.getByText('Tudo salvo')).toBeAttached({ timeout: 10_000 });
+    await ok.getByRole('button', { name: 'Gostei, continuar' }).click();
+    await expect(page).toHaveURL(/\/loja-pronta\/marca\/descricao$/);
   });
 });
 

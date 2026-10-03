@@ -44,6 +44,7 @@ export type StudentKind =
   | 'editorlivre'
   | 'editorbiblioteca'
   | 'editorvariacoes'
+  | 'editorideias'
   | 'editorcelular';
 
 /** Id desta execução, definido no global-setup: cada execução usa alunas próprias. */

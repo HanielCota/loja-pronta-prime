@@ -4,7 +4,7 @@ import { BrandReview } from '@/features/brand/components/brand-review';
 import { DescriptionStep } from '@/features/brand/components/description-step';
 import { LogoEditor } from '@/features/brand/components/editor/logo-editor';
 import { NameStep } from '@/features/brand/components/name-step';
-import { logoTemplates } from '@/features/brand/logo/config';
+import { logoIdeas, logoTemplates } from '@/features/brand/logo/config';
 import { loadLogoFonts } from '@/features/brand/logo/fonts.server';
 import { configToScene } from '@/features/brand/logo/from-config';
 import { iconsForCategories } from '@/features/brand/logo/icons';
@@ -80,6 +80,7 @@ export default async function BrandStepPage({ params, searchParams }: PageProps)
               editing={editing}
               recommended={iconsForCategories(categories)}
               templates={templates}
+              ideas={logoIdeas(answers)}
             />
           </div>
         </>

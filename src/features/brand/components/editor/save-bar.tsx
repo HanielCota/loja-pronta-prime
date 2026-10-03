@@ -23,14 +23,19 @@ export function SaveBar({
   variations,
   editing,
   saveState,
+  formId,
+  onContinue,
 }: {
   scene: LogoScene;
   variations: LogoScene[];
   editing: boolean;
   saveState: SaveState;
+  formId: string;
+  /** Antes de enviar: devolve `false` pra segurar (a conferência abre no lugar). */
+  onContinue: () => boolean;
 }) {
   return (
-    <BrandForm action={finishLogoEditor} editing={editing}>
+    <BrandForm action={finishLogoEditor} editing={editing} id={formId}>
       <input type="hidden" name="scene" value={JSON.stringify(scene)} />
       <input type="hidden" name="variations" value={JSON.stringify(variations)} />
       <output
@@ -45,15 +50,23 @@ export function SaveBar({
         ) : null}
         {STATUS[saveState]}
       </output>
-      <ContinueButton />
+      <ContinueButton onContinue={onContinue} />
     </BrandForm>
   );
 }
 
-function ContinueButton() {
+function ContinueButton({ onContinue }: { onContinue: () => boolean }) {
   const pending = useBrandPending();
   return (
-    <Button type="submit" loading={pending} loadingText="Salvando…" className="min-h-14">
+    <Button
+      type="submit"
+      loading={pending}
+      loadingText="Salvando…"
+      className="min-h-14"
+      onClick={(event) => {
+        if (!onContinue()) event.preventDefault();
+      }}
+    >
       Gostei, continuar
       {pending ? null : <ArrowRightIcon aria-hidden="true" />}
     </Button>
