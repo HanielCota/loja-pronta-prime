@@ -3,13 +3,13 @@ import { STORE_PHASES } from '@/config/store-phases';
 import { storeChooserCard } from './store-card';
 
 describe('storeChooserCard', () => {
-  test('fase 1: depende dela, com a fase, o nome e o que acontece', () => {
+  test('fase 1: depende dela, com a etapa, o nome e o que acontece', () => {
     const card = storeChooserCard(1);
     expect(card.waitsOnStudent).toBe(true);
     expect(card.status).toEqual({
-      caption: `Fase 1 de ${STORE_PHASES.length}`,
-      label: 'Conversa inicial',
-      bar: { step: 1, total: STORE_PHASES.length },
+      caption: 'Etapa 1 de 3',
+      label: 'Você conta sobre você',
+      bar: { step: 1, total: 3 },
       detail: STORE_PHASES[0]?.detail,
     });
   });
@@ -17,6 +17,7 @@ describe('storeChooserCard', () => {
   test('marca: depende dela; fases ainda fechadas, não', () => {
     expect(storeChooserCard(2).waitsOnStudent).toBe(true);
     expect(storeChooserCard(3).waitsOnStudent).toBe(false);
-    expect(storeChooserCard(7).status.label).toBe('Loja no ar');
+    expect(storeChooserCard(5).status.caption).toBe('Etapa 3 de 3');
+    expect(storeChooserCard(5).status.detail).toBe(STORE_PHASES[4]?.detail);
   });
 });

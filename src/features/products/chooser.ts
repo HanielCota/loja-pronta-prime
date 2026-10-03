@@ -1,12 +1,12 @@
 import type { ProductId } from '@/config/products';
 
 /**
- * Onde ela está num produto, no cartão da escolha de área: a etapa ("Fase 3 de 7"), o nome dela,
+ * Onde ela está num produto, no cartão da escolha de área: a etapa ("Etapa 2 de 3"), o nome dela,
  * a barra de etapas (quando há) e o que acontece agora. Com `detail`, o cartão troca o resumo do
  * produto por ele: quem já comprou precisa saber o que vem a seguir, não o que o produto é.
  */
 export type ProductStatus = {
-  /** Linha pequena acima ("Fase 1 de 7"). */
+  /** Linha pequena acima ("Etapa 1 de 3"). */
   caption?: string | undefined;
   label: string;
   bar?: { step: number; total: number } | undefined;
