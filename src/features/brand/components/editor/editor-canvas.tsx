@@ -19,7 +19,22 @@ type Point = { x: number; y: number };
 type Drag =
   | { mode: 'move'; start: Point; element: SceneElement }
   | { mode: 'scale'; start: Point; element: SceneElement }
-  | { mode: 'rotate'; element: SceneElement };
+  | { mode: 'rotate'; element: SceneElement }
+  /** Dois dedos no celular: a distância muda o tamanho e o ângulo entre eles gira. */
+  | { mode: 'pinch'; element: SceneElement; distance: number; angle: number };
+
+/** Distância e ângulo (em graus) entre os dois primeiros dedos na tela. */
+function fingers(points: Map<number, Point>): { distance: number; angle: number } | undefined {
+  const [a, b] = [...points.values()];
+  if (!a || !b) return undefined;
+  return {
+    distance: Math.hypot(b.x - a.x, b.y - a.y),
+    angle: (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI,
+  };
+}
+
+/** Ângulo entre -180 e 180. */
+const normalizeAngle = (angle: number) => ((((angle + 180) % 360) + 360) % 360) - 180;
 
 type EditorCanvasProps = {
   scene: LogoScene;
@@ -60,6 +75,8 @@ export function EditorCanvas({
   const svgRef = useRef<SVGSVGElement>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
   const [guides, setGuides] = useState({ vertical: false, horizontal: false });
+  // Os dedos (ou o mouse) na tela agora, pra reconhecer a pinça com dois dedos.
+  const [pointers] = useState(() => new Map<number, Point>());
   // Quantos pixels da tela vale uma unidade do logo: as alças ficam do mesmo tamanho com zoom.
   const [unit, setUnit] = useState(0.6);
 
@@ -105,12 +122,33 @@ export function EditorCanvas({
     setDrag(next);
   }
 
+  /** Cada dedo que encosta. O segundo, com um elemento escolhido, vira pinça. */
+  function onPointerDownCapture(event: PointerEvent<SVGSVGElement>) {
+    pointers.set(event.pointerId, toScene(event));
+    const pair = fingers(pointers);
+    const element = findElement(scene, selectedId);
+    if (pointers.size !== 2 || !pair || !element) return;
+    event.stopPropagation();
+    svgRef.current?.setPointerCapture(event.pointerId);
+    if (!drag) onBeginGesture();
+    setGuides({ vertical: false, horizontal: false });
+    setDrag({ mode: 'pinch', element, ...pair });
+  }
+
   function onPointerMove(event: PointerEvent<SVGSVGElement>) {
+    if (pointers.has(event.pointerId)) pointers.set(event.pointerId, toScene(event));
     if (!drag) return;
     const pointer = toScene(event);
     const { element } = drag;
     let next: SceneElement;
-    if (drag.mode === 'move') {
+    if (drag.mode === 'pinch') {
+      const pair = fingers(pointers);
+      if (!pair || drag.distance <= 0) return;
+      next = {
+        ...scaleElement(element, pair.distance / drag.distance),
+        rotation: Math.round(normalizeAngle(element.rotation + pair.angle - drag.angle) * 10) / 10,
+      };
+    } else if (drag.mode === 'move') {
       const snapped = snapCenter(
         element.x + pointer.x - drag.start.x,
         element.y + pointer.y - drag.start.y,
@@ -127,8 +165,10 @@ export function EditorCanvas({
     onLive(replaceElement(scene, next));
   }
 
-  function onPointerUp() {
-    if (!drag) return;
+  function onPointerUp(event: PointerEvent<SVGSVGElement>) {
+    pointers.delete(event.pointerId);
+    // Na pinça, tirar um dedo já termina (o outro não volta a arrastar sozinho).
+    if (!drag || (drag.mode !== 'pinch' && pointers.size > 0)) return;
     setDrag(null);
     setGuides({ vertical: false, horizontal: false });
     onEndGesture();
@@ -137,15 +177,18 @@ export function EditorCanvas({
   const selected = findElement(scene, selectedId);
   const selectedSize = selected ? sizes.get(selected.id) : undefined;
   const handle = 9 / unit;
+  // Área de toque das alças: 44px, mesmo com a bolinha menor.
+  const handleTouch = 22 / unit;
 
   return (
-    <div className="overflow-auto rounded-card border border-border bg-[#e8e8ed] p-4 forced-colors:border-[CanvasText]">
+    <div className="overflow-auto rounded-card border border-border bg-[#e8e8ed] p-2 [--canvas-max:34dvh] lg:p-4 lg:[--canvas-max:calc(100dvh-420px)] forced-colors:border-[CanvasText]">
       {/* 100% = até 640px; acima disso, o quadro rola. */}
       <div
         className="mx-auto"
         style={{
-          // Em 100%, cabe na janela (com o topo e a barra de salvar à vista); acima, rola.
-          width: zoom <= 1 ? `min(${640 * zoom}px, 100%, calc(100dvh - 420px))` : `${640 * zoom}px`,
+          // Em 100%, cabe na janela (no computador, com o topo e a barra de salvar à vista; no
+          // celular, em até um terço da altura, pra sobrar espaço pros controles); acima, rola.
+          width: zoom <= 1 ? `min(${640 * zoom}px, 100%, var(--canvas-max))` : `${640 * zoom}px`,
         }}
       >
         <svg
@@ -155,7 +198,11 @@ export function EditorCanvas({
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
-          onPointerDown={() => onSelect(null)}
+          onPointerDownCapture={onPointerDownCapture}
+          onPointerDown={() => {
+            // Tocar no fundo solta o elemento (mas não o segundo dedo de uma pinça).
+            if (!drag && pointers.size <= 1) onSelect(null);
+          }}
         >
           <title>{`Seu logo, com ${scene.elements.length} elementos. Use a lista de camadas pra escolher um.`}</title>
           <rect width={SCENE_SIZE} height={SCENE_SIZE} fill={scene.background} />
@@ -255,31 +302,51 @@ export function EditorCanvas({
                 className="stroke-primary"
                 strokeWidth={2 / unit}
               />
-              <circle
-                cx={0}
-                cy={-selectedSize.height / 2 - 34 / unit}
-                r={handle}
-                className="cursor-grab fill-card stroke-primary"
-                strokeWidth={2 / unit}
+              <g
+                className="cursor-grab"
                 onPointerDown={(event) => start(event, { mode: 'rotate', element: selected })}
-              />
+              >
+                <circle
+                  cx={0}
+                  cy={-selectedSize.height / 2 - 34 / unit}
+                  r={handleTouch}
+                  fill="transparent"
+                />
+                <circle
+                  cx={0}
+                  cy={-selectedSize.height / 2 - 34 / unit}
+                  r={handle}
+                  className="fill-card stroke-primary"
+                  strokeWidth={2 / unit}
+                />
+              </g>
               {[
                 [-1, -1],
                 [1, -1],
                 [1, 1],
                 [-1, 1],
               ].map(([sx, sy]) => (
-                <circle
+                <g
                   key={`${sx}${sy}`}
-                  cx={(sx! * selectedSize.width) / 2}
-                  cy={(sy! * selectedSize.height) / 2}
-                  r={handle}
-                  className={`fill-card stroke-primary ${sx === sy ? 'cursor-nwse-resize' : 'cursor-nesw-resize'}`}
-                  strokeWidth={2 / unit}
+                  className={sx === sy ? 'cursor-nwse-resize' : 'cursor-nesw-resize'}
                   onPointerDown={(event) =>
                     start(event, { mode: 'scale', start: toScene(event), element: selected })
                   }
-                />
+                >
+                  <circle
+                    cx={(sx! * selectedSize.width) / 2}
+                    cy={(sy! * selectedSize.height) / 2}
+                    r={handleTouch}
+                    fill="transparent"
+                  />
+                  <circle
+                    cx={(sx! * selectedSize.width) / 2}
+                    cy={(sy! * selectedSize.height) / 2}
+                    r={handle}
+                    className="fill-card stroke-primary"
+                    strokeWidth={2 / unit}
+                  />
+                </g>
               ))}
             </g>
           ) : null}
