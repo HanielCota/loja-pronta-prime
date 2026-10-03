@@ -193,12 +193,21 @@ export function addElement(
   return { scene: { ...scene, elements: [...scene.elements, placed] }, id };
 }
 
-/** A cor principal do logo (a do nome, ou a do primeiro elemento), pro que ela adicionar. */
+/**
+ * A cor principal do logo, pro que ela adicionar: a do nome, ou (nome branco num selo ou numa
+ * faixa) a primeira cor que não é branca nem a do fundo. Num fundo colorido, tudo é branco: aí a
+ * principal é o branco mesmo.
+ */
 export function mainColor(scene: LogoScene): string {
   const name = scene.elements.find(
     (element) => element.type === 'text' && element.source === 'name',
   );
-  return (name ?? scene.elements[0])?.color ?? '#1d1d1f';
+  const colors = [name, ...scene.elements].flatMap((element) => (element ? [element.color] : []));
+  return (
+    colors.find((color) => color !== '#ffffff' && color !== scene.background) ??
+    colors[0] ??
+    '#1d1d1f'
+  );
 }
 
 /** Um id que ainda não existe na cena. */
