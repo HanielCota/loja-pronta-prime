@@ -37,7 +37,7 @@ export default async function HomePage() {
 
   if (products.length === 0) {
     return (
-      <CenteredMemberPage>
+      <CenteredMemberPage account={user}>
         <BrandCard expression="happy" compact>
           <CardHeading
             title="Seu acesso ainda não foi liberado"
@@ -65,7 +65,7 @@ export default async function HomePage() {
 
   // Sem o cartão em volta: os produtos são os cartões, com o espaço da tela toda.
   return (
-    <CenteredMemberPage wide>
+    <CenteredMemberPage account={user} wide>
       <div className="flex flex-col">
         <CardHeading
           className="mb-0"

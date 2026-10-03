@@ -3,7 +3,7 @@ import { AreaShell, greeting } from '@/features/member/components/area-shell';
 import { SllCourseCard, SllToolsCard } from './sll-cards';
 
 type SllAreaProps = {
-  user: { name: string };
+  user: { name: string; email: string };
   /** Primeira vez nesta área: "Boas-vindas"; depois, "Oi". */
   firstVisit: boolean;
   /** Tem os dois produtos: o topo leva de volta pra escolha. */
@@ -17,6 +17,7 @@ type SllAreaProps = {
 export function SllArea({ user, firstVisit, hasChoice }: SllAreaProps) {
   return (
     <AreaShell
+      account={user}
       hasChoice={hasChoice}
       product="Sistema Loja Lucrativa (SLL)"
       // As aulas ainda não estão no ar: o título diz isso, sem mandar ela "começar" algo fechado.

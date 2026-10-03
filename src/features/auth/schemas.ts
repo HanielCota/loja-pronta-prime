@@ -30,6 +30,24 @@ export const firstPasswordSchema = z.object({
   next: z.string().optional(),
 });
 
+/** Trocar a senha logada (perfil): a atual confirma que é ela mesma quem está no aparelho. */
+export const changePasswordSchema = z.object({
+  currentPassword: z
+    .string({ error: VALIDATION_MESSAGES.currentPasswordRequired })
+    .max(PASSWORD_MAX_LENGTH, { error: VALIDATION_MESSAGES.passwordTooLong }),
+  password,
+});
+
+export const NAME_MAX_LENGTH = 60;
+
+export const profileNameSchema = z.object({
+  name: z
+    .string({ error: VALIDATION_MESSAGES.nameRequired })
+    .trim()
+    .min(1, { error: VALIDATION_MESSAGES.nameRequired })
+    .max(NAME_MAX_LENGTH, { error: VALIDATION_MESSAGES.nameTooLong }),
+});
+
 export const resetPasswordSchema = z.object({
   password,
   token: z.string({ error: VALIDATION_MESSAGES.resetLinkMissing }),

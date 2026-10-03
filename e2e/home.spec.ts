@@ -27,7 +27,8 @@ test('logada, abrir o login leva direto pro início', async ({ page }) => {
 
 test('sair encerra a sessão e volta pro login', async ({ page, context }) => {
   await signIn(page);
-  await page.getByRole('button', { name: 'Sair da conta' }).click();
+  await page.getByRole('button', { name: 'Sua conta' }).click();
+  await page.getByRole('menuitem', { name: 'Sair da conta' }).click();
   await expect(page).toHaveURL(/\/entrar$/);
   await expect
     .poll(async () => (await context.cookies()).some((c) => c.name.endsWith('session_token')))

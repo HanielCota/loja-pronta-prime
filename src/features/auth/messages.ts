@@ -18,6 +18,9 @@ export const VALIDATION_MESSAGES = {
   passwordRequired: 'Digite sua senha',
   passwordTooShort: `Senha precisa ter no mínimo ${PASSWORD_MIN_LENGTH} caracteres`,
   passwordTooLong: `Senha pode ter no máximo ${PASSWORD_MAX_LENGTH} caracteres`,
+  currentPasswordRequired: 'Digite sua senha atual',
+  nameRequired: 'Digite seu nome',
+  nameTooLong: 'Use no máximo 60 letras',
   resetLinkMissing: 'Abra o link que enviamos no seu email',
 } as const;
 
@@ -58,6 +61,14 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, AuthMessage> = {
   same_password: {
     title: 'Escolha uma senha diferente da temporária',
     hint: 'Crie uma senha só sua, diferente da que chegou por email.',
+  },
+  wrong_current_password: {
+    title: 'A senha atual não confere',
+    hint: 'Digite a senha que você usa pra entrar. Se não lembrar, saia da conta e use "Esqueceu a senha?" no login.',
+  },
+  unchanged_password: {
+    title: 'A senha nova é igual à atual',
+    hint: 'Escolha uma senha diferente da que você usa hoje.',
   },
   // Vale pra qualquer tela de acesso (login, primeiro acesso, redefinição): título neutro.
   unknown: {

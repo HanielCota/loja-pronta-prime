@@ -35,7 +35,9 @@ export type StudentKind =
   | 'apinome'
   | 'conversatoques'
   | 'marca'
-  | 'marcateclado';
+  | 'marcateclado'
+  | 'perfilnome'
+  | 'perfilsenha';
 
 /** Id desta execução, definido no global-setup: cada execução usa alunas próprias. */
 export function runId(): string {
