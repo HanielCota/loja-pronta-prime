@@ -54,7 +54,7 @@ export function LoginForm({ next, initialError }: LoginFormProps) {
                 href={authHref('/recuperar-senha', next)}
                 onClick={() => rememberEmail(fields.email.value ?? '')}
               >
-                Esqueci ou não recebi a senha
+                Esqueceu ou não recebeu a senha?
               </Link>
             </Button>
           </div>
