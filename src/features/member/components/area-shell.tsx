@@ -38,7 +38,7 @@ type AreaShellProps = {
 export function AreaShell({ hasChoice, product, title, intro, children }: AreaShellProps) {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[1040px] flex-col gap-8 px-4 pt-4 pb-12 sm:px-6 sm:pt-6">
-      <TopBar back={hasChoice ? { href: '/', label: 'Início' } : undefined} />
+      <TopBar back={hasChoice ? { href: '/', label: 'Voltar ao início' } : undefined} />
       <main className="flex flex-col gap-8">
         <div className="flex flex-col gap-2">
           {product ? (
@@ -64,9 +64,11 @@ function TopBar({ back }: { back?: { href: string; label: string } | undefined }
   if (!back) return null;
   return (
     <header className="flex min-h-11 items-center">
+      {/* Com cara de botão (fundo, borda, letra escura) e dizendo o que faz: um "‹ Início" cinza
+          passava por texto pra quem tem pouca prática. */}
       <Link
         href={back.href}
-        className="-ml-1 inline-flex min-h-11 items-center gap-1 rounded-md font-medium text-muted-foreground transition-colors duration-100 outline-none hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid"
+        className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border bg-card py-2 pr-4 pl-3 text-body font-semibold text-foreground shadow-sm transition-colors duration-100 outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid forced-colors:border-[ButtonText]"
       >
         <ChevronLeftIcon aria-hidden="true" className="size-5" />
         {back.label}
