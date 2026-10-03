@@ -39,7 +39,11 @@ export default async function ConversationDonePage() {
   return (
     <CenteredMemberPage
       account={session.user}
-      back={{ href: '/loja-pronta', label: 'Voltar à Loja Pronta' }}
+      trail={[
+        { href: '/', label: 'Início' },
+        { href: '/loja-pronta', label: 'Loja Pronta' },
+      ]}
+      current="Respostas enviadas"
     >
       <div className="flex flex-col gap-6">
         <Logo expression="happy" compact />

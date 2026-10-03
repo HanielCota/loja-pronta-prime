@@ -24,7 +24,10 @@ test('o menu da conta leva ao perfil, e o nome novo aparece na hora', async ({ p
   await page.getByRole('button', { name: 'Salvar nome' }).click();
   await expect(page.locator('p').filter({ hasText: 'Nome salvo' })).toBeVisible();
 
-  await page.getByRole('link', { name: 'Voltar ao início' }).click();
+  await page
+    .getByRole('navigation', { name: 'Você está em' })
+    .getByRole('link', { name: 'Início' })
+    .click();
   await expect(page.getByRole('heading', { name: 'Oi, Maria! Pra onde vamos?' })).toBeVisible();
 });
 

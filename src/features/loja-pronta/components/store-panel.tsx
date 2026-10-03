@@ -37,6 +37,7 @@ export function StorePanel({ user, hasChoice, phase, conversation, brand }: Stor
     <AreaShell
       account={user}
       hasChoice={hasChoice}
+      crumb="Loja Pronta"
       title={
         brand.name ?? (name ? `Oi, ${name}! Vamos montar sua loja?` : 'Vamos montar sua loja?')
       }

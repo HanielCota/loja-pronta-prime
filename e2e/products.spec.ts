@@ -24,7 +24,9 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
   await expect(page.getByRole('heading', { name: /Pra onde vamos/ })).toBeVisible();
   // No topo, a marca e a conta; sem voltar (já é o início) e sem rodapé competindo com os produtos.
   await expect(page.getByRole('banner').getByRole('button', { name: 'Sua conta' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Voltar ao início' })).toHaveCount(0);
+  await expect(
+    page.getByRole('navigation', { name: 'Você está em' }).getByRole('link', { name: 'Início' }),
+  ).toHaveCount(0);
   await expect(page.getByRole('contentinfo')).toHaveCount(0);
   // Leitor de tela: cada produto é um título, o link se chama pelo que faz e o resto do cartão
   // (incluindo qual é o recomendado) vem como descrição.
@@ -53,7 +55,10 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
   await expectNoA11yViolations(page);
 
   // Sem barra: com os dois produtos, o link "Início" leva de volta pra escolha.
-  await page.getByRole('link', { name: 'Voltar ao início' }).click();
+  await page
+    .getByRole('navigation', { name: 'Você está em' })
+    .getByRole('link', { name: 'Início' })
+    .click();
   await expect(page.getByRole('heading', { name: /Pra onde vamos/ })).toBeVisible();
   await page.goto('/loja-pronta');
   await expect(page.getByRole('heading', { name: LOJA_PRONTA })).toBeVisible();
@@ -97,7 +102,9 @@ test('com um produto só: entra direto nele, sem tela de escolha', async ({ page
   await expect(page.getByRole('menuitem', { name: 'Sair da conta' })).toBeVisible();
   await page.keyboard.press('Escape');
   // E não há pra onde voltar.
-  await expect(page.getByRole('link', { name: 'Voltar ao início' })).toHaveCount(0);
+  await expect(
+    page.getByRole('navigation', { name: 'Você está em' }).getByRole('link', { name: 'Início' }),
+  ).toHaveCount(0);
 
   // A área do produto que ela não tem leva de volta (e o início manda pro produto dela).
   await page.goto('/loja-pronta');
