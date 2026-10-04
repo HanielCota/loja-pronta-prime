@@ -14,6 +14,7 @@ import {
   SLL_CHOOSER_STATUS,
   type ProductStatus,
 } from '@/features/products/chooser';
+import { getBrand } from '@/features/brand/server/brand';
 import { getStoreOverview } from '@/features/loja-pronta/server/overview';
 import { storeChooserCard } from '@/features/loja-pronta/store-card';
 import { greetingName } from '@/features/products/names';
@@ -55,9 +56,7 @@ export default async function HomePage() {
     );
   }
 
-  const store = products.includes('loja-pronta')
-    ? storeChooserCard((await getStoreOverview(user.id)).phase)
-    : undefined;
+  const store = products.includes('loja-pronta') ? await storeCard(user.id) : undefined;
   const status: Partial<Record<ProductId, ProductStatus>> = {
     sll: SLL_CHOOSER_STATUS,
     ...(store ? { 'loja-pronta': store.status } : {}),
@@ -78,4 +77,12 @@ export default async function HomePage() {
       <ProductChooser products={products} lastArea={lastArea} status={status} primary={primary} />
     </CenteredMemberPage>
   );
+}
+
+/** O cartão da Loja Pronta, com a mesma regra do painel pro logo que falta. */
+async function storeCard(userId: string) {
+  const [{ phase }, brand] = await Promise.all([getStoreOverview(userId), getBrand(userId)]);
+  return storeChooserCard(phase, {
+    missingLogo: Boolean(brand.completedAt) && !brand.logoImage,
+  });
 }

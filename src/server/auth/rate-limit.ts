@@ -86,3 +86,22 @@ export async function consumeAttempt(scope: RateLimitScope, identity: string): P
   }
   return points <= max;
 }
+
+/**
+ * Confere vários limites em ordem e para no primeiro estourado, sem contar a tentativa nos
+ * seguintes. Devolve a regra estourada (ou `undefined` se passou em todas).
+ *
+ * A ordem importa: do limite mais apertado pro mais largo. Uma tentativa barrada pelo limite de
+ * email + IP não pode subir o contador só do email: senão um único IP enche o teto da conta e
+ * trava a dona dela, de qualquer lugar.
+ */
+export async function consumeAttempts(
+  checks: readonly (readonly [RateLimitScope, string | undefined])[],
+): Promise<RateLimitScope | undefined> {
+  for (const [scope, identity] of checks) {
+    // Sem identidade (IP desconhecido): essa regra não se aplica.
+    if (identity === undefined) continue;
+    if (!(await consumeAttempt(scope, identity))) return scope;
+  }
+  return undefined;
+}

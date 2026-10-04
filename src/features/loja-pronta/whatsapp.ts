@@ -23,8 +23,22 @@ export function isValidDdd(ddd: string): boolean {
 type Removed = 'pais' | 'zero' | 'operadora';
 
 /**
+ * O 55 da frente é o do país? 55 também é DDD (RS), então nem sempre:
+ * - 13 números: é o país (DDD 55 com 2 números a mais é raro demais);
+ * - 12 números: é o país quando ela escreveu o "+", ou quando o 3º número não é 9 (um celular
+ *   de DDD 55 seria "55 9..."). Sem isso, quem é do RS e aperta uma tecla a mais teria o 55
+ *   cortado calado, e o número viraria outro.
+ */
+function startsWithCountryCode(input: string, digits: string): boolean {
+  if (!digits.startsWith('55')) return false;
+  if (digits.length === 13) return true;
+  if (digits.length !== 12) return false;
+  return input.trimStart().startsWith('+') || digits.charAt(2) !== '9';
+}
+
+/**
  * Só os números, sem o que ela não precisa digitar:
- * - o 55 do país (só com 12 ou 13 números: 55 também é DDD);
+ * - o 55 do país (veja `startsWithCountryCode`);
  * - o 0 da frente e, depois dele, o código da operadora ("0 21 11 98765-4321": 0 + operadora
  *   21 + DDD), reconhecido quando sobram 12 ou 13 números.
  * Nada é cortado além disso: número a mais continua lá, pra ela ver e corrigir (cortar calado
@@ -33,7 +47,7 @@ type Removed = 'pais' | 'zero' | 'operadora';
 export function cleanWhatsapp(input: string): { digits: string; removed?: Removed } {
   let digits = input.replace(/\D/g, '');
   let removed: Removed | undefined;
-  if ((digits.length === 12 || digits.length === 13) && digits.startsWith('55')) {
+  if (startsWithCountryCode(input, digits)) {
     digits = digits.slice(2);
     removed = 'pais';
   }
@@ -111,7 +125,13 @@ export function whatsappHint(digits: string, removed?: Removed): WhatsappHint {
     return { tone: 'warning', text: 'Não precisa do 0: comece pelo DDD, como 11.' };
   }
   if (!digits) return { tone: 'info', text: `Exemplo: ${EXAMPLE}` };
-  if (digits.length === 9 && digits.startsWith('9')) {
+  // Um celular sem DDD ("9 8765-4321"). Com DDD 91–99 ela também passa por 9 números, mas aí o
+  // 3º é o 9 do celular: só avisa quando não pode ser isso.
+  if (
+    digits.length === 9 &&
+    digits.startsWith('9') &&
+    (!isValidDdd(digits.slice(0, 2)) || digits.charAt(2) !== '9')
+  ) {
     return { tone: 'warning', text: 'Faltou o DDD: os 2 números da sua cidade, como 11.' };
   }
   if (digits.length >= 2 && !isValidDdd(digits.slice(0, 2))) {

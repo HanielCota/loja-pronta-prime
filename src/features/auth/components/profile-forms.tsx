@@ -12,7 +12,7 @@ import {
   UserRoundIcon,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
@@ -79,6 +79,9 @@ export function ProfileSettings({ name, email, emailHelp }: ProfileSettingsProps
 
   return (
     <>
+      <noscript>
+        <style>{NO_SCRIPT_CSS}</style>
+      </noscript>
       <SettingsGroup id="perfil-conta" title="Sua conta" footer={emailHelp}>
         <ExpandableRow
           section="name"
@@ -303,7 +306,16 @@ type ExpandableRowProps = {
  * Linha que abre o formulário embaixo dela. A linha inteira é o botão (alvo grande, fácil no
  * celular). Fechado, o formulário continua montado (guarda o que ela digitou e a resposta do
  * servidor), mas `inert`: o Tab e o leitor de tela pulam ele.
+ *
+ * Sem JavaScript, nada abriria: por isso o `inert` só entra depois de a página hidratar, e o
+ * <noscript> deixa os formulários abertos (eles funcionam sem JavaScript).
  */
+const noSubscribe = () => () => {};
+
+/** Sem JavaScript, as linhas não abrem: os formulários ficam abertos e os botões da linha somem. */
+const NO_SCRIPT_CSS =
+  '[data-profile-panel]{grid-template-rows:1fr!important}[aria-controls^="perfil-"] [data-row-action]{display:none}';
+
 function ExpandableRow({
   section,
   rowRef,
@@ -319,6 +331,11 @@ function ExpandableRow({
 }: ExpandableRowProps) {
   const panel = useRef<HTMLDivElement>(null);
   const panelId = `perfil-${section}-form`;
+  const hydrated = useSyncExternalStore(
+    noSubscribe,
+    () => true,
+    () => false,
+  );
 
   // Sem o foco no campo, ele fica na linha: o Tab seguinte já entra no formulário.
   useEffect(() => {
@@ -357,7 +374,7 @@ function ExpandableRow({
             {saved}
           </span>
         ) : (
-          <span className="flex items-center gap-1 text-sm font-semibold text-link">
+          <span data-row-action className="flex items-center gap-1 text-sm font-semibold text-link">
             {action}
             <ChevronRightIcon
               aria-hidden="true"
@@ -372,7 +389,8 @@ function ExpandableRow({
       <div
         id={panelId}
         ref={panel}
-        inert={!open}
+        inert={hydrated && !open}
+        data-profile-panel
         onTransitionEnd={(event) => {
           if (open && event.target === event.currentTarget) revealPanel();
         }}

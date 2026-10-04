@@ -5,7 +5,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { after } from 'next/server';
 import { auth } from '@/server/auth/auth';
-import { consumeAttempt } from '@/server/auth/rate-limit';
+import { consumeAttempt, consumeAttempts } from '@/server/auth/rate-limit';
 import { reportAuthError } from '@/server/auth/report-error';
 import { getClientIp } from '@/server/request/client-ip';
 import { ENHANCED_SUBMIT_FIELD } from '@/lib/forms';
@@ -22,17 +22,17 @@ export type RecoverResult = { submission?: FormResult; sentTo?: string } | undef
 export type ResetResult = { submission?: FormResult; completed?: boolean } | undefined;
 
 /**
- * Login: limite por conta vinda de um mesmo IP, teto por conta e, quando o IP é conhecido, por
- * IP. Sem IP conhecido, o limite apertado vale pra conta inteira (o lado seguro).
+ * Login: limite por conta vinda de um mesmo IP, por IP (quando conhecido) e teto por conta, nessa
+ * ordem. Sem IP conhecido, o limite apertado vale pra conta inteira (o lado seguro).
  */
 async function canAttemptLogin(email: string): Promise<boolean> {
   const ip = await getClientIp();
-  const results = await Promise.all([
-    consumeAttempt('loginPerEmailAndIp', ip ? `${email} ${ip}` : email),
-    consumeAttempt('loginPerEmail', email),
-    ip ? consumeAttempt('loginPerIp', ip) : true,
+  const exceeded = await consumeAttempts([
+    ['loginPerEmailAndIp', ip ? `${email} ${ip}` : email],
+    ['loginPerIp', ip],
+    ['loginPerEmail', email],
   ]);
-  return results.every(Boolean);
+  return exceeded === undefined;
 }
 
 export async function login(_state: LoginResult, formData: FormData): Promise<LoginResult> {
@@ -87,15 +87,19 @@ export async function requestPasswordReset(
     ? `/redefinir-senha?${new URLSearchParams({ next })}`
     : '/redefinir-senha';
 
-  // Por email (no minuto e no dia): ninguém consegue encher a caixa de entrada de outra pessoa
-  // com links. Por IP: ninguém dispara links pra uma lista inteira de emails.
+  // Por IP: ninguém dispara links pra uma lista inteira de emails. Por email (no minuto e no dia):
+  // ninguém enche a caixa de entrada de outra pessoa com links. Nessa ordem: pedido barrado no IP
+  // não gasta o limite do dia da dona do email.
   const ip = await getClientIp();
-  const allowed = await Promise.all([
-    consumeAttempt('recoverPerEmail', email),
-    consumeAttempt('recoverPerEmailPerDay', email),
-    ip ? consumeAttempt('recoverPerIp', ip) : true,
+  const exceeded = await consumeAttempts([
+    ['recoverPerIp', ip],
+    ['recoverPerEmail', email],
+    ['recoverPerEmailPerDay', email],
   ]);
-  if (allowed.includes(false)) return { submission: reject(submission, 'rate_limited') };
+  if (exceeded === 'recoverPerEmailPerDay') {
+    return { submission: reject(submission, 'recover_daily_limit') };
+  }
+  if (exceeded) return { submission: reject(submission, 'rate_limited') };
 
   // Depois da resposta: com conta, o Better Auth grava o token no banco; sem conta, só consulta.
   // Respondendo antes, o tempo de resposta é o mesmo nos dois casos e não revela se o email existe.

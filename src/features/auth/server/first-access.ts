@@ -50,8 +50,6 @@ export async function createFirstPassword(
     return { submission: reject(submission, 'unknown') };
   }
   if (!session) return { submission: reject(submission, 'session_expired') };
-  // Já criou a senha (ou outra aba acabou de criar): não há nada a trocar aqui.
-  if (!needsFirstPassword(session.user)) return finish();
 
   const userId = session.user.id;
   if (!(await consumeAttempt('firstPasswordPerUser', userId))) {
@@ -59,6 +57,32 @@ export async function createFirstPassword(
   }
 
   const credential = and(eq(account.userId, userId), eq(account.providerId, 'credential'));
+  /**
+   * Já criou a senha (clique duplo, ou outra aba acabou de criar): se é a mesma que ela digitou,
+   * segue em frente; se é outra, avisa. Seguir calado faria o navegador guardar a senha que não
+   * foi salva, e o próximo login falharia.
+   */
+  const alreadyCreated = async (): Promise<FirstAccessResult> => {
+    let same: boolean;
+    try {
+      const context = await auth.$context;
+      const [stored] = await db
+        .select({ password: account.password })
+        .from(account)
+        .where(credential);
+      same = stored?.password
+        ? await context.password.verify({ hash: stored.password, password })
+        : false;
+    } catch (error) {
+      reportAuthError('primeiro acesso já concluído', error);
+      return { submission: reject(submission, 'unknown') };
+    }
+    // Fora do try: o redirect do Next funciona lançando uma exceção.
+    return same ? finish() : { submission: reject(submission, 'first_password_already_set') };
+  };
+
+  if (!needsFirstPassword(session.user)) return alreadyCreated();
+
   let outcome: 'changed' | 'already-done' | 'same-password';
   try {
     const context = await auth.$context;
@@ -71,10 +95,8 @@ export async function createFirstPassword(
     // Sem senha guardada não há o que trocar: tirar a marca de "senha temporária" deixaria uma
     // conta sem senha que pula o primeiro acesso.
     if (!stored?.password) throw new Error('Conta sem senha guardada no primeiro acesso');
-    if (await context.password.verify({ hash: stored.password, password })) {
-      return { submission: reject(submission, 'same_password') };
-    }
-    const newHash = await context.password.hash(password);
+    const typedStored = await context.password.verify({ hash: stored.password, password });
+    const newHash = typedStored ? null : await context.password.hash(password);
 
     // Na transação, com a linha da aluna travada: dois envios ao mesmo tempo (clique duplo, outra
     // aba) não se atropelam, e senha e marca mudam juntas ou nenhuma muda.
@@ -85,6 +107,8 @@ export async function createFirstPassword(
         .where(eq(user.id, userId))
         .for('update');
       if (!current || !needsFirstPassword(current)) return 'already-done';
+      // Igual à guardada, e ela ainda é a temporária: precisa ser outra.
+      if (!newHash) return 'same-password';
 
       const now = new Date();
       await tx.update(account).set({ password: newHash, updatedAt: now }).where(credential);
@@ -99,7 +123,9 @@ export async function createFirstPassword(
     return { submission: reject(submission, 'unknown') };
   }
 
+  if (outcome === 'same-password') return { submission: reject(submission, 'same_password') };
+  if (outcome === 'already-done') return alreadyCreated();
   // Quem souber a senha temporária (ela foi por email) perde as outras sessões; esta continua.
-  if (outcome === 'changed') await revokeOtherSessions(userId, session.session.token);
+  await revokeOtherSessions(userId, session.session.token);
   return finish();
 }

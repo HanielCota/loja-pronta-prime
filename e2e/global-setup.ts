@@ -3,6 +3,13 @@ import { readFile } from 'node:fs/promises';
 import type { ProductId } from '@/config/products';
 import { auth } from '@/server/auth/auth';
 import { storage } from '@/server/storage';
+import {
+  assertTestDatabase,
+  removeStaleStudents,
+  removeStudents,
+  RUN_FILTER,
+  runPattern,
+} from './support/cleanup';
 import { database, PASSWORD, studentEmail, type StudentKind } from './support/students';
 
 type Student = {
@@ -145,11 +152,24 @@ const STUDENTS: Student[] = [
 
 /** Cria as alunas desta execução pela mesma API que a integração com a Hotmart vai usar. */
 export default async function globalSetup() {
-  process.env.E2E_RUN_ID = randomBytes(4).toString('hex');
+  assertTestDatabase();
+  const id = randomBytes(4).toString('hex');
+  process.env.E2E_RUN_ID = id;
   // Todos os testes saem do mesmo IP (e do mesmo limite de 30 logins/min): rodar o suite duas
   // vezes seguidas não pode herdar as tentativas da execução anterior.
   await database().query('delete from rate_limits');
+  await removeStaleStudents();
 
+  // Se falhar no meio, o Playwright não roda o teardown: as alunas já criadas saem aqui.
+  try {
+    await createStudents();
+  } catch (error) {
+    await removeStudents(RUN_FILTER, [runPattern(id)]).catch(() => {});
+    throw error;
+  }
+}
+
+async function createStudents() {
   for (const student of STUDENTS) {
     const { user } = await auth.api.createUser({
       body: {

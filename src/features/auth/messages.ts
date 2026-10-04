@@ -42,6 +42,11 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, AuthMessage> = {
     title: 'Aguarde 1 minuto pra tentar novamente',
     hint: 'É uma proteção da sua conta. Enquanto isso, confira se o email é o mesmo da compra.',
   },
+  // Os links pedidos hoje (mesmo os que outra pessoa pediu) chegaram no email dela e ainda valem.
+  recover_daily_limit: {
+    title: 'Já enviamos vários links hoje',
+    hint: 'Abra o mais recente no seu email (olhe também no spam). Se nenhum chegou, fale com o suporte.',
+  },
   account_disabled: {
     title: 'Sua conta foi desativada. Entre em contato com o suporte.',
     hint: 'Isso acontece depois de um reembolso ou cancelamento. Se achar que é engano, fale com o suporte.',
@@ -61,6 +66,11 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, AuthMessage> = {
   same_password: {
     title: 'Escolha uma senha diferente da temporária',
     hint: 'Crie uma senha só sua, diferente da que chegou por email.',
+  },
+  // Outra aba (ou outro envio) criou a senha antes: a que ela digitou agora não foi salva.
+  first_password_already_set: {
+    title: 'Sua senha já foi criada',
+    hint: 'Você criou uma senha há pouco, talvez em outra aba. Use aquela pra entrar. Se não lembrar, saia e toque em "Esqueceu a senha?".',
   },
   wrong_current_password: {
     title: 'A senha atual não confere',
