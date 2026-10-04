@@ -1,11 +1,10 @@
 'use client';
 
-import { ArrowUpIcon, RefreshCwIcon, RotateCcwIcon, SparklesIcon } from 'lucide-react';
+import { ArrowUpIcon, RefreshCwIcon, SparklesIcon, SquarePenIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useId, useRef, useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import { BRAND_PATH } from '../../steps';
 import type { ChatView, ChatViewMessage } from '../chat-view';
 import { MAX_MESSAGE_CHARS } from '../model';
@@ -22,9 +21,10 @@ import {
 type Busy = 'typing' | 'creating' | 'choosing' | 'restarting' | null;
 
 /**
- * O chat do logo: a conversa (como no ChatGPT, mas pensada pra quem tem pouca prática), as
- * respostas rápidas, o "Criar meu logo" quando a conversa tem o bastante e, em cada logo criado,
- * "Usar esse logo". O que ela escreve vai pro servidor, que responde com a conversa toda.
+ * O chat do logo, com a cara do ChatGPT (mas pensado pra quem tem pouca prática): a conversa, as
+ * respostas rápidas em cima da caixa de escrever, o "Criar meu logo" quando a conversa tem o
+ * bastante e, em cada logo criado, "Usar esse logo". O que ela escreve vai pro servidor, que
+ * responde com a conversa toda.
  */
 export function LogoChat({ initial, editing }: { initial: ChatView; editing: boolean }) {
   const [chat, setChat] = useState(initial);
@@ -86,7 +86,9 @@ export function LogoChat({ initial, editing }: { initial: ChatView; editing: boo
   const canRetry = !busy && last?.role === 'user';
 
   return (
-    <div className="flex flex-col gap-4">
+    // Como o ChatGPT: a conversa solta na página (sem cartão em volta), as falas da assistente
+    // sem balão, as dela num balão cinza à direita e a caixa de escrever presa embaixo.
+    <div className="flex min-h-[calc(100dvh-13rem)] flex-col">
       <div className="flex justify-end">
         <Button
           type="button"
@@ -96,8 +98,8 @@ export function LogoChat({ initial, editing }: { initial: ChatView; editing: boo
           disabled={Boolean(busy)}
           onClick={() => run('restarting', restartLogoChat)}
         >
-          <RotateCcwIcon aria-hidden="true" />
-          Recomeçar conversa
+          <SquarePenIcon aria-hidden="true" />
+          Nova conversa
         </Button>
       </div>
 
@@ -105,7 +107,7 @@ export function LogoChat({ initial, editing }: { initial: ChatView; editing: boo
       <div
         role="log"
         aria-label="Conversa sobre o seu logo"
-        className="flex flex-col gap-4 rounded-card bg-card p-4 shadow-card sm:p-6 forced-colors:border forced-colors:border-[CanvasText]"
+        className="flex flex-1 flex-col gap-8 py-6"
       >
         {chat.messages.map((message, index) => (
           <Message
@@ -118,108 +120,125 @@ export function LogoChat({ initial, editing }: { initial: ChatView; editing: boo
             isLatestImage={Boolean(message.imageId) && message === last}
           />
         ))}
-        {busy === 'typing' ? <Thinking text="Digitando…" /> : null}
+        {busy === 'typing' ? <Thinking text="Pensando…" /> : null}
         {busy === 'creating' ? <Thinking text="Criando seu logo… leva uns 15 segundos." /> : null}
-      </div>
 
-      {suggestions.length ? (
-        <fieldset className="flex flex-wrap gap-2.5">
-          <legend className="sr-only">Respostas rápidas</legend>
-          {suggestions.map((suggestion) => (
-            <button
-              key={suggestion}
+        {showCreate ? (
+          <div className="ml-11 flex flex-col gap-3 rounded-3xl border border-border bg-card p-5 shadow-card forced-colors:border-[CanvasText]">
+            <p className="text-body font-semibold">
+              {hasImage ? 'Pronto pra criar outro logo' : 'Tudo pronto pra criar o seu logo'}
+            </p>
+            {chat.summary ? (
+              <p className="text-body text-pretty text-muted-foreground">{chat.summary}</p>
+            ) : null}
+            <p className="text-body text-pretty text-muted-foreground">
+              {chat.generationsLeft
+                ? `Você pode criar mais ${chat.generationsLeft} ${chat.generationsLeft === 1 ? 'logo' : 'logos'}.`
+                : 'Você já criou todos os logos que dava. Escolha um deles aqui em cima.'}
+            </p>
+            <Button
               type="button"
-              onClick={() => send(suggestion)}
-              className="min-h-12 rounded-full border-[1.5px] border-primary bg-card px-5 text-body font-semibold text-link transition-[background-color,transform] duration-100 outline-none hover:bg-primary-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid active:scale-[0.97] motion-reduce:active:scale-100 forced-colors:border-[ButtonText]"
+              className="sm:w-auto sm:self-start sm:px-8"
+              disabled={Boolean(busy) || chat.generationsLeft === 0}
+              loading={busy === 'creating'}
+              loadingText="Criando…"
+              onClick={() => run('creating', createLogo)}
             >
-              {suggestion}
-            </button>
-          ))}
-        </fieldset>
-      ) : null}
+              <SparklesIcon aria-hidden="true" />
+              {hasImage ? 'Criar outro logo' : 'Criar meu logo'}
+            </Button>
+          </div>
+        ) : null}
 
-      {showCreate ? (
-        <div className="flex flex-col gap-3 rounded-card bg-primary-soft p-5 forced-colors:border forced-colors:border-[CanvasText]">
-          <p className="text-body font-semibold">
-            {hasImage ? 'Pronto pra criar outro logo' : 'Tudo pronto pra criar o seu logo'}
-          </p>
-          {chat.summary ? <p className="text-body text-pretty">{chat.summary}</p> : null}
-          <p className="text-body text-pretty text-muted-foreground">
-            {chat.generationsLeft
-              ? `Você pode criar mais ${chat.generationsLeft} ${chat.generationsLeft === 1 ? 'logo' : 'logos'}.`
-              : 'Você já criou todos os logos que dava. Escolha um deles lá em cima.'}
-          </p>
+        {canRetry ? (
           <Button
             type="button"
-            className="min-h-14"
-            disabled={Boolean(busy) || chat.generationsLeft === 0}
-            loading={busy === 'creating'}
-            loadingText="Criando…"
-            onClick={() => run('creating', createLogo)}
+            variant="soft"
+            className="ml-11 w-auto self-start px-6"
+            onClick={() => run('typing', retryLogoReply)}
           >
-            <SparklesIcon aria-hidden="true" />
-            {hasImage ? 'Criar outro logo' : 'Criar meu logo'}
+            <RefreshCwIcon aria-hidden="true" />
+            Tentar de novo
           </Button>
-        </div>
-      ) : null}
+        ) : null}
 
-      {canRetry ? (
-        <Button type="button" variant="soft" onClick={() => run('typing', retryLogoReply)}>
-          <RefreshCwIcon aria-hidden="true" />
-          Tentar de novo
-        </Button>
-      ) : null}
-
-      <p
-        id={errorId}
-        role="alert"
-        className="text-center text-body text-pretty text-destructive empty:hidden"
-      >
-        {error}
-      </p>
-
-      {/* A rolagem para aqui: depois das respostas rápidas, do "Criar meu logo" e do aviso. */}
-      <div ref={endRef} className="scroll-mb-28" />
-
-      <form
-        className="sticky bottom-0 -mx-4 flex items-end gap-2 bg-background/95 px-4 pt-2 pb-3 backdrop-blur-md sm:-mx-6 sm:px-6"
-        onSubmit={(event) => {
-          event.preventDefault();
-          send(draft);
-        }}
-      >
-        <label htmlFor={fieldId} className="sr-only">
-          Sua mensagem
-        </label>
-        <textarea
-          ref={fieldRef}
-          id={fieldId}
-          rows={1}
-          value={draft}
-          maxLength={MAX_MESSAGE_CHARS}
-          placeholder="Escreva aqui…"
-          aria-describedby={error ? errorId : undefined}
-          onChange={(event) => setDraft(event.target.value)}
-          onKeyDown={(event) => {
-            // Enter manda; Shift+Enter pula linha.
-            if (event.key === 'Enter' && !event.shiftKey) {
-              event.preventDefault();
-              send(draft);
-            }
-          }}
-          className="[field-sizing:content] max-h-40 min-h-14 flex-1 resize-none rounded-field border-[1.5px] border-input bg-card px-4 py-3.5 text-body leading-normal outline-none placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
-        />
-        <Button
-          type="submit"
-          size="icon"
-          aria-label="Enviar"
-          disabled={!draft.trim() || Boolean(busy)}
-          className="size-14 shrink-0 rounded-full"
+        <p
+          id={errorId}
+          role="alert"
+          className="ml-11 text-body text-pretty text-destructive empty:hidden"
         >
-          <ArrowUpIcon aria-hidden="true" className="size-6" />
-        </Button>
-      </form>
+          {error}
+        </p>
+
+        {/* A rolagem para aqui: depois do "Criar meu logo" e do aviso. */}
+        <div ref={endRef} className="scroll-mb-48" />
+      </div>
+
+      {/* A caixa de escrever, presa embaixo, com as respostas rápidas logo acima (o fundo some
+          aos poucos por cima da conversa, como no ChatGPT). */}
+      <div className="sticky bottom-0 -mx-4 flex flex-col gap-3 bg-linear-to-t from-background from-70% to-transparent px-4 pt-8 pb-4 sm:-mx-6 sm:px-6">
+        {suggestions.length ? (
+          <fieldset className="flex flex-wrap gap-2">
+            <legend className="sr-only">Respostas rápidas</legend>
+            {suggestions.map((suggestion) => (
+              <button
+                key={suggestion}
+                type="button"
+                onClick={() => send(suggestion)}
+                className="min-h-11 rounded-full border border-input bg-card px-4 text-body font-medium text-foreground shadow-sm transition-[background-color,transform] duration-100 outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid active:scale-[0.97] motion-reduce:active:scale-100 forced-colors:border-[ButtonText]"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </fieldset>
+        ) : null}
+
+        <form
+          className="flex items-end gap-2 rounded-[28px] border border-input bg-card py-2 pr-2 pl-5 shadow-card transition-colors duration-150 focus-within:border-primary motion-reduce:transition-none forced-colors:border-[CanvasText]"
+          onSubmit={(event) => {
+            event.preventDefault();
+            send(draft);
+          }}
+        >
+          <label htmlFor={fieldId} className="sr-only">
+            Sua mensagem
+          </label>
+          <textarea
+            ref={fieldRef}
+            id={fieldId}
+            rows={1}
+            value={draft}
+            maxLength={MAX_MESSAGE_CHARS}
+            placeholder="Escreva sobre o seu logo…"
+            aria-describedby={error ? errorId : undefined}
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event) => {
+              // Enter manda; Shift+Enter pula linha.
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                send(draft);
+              }
+            }}
+            className="[field-sizing:content] max-h-48 min-h-11 flex-1 resize-none bg-transparent py-2.5 text-body leading-normal text-foreground outline-none placeholder:text-muted-foreground"
+          />
+          <button
+            type="submit"
+            aria-label="Enviar"
+            disabled={!draft.trim() || Boolean(busy)}
+            className="grid size-11 shrink-0 place-items-center rounded-full bg-foreground text-background transition-[opacity,transform] duration-100 outline-none hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid active:scale-[0.94] disabled:bg-muted disabled:text-muted-foreground motion-reduce:active:scale-100 forced-colors:border-2 forced-colors:border-[ButtonText]"
+          >
+            <ArrowUpIcon aria-hidden="true" className="size-5" strokeWidth={2.5} />
+          </button>
+        </form>
+      </div>
     </div>
+  );
+}
+
+/** O mascote, como "rosto" da assistente (só desenho: quem fala já vai escrito pro leitor). */
+function Avatar() {
+  return (
+    <Image src="/brand/mascote.png" alt="" width={32} height={32} className="size-8 shrink-0" />
   );
 }
 
@@ -238,59 +257,50 @@ function Message({
   onChoose: (imageId: string) => void;
   onAnother: () => void;
 }) {
-  const mine = message.role === 'user';
+  if (message.role === 'user') {
+    return (
+      <div className="flex justify-end">
+        <p className="max-w-[80%] rounded-3xl bg-card px-5 py-3 text-body text-pretty whitespace-pre-line text-foreground shadow-card forced-colors:border forced-colors:border-[CanvasText]">
+          <span className="sr-only">Você disse: </span>
+          {message.text}
+        </p>
+      </div>
+    );
+  }
   return (
-    <div className={cn('flex items-end gap-2', mine && 'flex-row-reverse')}>
-      {mine ? null : (
-        <Image
-          src="/brand/mascote.png"
-          alt=""
-          width={36}
-          height={36}
-          className="size-9 shrink-0 self-start"
-        />
-      )}
-      <div className={cn('flex max-w-[85%] flex-col gap-3', mine && 'items-end')}>
-        <p className="sr-only">{mine ? 'Você disse:' : 'Assistente:'}</p>
-        <p
-          className={cn(
-            'rounded-3xl px-4 py-3 text-body text-pretty whitespace-pre-line',
-            mine
-              ? 'rounded-br-md bg-primary text-primary-foreground forced-colors:border forced-colors:border-[CanvasText]'
-              : 'rounded-bl-md bg-muted text-foreground',
-          )}
-        >
+    <div className="flex gap-3">
+      <Avatar />
+      <div className="flex min-w-0 flex-1 flex-col gap-4 pt-1">
+        <p className="text-body leading-relaxed text-pretty whitespace-pre-line">
+          <span className="sr-only">Assistente: </span>
           {message.text}
         </p>
         {message.imageId ? (
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={`${BRAND_PATH}/imagens/${message.imageId}`}
               alt="Logo criado pra sua loja"
-              width={280}
-              height={280}
-              className="aspect-square w-[min(280px,100%)] rounded-3xl bg-card shadow-card"
+              width={320}
+              height={320}
+              className="aspect-square w-[min(320px,100%)] rounded-3xl border border-border bg-card"
             />
-            <Button
-              type="button"
-              className="w-[min(280px,100%)]"
-              disabled={!canChoose}
-              onClick={() => onChoose(message.imageId!)}
-            >
-              Usar esse logo
-            </Button>
-            {isLatestImage && canCreateMore ? (
+            <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
-                variant="soft"
-                className="w-[min(280px,100%)]"
-                onClick={onAnother}
+                className="w-auto px-6"
+                disabled={!canChoose}
+                onClick={() => onChoose(message.imageId!)}
               >
-                <SparklesIcon aria-hidden="true" />
-                Fazer outro
+                Usar esse logo
               </Button>
-            ) : null}
+              {isLatestImage && canCreateMore ? (
+                <Button type="button" variant="soft" className="w-auto px-6" onClick={onAnother}>
+                  <SparklesIcon aria-hidden="true" />
+                  Fazer outro
+                </Button>
+              ) : null}
+            </div>
           </div>
         ) : null}
       </div>
@@ -298,21 +308,16 @@ function Message({
   );
 }
 
-/** "Digitando…" e "Criando seu logo…": três bolinhas e o aviso escrito. */
+/** "Pensando…" e "Criando seu logo…": a bolinha pulsando (como no ChatGPT) e o aviso escrito. */
 function Thinking({ text }: { text: string }) {
   return (
-    <div className="flex items-end gap-2">
-      <Image src="/brand/mascote.png" alt="" width={36} height={36} className="size-9 shrink-0" />
-      <p className="flex items-center gap-2 rounded-3xl rounded-bl-md bg-muted px-4 py-3 text-body text-muted-foreground">
-        <span aria-hidden="true" className="flex gap-1">
-          {[0, 1, 2].map((dot) => (
-            <span
-              key={dot}
-              className="size-2 animate-bounce rounded-full bg-muted-foreground motion-reduce:animate-none"
-              style={{ animationDelay: `${dot * 150}ms` }}
-            />
-          ))}
-        </span>
+    <div className="flex gap-3">
+      <Avatar />
+      <p className="flex items-center gap-2.5 pt-1 text-body text-muted-foreground">
+        <span
+          aria-hidden="true"
+          className="size-3 animate-pulse rounded-full bg-foreground motion-reduce:animate-none"
+        />
         {text}
       </p>
     </div>

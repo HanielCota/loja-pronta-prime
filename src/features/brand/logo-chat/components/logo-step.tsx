@@ -25,18 +25,11 @@ export async function LogoStep({
   const initial = await loadChatView(userId, { storeName, studentName, answers });
   return (
     <>
-      <div className="flex flex-col gap-1 text-center">
-        <h1
-          id={TITLE_ID}
-          tabIndex={-1}
-          className="text-title font-semibold text-balance outline-none sm:text-title-lg"
-        >
-          Vamos criar o seu logo
-        </h1>
-        <p className="text-body text-pretty text-muted-foreground">
-          Responda umas perguntas e eu crio o logo da {storeName}.
-        </p>
-      </div>
+      {/* O título fica pro leitor de tela (e pro foco ao chegar): na tela, quem abre a conversa é
+          a primeira fala da assistente, como no ChatGPT. */}
+      <h1 id={TITLE_ID} tabIndex={-1} className="sr-only">
+        Vamos criar o logo da {storeName}
+      </h1>
       <FocusOnArrival targetId={TITLE_ID} />
       <LogoChat initial={initial} editing={editing} />
     </>
