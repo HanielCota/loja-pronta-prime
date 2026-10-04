@@ -11,7 +11,7 @@ import type { ChatViewMessage } from '../chat-view';
 
 /** O mascote, como "rosto" da assistente (só desenho: quem fala já vai escrito pro leitor). */
 export function Avatar() {
-  return <Image src={mascotStill} alt="" width={32} height={32} className="size-8 shrink-0" />;
+  return <Image src={mascotStill} alt="" width={40} height={40} className="size-10 shrink-0" />;
 }
 
 /**
@@ -44,7 +44,7 @@ export function ChatMessage({
   if (message.role === 'user') {
     return (
       <div className="flex justify-end">
-        <p className="max-w-[80%] rounded-3xl bg-card px-5 py-3 text-body text-pretty whitespace-pre-line text-foreground shadow-card forced-colors:border forced-colors:border-[CanvasText]">
+        <p className="max-w-[80%] rounded-3xl bg-card px-5 py-3 text-lg text-pretty whitespace-pre-line text-foreground shadow-card forced-colors:border forced-colors:border-[CanvasText]">
           <span className="sr-only">Você disse: </span>
           {message.text}
         </p>
@@ -54,8 +54,8 @@ export function ChatMessage({
   return (
     <div className="flex gap-3">
       <Avatar />
-      <div className="flex min-w-0 flex-1 flex-col gap-4 pt-1">
-        <p className="text-body leading-relaxed text-pretty whitespace-pre-line">
+      <div className="flex min-w-0 flex-1 flex-col gap-4 pt-1.5">
+        <p className="text-lg leading-relaxed text-pretty whitespace-pre-line">
           <span className="sr-only">Assistente: </span>
           {message.text}
         </p>
@@ -104,11 +104,11 @@ function LogoResult({
       <img
         src={src}
         alt={`Logo ${number ?? ''} criado pra sua loja`}
-        width={320}
-        height={320}
+        width={360}
+        height={360}
         onLoad={() => setLoaded(true)}
         className={cn(
-          'aspect-square w-[min(320px,100%)] rounded-3xl border border-border bg-card',
+          'aspect-square w-[min(360px,100%)] rounded-3xl border border-border bg-card',
           // Enquanto a imagem chega, um quadro piscando no lugar (sem piscar pra quem pediu menos
           // movimento).
           !loaded && 'animate-pulse bg-muted motion-reduce:animate-none',
@@ -156,7 +156,7 @@ export function Thinking() {
   return (
     <div className="flex gap-3">
       <Avatar />
-      <p className="flex items-center gap-2.5 pt-1 text-body text-muted-foreground">
+      <p className="flex items-center gap-2.5 pt-1.5 text-lg text-muted-foreground">
         <span
           aria-hidden="true"
           className="size-3 animate-pulse rounded-full bg-foreground motion-reduce:animate-none"
@@ -172,11 +172,11 @@ export function Creating() {
   return (
     <div className="flex gap-3">
       <Avatar />
-      <div className="flex min-w-0 flex-1 flex-col gap-4 pt-1">
-        <p className="text-body text-muted-foreground">Criando seu logo… leva uns 15 segundos.</p>
+      <div className="flex min-w-0 flex-1 flex-col gap-4 pt-1.5">
+        <p className="text-lg text-muted-foreground">Criando seu logo… leva uns 15 segundos.</p>
         <div
           aria-hidden="true"
-          className="grid aspect-square w-[min(320px,100%)] animate-pulse place-items-center rounded-3xl border border-border bg-muted motion-reduce:animate-none"
+          className="grid aspect-square w-[min(360px,100%)] animate-pulse place-items-center rounded-3xl border border-border bg-muted motion-reduce:animate-none"
         >
           <SparklesIcon className="size-10 text-muted-foreground" />
         </div>
