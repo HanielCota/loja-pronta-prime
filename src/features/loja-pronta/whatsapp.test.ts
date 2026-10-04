@@ -70,6 +70,20 @@ describe('cleanWhatsapp e formatTypedWhatsapp', () => {
     expect(cleanWhatsapp('119876543210').digits).toBe('119876543210');
   });
 
+  test('DDD 55 com um número a mais não perde o 55', () => {
+    expect(cleanWhatsapp('559999912345')).toEqual({ digits: '559999912345' });
+    expect(whatsappHint(cleanWhatsapp('559999912345').digits).text).toMatch(/número a mais/);
+    expect(parseWhatsapp('559999912345')).toBeUndefined();
+  });
+
+  test('o 55 do país ainda sai enquanto ela digita ou cola', () => {
+    // Digitando "+55 11 9876-5432" (falta 1): o 3º número não é 9, então é o país.
+    expect(cleanWhatsapp('551198765432').digits).toBe('1198765432');
+    // Com o "+", vale mesmo com DDD 9x.
+    expect(cleanWhatsapp('+55 91 9876-5432').digits).toBe('9198765432');
+    expect(cleanWhatsapp('5591987654321').digits).toBe('91987654321');
+  });
+
   test('formata aos poucos, enquanto ela digita', () => {
     expect(formatTypedWhatsapp('')).toBe('');
     expect(formatTypedWhatsapp('1')).toBe('(1');
@@ -92,11 +106,17 @@ describe('whatsappHint', () => {
 
   test('enganos comuns', () => {
     expect(whatsappHint('987654321').text).toMatch(/Faltou o DDD/);
+    expect(whatsappHint('907654321').text).toMatch(/Faltou o DDD/);
     expect(whatsappHint('1134567890').text).toMatch(/telefone fixo/);
     expect(whatsappHint('11887654321').text).toMatch(/começa com 9/);
     expect(whatsappHint('119', 'zero').text).toMatch(/Não precisa do 0/);
     expect(whatsappHint('119876543210').text).toMatch(/número a mais/);
     expect(whatsappHint('20987').text).toBe('O DDD 20 não existe. Confira os 2 primeiros números.');
+  });
+
+  test('DDD 91–99 no meio da digitação não é "faltou o DDD"', () => {
+    expect(whatsappHint('919876543').text).toBe('Exemplo: (11) 9XXXX-XXXX · Faltam 2 números');
+    expect(whatsappHint('989876543').tone).toBe('info');
   });
 
   test('completo', () => {
