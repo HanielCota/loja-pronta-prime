@@ -18,9 +18,15 @@ test('conversa enviada: ela revê e muda uma resposta, sem voltar de fase', asyn
   await expect(page).toHaveURL(/\/conversa\/revisao$/);
   await expect(page.getByText('Lilás', { exact: true })).toBeVisible();
 
-  // O WhatsApp já foi confirmado: não reabre.
-  await page.goto('/loja-pronta/conversa/whatsapp');
+  // O WhatsApp (o canal dos avisos) dá pra corrigir: abre com o número salvo e volta pra revisão.
+  await page.getByRole('link', { name: 'Editar WhatsApp' }).click();
+  await expect(page).toHaveURL(/\/conversa\/whatsapp$/);
+  const whatsapp = page.getByLabel('Seu WhatsApp, com DDD');
+  await expect(whatsapp).toHaveValue('(11) 98765-4321');
+  await whatsapp.fill('21 99876-5432');
+  await page.getByRole('button', { name: 'Salvar o número' }).click();
   await expect(page).toHaveURL(/\/conversa\/revisao$/);
+  await expect(page.getByText('(21) 99876-5432')).toBeVisible();
 
   await page.getByRole('link', { name: 'Voltar pra Loja Pronta' }).click();
   await expect(page).toHaveURL(/\/loja-pronta$/);
@@ -40,6 +46,12 @@ test('marca confirmada: ela muda o nome e volta pro painel na mesma fase', async
   await page.getByRole('link', { name: 'Mudar o nome' }).click();
   await page.getByLabel('Nome da loja').fill('Patinhas & Cia');
   await page.getByRole('button', { name: 'Continuar com “Patinhas & Cia”' }).click();
+  // O logo traz o nome antigo: o chat avisa; ela pode seguir com ele, voltando pra revisão.
+  await expect(page).toHaveURL(/\/marca\/logo\?editar=1$/);
+  await expect(page.getByRole('log', { name: 'Conversa sobre o seu logo' })).toContainText(
+    'Você mudou o nome pra Patinhas & Cia',
+  );
+  await page.getByRole('link', { name: 'Voltar' }).click();
   await expect(page).toHaveURL(/\/marca\/revisao$/);
   await expect(page.getByText('Patinhas & Cia', { exact: true })).toBeVisible();
 

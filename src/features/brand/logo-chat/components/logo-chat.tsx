@@ -31,6 +31,8 @@ export function LogoChat({ initial, editing }: { initial: ChatView; editing: boo
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState<Busy>(null);
+  /** O logo que ela tocou pra usar (o botão dele mostra que está salvando). */
+  const [choosing, setChoosing] = useState<string>();
   const [, startTransition] = useTransition();
   const router = useRouter();
   const endRef = useRef<HTMLDivElement>(null);
@@ -47,21 +49,38 @@ export function LogoChat({ initial, editing }: { initial: ChatView; editing: boo
     endRef.current?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'end' });
   }, [scrollKey]);
 
-  /** Roda uma action; `before`: a conversa como estava (volta a ela se a action nem respondeu). */
-  function run(kind: Exclude<Busy, null>, action: () => Promise<ChatResult>, before = chat) {
+  /**
+   * Roda uma action. `before`: a conversa como estava (volta a ela se a action nem respondeu);
+   * `typed`: o que ela tinha escrito (volta pro campo se a mensagem não foi guardada).
+   */
+  function run(
+    kind: Exclude<Busy, null>,
+    action: () => Promise<ChatResult>,
+    { before = chat, typed }: { before?: ChatView; typed?: string } = {},
+  ) {
     setBusy(kind);
     setError(undefined);
     startTransition(async () => {
+      let navigating = false;
       try {
         const result = await action();
         setChat(result.chat);
         setError(result.error);
-        if (result.next) router.push(result.next);
+        // Não guardou a mensagem (limite da conversa): o texto volta pro campo.
+        if (typed && !result.chat.messages.some((message) => message.text === typed)) {
+          setDraft(typed);
+        }
+        if (result.next) {
+          // Mudando de página: os botões continuam travados até a outra tela abrir.
+          navigating = true;
+          router.push(result.next);
+        }
       } catch {
         setChat(before);
+        if (typed) setDraft(typed);
         setError('Algo deu errado. Confira a internet e tente de novo.');
       } finally {
-        setBusy(null);
+        if (!navigating) setBusy(null);
       }
     });
   }
@@ -73,10 +92,13 @@ export function LogoChat({ initial, editing }: { initial: ChatView; editing: boo
     const before = chat;
     setChat({ ...chat, messages: [...chat.messages, { role: 'user', text: message }] });
     setDraft('');
-    run('typing', () => sendLogoMessage(message), before);
+    run('typing', () => sendLogoMessage(message), { before, typed: message });
   }
 
   const last = chat.messages.at(-1);
+  // "Logo 1", "Logo 2"...: cada logo criado com o seu número (pro leitor de tela distinguir).
+  let imageCount = 0;
+  const imageNumbers = chat.messages.map((message) => (message.imageId ? ++imageCount : undefined));
   const suggestions = !busy && last?.role === 'assistant' ? (last.suggestions ?? []) : [];
   // O cartão de criar aparece quando há resumo e a última mensagem não é um logo (depois de um
   // logo, ela pode pedir mudanças conversando e criar outro).
@@ -103,25 +125,29 @@ export function LogoChat({ initial, editing }: { initial: ChatView; editing: boo
         </Button>
       </div>
 
-      {/* role=log: o leitor de tela anuncia cada mensagem nova, sem ler tudo de novo. */}
-      <div
-        role="log"
-        aria-label="Conversa sobre o seu logo"
-        className="flex flex-1 flex-col gap-8 py-6"
-      >
-        {chat.messages.map((message, index) => (
-          <Message
-            key={index}
-            message={message}
-            canChoose={!busy}
-            canCreateMore={chat.generationsLeft > 0 && !busy}
-            onChoose={(imageId) => run('choosing', () => chooseLogo(imageId, editing))}
-            onAnother={() => run('creating', createLogo)}
-            isLatestImage={Boolean(message.imageId) && message === last}
-          />
-        ))}
-        {busy === 'typing' ? <Thinking text="Pensando…" /> : null}
-        {busy === 'creating' ? <Thinking text="Criando seu logo… leva uns 15 segundos." /> : null}
+      <div className="flex flex-1 flex-col gap-8 py-6">
+        {/* role=log: o leitor de tela anuncia cada mensagem nova, sem ler tudo de novo. Só as
+            mensagens ficam aqui: o aviso de erro e os botões, fora, não são lidos duas vezes. */}
+        <div role="log" aria-label="Conversa sobre o seu logo" className="flex flex-col gap-8">
+          {chat.messages.map((message, index) => (
+            <Message
+              key={index}
+              message={message}
+              imageNumber={imageNumbers[index]}
+              canChoose={!busy}
+              choosing={busy === 'choosing' && choosing === message.imageId}
+              canCreateMore={chat.generationsLeft > 0 && !busy}
+              onChoose={(imageId) => {
+                setChoosing(imageId);
+                run('choosing', () => chooseLogo(imageId, editing));
+              }}
+              onAnother={() => run('creating', createLogo)}
+              isLatestImage={Boolean(message.imageId) && message === last}
+            />
+          ))}
+          {busy === 'typing' ? <Thinking text="Pensando…" /> : null}
+          {busy === 'creating' ? <Thinking text="Criando seu logo… leva uns 15 segundos." /> : null}
+        </div>
 
         {showCreate ? (
           <div className="ml-11 flex flex-col gap-3 rounded-3xl border border-border bg-card p-5 shadow-card forced-colors:border-[CanvasText]">
@@ -244,14 +270,20 @@ function Avatar() {
 
 function Message({
   message,
+  imageNumber,
   canChoose,
+  choosing,
   canCreateMore,
   isLatestImage,
   onChoose,
   onAnother,
 }: {
   message: ChatViewMessage;
+  /** O número do logo (só nas mensagens com logo). */
+  imageNumber: number | undefined;
   canChoose: boolean;
+  /** Este logo está sendo salvo como o da loja. */
+  choosing: boolean;
   canCreateMore: boolean;
   isLatestImage: boolean;
   onChoose: (imageId: string) => void;
@@ -280,7 +312,7 @@ function Message({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={`${BRAND_PATH}/imagens/${message.imageId}`}
-              alt="Logo criado pra sua loja"
+              alt={`Logo ${imageNumber ?? ''} criado pra sua loja`}
               width={320}
               height={320}
               className="aspect-square w-[min(320px,100%)] rounded-3xl border border-border bg-card"
@@ -289,10 +321,12 @@ function Message({
               <Button
                 type="button"
                 className="w-auto px-6"
-                disabled={!canChoose}
+                disabled={!canChoose && !choosing}
+                loading={choosing}
+                loadingText="Salvando…"
                 onClick={() => onChoose(message.imageId!)}
               >
-                Usar esse logo
+                Usar esse logo<span className="sr-only"> (logo {imageNumber})</span>
               </Button>
               {isLatestImage && canCreateMore ? (
                 <Button type="button" variant="soft" className="w-auto px-6" onClick={onAnother}>

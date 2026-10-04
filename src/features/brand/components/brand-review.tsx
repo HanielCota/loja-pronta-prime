@@ -14,7 +14,7 @@ import { FinishButton } from './finish-button';
 const TITLE_ID = 'revisao-marca-titulo';
 
 /**
- * Passo 5: a marca inteira junta, cada parte com "Mudar", e a confirmação. `revising`: a marca já
+ * Passo 4: a marca inteira junta, cada parte com "Mudar", e a confirmação. `revising`: a marca já
  * foi confirmada e ela voltou pra rever; cada mudança já fica salva, e o botão só leva de volta.
  */
 export function BrandReview({

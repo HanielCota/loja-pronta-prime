@@ -18,8 +18,6 @@ type BrandFormProps = {
   action: (state: BrandResult, formData: FormData) => Promise<BrandResult>;
   /** Veio da revisão pra mudar algo: salvar volta pra ela. */
   editing?: boolean;
-  /** Pra um botão de fora (numa janela) enviar este formulário, com `form`. */
-  id?: string;
   className?: string;
   children: ReactNode;
 };
@@ -28,7 +26,7 @@ type BrandFormProps = {
  * Formulário de um passo da marca: Server Action de verdade (funciona sem JavaScript), sem apagar
  * o que ela digitou quando volta um erro, e o erro aparece embaixo, anunciado.
  */
-export function BrandForm({ action, editing = false, id, className, children }: BrandFormProps) {
+export function BrandForm({ action, editing = false, className, children }: BrandFormProps) {
   const [state, formAction, pending] = useActionState(action, undefined);
   const errorId = useId();
 
@@ -38,7 +36,6 @@ export function BrandForm({ action, editing = false, id, className, children }: 
 
   return (
     <form
-      id={id}
       action={formAction}
       onSubmit={submitWithoutReset(() => {}, formAction)}
       aria-describedby={state?.error ? errorId : undefined}

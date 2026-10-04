@@ -267,10 +267,10 @@ test.describe('sem JavaScript', () => {
     await expect(page.getByText('Um girassol')).toBeVisible();
 
     await page.getByRole('link', { name: 'Está tudo certo' }).click();
-    await page.getByLabel('Seu WhatsApp, com DDD').fill('21 3456-7890');
+    await page.getByLabel('Seu WhatsApp, com DDD').fill('21 98765-4321');
     await page.getByRole('button', { name: 'Enviar respostas' }).click();
     await expect(page).toHaveURL(/\/loja-pronta\/conversa\/pronto$/);
-    await expect(page.getByText('(21) 3456-7890')).toBeVisible();
+    await expect(page.getByText('(21) 98765-4321')).toBeVisible();
     // Só com a Loja Pronta: nada sobre o SLL.
     await expect(page.getByText(/SLL/)).toHaveCount(0);
   });
