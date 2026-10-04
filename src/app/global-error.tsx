@@ -4,6 +4,7 @@ import { Manrope } from 'next/font/google';
 import { CardHeading } from '@/components/brand/card-heading';
 import { PageShell } from '@/components/brand/page-shell';
 import { Button } from '@/components/ui/button';
+import { THEME_COLORS } from '@/features/theme/theme';
 import { ThemeProvider } from '@/features/theme/use-theme';
 import './globals.css';
 
@@ -25,6 +26,7 @@ export default function GlobalError({ error, retry }: GlobalErrorProps) {
   return (
     <html lang="pt-BR" className={manrope.variable} suppressHydrationWarning>
       <body>
+        <meta name="theme-color" content={THEME_COLORS.light} />
         <ThemeProvider>
           <PageShell>
             <section className="flex flex-col gap-6 rounded-card bg-card px-6 py-10 shadow-card sm:px-10">
