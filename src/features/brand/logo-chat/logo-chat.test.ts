@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 import { parseAssistantTurn, serializeAssistantTurn } from './assistant-turn';
-import { assistantMessage, toChatView, withOpening } from './chat-view';
+import { assistantMessage, toChatView, topicAnswers, withOpening } from './chat-view';
 import { logoImagePrompt } from './image-prompt';
 import { interviewerSystemPrompt } from './interviewer-prompt';
 import { EMPTY_CHAT, logoBriefSchema, MAX_GENERATIONS, type LogoBrief } from './model';
+import { isLastingTweak, LOGO_TWEAK_IDS } from './tweaks';
 
 const BRIEF: LogoBrief = {
   symbol: 'uma patinha',
@@ -14,12 +15,21 @@ const BRIEF: LogoBrief = {
   look: 'ilustracao',
 };
 
+/** Uma fala da IA com o assunto `topic` (o resto fixo). */
+const askAbout = (topic: unknown) =>
+  parseAssistantTurn(JSON.stringify({ reply: 'Oi', suggestions: [], topic, brief: null }));
+
 describe('parseAssistantTurn', () => {
   test('lê a fala, as respostas rápidas e o resumo', () => {
     const turn = parseAssistantTurn(
       JSON.stringify({ reply: 'Que cores?', suggestions: ['Rosa', 'Azul'], brief: BRIEF }),
     );
-    expect(turn).toEqual({ reply: 'Que cores?', suggestions: ['Rosa', 'Azul'], brief: BRIEF });
+    expect(turn).toEqual({
+      reply: 'Que cores?',
+      suggestions: ['Rosa', 'Azul'],
+      topic: null,
+      brief: BRIEF,
+    });
   });
 
   test('sem resumo ainda: brief nulo; respostas rápidas limpas e no máximo 4', () => {
@@ -52,8 +62,19 @@ describe('parseAssistantTurn', () => {
   });
 
   test('a fala volta pro mesmo JSON que a IA deve responder (o histórico vai assim)', () => {
-    const turn = { reply: 'Que cores?', suggestions: ['Rosa'], brief: null };
+    const turn = {
+      reply: 'Que cores?',
+      suggestions: ['Rosa'],
+      topic: 'cores' as const,
+      brief: null,
+    };
     expect(parseAssistantTurn(serializeAssistantTurn(turn))).toEqual(turn);
+  });
+
+  test('lê o assunto da pergunta; assunto desconhecido ou ausente vira nulo', () => {
+    expect(askAbout('cores')?.topic).toBe('cores');
+    expect(askAbout('sentimento')?.topic).toBeNull();
+    expect(askAbout(undefined)?.topic).toBeNull();
   });
 
   test('resumo incompleto não vale (a conversa continua), o resto da fala sim', () => {
@@ -105,17 +126,50 @@ describe('interviewerSystemPrompt', () => {
     // Só o que ajuda no logo (nada de quanto ela vende).
     expect(prompt).not.toContain('Nunca vendi');
     expect(prompt).toContain('"brief"');
+    // Sem resumo guardado, nada de resumo nas instruções.
+    expect(prompt).not.toContain('JÁ ESTÁ COMBINADO');
+  });
+
+  test('leva o resumo guardado (a janela corta as mensagens antigas) e os ajustes pedidos', () => {
+    const context = { storeName: 'Bella', studentName: 'Ana', answers: {} };
+    const prompt = interviewerSystemPrompt(context, {
+      ...BRIEF,
+      tweaks: ['mais-colorido', 'letra-maior'],
+    });
+    expect(prompt).toContain('JÁ ESTÁ COMBINADO');
+    expect(prompt).toContain('- symbol: uma patinha');
+    expect(prompt).toContain('- colors: rosa e dourado');
+    expect(prompt).toContain('- look: ilustracao');
+    // Sem "extras" no resumo, nada de linha vazia.
+    expect(prompt).not.toContain('- extras:');
+    expect(prompt).toContain('Mais colorido, Letra maior');
   });
 });
 
-const opening = () => ({ reply: 'Oi!', suggestions: ['Sim'], brief: null });
+describe('isLastingTweak', () => {
+  test('"Outro desenho" vale só uma vez; os outros ficam no resumo', () => {
+    expect(isLastingTweak('outro-desenho')).toBe(false);
+    expect(LOGO_TWEAK_IDS.filter(isLastingTweak)).toEqual([
+      'mais-colorido',
+      'letra-maior',
+      'mais-simples',
+    ]);
+  });
+});
+
+const opening = () => ({
+  reply: 'Oi!',
+  suggestions: ['Sim'],
+  topic: 'desenho' as const,
+  brief: null,
+});
 
 describe('chat-view', () => {
   const context = { storeName: 'Bella', studentName: 'Ana', answers: {} };
 
   test('conversa vazia ganha a primeira fala; com mensagens, fica como está', () => {
     expect(withOpening(EMPTY_CHAT, opening, context).messages).toEqual([
-      { role: 'assistant', text: 'Oi!', suggestions: ['Sim'] },
+      { role: 'assistant', text: 'Oi!', suggestions: ['Sim'], topic: 'desenho' },
     ]);
     const started = { ...EMPTY_CHAT, messages: [{ role: 'user' as const, text: 'oi' }] };
     expect(withOpening(started, opening, context)).toBe(started);
@@ -125,7 +179,7 @@ describe('chat-view', () => {
     const view = toChatView(
       {
         messages: [
-          assistantMessage({ reply: 'Pronto', suggestions: [], brief: null }),
+          assistantMessage({ reply: 'Pronto', suggestions: [], topic: null, brief: null }),
           { role: 'assistant', text: 'Olha', image: 'logos/aluna/abc12345-6789.png' },
         ],
         brief: BRIEF,
@@ -139,5 +193,24 @@ describe('chat-view', () => {
     expect(view.summary).toContainEqual({ label: 'Desenho', value: 'uma patinha' });
     expect(view.summary).toContainEqual({ label: 'Estilo', value: 'ilustração' });
     expect(view.generationsLeft).toBe(MAX_GENERATIONS - 1);
+  });
+});
+
+describe('topicAnswers', () => {
+  test('cada resposta dela vale pro assunto da pergunta antes; a última por assunto vence', () => {
+    const answers = topicAnswers([
+      { role: 'assistant', text: 'Desenho ou nome?', topic: 'desenho' },
+      { role: 'user', text: 'Uma flor' },
+      { role: 'assistant', text: 'Que cores?', topic: 'cores' },
+      { role: 'user', text: 'Rosa' },
+      { role: 'assistant', text: 'Que tal?' },
+      { role: 'user', text: 'Pode ser' },
+      { role: 'assistant', text: 'E o desenho?', topic: 'desenho' },
+      { role: 'user', text: 'Uma patinha' },
+    ]);
+    expect(answers).toEqual([
+      { topic: 'desenho', label: 'Desenho', answer: 'Uma patinha' },
+      { topic: 'cores', label: 'Cores', answer: 'Rosa' },
+    ]);
   });
 });

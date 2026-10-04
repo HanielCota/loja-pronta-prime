@@ -1,5 +1,11 @@
 import { z } from 'zod';
-import { logoBriefSchema, MAX_SUGGESTIONS, type AssistantTurn, type LogoBrief } from './model';
+import {
+  logoBriefSchema,
+  logoTopicSchema,
+  MAX_SUGGESTIONS,
+  type AssistantTurn,
+  type LogoBrief,
+} from './model';
 
 /**
  * Lê a resposta da IA (o JSON das instruções) e devolve só o que vale: a fala, as respostas
@@ -10,6 +16,7 @@ import { logoBriefSchema, MAX_SUGGESTIONS, type AssistantTurn, type LogoBrief } 
 export const FALLBACK_TURN: AssistantTurn = {
   reply: 'Desculpa, me perdi aqui. Pode me contar de novo?',
   suggestions: [],
+  topic: null,
   brief: null,
 };
 
@@ -25,6 +32,7 @@ const turnSchema = z.object({
         .filter(Boolean)
         .slice(0, MAX_SUGGESTIONS),
     ),
+  topic: logoTopicSchema.nullable().catch(null).default(null),
   brief: logoBriefSchema.nullable().catch(null),
 });
 
@@ -37,9 +45,10 @@ export function parseAssistantTurn(raw: string): AssistantTurn | null {
   }
   const parsed = turnSchema.safeParse(data);
   if (!parsed.success) return null;
-  const { reply, suggestions, brief } = parsed.data;
+  const { reply, suggestions, topic, brief } = parsed.data;
   return {
     reply,
+    topic,
     // Os ajustes de um toque são do sistema: a IA não liga nem desliga.
     brief: brief ? withoutTweaks(brief) : null,
     // "Criar meu logo" é um botão da tela: como resposta rápida, só mandaria o texto.
@@ -59,5 +68,10 @@ const CREATE_LIKE = /\b(criar|gerar|fazer)\b.*\blogo\b/i;
  * assim: com falas em texto solto, o modelo imita o texto solto e erra o formato.
  */
 export function serializeAssistantTurn(turn: AssistantTurn): string {
-  return JSON.stringify({ reply: turn.reply, suggestions: turn.suggestions, brief: turn.brief });
+  return JSON.stringify({
+    reply: turn.reply,
+    suggestions: turn.suggestions,
+    topic: turn.topic,
+    brief: turn.brief,
+  });
 }

@@ -23,6 +23,21 @@ export const MAX_SUGGESTIONS = 4;
 /** O logo que ela manda: até 5 MB (a tela já reduz pra 1024px antes de mandar). */
 export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
+/**
+ * Os assuntos das perguntas, na ordem do resumo: a tela mostra "Pergunta 2 de 5" e as respostas
+ * dela em etiquetas ("Cores: rosa"). `change`: o pedido pra mudar a resposta (tocar na etiqueta).
+ */
+export const LOGO_TOPICS = {
+  desenho: { label: 'Desenho', change: 'Quero mudar o desenho' },
+  cores: { label: 'Cores', change: 'Quero mudar as cores' },
+  letras: { label: 'Letras', change: 'Quero mudar as letras' },
+  fundo: { label: 'Fundo', change: 'Quero mudar o fundo' },
+  estilo: { label: 'Estilo', change: 'Quero mudar o estilo' },
+} as const;
+export type LogoTopic = keyof typeof LOGO_TOPICS;
+export const LOGO_TOPIC_IDS = Object.keys(LOGO_TOPICS) as LogoTopic[];
+export const logoTopicSchema = z.enum(LOGO_TOPIC_IDS as [LogoTopic, ...LogoTopic[]]);
+
 /** Texto curto vindo da IA: sem quebra de linha, sem aspas, sem espaço sobrando. */
 const short = (max: number) =>
   z
@@ -59,7 +74,7 @@ export type LogoBrief = z.infer<typeof logoBriefSchema>;
 
 /**
  * Uma mensagem guardada. `image`: a chave do logo, quando a mensagem é ele; `uploaded`: o logo
- * foi ela que mandou (não a IA que criou).
+ * foi ela que mandou (não a IA que criou); `topic`: o assunto da pergunta da assistente.
  */
 export const chatMessageSchema = z.object({
   role: z.enum(['assistant', 'user']),
@@ -67,6 +82,7 @@ export const chatMessageSchema = z.object({
   suggestions: z.array(z.string().max(80)).max(MAX_SUGGESTIONS).optional(),
   image: z.string().max(200).optional(),
   uploaded: z.literal(true).optional(),
+  topic: logoTopicSchema.optional().catch(undefined),
 });
 export type LogoChatMessage = z.infer<typeof chatMessageSchema>;
 
@@ -81,10 +97,14 @@ export type LogoChat = {
 
 export const EMPTY_CHAT: LogoChat = { messages: [], brief: null, generations: 0 };
 
-/** O que a IA responde a cada vez (já conferido): a fala, as respostas rápidas e o resumo. */
+/**
+ * O que a IA responde a cada vez (já conferido): a fala, as respostas rápidas, o assunto da
+ * pergunta (nulo quando não é de um dos 5) e o resumo.
+ */
 export type AssistantTurn = {
   reply: string;
   suggestions: string[];
+  topic: LogoTopic | null;
   /** Com o resumo, a conversa tem o bastante: aparece "Criar meu logo". */
   brief: LogoBrief | null;
 };

@@ -40,7 +40,7 @@ export function ConversationLayout({
 }: ConversationLayoutProps) {
   const column = cn(
     'mx-auto flex w-full max-w-[560px] flex-col px-4 sm:px-6',
-    wide ? 'sm:max-w-[720px] lg:max-w-[840px]' : 'lg:max-w-[680px]',
+    wide ? 'sm:max-w-[720px] lg:max-w-[1040px]' : 'lg:max-w-[680px]',
   );
   return (
     <div className="flex min-h-dvh flex-col">

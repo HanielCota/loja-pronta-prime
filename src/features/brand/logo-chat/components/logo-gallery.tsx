@@ -1,10 +1,11 @@
 import { logoSrc } from './logo-src';
 
-export type ChatLogo = { imageId: string; number: number };
+/** Um logo da conversa: o id, o número (Logo 1, Logo 2...) e se foi ela que mandou. */
+export type ChatLogo = { imageId: string; number: number; uploaded: boolean };
 
 /**
- * "Seus logos": todos os logos da conversa lado a lado, pra comparar e escolher sem rolar a
- * conversa. Tocar num abre ele grande (com "Usar esse logo"). Só com 2 ou mais.
+ * "Seus logos": os logos que ela já tem, enquanto conversa de novo (pra mudar algo ou criar
+ * outro). Tocar num abre ele grande (com "Usar esse logo").
  */
 export function LogoGallery({
   logos,
@@ -13,7 +14,7 @@ export function LogoGallery({
   logos: ChatLogo[];
   onOpen: (imageId: string) => void;
 }) {
-  if (logos.length < 2) return null;
+  if (!logos.length) return null;
   return (
     <section aria-labelledby="seus-logos" className="flex flex-col gap-3">
       <h2 id="seus-logos" className="text-lg font-semibold">

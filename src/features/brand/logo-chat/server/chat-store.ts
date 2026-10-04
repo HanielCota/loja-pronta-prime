@@ -2,6 +2,7 @@ import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/server/db';
 import { logoChat } from '@/server/db/schema';
+import type { LastingTweak } from '../tweaks';
 import {
   chatMessageSchema,
   EMPTY_CHAT,
@@ -48,7 +49,9 @@ export async function getLogoChat(userId: string): Promise<LogoChat> {
 /**
  * Acrescenta mensagens no fim da conversa guardada e devolve a conversa como ficou. `opening`: a
  * primeira fala, que entra antes só se a conversa ainda está vazia (ela nasce na tela, sem custo,
- * e é guardada na primeira mensagem dela). `brief`: o resumo novo, quando a IA mandou um.
+ * e é guardada na primeira mensagem dela). `brief`: o resumo novo, quando a IA mandou um. Os
+ * ajustes de um toque continuam: a IA não manda os ajustes, então eles vêm do resumo guardado
+ * agora (não do lido antes da IA responder, que outra aba pode ter mudado).
  */
 export async function appendMessages(
   userId: string,
@@ -60,6 +63,10 @@ export async function appendMessages(
   const withOpening = opening
     ? sql`case when jsonb_array_length(${logoChat.messages}) = 0 then ${JSON.stringify([opening])}::jsonb else '[]'::jsonb end`
     : sql`'[]'::jsonb`;
+  // Sem resumo guardado (ou sem ajustes), o "tweaks" nulo some e fica só o resumo novo.
+  const keepingTweaks = brief
+    ? sql`${JSON.stringify(brief)}::jsonb || coalesce(jsonb_strip_nulls(jsonb_build_object('tweaks', ${logoChat.brief} -> 'tweaks')), '{}'::jsonb)`
+    : null;
   const [row] = await db
     .insert(logoChat)
     .values({ userId, messages: fresh, ...(brief ? { brief } : {}) })
@@ -67,11 +74,27 @@ export async function appendMessages(
       target: logoChat.userId,
       set: {
         messages: sql`${logoChat.messages} || ${withOpening} || ${added}`,
-        ...(brief ? { brief } : {}),
+        ...(keepingTweaks ? { brief: keepingTweaks } : {}),
       },
     })
     .returning(CHAT_COLUMNS);
   return toChat(row);
+}
+
+/**
+ * Guarda um ajuste de um toque no resumo como ele está agora no banco (numa só instrução): a
+ * criação leva até 1 minuto, e nesse meio outra aba pode ter trocado o resumo ou recomeçado a
+ * conversa. Sem resumo (recomeçou), não faz nada; ajuste repetido também não.
+ */
+export async function addBriefTweak(userId: string, tweak: LastingTweak) {
+  const tweaks = sql`coalesce(${logoChat.brief} -> 'tweaks', '[]'::jsonb)`;
+  const added = sql`jsonb_build_array(${tweak}::text)`;
+  await db
+    .update(logoChat)
+    .set({ brief: sql`jsonb_set(${logoChat.brief}, '{tweaks}', ${tweaks} || ${added})` })
+    .where(
+      sql`${logoChat.userId} = ${userId} and jsonb_typeof(${logoChat.brief}) = 'object' and not ${tweaks} @> ${added}`,
+    );
 }
 
 /**
