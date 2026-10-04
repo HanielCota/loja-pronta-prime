@@ -34,12 +34,15 @@ export function LogoChat({
   editing,
   storeName,
   titleId,
+  testMode,
 }: {
   initial: ChatView;
   editing: boolean;
   storeName: string;
   /** O id do título (o foco vai pra ele ao chegar na página). */
   titleId: string;
+  /** IA de mentira ligada (AI_FAKE=1, só fora de produção): o logo sai um quadrado rosa. */
+  testMode: boolean;
 }) {
   const [chat, setChat] = useState(initial);
   const [draft, setDraft] = useState('');
@@ -137,6 +140,12 @@ export function LogoChat({
         fresh && 'justify-center gap-8 pb-[10vh]',
       )}
     >
+      {/* Sem este aviso, o quadrado rosa da IA de mentira parece um logo quebrado. */}
+      {testMode ? (
+        <p className="mb-4 rounded-2xl border border-dashed border-border px-4 py-3 text-center text-body text-muted-foreground">
+          Modo de teste (AI_FAKE=1): a IA está desligada e o logo sai um quadrado rosa.
+        </p>
+      ) : null}
       <div
         className={cn(
           'flex items-center gap-3',
@@ -148,7 +157,7 @@ export function LogoChat({
           tabIndex={-1}
           className={cn(
             'font-semibold text-balance outline-none',
-            fresh ? 'text-title sm:text-title-lg' : 'text-body',
+            fresh ? 'text-title-lg sm:text-title-xl' : 'text-lg',
           )}
         >
           Logo da {storeName}
@@ -208,7 +217,7 @@ export function LogoChat({
         <p
           id={errorId}
           role="alert"
-          className="ml-11 flex items-start gap-2 rounded-2xl bg-destructive/10 px-4 py-3 text-body text-pretty text-destructive empty:hidden forced-colors:border forced-colors:border-[CanvasText]"
+          className="ml-13 flex items-start gap-2 rounded-2xl bg-destructive/10 px-4 py-3 text-body text-pretty text-destructive empty:hidden forced-colors:border forced-colors:border-[CanvasText]"
         >
           {error ? (
             <>
@@ -222,7 +231,7 @@ export function LogoChat({
           <Button
             type="button"
             variant="soft"
-            className="ml-11 w-auto self-start px-6"
+            className="ml-13 w-auto self-start px-6"
             onClick={() => run('typing', retryLogoReply)}
           >
             <RefreshCwIcon aria-hidden="true" />
