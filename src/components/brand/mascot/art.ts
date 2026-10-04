@@ -3,10 +3,13 @@ import { getImageProps, type StaticImageData } from 'next/image';
 // mudança na arte invalida os caches (navegador, CDN e otimizador de imagens) sozinha.
 import mascotBase from './assets/mascote-base.png';
 import mascotClosedEyes from './assets/mascote-olhos-fechados.png';
+// O mascote inteiro, com o rosto desenhado na própria imagem: pros lugares pequenos e parados
+// (a barra do topo, o chat), onde o rosto animado não faz falta.
+import mascotStill from './assets/mascote-rosto.png';
 
 /** A arte e as medidas do desenho: o que muda junto quando a arte do mascote muda. */
 
-export { mascotBase, mascotClosedEyes };
+export { mascotBase, mascotClosedEyes, mascotStill };
 
 export const IMAGE_SIZE = 512;
 /**

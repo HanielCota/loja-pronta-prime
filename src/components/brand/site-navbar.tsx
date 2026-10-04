@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { mascotBase } from './mascot/art';
+import { mascotStill } from './mascot/art';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
@@ -16,7 +16,7 @@ export function SiteNavbar({ children }: { children?: ReactNode }) {
           href="/"
           className="-ml-1 flex min-h-11 items-center gap-2 rounded-full py-1 pr-3 pl-1 text-body font-semibold text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid"
         >
-          <Image src={mascotBase} alt="" width={32} height={32} className="size-8" />
+          <Image src={mascotStill} alt="" width={32} height={32} className="size-8" />
           Loja Pronta Prime
         </Link>
         {children}
