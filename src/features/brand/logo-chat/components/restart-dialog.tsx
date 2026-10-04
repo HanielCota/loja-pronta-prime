@@ -1,8 +1,9 @@
 'use client';
 
 import { SquarePenIcon } from 'lucide-react';
-import { useEffect, useId, useRef } from 'react';
+import { useId } from 'react';
 import { Button } from '@/components/ui/button';
+import { useDialog } from './use-dialog';
 
 /**
  * "Nova conversa" pede confirmação: um toque sem querer apagaria a conversa toda (e os logos
@@ -19,16 +20,9 @@ export function RestartDialog({
   onConfirm: () => void;
   onClose: () => void;
 }) {
-  const ref = useRef<HTMLDialogElement>(null);
+  const ref = useDialog(open);
   const titleId = useId();
   const textId = useId();
-
-  useEffect(() => {
-    const dialog = ref.current;
-    if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal();
-    if (!open && dialog.open) dialog.close();
-  }, [open]);
 
   return (
     <dialog

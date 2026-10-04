@@ -10,8 +10,10 @@ export type ChatViewMessage = {
   role: LogoChatMessage['role'];
   text: string;
   suggestions?: string[];
-  /** O id do logo gerado (a imagem vem de marca/imagens/<id>). */
+  /** O id do logo (a imagem vem de marca/imagens/<id>). */
   imageId?: string;
+  /** O logo foi ela que mandou (sem ajustes de um toque: eles redesenham pela IA). */
+  uploaded?: boolean;
 };
 
 export type ChatView = {
@@ -53,6 +55,7 @@ export function toChatView(
         text: message.text,
         ...(message.suggestions ? { suggestions: message.suggestions } : {}),
         ...(imageId ? { imageId } : {}),
+        ...(imageId && message.uploaded ? { uploaded: true } : {}),
       };
     }),
     ready: Boolean(brief),

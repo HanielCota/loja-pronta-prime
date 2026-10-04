@@ -12,22 +12,28 @@ import {
   restartLogoChat,
   retryLogoReply,
   sendLogoMessage,
+  uploadLogo,
   type ChatResult,
 } from '../server/actions';
-import { ChatMessage, Creating, Thinking } from './chat-message';
+import { LOGO_TWEAKS, type LogoTweak } from '../tweaks';
+import { ChatMessage } from './chat-message';
 import { Composer } from './composer';
 import { CreateCard } from './create-card';
+import { LogoGallery, type ChatLogo } from './logo-gallery';
+import { LogoViewer } from './logo-viewer';
 import { RestartDialog } from './restart-dialog';
+import { shrinkImage } from './shrink-image';
+import { Creating, Thinking } from './waiting';
 
 /** O que está acontecendo agora (mostra o aviso certo e trava os botões). */
-type Busy = 'typing' | 'creating' | 'choosing' | 'restarting' | null;
+type Busy = 'typing' | 'creating' | 'uploading' | 'choosing' | 'restarting' | null;
 
 /**
  * O chat do logo, com a cara do ChatGPT (mas pensado pra quem tem pouca prática). Antes da
  * primeira resposta dela, tudo fica no meio da tela (a pergunta, as respostas rápidas e a caixa
  * de escrever); depois, a conversa corre na página e a caixa fica presa embaixo. Este componente
- * só guarda o estado e junta as partes: as mensagens, o cartão de criar, a caixa e a janela de
- * "Nova conversa" ficam cada uma no seu arquivo.
+ * só guarda o estado e junta as partes (cada uma no seu arquivo): as mensagens, "Seus logos", o
+ * logo em tamanho grande, o cartão de criar, a caixa e a janela de "Nova conversa".
  */
 export function LogoChat({
   initial,
@@ -46,8 +52,12 @@ export function LogoChat({
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState<Busy>(null);
   const [confirmingRestart, setConfirmingRestart] = useState(false);
+  /** O logo aberto em tamanho grande. */
+  const [viewing, setViewing] = useState<string>();
   /** O logo que ela tocou pra usar (o botão dele mostra que está salvando). */
   const [choosing, setChoosing] = useState<string>();
+  /** Daqui pra frente, as falas são novas (aparecem aos poucos); as de antes já estavam lá. */
+  const [animateFrom, setAnimateFrom] = useState(initial.messages.length);
   const [, startTransition] = useTransition();
   const router = useRouter();
   const endRef = useRef<HTMLDivElement>(null);
@@ -62,6 +72,14 @@ export function LogoChat({
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     endRef.current?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'end' });
   }, [scrollKey]);
+
+  // Criando o logo (até 1 minuto): sair da página pede confirmação do navegador.
+  useEffect(() => {
+    if (busy !== 'creating') return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [busy]);
 
   /**
    * Roda uma action. `before`: a conversa como estava (volta a ela se a action nem respondeu);
@@ -80,6 +98,7 @@ export function LogoChat({
         const result = await action();
         setChat(result.chat);
         setError(result.error);
+        if (kind === 'restarting') setAnimateFrom(result.chat.messages.length);
         // Não guardou a mensagem (limite da conversa): o texto volta pro campo.
         if (typed && !result.chat.messages.some((message) => message.text === typed)) {
           setDraft(typed);
@@ -99,14 +118,46 @@ export function LogoChat({
     });
   }
 
+  /** Mostra o pedido dela na hora (enquanto o servidor trabalha) e devolve a conversa de antes. */
+  function showAsked(text: string): ChatView {
+    const before = chat;
+    setChat({ ...chat, messages: [...chat.messages, { role: 'user', text }] });
+    return before;
+  }
+
   function send(text: string) {
     const message = text.trim();
     if (!message || busy) return;
-    // A mensagem aparece na hora, enquanto o assistente responde.
-    const before = chat;
-    setChat({ ...chat, messages: [...chat.messages, { role: 'user', text: message }] });
+    const before = showAsked(message);
     setDraft('');
     run('typing', () => sendLogoMessage(message), { before, typed: message });
+  }
+
+  function tweak(id: LogoTweak) {
+    if (busy) return;
+    const before = showAsked(LOGO_TWEAKS[id].label);
+    run('creating', () => createLogo(id), { before });
+  }
+
+  function choose(imageId: string) {
+    setChoosing(imageId);
+    run('choosing', () => chooseLogo(imageId, editing));
+  }
+
+  function upload(file: File) {
+    if (busy) return;
+    run('uploading', async () => {
+      const image = await shrinkImage(file);
+      if (!image) {
+        return {
+          chat,
+          error: 'Não consegui abrir essa imagem. Mande uma foto ou imagem (PNG ou JPG).',
+        };
+      }
+      const form = new FormData();
+      form.set('logo', image, 'logo');
+      return uploadLogo(form);
+    });
   }
 
   function restart() {
@@ -119,14 +170,20 @@ export function LogoChat({
   const last = chat.messages.at(-1);
   // Ainda só a primeira pergunta (ela não respondeu nada): tudo no meio da tela.
   const fresh = !chat.messages.some((message) => message.role === 'user') && !busy;
-  // "Logo 1", "Logo 2"...: cada logo criado com o seu número (pro leitor de tela distinguir).
-  let imageCount = 0;
-  const imageNumbers = chat.messages.map((message) => (message.imageId ? ++imageCount : undefined));
+  // "Logo 1", "Logo 2"...: cada logo com o seu número (pro leitor de tela e pra comparar).
+  const logos: ChatLogo[] = [];
+  const imageNumbers = chat.messages.map((message) => {
+    if (!message.imageId) return undefined;
+    logos.push({ imageId: message.imageId, number: logos.length + 1 });
+    return logos.length;
+  });
+  const viewed = logos.find((logo) => logo.imageId === viewing) ?? null;
   const suggestions = !busy && last?.role === 'assistant' ? (last.suggestions ?? []) : [];
-  const hasImage = imageCount > 0;
   // O cartão de criar aparece quando há resumo e a última mensagem não é um logo (depois de um
-  // logo, ela pode pedir mudanças conversando e criar outro).
-  const showCreate = chat.ready && !last?.imageId && last?.role !== 'user';
+  // logo, ela ajusta com um toque ou conversando). Criando, some: o quadro do logo já mostra.
+  const showCreate = chat.ready && !last?.imageId && last?.role !== 'user' && busy !== 'creating';
+  // Ajustes de um toque: no último logo, se a IA que criou e ainda dá pra criar.
+  const canTweak = chat.ready && chat.generationsLeft > 0;
   // A última mensagem dela ficou sem resposta (a IA falhou): dá pra pedir a resposta de novo.
   const canRetry = !busy && last?.role === 'user';
 
@@ -143,16 +200,26 @@ export function LogoChat({
           fresh ? 'justify-center text-center' : 'justify-between',
         )}
       >
-        <h1
-          id={titleId}
-          tabIndex={-1}
-          className={cn(
-            'font-semibold text-balance outline-none',
-            fresh ? 'text-title-lg sm:text-title-xl' : 'text-lg',
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <h1
+            id={titleId}
+            tabIndex={-1}
+            className={cn(
+              'font-semibold text-balance outline-none',
+              fresh ? 'text-title-lg sm:text-title-xl' : 'text-lg',
+            )}
+          >
+            Logo da {storeName}
+          </h1>
+          {/* Quantos ainda dá pra criar, sempre à vista (não só no cartão de criar). */}
+          {fresh ? null : (
+            <p className="text-body text-muted-foreground">
+              {chat.generationsLeft
+                ? `Você ainda pode criar ${chat.generationsLeft} ${chat.generationsLeft === 1 ? 'logo' : 'logos'}`
+                : 'Você já criou todos os logos que dava'}
+            </p>
           )}
-        >
-          Logo da {storeName}
-        </h1>
+        </div>
         {/* Nada pra recomeçar enquanto ela não respondeu. */}
         {fresh ? null : (
           <Button
@@ -170,6 +237,8 @@ export function LogoChat({
       </div>
 
       <div className={cn('flex flex-col gap-8', !fresh && 'flex-1 py-6')}>
+        <LogoGallery logos={logos} onOpen={setViewing} />
+
         {/* role=log: o leitor de tela anuncia cada mensagem nova, sem ler tudo de novo. Só as
             mensagens ficam aqui: o aviso de erro e os botões, fora, não são lidos duas vezes. */}
         <div role="log" aria-label="Conversa sobre o seu logo" className="flex flex-col gap-8">
@@ -179,18 +248,17 @@ export function LogoChat({
               message={message}
               storeName={storeName}
               imageNumber={imageNumbers[index]}
+              animate={message.role === 'assistant' && index >= animateFrom}
               canChoose={!busy}
               choosing={busy === 'choosing' && choosing === message.imageId}
-              canCreateMore={chat.generationsLeft > 0 && !busy}
-              onChoose={(imageId) => {
-                setChoosing(imageId);
-                run('choosing', () => chooseLogo(imageId, editing));
-              }}
-              onAnother={() => run('creating', createLogo)}
-              isLatestImage={Boolean(message.imageId) && message === last}
+              tweaks={canTweak && message === last && !message.uploaded}
+              onChoose={choose}
+              onOpen={setViewing}
+              onTweak={tweak}
             />
           ))}
           {busy === 'typing' ? <Thinking /> : null}
+          {busy === 'uploading' ? <Thinking label="Recebendo o seu logo…" /> : null}
           {busy === 'creating' ? <Creating /> : null}
         </div>
 
@@ -198,10 +266,9 @@ export function LogoChat({
           <CreateCard
             summary={chat.summary}
             generationsLeft={chat.generationsLeft}
-            again={hasImage}
+            again={logos.length > 0}
             busy={Boolean(busy)}
-            creating={busy === 'creating'}
-            onCreate={() => run('creating', createLogo)}
+            onCreate={() => run('creating', () => createLogo())}
           />
         ) : null}
 
@@ -231,13 +298,14 @@ export function LogoChat({
         ) : null}
 
         {/* A rolagem para aqui: depois do "Criar meu logo" e do aviso. */}
-        {fresh ? null : <div ref={endRef} className="scroll-mb-48" />}
+        {fresh ? null : <div ref={endRef} className="scroll-mb-56" />}
       </div>
 
       <Composer
         draft={draft}
         onDraftChange={setDraft}
         onSend={send}
+        onUpload={upload}
         suggestions={suggestions}
         disabled={Boolean(busy)}
         describedBy={error ? errorId : undefined}
@@ -247,10 +315,16 @@ export function LogoChat({
         className={
           fresh
             ? undefined
-            : 'sticky bottom-0 -mx-4 bg-linear-to-t from-background from-70% to-transparent px-4 pt-8 pb-4 sm:-mx-6 sm:px-6'
+            : 'sticky bottom-0 -mx-4 bg-linear-to-t from-background from-80% to-transparent px-4 pt-8 pb-3 sm:-mx-6 sm:px-6'
         }
       />
 
+      <LogoViewer
+        logo={viewed}
+        canChoose={!busy}
+        onChoose={choose}
+        onClose={() => setViewing(undefined)}
+      />
       <RestartDialog
         open={confirmingRestart}
         generationsLeft={chat.generationsLeft}

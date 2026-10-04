@@ -65,6 +65,17 @@ export async function chatUntilReady(page: Page) {
 /** Toca em criar e espera o logo número `number` chegar (a imagem carregada de verdade). */
 export async function createLogo(page: Page, number: number) {
   await page.getByRole('button', { name: /^Criar (meu|outro) logo$/ }).click();
+  await expectLogo(page, number);
+}
+
+/** Um ajuste de um toque no último logo ("Mais simples"...): espera a versão nova chegar. */
+export async function tweakLogo(page: Page, label: string, number: number) {
+  await page.getByRole('button', { name: label, exact: true }).click();
+  await expectLogo(page, number);
+}
+
+/** O logo número `number` na conversa, com a imagem carregada de verdade. */
+export async function expectLogo(page: Page, number: number) {
   const logo = conversation(page).getByRole('img', { name: `Logo ${number} criado pra sua loja` });
   await expect(logo).toBeVisible({ timeout: IMAGE_TIMEOUT });
   await expect

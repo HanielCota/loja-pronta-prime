@@ -11,6 +11,7 @@ import {
   MAX_GENERATIONS,
   MAX_MESSAGE_CHARS,
   MAX_TOTAL_TURNS,
+  MAX_UPLOAD_BYTES,
   MAX_USER_MESSAGES,
   userMessageCount,
   type LogoChat,
@@ -25,11 +26,12 @@ import {
 } from './chat-store';
 import { nextAssistantTurn } from './interviewer';
 import { currentChat, view } from './load';
-import { drawLogo, logoImageKey, storeLogoImage } from './logo-images';
+import { briefWithTweak, isLogoTweak, LOGO_TWEAKS } from '../tweaks';
+import { drawLogo, logoImageKey, normalizeUploadedLogo, storeLogoImage } from './logo-images';
 
 /**
- * O chat do logo: mandar mensagem, tentar a resposta de novo, criar o logo, escolher um e
- * recomeçar. Cada action confere o acesso, reserva o que custa, chama quem conversa ou quem
+ * O chat do logo: mandar mensagem, tentar a resposta de novo, criar o logo (ou um ajuste dele),
+ * mandar o próprio logo, escolher um e recomeçar. Cada action confere o acesso, reserva o que custa, chama quem conversa ou quem
  * desenha, guarda (sempre acrescentando, nunca regravando) e devolve a tela pronta. Quando a IA
  * falha, a mensagem dela fica guardada e a tela mostra um aviso com "Tentar de novo".
  */
@@ -43,6 +45,12 @@ export type ChatResult = {
 
 const AI_DOWN = 'O assistente está com dificuldade agora. Toque em "Tentar de novo".';
 const TOO_MANY = 'Você já conversou bastante por hoje. Escolha um dos logos ou volte mais tarde.';
+
+/** A primeira fala, pra guardar junto se a conversa ainda está vazia no banco. */
+function openingOf(chat: LogoChat): { opening?: LogoChatMessage } {
+  const opening = chat.messages[0];
+  return opening?.role === 'assistant' ? { opening } : {};
+}
 
 async function chatContext() {
   const access = await requireBrandAction({ logo: true });
@@ -66,8 +74,7 @@ async function reply(
   chat: LogoChat,
   pending: LogoChatMessage[],
 ): Promise<ChatResult> {
-  const opening = chat.messages[0];
-  const options = opening?.role === 'assistant' ? { opening } : {};
+  const options = openingOf(chat);
   if (!(await reserveTurn(userId, MAX_TOTAL_TURNS))) {
     return { chat: view(await appendMessages(userId, pending, options)), error: TOO_MANY };
   }
@@ -113,10 +120,14 @@ export async function retryLogoReply(): Promise<ChatResult> {
   return reply(userId, context, chat, []);
 }
 
-/** Cria um logo com o resumo da conversa (dentro do limite de criações). */
-export async function createLogo(): Promise<ChatResult> {
+/**
+ * Cria um logo com o resumo da conversa (dentro do limite de criações). Com `tweak` (um ajuste
+ * de um toque, como "Mais colorido"), o pedido dela entra na conversa e o ajuste vai pra imagem.
+ */
+export async function createLogo(tweak?: string): Promise<ChatResult> {
   const { userId, context } = await chatContext();
   const chat = await currentChat(userId, context);
+  if (tweak !== undefined && !isLogoTweak(tweak)) return { chat: view(chat) };
   if (!chat.brief) {
     return { chat: view(chat), error: 'Me conta mais um pouco antes de criar o logo.' };
   }
@@ -128,7 +139,7 @@ export async function createLogo(): Promise<ChatResult> {
   }
   let png: Uint8Array;
   try {
-    png = await drawLogo(chat.brief, context.storeName);
+    png = await drawLogo(chat.brief, context.storeName, tweak);
   } catch (error) {
     // A imagem não saiu: a criação volta pra ela (nada foi pago).
     await releaseGeneration(userId);
@@ -141,17 +152,62 @@ export async function createLogo(): Promise<ChatResult> {
   }
   // Daqui pra frente a imagem já foi paga: uma falha ao guardar não devolve a criação.
   const key = await storeLogoImage(userId, png);
-  const opening = chat.messages[0];
+  const asked: LogoChatMessage[] = tweak ? [{ role: 'user', text: LOGO_TWEAKS[tweak].label }] : [];
   const saved = await appendMessages(
     userId,
     [
+      ...asked,
       {
         role: 'assistant',
-        text: 'Prontinho! Gostou? Se quiser, me diga o que mudar e eu crio outro.',
+        text: tweak
+          ? 'Prontinho, fiz a versão nova! Gostou? Compare com os outros e escolha o seu.'
+          : 'Prontinho! Gostou? Se quiser, peça um ajuste aqui embaixo ou me diga o que mudar.',
         image: key,
       },
     ],
-    opening?.role === 'assistant' ? { opening } : {},
+    {
+      ...openingOf(chat),
+      ...(tweak ? { brief: briefWithTweak(chat.brief, tweak) } : {}),
+    },
+  );
+  return { chat: view(saved) };
+}
+
+/**
+ * "Já tenho um logo": ela manda a imagem dela, que entra na conversa pra ela escolher, como um
+ * logo criado (sem gastar criação; conta como uma resposta, pra segurar abuso).
+ */
+export async function uploadLogo(form: FormData): Promise<ChatResult> {
+  const { userId, context } = await chatContext();
+  const chat = await currentChat(userId, context);
+  const file = form.get('logo');
+  if (!(file instanceof File) || file.size === 0) {
+    return { chat: view(chat), error: 'Escolha a imagem do seu logo.' };
+  }
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return { chat: view(chat), error: 'Essa imagem é grande demais. Tente outra.' };
+  }
+  const png = await normalizeUploadedLogo(new Uint8Array(await file.arrayBuffer()));
+  if (!png) {
+    return {
+      chat: view(chat),
+      error: 'Não consegui abrir essa imagem. Mande uma foto ou imagem (PNG ou JPG).',
+    };
+  }
+  if (!(await reserveTurn(userId, MAX_TOTAL_TURNS))) return { chat: view(chat), error: TOO_MANY };
+  const key = await storeLogoImage(userId, png);
+  const saved = await appendMessages(
+    userId,
+    [
+      { role: 'user', text: 'Mandei o meu logo.' },
+      {
+        role: 'assistant',
+        text: 'Recebi o seu logo! Se estiver tudo certo, toque em "Usar esse logo".',
+        image: key,
+        uploaded: true,
+      },
+    ],
+    openingOf(chat),
   );
   return { chat: view(saved) };
 }

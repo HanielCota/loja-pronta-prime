@@ -1,13 +1,14 @@
 'use client';
 
-import { SparklesIcon } from 'lucide-react';
+import { Maximize2Icon } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { mascotStill } from '@/components/brand/mascot/art';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { BRAND_PATH } from '../../steps';
 import type { ChatViewMessage } from '../chat-view';
+import { LOGO_TWEAK_IDS, LOGO_TWEAKS, type LogoTweak } from '../tweaks';
+import { logoSrc } from './logo-src';
 
 /** O mascote, como "rosto" da assistente (só desenho: quem fala já vai escrito pro leitor). */
 export function Avatar() {
@@ -16,30 +17,35 @@ export function Avatar() {
 
 /**
  * Uma mensagem da conversa: a dela, num balão à direita; a da assistente, solta ao lado do
- * mascote e, quando é um logo criado, com a imagem, a prévia no círculo da Shopee e os botões.
+ * mascote e, quando é um logo, com a imagem (tocar amplia), a prévia no círculo da Shopee e os
+ * botões.
  */
 export function ChatMessage({
   message,
   storeName,
   imageNumber,
+  animate,
   canChoose,
   choosing,
-  canCreateMore,
-  isLatestImage,
+  tweaks,
   onChoose,
-  onAnother,
+  onOpen,
+  onTweak,
 }: {
   message: ChatViewMessage;
   storeName: string;
   /** O número do logo (só nas mensagens com logo). */
   imageNumber: number | undefined;
+  /** Fala nova: aparece aos poucos, palavra por palavra. */
+  animate: boolean;
   canChoose: boolean;
   /** Este logo está sendo salvo como o da loja. */
   choosing: boolean;
-  canCreateMore: boolean;
-  isLatestImage: boolean;
+  /** Mostra os ajustes de um toque (só no último logo criado pela IA, com criações sobrando). */
+  tweaks: boolean;
   onChoose: (imageId: string) => void;
-  onAnother: () => void;
+  onOpen: (imageId: string) => void;
+  onTweak: (tweak: LogoTweak) => void;
 }) {
   if (message.role === 'user') {
     return (
@@ -57,7 +63,7 @@ export function ChatMessage({
       <div className="flex min-w-0 flex-1 flex-col gap-4 pt-1.5">
         <p className="text-lg leading-relaxed text-pretty whitespace-pre-line">
           <span className="sr-only">Assistente: </span>
-          {message.text}
+          {animate ? <Typewriter text={message.text} /> : message.text}
         </p>
         {message.imageId ? (
           <LogoResult
@@ -66,9 +72,10 @@ export function ChatMessage({
             number={imageNumber}
             canChoose={canChoose}
             choosing={choosing}
-            showAnother={isLatestImage && canCreateMore}
+            tweaks={tweaks}
             onChoose={onChoose}
-            onAnother={onAnother}
+            onOpen={onOpen}
+            onTweak={onTweak}
           />
         ) : null}
       </div>
@@ -76,44 +83,80 @@ export function ChatMessage({
   );
 }
 
-/** Um logo criado: a imagem (com espera enquanto chega), como fica no perfil e os botões. */
+/**
+ * A fala aparecendo palavra por palavra, como no ChatGPT (a espera parece menor). O leitor de
+ * tela recebe o texto inteiro de uma vez; quem pediu menos movimento vê tudo direto.
+ */
+function Typewriter({ text }: { text: string }) {
+  const words = text.split(/(\s+)/);
+  const [shown, setShown] = useState(() =>
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches ? words.length : 0,
+  );
+  useEffect(() => {
+    if (shown >= words.length) return;
+    const timer = window.setTimeout(() => setShown((count) => count + 2), 28);
+    return () => window.clearTimeout(timer);
+  }, [shown, words.length]);
+  return (
+    <>
+      <span className="sr-only">{text}</span>
+      <span aria-hidden="true">{words.slice(0, shown).join('')}</span>
+    </>
+  );
+}
+
+/** Um logo: a imagem (tocar amplia), como fica no perfil, o "Usar esse logo" e os ajustes. */
 function LogoResult({
   imageId,
   storeName,
   number,
   canChoose,
   choosing,
-  showAnother,
+  tweaks,
   onChoose,
-  onAnother,
+  onOpen,
+  onTweak,
 }: {
   imageId: string;
   storeName: string;
   number: number | undefined;
   canChoose: boolean;
   choosing: boolean;
-  showAnother: boolean;
+  tweaks: boolean;
   onChoose: (imageId: string) => void;
-  onAnother: () => void;
+  onOpen: (imageId: string) => void;
+  onTweak: (tweak: LogoTweak) => void;
 }) {
   const [loaded, setLoaded] = useState(false);
-  const src = `${BRAND_PATH}/imagens/${imageId}`;
+  const src = logoSrc(imageId);
   return (
     <div className="flex flex-col gap-4">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={src}
-        alt={`Logo ${number ?? ''} criado pra sua loja`}
-        width={360}
-        height={360}
-        onLoad={() => setLoaded(true)}
-        className={cn(
-          'aspect-square w-[min(360px,100%)] rounded-3xl border border-border bg-card',
-          // Enquanto a imagem chega, um quadro piscando no lugar (sem piscar pra quem pediu menos
-          // movimento).
-          !loaded && 'animate-pulse bg-muted motion-reduce:animate-none',
-        )}
-      />
+      <button
+        type="button"
+        onClick={() => onOpen(imageId)}
+        className="relative w-[min(360px,100%)] rounded-3xl outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring focus-visible:outline-solid"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={`Logo ${number ?? ''} criado pra sua loja`}
+          width={360}
+          height={360}
+          onLoad={() => setLoaded(true)}
+          className={cn(
+            'aspect-square w-full rounded-3xl border border-border bg-card',
+            // Enquanto a imagem chega, um quadro piscando no lugar.
+            !loaded && 'animate-pulse bg-muted motion-reduce:animate-none',
+          )}
+        />
+        <span
+          aria-hidden="true"
+          className="absolute right-3 bottom-3 inline-flex min-h-10 items-center gap-1.5 rounded-full bg-black/70 px-3.5 text-body font-medium text-white"
+        >
+          <Maximize2Icon className="size-4" />
+          Ver grande
+        </span>
+      </button>
       {/* Como a cliente vai ver: a Shopee mostra o logo pequeno e redondo, com o nome do lado. */}
       <div className="flex items-center gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -129,58 +172,37 @@ function LogoResult({
           <span className="block text-muted-foreground">Assim aparece no perfil da Shopee</span>
         </p>
       </div>
-      <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          className="w-auto px-6"
-          disabled={!canChoose && !choosing}
-          loading={choosing}
-          loadingText="Salvando…"
-          onClick={() => onChoose(imageId)}
-        >
-          Usar esse logo<span className="sr-only"> (logo {number})</span>
-        </Button>
-        {showAnother ? (
-          <Button type="button" variant="soft" className="w-auto px-6" onClick={onAnother}>
-            <SparklesIcon aria-hidden="true" />
-            Fazer outro
-          </Button>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-/** "Pensando…": a bolinha pulsando (como no ChatGPT) e o aviso escrito. */
-export function Thinking() {
-  return (
-    <div className="flex gap-3">
-      <Avatar />
-      <p className="flex items-center gap-2.5 pt-1.5 text-lg text-muted-foreground">
-        <span
-          aria-hidden="true"
-          className="size-3 animate-pulse rounded-full bg-foreground motion-reduce:animate-none"
-        />
-        Pensando…
-      </p>
-    </div>
-  );
-}
-
-/** Criando o logo: o quadro do logo piscando no lugar onde ele vai aparecer, e quanto demora. */
-export function Creating() {
-  return (
-    <div className="flex gap-3">
-      <Avatar />
-      <div className="flex min-w-0 flex-1 flex-col gap-4 pt-1.5">
-        <p className="text-lg text-muted-foreground">Criando seu logo… leva uns 15 segundos.</p>
-        <div
-          aria-hidden="true"
-          className="grid aspect-square w-[min(360px,100%)] animate-pulse place-items-center rounded-3xl border border-border bg-muted motion-reduce:animate-none"
-        >
-          <SparklesIcon className="size-10 text-muted-foreground" />
-        </div>
-      </div>
+      <Button
+        type="button"
+        className="sm:w-auto sm:self-start sm:px-8"
+        disabled={!canChoose && !choosing}
+        loading={choosing}
+        loadingText="Salvando…"
+        onClick={() => onChoose(imageId)}
+      >
+        Usar esse logo<span className="sr-only"> (logo {number})</span>
+      </Button>
+      {tweaks ? (
+        <fieldset className="flex flex-col">
+          <legend className="mb-2.5 text-body font-semibold">
+            Quer mudar algo? Toque e eu faço outro:
+          </legend>
+          <div className="flex flex-wrap gap-2">
+            {LOGO_TWEAK_IDS.map((tweak) => (
+              <Button
+                key={tweak}
+                type="button"
+                variant="soft"
+                className="w-auto px-5"
+                disabled={!canChoose}
+                onClick={() => onTweak(tweak)}
+              >
+                {LOGO_TWEAKS[tweak].label}
+              </Button>
+            ))}
+          </div>
+        </fieldset>
+      ) : null}
     </div>
   );
 }
