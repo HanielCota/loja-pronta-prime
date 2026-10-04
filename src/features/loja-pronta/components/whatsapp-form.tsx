@@ -45,9 +45,10 @@ function caretAfterDigits(formatted: string, count: number): number {
  *   fim, "Número completo" e o número grande pra ela conferir antes de enviar.
  * Só ajuda: quem confere é o servidor (parseWhatsapp). Sem JavaScript, o campo é um campo comum.
  */
-export function WhatsappForm({ helpId }: { helpId: string }) {
+export function WhatsappForm({ helpId, initial }: { helpId: string; initial: string | null }) {
   const [state, formAction, pending] = useActionState(finishConversation, undefined);
-  const [value, setValue] = useState('');
+  // Corrigindo o número (conversa já enviada): o campo já vem com o salvo.
+  const [value, setValue] = useState(initial ? formatTypedWhatsapp(initial) : '');
   const [removed, setRemoved] = useState<ReturnType<typeof cleanWhatsapp>['removed']>();
   const [clientError, setClientError] = useState<string>();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -172,8 +173,13 @@ export function WhatsappForm({ helpId }: { helpId: string }) {
         </p>
       ) : null}
 
-      <Button type="submit" loading={pending} loadingText="Enviando…" className="mt-2">
-        Enviar respostas
+      <Button
+        type="submit"
+        loading={pending}
+        loadingText={initial ? 'Salvando…' : 'Enviando…'}
+        className="mt-2"
+      >
+        {initial ? 'Salvar o número' : 'Enviar respostas'}
         {pending ? null : <SendIcon aria-hidden="true" />}
       </Button>
     </form>

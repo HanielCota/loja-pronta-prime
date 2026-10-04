@@ -2,7 +2,7 @@
 
 import { ArrowLeftIcon, MailIcon } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { CardHeading } from '@/components/brand/card-heading';
 import { Button } from '@/components/ui/button';
 import { RESET_LINK_TTL_HOURS } from '@/config/auth';
@@ -23,20 +23,24 @@ type RecoverPasswordProps = {
 
 export function RecoverPassword(props: RecoverPasswordProps) {
   const [attempt, setAttempt] = useState(0);
+  const root = useRef<HTMLDivElement>(null);
   return (
-    <RecoverPasswordFlow
-      key={attempt}
-      {...props}
-      onRestart={() => {
-        rememberEmail('');
-        setAttempt((n) => n + 1);
-        // A tela é recriada (o botão clicado some): o foco vai pro campo de email, pra ela já
-        // digitar o outro, em vez de cair no começo da página.
-        requestAnimationFrame(() =>
-          document.querySelector<HTMLInputElement>('input[name="email"]')?.focus(),
-        );
-      }}
-    />
+    // `contents`: o contêiner não muda o layout; só limita onde procurar o campo (abaixo).
+    <div ref={root} className="contents">
+      <RecoverPasswordFlow
+        key={attempt}
+        {...props}
+        onRestart={() => {
+          rememberEmail('');
+          setAttempt((n) => n + 1);
+          // A tela é recriada (o botão clicado some): o foco vai pro campo de email deste
+          // formulário, pra ela já digitar o outro, em vez de cair no começo da página.
+          requestAnimationFrame(() =>
+            root.current?.querySelector<HTMLInputElement>('input[name="email"]')?.focus(),
+          );
+        }}
+      />
+    </div>
   );
 }
 

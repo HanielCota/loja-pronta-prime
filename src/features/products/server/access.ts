@@ -1,9 +1,14 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, isNull, lt, or, sql } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
+import { cache } from 'react';
 import { after } from 'next/server';
 import { PRODUCT_IDS, type ProductId } from '@/config/products';
 import { authHref } from '@/features/auth/links';
-import { getSessionState, needsFirstPassword } from '@/features/auth/server/session';
+import {
+  getActiveSession,
+  getSessionState,
+  needsFirstPassword,
+} from '@/features/auth/server/session';
 import { db } from '@/server/db';
 import { studentProducts } from '@/server/db/schema';
 import { PRODUCTS } from '../catalog';
@@ -17,7 +22,8 @@ type StudentProducts = {
   lastArea?: ProductId | undefined;
 };
 
-export async function getStudentProducts(userId: string): Promise<StudentProducts> {
+/** Os produtos dela (lidos uma vez por requisição, mesmo com várias guardas pedindo). */
+export const getStudentProducts = cache(async (userId: string): Promise<StudentProducts> => {
   const rows = await db
     .select({
       product: studentProducts.product,
@@ -36,7 +42,7 @@ export async function getStudentProducts(userId: string): Promise<StudentProduct
     ),
     lastArea: latest?.product,
   };
-}
+});
 
 /**
  * Páginas da área da aluna: exige estar dentro e já ter criado a própria senha. Sem sessão, vai
@@ -53,6 +59,9 @@ export async function requireStudent(path: string) {
   return { session, ...(await getStudentProducts(session.user.id)) };
 }
 
+/** De quanto em quanto tempo a visita a uma área é gravada de novo. */
+const VISIT_INTERVAL_MS = 10 * 60 * 1000;
+
 /**
  * Área de um produto: quem não tem esse produto volta pro início (que mostra o que ela tem).
  * `path` é a página atual (pra onde o login devolve), quando é uma página dentro da área.
@@ -68,15 +77,36 @@ export async function requireProduct(product: ProductId, path: string = PRODUCTS
   after(() => {
     // Hora do servidor em UTC, como o Drizzle grava as outras datas (as colunas não têm fuso).
     const now = new Date();
+    const recent = new Date(now.getTime() - VISIT_INTERVAL_MS);
     return db
       .update(studentProducts)
       .set({
         firstVisitedAt: sql`coalesce(${studentProducts.firstVisitedAt}, ${now.toISOString()}::timestamp)`,
         lastVisitedAt: now,
       })
-      .where(and(eq(studentProducts.userId, userId), eq(studentProducts.product, product)));
+      .where(
+        and(
+          eq(studentProducts.userId, userId),
+          eq(studentProducts.product, product),
+          // Uma gravação por visita, não uma por página (cada pergunta da conversa é uma página).
+          or(isNull(studentProducts.lastVisitedAt), lt(studentProducts.lastVisitedAt, recent)),
+        ),
+      );
   });
   const firstVisitedAt = student.firstVisits[product];
   const firstVisit = !firstVisitedAt || firstVisitedAt >= student.session.session.createdAt;
   return { ...student, firstVisit };
+}
+
+/**
+ * A mesma regra, pras Server Actions (que podem ser chamadas direto, sem passar pela página):
+ * sessão ativa, senha própria criada e o produto. Sem isso, nada: leva pro login ou pro início.
+ */
+export async function requireProductAction(product: ProductId) {
+  const session = await getActiveSession();
+  if (!session || needsFirstPassword(session.user)) redirect('/entrar');
+  const userId = session.user.id;
+  const { products } = await getStudentProducts(userId);
+  if (!products.includes(product)) redirect('/');
+  return { session, userId };
 }

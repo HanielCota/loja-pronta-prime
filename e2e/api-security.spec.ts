@@ -15,6 +15,9 @@ test('login, cadastro e senha pela API ficam desligados (só as telas fazem isso
     ],
     ['/api/auth/request-password-reset', { email: studentEmail('aluna') }],
     ['/api/auth/reset-password', { newPassword: '12345678', token: 'qualquer' }],
+    // Conferir a senha pela API seria um jeito de chutar senhas sem o limite da tela.
+    ['/api/auth/verify-password', { password: PASSWORD }],
+    ['/api/auth/update-session', {}],
   ] as const;
 
   for (const [path, data] of attempts) {

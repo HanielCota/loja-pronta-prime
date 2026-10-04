@@ -2,9 +2,10 @@
 
 import { redirect } from 'next/navigation';
 import { AiUnavailableError } from '@/server/ai/errors';
-import { requireBrandAction, setBrandLogo } from '../../server/brand';
+import { requireBrandAction } from '../../server/brand';
+import { saveBrand } from '../../server/brand-store';
 import { brandStepPath } from '../../steps';
-import { assistantMessage, toChatView, withOpening, type ChatView } from '../chat-view';
+import { assistantMessage, type ChatView } from '../chat-view';
 import type { InterviewContext } from '../interviewer-prompt';
 import {
   MAX_GENERATIONS,
@@ -18,13 +19,13 @@ import {
 import {
   appendMessages,
   clearLogoChat,
-  getLogoChat,
   releaseGeneration,
   reserveGeneration,
   reserveTurn,
 } from './chat-store';
-import { nextAssistantTurn, openingTurn } from './interviewer';
-import { generateLogoImage, imageIdFromKey, logoImageKey } from './logo-images';
+import { nextAssistantTurn } from './interviewer';
+import { currentChat, view } from './load';
+import { drawLogo, logoImageKey, storeLogoImage } from './logo-images';
 
 /**
  * O chat do logo: mandar mensagem, tentar a resposta de novo, criar o logo, escolher um e
@@ -55,13 +56,6 @@ async function chatContext() {
   return { ...access, context };
 }
 
-/** A conversa guardada, como a tela abre (com a primeira fala, se ainda está vazia). */
-async function current(userId: string, context: InterviewContext): Promise<LogoChat> {
-  return withOpening(await getLogoChat(userId), openingTurn, context);
-}
-
-const view = (chat: LogoChat) => toChatView(chat, imageIdFromKey);
-
 /**
  * Pede a próxima fala da IA pra conversa `chat` (que já termina na mensagem dela) e guarda a fala
  * (mais `pending`: o que ainda não estava guardado, como a mensagem dela).
@@ -75,26 +69,27 @@ async function reply(
   const opening = chat.messages[0];
   const options = opening?.role === 'assistant' ? { opening } : {};
   if (!(await reserveTurn(userId, MAX_TOTAL_TURNS))) {
-    await appendMessages(userId, pending, options);
-    return { chat: view(chat), error: TOO_MANY };
+    return { chat: view(await appendMessages(userId, pending, options)), error: TOO_MANY };
   }
   try {
     const turn = await nextAssistantTurn(context, chat.messages);
     const answer = assistantMessage(turn);
-    await appendMessages(userId, [...pending, answer], { ...options, brief: turn.brief });
-    return { chat: view(await current(userId, context)) };
+    const saved = await appendMessages(userId, [...pending, answer], {
+      ...options,
+      brief: turn.brief,
+    });
+    return { chat: view(saved) };
   } catch (error) {
     if (!(error instanceof AiUnavailableError)) throw error;
     console.error('[chat do logo]', error.message);
     // A mensagem dela fica guardada: ela não precisa escrever de novo.
-    await appendMessages(userId, pending, options);
-    return { chat: view(chat), error: AI_DOWN };
+    return { chat: view(await appendMessages(userId, pending, options)), error: AI_DOWN };
   }
 }
 
 export async function sendLogoMessage(text: string): Promise<ChatResult> {
   const { userId, context } = await chatContext();
-  const chat = await current(userId, context);
+  const chat = await currentChat(userId, context);
   const message = String(text ?? '')
     .replace(/\s+/g, ' ')
     .trim()
@@ -113,7 +108,7 @@ export async function sendLogoMessage(text: string): Promise<ChatResult> {
 /** "Tentar de novo": a IA responde à última mensagem dela, que ficou sem resposta. */
 export async function retryLogoReply(): Promise<ChatResult> {
   const { userId, context } = await chatContext();
-  const chat = await current(userId, context);
+  const chat = await currentChat(userId, context);
   if (chat.messages.at(-1)?.role !== 'user') return { chat: view(chat) };
   return reply(userId, context, chat, []);
 }
@@ -121,7 +116,7 @@ export async function retryLogoReply(): Promise<ChatResult> {
 /** Cria um logo com o resumo da conversa (dentro do limite de criações). */
 export async function createLogo(): Promise<ChatResult> {
   const { userId, context } = await chatContext();
-  const chat = await current(userId, context);
+  const chat = await currentChat(userId, context);
   if (!chat.brief) {
     return { chat: view(chat), error: 'Me conta mais um pouco antes de criar o logo.' };
   }
@@ -131,11 +126,11 @@ export async function createLogo(): Promise<ChatResult> {
       error: `Você já criou ${MAX_GENERATIONS} logos. Escolha um deles pra seguir.`,
     };
   }
-  let key: string;
+  let png: Uint8Array;
   try {
-    key = await generateLogoImage(userId, chat.brief, context.storeName);
+    png = await drawLogo(chat.brief, context.storeName);
   } catch (error) {
-    // Só devolve a criação quando a imagem não saiu (se saiu, já foi paga).
+    // A imagem não saiu: a criação volta pra ela (nada foi pago).
     await releaseGeneration(userId);
     if (!(error instanceof AiUnavailableError)) throw error;
     console.error('[logo]', error.message);
@@ -144,8 +139,10 @@ export async function createLogo(): Promise<ChatResult> {
       error: 'Não consegui criar o logo agora. Tente de novo daqui a pouco.',
     };
   }
+  // Daqui pra frente a imagem já foi paga: uma falha ao guardar não devolve a criação.
+  const key = await storeLogoImage(userId, png);
   const opening = chat.messages[0];
-  await appendMessages(
+  const saved = await appendMessages(
     userId,
     [
       {
@@ -156,13 +153,13 @@ export async function createLogo(): Promise<ChatResult> {
     ],
     opening?.role === 'assistant' ? { opening } : {},
   );
-  return { chat: view(await current(userId, context)) };
+  return { chat: view(saved) };
 }
 
 /** Escolhe um logo da conversa: vira o logo da loja e ela segue (ou volta pra revisão). */
 export async function chooseLogo(imageId: string, editing: boolean): Promise<ChatResult> {
   const { userId, context, revising, logoOnly } = await chatContext();
-  const chat = await current(userId, context);
+  const chat = await currentChat(userId, context);
   let key: string | null = null;
   try {
     key = logoImageKey(userId, imageId);
@@ -173,7 +170,7 @@ export async function chooseLogo(imageId: string, editing: boolean): Promise<Cha
   if (!key || !chat.messages.some((message) => message.image === key)) {
     return { chat: view(chat), error: 'Esse logo não está mais aqui. Escolha outro.' };
   }
-  await setBrandLogo(userId, key);
+  await saveBrand(userId, { logoImage: key });
   const next = logoOnly
     ? '/loja-pronta'
     : brandStepPath(editing || revising ? 'revisao' : 'descricao');
@@ -184,5 +181,5 @@ export async function chooseLogo(imageId: string, editing: boolean): Promise<Cha
 export async function restartLogoChat(): Promise<ChatResult> {
   const { userId, context } = await chatContext();
   await clearLogoChat(userId);
-  return { chat: view(await current(userId, context)) };
+  return { chat: view(await currentChat(userId, context)) };
 }

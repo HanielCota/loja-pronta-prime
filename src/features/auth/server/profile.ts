@@ -7,6 +7,7 @@ import { headers } from 'next/headers';
 import { auth } from '@/server/auth/auth';
 import { consumeAttempt } from '@/server/auth/rate-limit';
 import { reportAuthError } from '@/server/auth/report-error';
+import { revokeOtherSessions } from '@/server/auth/sessions';
 import { db } from '@/server/db';
 import { user } from '@/server/db/schema';
 import { changePasswordSchema, profileNameSchema } from '../schemas';
@@ -101,16 +102,13 @@ export async function changePassword(
       body: { currentPassword, newPassword: password },
       headers: await headers(),
     });
-    const context = await auth.$context;
-    const others = (await context.internalAdapter.listSessions(session.user.id))
-      .map((item) => item.token)
-      .filter((token) => token !== session.session.token);
-    if (others.length) await context.internalAdapter.deleteSessions(others);
   } catch (error) {
     const code = toAuthErrorCode(error);
     if (code === 'unknown') reportAuthError('troca de senha no perfil', error);
     return { submission: reject(submission, code) };
   }
+  // A senha já mudou: encerrar os outros aparelhos não pode virar um "deu errado" na tela.
+  await revokeOtherSessions(session.user.id, session.session.token);
 
   // Sem os valores de volta: os campos de senha ficam vazios depois de salvar.
   return { submission: submission.reply({ resetForm: true }), saved: true };

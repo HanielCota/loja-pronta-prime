@@ -13,7 +13,7 @@ import { fakeImage } from './fake-ai';
 /** Id de uma imagem (sem barra, sem ponto): o que aparece na URL. */
 const IMAGE_ID = /^[a-z0-9-]{8,40}$/;
 
-export function isLogoImageId(value: string): boolean {
+function isLogoImageId(value: string): boolean {
   return IMAGE_ID.test(value);
 }
 
@@ -35,13 +35,13 @@ function imageModel(): ImageGenerator {
   return env.AI_FAKE === '1' ? fakeImage : openAiImage;
 }
 
-/** Gera o logo com o resumo da conversa e guarda. Devolve a chave. */
-export async function generateLogoImage(
-  userId: string,
-  brief: LogoBrief,
-  storeName: string,
-): Promise<string> {
-  const png = await imageModel()(logoImagePrompt(brief, storeName));
+/** Desenha o logo com o resumo da conversa (a parte que custa: chama a IA). */
+export function drawLogo(brief: LogoBrief, storeName: string): Promise<Uint8Array> {
+  return imageModel()(logoImagePrompt(brief, storeName));
+}
+
+/** Guarda um logo dela. Devolve a chave. */
+export async function storeLogoImage(userId: string, png: Uint8Array): Promise<string> {
   const key = logoImageKey(userId, crypto.randomUUID());
   await storage().put(key, png, 'image/png');
   return key;

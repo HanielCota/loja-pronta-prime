@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 /**
  * Uma etapa da conversa inicial: uma pergunta, a revisão das respostas ou o WhatsApp. Ela pode
  * voltar pras perguntas já respondidas, mas não pular as que faltam. Revendo a conversa já
- * enviada, toda pergunta volta pra revisão ao salvar, e o WhatsApp (já confirmado) não reabre.
+ * enviada, toda pergunta (e o WhatsApp, pra corrigir o número) volta pra revisão ao salvar.
  */
 export default async function ConversationStepPage({ params, searchParams }: PageProps) {
   const [{ passo }, query] = await Promise.all([params, searchParams]);
@@ -38,7 +38,6 @@ export default async function ConversationStepPage({ params, searchParams }: Pag
   const { student, onboarding, revising } = await requireConversation(stepPath(passo));
   const { answers } = onboarding;
   if (!canOpen(passo, answers)) redirect(stepPath(resumeStep(answers)));
-  if (revising && passo === WHATSAPP_STEP) redirect(stepPath(REVIEW_STEP));
 
   const question = findQuestion(passo);
   // Editar só existe nas perguntas (vindo da revisão, salvar volta pra ela).
@@ -52,8 +51,12 @@ export default async function ConversationStepPage({ params, searchParams }: Pag
         revising && passo === REVIEW_STEP ? '/loja-pronta' : previousPath(passo, { editing })
       }
     >
-      {passo === REVIEW_STEP ? <ReviewStep answers={answers} revising={revising} /> : null}
-      {passo === WHATSAPP_STEP ? <WhatsappStep /> : null}
+      {passo === REVIEW_STEP ? (
+        <ReviewStep answers={answers} whatsapp={onboarding.whatsapp} revising={revising} />
+      ) : null}
+      {passo === WHATSAPP_STEP ? (
+        <WhatsappStep saved={onboarding.whatsapp} revising={revising} />
+      ) : null}
       {question ? (
         <QuestionStep question={question} saved={answers[question.id]} editing={editing} />
       ) : null}

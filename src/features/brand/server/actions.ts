@@ -5,24 +5,13 @@ import { redirect } from 'next/navigation';
 import { db } from '@/server/db';
 import { storeBrand, stores } from '@/server/db/schema';
 import { parseBrandDescription, parseBrandName } from '../fields';
+import { appendMessages, getLogoChat } from '../logo-chat/server/chat-store';
 import { BRAND_DONE_PATH, brandStepPath } from '../steps';
 import { requireBrandAction } from './brand';
+import { saveBrand } from './brand-store';
 
 /** Resposta pra tela quando algo não passa (sem erro, a action redireciona). */
 export type BrandResult = { error?: string } | undefined;
-
-type BrandPatch = Partial<Pick<typeof storeBrand.$inferInsert, 'name' | 'description'>>;
-
-/**
- * Grava só o que mudou, criando a linha na primeira escolha. Confirmada, muda só revendo (a guarda
- * de cada action já decidiu que ela pode, até a publicação).
- */
-async function saveBrand(userId: string, patch: BrandPatch) {
-  await db
-    .insert(storeBrand)
-    .values({ userId, ...patch })
-    .onConflictDoUpdate({ target: storeBrand.userId, set: patch });
-}
 
 /**
  * Volta pra revisão quando ela veio de lá pra mudar algo (ou está revendo a marca confirmada);
@@ -36,12 +25,38 @@ function after(
   redirect(brandStepPath(formData.get('editing') || revising ? 'revisao' : next));
 }
 
-/** O nome da loja; depois, o chat do logo. */
+/**
+ * O nome da loja; depois, o chat do logo. Trocando o nome de uma marca já feita, o texto da loja
+ * troca o nome antigo pelo novo, e o logo (que traz o nome escrito na imagem) pede pra ser
+ * criado de novo: ela volta pro chat, com um aviso. O logo de agora fica (se ela não tiver mais
+ * criações, ainda dá pra seguir com ele).
+ */
 export async function saveBrandName(_state: BrandResult, formData: FormData): Promise<BrandResult> {
-  const { userId, revising } = await requireBrandAction();
+  const { userId, brand, revising } = await requireBrandAction();
   const parsed = parseBrandName(formData.get('name'));
   if (!parsed.ok) return { error: parsed.error };
-  await saveBrand(userId, { name: parsed.value });
+  const name = parsed.value;
+  const renamed = Boolean(brand.name) && brand.name !== name;
+  // O texto com o nome novo, se ainda couber no limite da Shopee (senão, fica como estava).
+  const description =
+    renamed && brand.description
+      ? parseBrandDescription(brand.description.replaceAll(brand.name!, name))
+      : undefined;
+  await saveBrand(userId, { name, ...(description?.ok ? { description: description.value } : {}) });
+  if (renamed && brand.logoImage) {
+    // Com o resumo da conversa, o "Criar outro logo" já aparece; sem ele, ela conta de novo.
+    const { brief } = await getLogoChat(userId);
+    const next = brief
+      ? 'toque em "Criar outro logo" pra fazer um com o nome novo.'
+      : 'me conta como você quer o logo novo, ou volte pra seguir com ele.';
+    await appendMessages(userId, [
+      {
+        role: 'assistant',
+        text: `Você mudou o nome pra ${name}. O seu logo ainda mostra ${brand.name}: ${next}`,
+      },
+    ]);
+    redirect(`${brandStepPath('logo')}?editar=1`);
+  }
   after(formData, revising, 'logo');
 }
 

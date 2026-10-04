@@ -13,7 +13,8 @@ describe('parseWhatsapp e formatWhatsapp', () => {
     expect(parseWhatsapp('(11) 98765-4321')).toBe('11987654321');
     expect(parseWhatsapp('+55 11 98765 4321')).toBe('11987654321');
     expect(parseWhatsapp('5511987654321')).toBe('11987654321');
-    expect(parseWhatsapp('11 3456-7890')).toBe('1134567890');
+    // Fixo: a tela pede o número do WhatsApp (e avisa que parece fixo).
+    expect(parseWhatsapp('11 3456-7890')).toBeUndefined();
   });
 
   test('recusa número curto ou longo', () => {
@@ -25,16 +26,17 @@ describe('parseWhatsapp e formatWhatsapp', () => {
   test('tira o 0 e o código da operadora da frente', () => {
     expect(parseWhatsapp('011 98765-4321')).toBe('11987654321');
     expect(parseWhatsapp('0 21 11 98765-4321')).toBe('11987654321');
-    expect(parseWhatsapp('0 15 11 3456-7890')).toBe('1134567890');
+    expect(parseWhatsapp('0 15 11 98765-4321')).toBe('11987654321');
   });
 
-  test('recusa número que não existe: DDD inválido, celular sem o 9, fixo com 6 a 9', () => {
+  test('recusa número que não existe ou não é celular: DDD inválido, sem o 9, telefone fixo', () => {
     expect(parseWhatsapp('10 98765-4321')).toBeUndefined();
     expect(parseWhatsapp('20 98765-4321')).toBeUndefined();
     expect(parseWhatsapp('23 98765-4321')).toBeUndefined();
     expect(parseWhatsapp('11 8765-4321')).toBeUndefined();
     expect(parseWhatsapp('11 88765-4321')).toBeUndefined();
-    expect(parseWhatsapp('11 3456-7890')).toBe('1134567890');
+    // Fixo: a tela pede o número do WhatsApp (e avisa que parece fixo).
+    expect(parseWhatsapp('11 3456-7890')).toBeUndefined();
   });
 
   test('formata celular e fixo', () => {

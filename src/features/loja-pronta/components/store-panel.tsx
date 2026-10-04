@@ -26,8 +26,10 @@ type StorePanelProps = {
   hasChoice: boolean;
   phase: number;
   conversation: ConversationStatus;
-  /** A marca, quando já tem: o nome vira o título e o logo aparece no destaque. */
-  /** `logoSrc`: a imagem do logo salvo (brandLogoSrc), quando já tem. */
+  /**
+   * A marca, quando já tem: o nome vira o título e o logo aparece no destaque. `logoSrc`: a
+   * imagem do logo salvo (brandLogoSrc), quando já tem.
+   */
   brand: { name: string | null; logoSrc: string | null; started: boolean; confirmed: boolean };
 };
 
@@ -83,7 +85,11 @@ function stageEyebrow(stage: number, rest?: string): string {
 }
 
 /** O que o destaque diz em cada momento da loja. */
-function heroFor(phase: number, conversation: ConversationStatus, brandStarted: boolean): Hero {
+function heroFor(
+  phase: number,
+  conversation: ConversationStatus,
+  brand: StorePanelProps['brand'],
+): Hero {
   if (phase === 1 && conversation !== 'enviada') {
     return {
       eyebrow: stageEyebrow(1),
@@ -102,8 +108,18 @@ function heroFor(phase: number, conversation: ConversationStatus, brandStarted: 
       text: 'Escolha o nome, crie o logo conversando com a nossa assistente e defina o texto da loja.',
       action: {
         href: BRAND_PATH,
-        label: brandStarted ? 'Continuar minha marca' : 'Criar minha marca',
+        label: brand.started ? 'Continuar minha marca' : 'Criar minha marca',
       },
+    };
+  }
+  // Marca confirmada antes do chat do logo: o logo antigo saiu, e ela cria um novo (em qualquer
+  // fase, só ele reabre).
+  if (brand.confirmed && !brand.logoSrc) {
+    return {
+      eyebrow: 'Falta o logo',
+      title: 'Crie o logo da sua loja',
+      text: 'Agora o logo é feito conversando com a nossa assistente. Leva poucos minutos.',
+      action: { href: brandStepPath('logo'), label: 'Criar meu logo' },
     };
   }
   const current = STORE_PHASES[phase - 1];
@@ -136,7 +152,7 @@ function NextStep({
   conversation: ConversationStatus;
   brand: StorePanelProps['brand'];
 }) {
-  const hero = heroFor(phase, conversation, brand.started);
+  const hero = heroFor(phase, conversation, brand);
   const showLogo = phase >= 3 && brand.logoSrc && brand.name;
 
   return (

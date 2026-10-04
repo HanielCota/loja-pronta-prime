@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useId, useMemo, useRef } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import {
   BROWS,
@@ -55,8 +55,13 @@ export function Mascot({
   const rootRef = useRef<HTMLDivElement>(null);
   const faceRef = useRef<HTMLDivElement>(null);
   const id = useId().replace(/[^\w-]/g, '');
-  const base = EXPRESSIONS[expression];
-  const initialMouth = mouthShape(base.mouth);
+  // Só o desenho de partida: depois, quem muda a expressão é o laço de animação (useMascot).
+  // Recalculado a cada render, o React escreveria a expressão nova por cima do quadro que o laço
+  // acabou de desenhar, e o rosto pularia por um quadro.
+  const [{ base, initialMouth }] = useState(() => {
+    const start = EXPRESSIONS[expression];
+    return { base: start, initialMouth: mouthShape(start.mouth) };
+  });
 
   useMascot(rootRef, faceRef, expression);
 

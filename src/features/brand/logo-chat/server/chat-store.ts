@@ -1,4 +1,4 @@
-import { and, eq, lt, sql, type SQL } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/server/db';
 import { logoChat } from '@/server/db/schema';
@@ -17,20 +17,20 @@ import {
  *
  * Mensagens novas entram sempre no fim da lista guardada (nunca regravando a lista lida antes):
  * duas abas ao mesmo tempo, ou uma criação de 15 segundos no meio de uma conversa, não apagam
- * nada uma da outra.
+ * nada uma da outra. Cada operação é uma instrução só (insere a linha se ainda não existe).
  */
 
 const messagesSchema = z.array(chatMessageSchema).catch([]);
 
-export async function getLogoChat(userId: string): Promise<LogoChat> {
-  const [row] = await db
-    .select({
-      messages: logoChat.messages,
-      brief: logoChat.brief,
-      generations: logoChat.generations,
-    })
-    .from(logoChat)
-    .where(eq(logoChat.userId, userId));
+type ChatRow = { messages: unknown; brief: unknown; generations: number };
+
+const CHAT_COLUMNS = {
+  messages: logoChat.messages,
+  brief: logoChat.brief,
+  generations: logoChat.generations,
+};
+
+function toChat(row: ChatRow | undefined): LogoChat {
   if (!row) return EMPTY_CHAT;
   const brief = logoBriefSchema.safeParse(row.brief);
   return {
@@ -40,58 +40,66 @@ export async function getLogoChat(userId: string): Promise<LogoChat> {
   };
 }
 
+export async function getLogoChat(userId: string): Promise<LogoChat> {
+  const [row] = await db.select(CHAT_COLUMNS).from(logoChat).where(eq(logoChat.userId, userId));
+  return toChat(row);
+}
+
 /**
- * Acrescenta mensagens no fim da conversa guardada. `opening`: a primeira fala, que entra antes
- * só se a conversa ainda está vazia (ela nasce na tela, sem custo, e é guardada na primeira
- * mensagem dela). `brief`: o resumo novo, quando a IA mandou um.
+ * Acrescenta mensagens no fim da conversa guardada e devolve a conversa como ficou. `opening`: a
+ * primeira fala, que entra antes só se a conversa ainda está vazia (ela nasce na tela, sem custo,
+ * e é guardada na primeira mensagem dela). `brief`: o resumo novo, quando a IA mandou um.
  */
 export async function appendMessages(
   userId: string,
   messages: LogoChatMessage[],
-  { opening, brief }: { opening?: LogoChatMessage; brief?: LogoBrief | null } = {},
-) {
+  { opening, brief }: { opening?: LogoChatMessage | undefined; brief?: LogoBrief | null } = {},
+): Promise<LogoChat> {
+  const fresh = [...(opening ? [opening] : []), ...messages];
   const added = sql`${JSON.stringify(messages)}::jsonb`;
   const withOpening = opening
     ? sql`case when jsonb_array_length(${logoChat.messages}) = 0 then ${JSON.stringify([opening])}::jsonb else '[]'::jsonb end`
     : sql`'[]'::jsonb`;
-  const set: { messages: SQL; brief?: LogoBrief } = {
-    messages: sql`${logoChat.messages} || ${withOpening} || ${added}`,
-  };
-  if (brief) set.brief = brief;
-  await db.insert(logoChat).values({ userId }).onConflictDoNothing();
-  await db.update(logoChat).set(set).where(eq(logoChat.userId, userId));
+  const [row] = await db
+    .insert(logoChat)
+    .values({ userId, messages: fresh, ...(brief ? { brief } : {}) })
+    .onConflictDoUpdate({
+      target: logoChat.userId,
+      set: {
+        messages: sql`${logoChat.messages} || ${withOpening} || ${added}`,
+        ...(brief ? { brief } : {}),
+      },
+    })
+    .returning(CHAT_COLUMNS);
+  return toChat(row);
 }
 
 /**
  * Reserva uma unidade de `column` (respostas da IA ou logos) antes de chamar a IA, numa só
  * instrução: cliques ao mesmo tempo não passam do limite. Devolve se conseguiu.
  */
-async function reserve(
-  userId: string,
-  column: typeof logoChat.generations | typeof logoChat.turns,
-  max: number,
-) {
-  await db.insert(logoChat).values({ userId }).onConflictDoNothing();
+async function reserve(column: 'turns' | 'generations', userId: string, max: number) {
+  const target = logoChat[column];
   const reserved = await db
-    .update(logoChat)
-    .set(
-      column === logoChat.turns
-        ? { turns: sql`${column} + 1` }
-        : { generations: sql`${column} + 1` },
-    )
-    .where(and(eq(logoChat.userId, userId), lt(column, max)))
+    .insert(logoChat)
+    .values({ userId, [column]: 1 })
+    .onConflictDoUpdate({
+      target: logoChat.userId,
+      set: { [column]: sql`${target} + 1` },
+      setWhere: sql`${target} < ${max}`,
+    })
     .returning({ userId: logoChat.userId });
   return reserved.length > 0;
 }
 
 /** Uma resposta da IA (o limite vale pra sempre: recomeçar a conversa não zera). */
 export function reserveTurn(userId: string, max: number): Promise<boolean> {
-  return reserve(userId, logoChat.turns, max);
+  return reserve('turns', userId, max);
 }
 
 /** Um logo (o limite vale pra sempre). */
 export function reserveGeneration(userId: string, max: number): Promise<boolean> {
-  return reserve(userId, logoChat.generations, max);
+  return reserve('generations', userId, max);
 }
 
 /** Devolve o logo reservado quando a IA não desenhou nada (ela não pagou por nada). */

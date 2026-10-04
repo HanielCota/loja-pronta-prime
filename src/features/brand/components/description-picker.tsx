@@ -1,12 +1,13 @@
 'use client';
 
 import { ArrowRightIcon, CheckIcon, ShuffleIcon, XIcon } from 'lucide-react';
-import { useId, useRef, useState } from 'react';
+import { useId, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { parseBrandDescription } from '../fields';
 import type { DescriptionTone } from '../suggestions';
 import { useBrandPending } from './brand-form';
+import { useLimitedField } from './use-limited-field';
 
 /** A partir de quantas letras faltando o aviso do limite aparece (antes disso, não ajuda). */
 const NEAR_LIMIT = 50;
@@ -34,33 +35,22 @@ export function DescriptionPicker({
   logoSrc,
   max,
 }: DescriptionPickerProps) {
-  const [value, setValue] = useState(initial);
-  const [error, setError] = useState<string>();
+  const { value, text, write, clear, ref, note, invalid, announcement, checkBeforeSubmit } =
+    useLimitedField<HTMLTextAreaElement>({
+      initial,
+      max,
+      nearLimit: NEAR_LIMIT,
+      parse: parseBrandDescription,
+    });
   // Qual versão de cada jeito de falar está na vez.
   const [picks, setPicks] = useState<Record<string, number>>({});
   const [lastTone, setLastTone] = useState(tones[0]?.id);
-  const field = useRef<HTMLTextAreaElement>(null);
   const pending = useBrandPending();
   const fieldId = useId();
   const noteId = useId();
   const groupId = useId();
 
-  const text = value.trim();
   const active = tones.find((tone) => tone.texts.includes(text));
-  const left = max - text.length;
-  const note =
-    error ??
-    (left < 0
-      ? `Passou ${-left} ${-left === 1 ? 'letra' : 'letras'} do limite da Shopee.`
-      : left <= NEAR_LIMIT
-        ? `Ainda cabe${left === 1 ? '' : 'm'} ${left} ${left === 1 ? 'letra' : 'letras'}.`
-        : undefined);
-  const invalid = Boolean(error) || left < 0;
-
-  const write = (next: string) => {
-    setValue(next);
-    setError(undefined);
-  };
 
   /** O texto da vez desse jeito de falar; com `next`, a versão seguinte. */
   function applyTone(tone: DescriptionTone, next = false) {
@@ -103,10 +93,7 @@ export function DescriptionPicker({
               variant="ghost"
               size="inline"
               className="-mr-2 px-3"
-              onClick={() => {
-                write('');
-                field.current?.focus();
-              }}
+              onClick={clear}
             >
               <XIcon aria-hidden="true" />
               Apagar
@@ -117,7 +104,7 @@ export function DescriptionPicker({
           Texto da loja
         </label>
         <textarea
-          ref={field}
+          ref={ref}
           id={fieldId}
           name="description"
           rows={5}
@@ -132,7 +119,6 @@ export function DescriptionPicker({
       {/* Uma linha só embaixo do cartão: o erro do envio, o limite passado ou o aviso de perto. */}
       <p
         id={noteId}
-        aria-live="polite"
         className={cn(
           '-mt-1 text-center text-body empty:hidden',
           invalid ? 'text-destructive' : 'text-muted-foreground',
@@ -140,40 +126,46 @@ export function DescriptionPicker({
       >
         {note}
       </p>
+      {/* Anuncia só o erro (não o "ainda cabem" a cada letra digitada). */}
+      <p aria-live="polite" className="sr-only">
+        {announcement}
+      </p>
 
-      <div role="radiogroup" aria-labelledby={groupId} className="mt-3 flex flex-col gap-3">
+      <div className="mt-3 flex flex-col gap-3">
         <h2 id={groupId} className="text-body font-semibold">
           {initial ? 'Ou escolha um jeito de falar' : 'Escolha um jeito de falar'}
         </h2>
-        <div className="flex flex-wrap gap-2.5">
-          {tones.map((tone) => {
-            const checked = active?.id === tone.id;
-            return (
-              <label
-                key={tone.id}
-                className={cn(
-                  'flex min-h-12 cursor-pointer items-center gap-1.5 rounded-full border-[1.5px] px-5 text-body font-semibold shadow-card transition-colors duration-100 motion-reduce:transition-none',
-                  'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring has-focus-visible:outline-solid',
-                  'forced-colors:border-[ButtonText]',
-                  checked
-                    ? 'border-primary bg-primary-soft text-link'
-                    : 'border-transparent bg-card hover:border-primary',
-                )}
-              >
-                {/* "jeito" não é lido no servidor: o que vale é o que está no cartão. */}
-                <input
-                  type="radio"
-                  name="jeito"
-                  value={tone.id}
-                  className="sr-only"
-                  checked={checked}
-                  onChange={() => applyTone(tone)}
-                />
-                {checked ? <CheckIcon aria-hidden="true" className="size-5" /> : null}
-                {tone.label}
-              </label>
-            );
-          })}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div role="radiogroup" aria-labelledby={groupId} className="flex flex-wrap gap-2.5">
+            {tones.map((tone) => {
+              const checked = active?.id === tone.id;
+              return (
+                <label
+                  key={tone.id}
+                  className={cn(
+                    'flex min-h-12 cursor-pointer items-center gap-1.5 rounded-full border-[1.5px] px-5 text-body font-semibold shadow-card transition-colors duration-100 motion-reduce:transition-none',
+                    'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring has-focus-visible:outline-solid',
+                    'forced-colors:border-[ButtonText]',
+                    checked
+                      ? 'border-primary bg-primary-soft text-link'
+                      : 'border-transparent bg-card hover:border-primary',
+                  )}
+                >
+                  {/* "jeito" não é lido no servidor: o que vale é o que está no cartão. */}
+                  <input
+                    type="radio"
+                    name="jeito"
+                    value={tone.id}
+                    className="sr-only"
+                    checked={checked}
+                    onChange={() => applyTone(tone)}
+                  />
+                  {checked ? <CheckIcon aria-hidden="true" className="size-5" /> : null}
+                  {tone.label}
+                </label>
+              );
+            })}
+          </div>
           {anotherTone ? (
             <Button
               type="button"
@@ -195,14 +187,8 @@ export function DescriptionPicker({
         className="mt-3 min-h-14"
         loading={pending}
         loadingText="Salvando…"
-        onClick={(event) => {
-          // Confere antes de enviar: o erro aparece junto do cartão, e o foco volta pra ele.
-          const parsed = parseBrandDescription(value);
-          if (parsed.ok) return;
-          event.preventDefault();
-          setError(parsed.error);
-          field.current?.focus();
-        }}
+        // Confere antes de enviar: o erro aparece junto do cartão, e o foco volta pra ele.
+        onClick={checkBeforeSubmit}
       >
         Continuar com esse texto
         {pending ? null : <ArrowRightIcon aria-hidden="true" />}

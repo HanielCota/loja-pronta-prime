@@ -22,11 +22,15 @@ export async function GET(request: Request) {
   if (!owner || !key) return new Response('Não encontrado', { status: 404 });
   const png = await storage().get(key);
   if (!png) return new Response('Não encontrado', { status: 404 });
-  const download = new URL(request.url).searchParams.get('baixar') === '1';
+  const params = new URL(request.url).searchParams;
+  const download = params.get('baixar') === '1';
   return new Response(new Uint8Array(png), {
     headers: {
       'Content-Type': 'image/png',
-      'Cache-Control': 'private, no-store',
+      // Com `v` (muda a cada escolha salva, ver brandLogoSrc), a imagem daquele endereço nunca
+      // muda: o navegador guarda. Sem ele (o arquivo pra baixar), sempre a de agora.
+      'Cache-Control':
+        params.has('v') && !download ? 'private, max-age=31536000, immutable' : 'private, no-store',
       'X-Content-Type-Options': 'nosniff',
       ...(download
         ? { 'Content-Disposition': `attachment; filename="${fileName(owner.brand.name ?? '')}"` }

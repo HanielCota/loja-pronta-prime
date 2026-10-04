@@ -1,11 +1,12 @@
 'use client';
 
 import { ArrowRightIcon, CheckIcon, PencilIcon, ShuffleIcon, XIcon } from 'lucide-react';
-import { useId, useRef, useState } from 'react';
+import { useId, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { parseBrandName } from '../fields';
 import { useBrandPending } from './brand-form';
+import { useLimitedField } from './use-limited-field';
 
 /** A letra do estilo dela (ver NameStep), com a do site enquanto carrega ou se não carregar. */
 const PREVIEW_FONT = "'Letra da marca', var(--font-sans)";
@@ -32,32 +33,31 @@ type NamePickerProps = {
  * Sem JavaScript, o campo e o botão funcionam (as ideias só escrevem com ele).
  */
 export function NamePicker({ id, initial, featured, ideas, max }: NamePickerProps) {
-  const [value, setValue] = useState(initial);
+  const {
+    value,
+    text: name,
+    write,
+    clear,
+    ref,
+    note,
+    invalid,
+    announcement,
+    checkBeforeSubmit,
+  } = useLimitedField<HTMLInputElement>({
+    initial,
+    max,
+    nearLimit: NEAR_LIMIT,
+    parse: parseBrandName,
+    // Como o servidor: espaços repetidos viram um só.
+    normalize: (input) => input.replace(/\s+/g, ' ').trim(),
+  });
   const [page, setPage] = useState(0);
-  // O erro de quando ela tentou seguir: some assim que ela muda o nome.
-  const [error, setError] = useState<string>();
-  const field = useRef<HTMLInputElement>(null);
   const pending = useBrandPending();
   const limitId = useId();
   const groupId = useId();
 
   const pages = Math.ceil(ideas.length / PAGE);
   const shown = [...(featured ? [featured] : []), ...ideas.slice(page * PAGE, page * PAGE + PAGE)];
-  const name = value.replace(/\s+/g, ' ').trim();
-  const left = max - name.length;
-  // Uma linha só embaixo do cartão: o erro do envio, o limite passado ou o aviso de que está perto.
-  const note =
-    error ??
-    (left < 0
-      ? `Passou ${-left} ${-left === 1 ? 'letra' : 'letras'} do limite da Shopee.`
-      : left <= NEAR_LIMIT
-        ? `Ainda cabe${left === 1 ? '' : 'm'} ${left} ${left === 1 ? 'letra' : 'letras'}.`
-        : undefined);
-  const invalid = Boolean(error) || left < 0;
-  const write = (next: string) => {
-    setValue(next);
-    setError(undefined);
-  };
 
   return (
     <>
@@ -77,7 +77,7 @@ export function NamePicker({ id, initial, featured, ideas, max }: NamePickerProp
           className="pointer-events-none absolute top-1/2 left-5 size-5 -translate-y-1/2 text-muted-foreground"
         />
         <input
-          ref={field}
+          ref={ref}
           id={id}
           name="name"
           value={value}
@@ -101,18 +101,15 @@ export function NamePicker({ id, initial, featured, ideas, max }: NamePickerProp
             size="icon"
             aria-label="Apagar o nome"
             className="absolute top-1/2 right-2 -translate-y-1/2 rounded-full text-muted-foreground"
-            onClick={() => {
-              write('');
-              field.current?.focus();
-            }}
+            onClick={clear}
           >
             <XIcon aria-hidden="true" />
           </Button>
         ) : null}
       </div>
+      {/* Uma linha só embaixo do cartão (o erro, o limite passado ou o "ainda cabem"). */}
       <p
         id={limitId}
-        aria-live="polite"
         className={cn(
           '-mt-1 text-center text-body empty:hidden',
           invalid ? 'text-destructive' : 'text-muted-foreground',
@@ -120,12 +117,16 @@ export function NamePicker({ id, initial, featured, ideas, max }: NamePickerProp
       >
         {note}
       </p>
+      {/* Anuncia só o erro (não o "ainda cabem" a cada letra digitada). */}
+      <p aria-live="polite" className="sr-only">
+        {announcement}
+      </p>
 
-      <div role="radiogroup" aria-labelledby={groupId} className="mt-3 flex flex-col gap-3">
+      <div className="mt-3 flex flex-col gap-3">
         <h2 id={groupId} className="text-body font-semibold">
           {initial ? 'Ou toque numa ideia' : 'Toque numa ideia'}
         </h2>
-        <div className="flex flex-wrap gap-2.5">
+        <div role="radiogroup" aria-labelledby={groupId} className="flex flex-wrap gap-2.5">
           {shown.map((idea) => {
             const checked = idea === name;
             return (
@@ -154,7 +155,9 @@ export function NamePicker({ id, initial, featured, ideas, max }: NamePickerProp
               </label>
             );
           })}
-          {pages > 1 ? (
+        </div>
+        {pages > 1 ? (
+          <div>
             <Button
               type="button"
               variant="ghost"
@@ -165,8 +168,8 @@ export function NamePicker({ id, initial, featured, ideas, max }: NamePickerProp
               <ShuffleIcon aria-hidden="true" />
               Mais ideias
             </Button>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
         {/* Avisa o leitor de tela que a lista mudou (o foco fica no botão). */}
         <p aria-live="polite" className="sr-only">
           {page > 0 ? `Novas ideias: ${shown.join(', ')}` : ''}
@@ -178,14 +181,8 @@ export function NamePicker({ id, initial, featured, ideas, max }: NamePickerProp
         className="mt-3 min-h-14"
         loading={pending}
         loadingText="Salvando…"
-        onClick={(event) => {
-          // Confere antes de enviar: o erro aparece junto do cartão, e o foco volta pra ele.
-          const parsed = parseBrandName(value);
-          if (parsed.ok) return;
-          event.preventDefault();
-          setError(parsed.error);
-          field.current?.focus();
-        }}
+        // Confere antes de enviar: o erro aparece junto do cartão, e o foco volta pra ele.
+        onClick={checkBeforeSubmit}
       >
         {name ? `Continuar com “${name}”` : 'Continuar'}
         {pending ? null : <ArrowRightIcon aria-hidden="true" />}

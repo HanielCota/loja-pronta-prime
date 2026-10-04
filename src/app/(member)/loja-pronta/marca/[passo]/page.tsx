@@ -51,7 +51,15 @@ export default async function BrandStepPage({ params, searchParams }: PageProps)
       account={student.session.user}
       header={brandStepHeader(passo)}
       backHref={
-        editing ? brandStepPath('revisao') : revising ? '/loja-pronta' : previousBrandPath(passo)
+        // Sem logo ainda (marca antiga, ou rever com o logo pendente), a revisão mandaria de volta
+        // pra cá: o "Voltar" vai pro painel.
+        revising && !brand.logoImage
+          ? '/loja-pronta'
+          : editing
+            ? brandStepPath('revisao')
+            : revising
+              ? '/loja-pronta'
+              : previousBrandPath(passo)
       }
     >
       {passo === 'nome' ? (

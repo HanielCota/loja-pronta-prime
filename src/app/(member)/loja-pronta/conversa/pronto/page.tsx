@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import { CardHeading } from '@/components/brand/card-heading';
 import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
+import { getBrand } from '@/features/brand/server/brand';
 import { BRAND_PATH } from '@/features/brand/steps';
 import { getOnboarding } from '@/features/loja-pronta/server/conversation';
 import { CONVERSATION_PATH, DONE_PATH } from '@/features/loja-pronta/steps';
@@ -26,13 +27,18 @@ export const metadata: Metadata = {
 /** Fim da conversa: a marca é o próximo passo, e já dá pra começar. */
 export default async function ConversationDonePage() {
   const { session } = await requireProduct('loja-pronta', DONE_PATH);
-  const { completedAt, whatsapp } = await getOnboarding(session.user.id);
+  const [{ completedAt, whatsapp }, brand] = await Promise.all([
+    getOnboarding(session.user.id),
+    getBrand(session.user.id),
+  ]);
   if (!completedAt) redirect(CONVERSATION_PATH);
+  // Voltou aqui depois (pelo histórico, por exemplo) com a marca já feita: o botão leva pra loja.
+  const brandDone = Boolean(brand.completedAt);
   const name = greetingName(session.user);
 
   const next: ReactNode[] = [
     'Escolher o nome da loja.',
-    'Montar o seu logo, a partir de modelos prontos.',
+    'Criar o seu logo conversando com a nossa assistente.',
     'Escolher o texto que aparece na loja.',
   ];
 
@@ -81,14 +87,20 @@ export default async function ConversationDonePage() {
       </section>
       <div className="flex flex-col gap-2">
         <Button asChild>
-          <Link href={BRAND_PATH}>
-            Criar minha marca
+          <Link href={brandDone ? '/loja-pronta' : BRAND_PATH}>
+            {brandDone
+              ? 'Ver minha loja'
+              : brand.name
+                ? 'Continuar minha marca'
+                : 'Criar minha marca'}
             <ArrowRightIcon aria-hidden="true" />
           </Link>
         </Button>
-        <Button asChild variant="ghost">
-          <Link href="/loja-pronta">Fazer depois</Link>
-        </Button>
+        {brandDone ? null : (
+          <Button asChild variant="ghost">
+            <Link href="/loja-pronta">Fazer depois</Link>
+          </Button>
+        )}
       </div>
     </CenteredMemberPage>
   );

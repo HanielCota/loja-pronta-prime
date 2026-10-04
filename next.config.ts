@@ -2,6 +2,8 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Sem o cabeçalho "X-Powered-By: Next.js" (não conta pra ninguém com o que o site é feito).
+  poweredByHeader: false,
   agentRules: false,
 
   // Em dev o Next registra os argumentos das Server Actions no terminal;
@@ -26,6 +28,9 @@ const nextConfig: NextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+          // Depois da primeira visita, o navegador só abre o site por https (os navegadores
+          // ignoram esse cabeçalho em http, então o dev local não muda).
+          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
         ],
       },
     ];

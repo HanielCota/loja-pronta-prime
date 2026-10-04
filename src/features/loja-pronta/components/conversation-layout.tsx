@@ -12,11 +12,6 @@ type ConversationLayoutProps = {
   header: StepHeader;
   /** Pra onde o "Voltar" leva. */
   backHref: string;
-  /**
-   * Largura do conteúdo no computador: `normal` (perguntas), `wide` (a da barra do topo) ou
-   * `editor` (o editor do logo, mais largo que a barra: o painel e o quadro precisam de espaço).
-   */
-  width?: 'normal' | 'wide' | 'editor';
   children: ReactNode;
 };
 
@@ -38,23 +33,15 @@ export function ConversationLayout({
   account,
   header,
   backHref,
-  width = 'normal',
   children,
 }: ConversationLayoutProps) {
-  const column = cn(
-    'mx-auto flex w-full max-w-[560px] flex-col px-4 sm:px-6',
-    { normal: 'lg:max-w-[680px]', wide: 'lg:max-w-[1040px]', editor: 'lg:max-w-[1320px]' }[width],
-  );
+  const column = 'mx-auto flex w-full max-w-[560px] flex-col px-4 sm:px-6 lg:max-w-[680px]';
   return (
     <div className="flex min-h-dvh flex-col">
       <MemberNavbar account={account} />
       {/* Um <nav>, não <header>: o topo da página já é a barra (um só "banner" pro leitor de tela).
-          E dentro de uma região: o voltar, o sair e onde ela está não ficam soltos na página.
-          Uma faixa só: voltar, onde ela está (com a barra embaixo) e sair, pro conteúdo subir. */}
-      {/* Um <nav>, não <header>: o topo da página já é a barra (um só "banner" pro leitor de tela).
-          Uma linha (voltar, onde ela está e sair) e a barra de progresso embaixo, na largura toda. */}
-      {/* Na largura da barra do topo (o voltar embaixo da marca, o sair embaixo da conta), não na
-          do conteúdo. */}
+          Uma linha (voltar, onde ela está e sair) e a barra de progresso embaixo, na largura da
+          barra do topo (o voltar embaixo da marca, o sair embaixo da conta), não na do conteúdo. */}
       <nav
         aria-label="Etapa atual"
         className="mx-auto flex w-full max-w-[1040px] flex-col gap-2 px-4 pt-3 sm:px-6"
@@ -106,15 +93,7 @@ export function ConversationLayout({
           ))}
         </div>
       </nav>
-      <main
-        className={cn(
-          column,
-          // O editor usa a altura toda (o quadro cabe na janela); o resto fica no meio.
-          width === 'editor'
-            ? 'flex-1 gap-5 pt-6 pb-6'
-            : 'flex-1 gap-8 pt-8 pb-10 sm:justify-center sm:py-12',
-        )}
-      >
+      <main className={cn(column, 'flex-1 gap-8 pt-8 pb-10 sm:justify-center sm:py-12')}>
         {children}
       </main>
     </div>

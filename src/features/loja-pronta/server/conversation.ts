@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
+import { cache } from 'react';
 import type { OnboardingAnswers } from '@/config/onboarding';
-import { getActiveSession, needsFirstPassword } from '@/features/auth/server/session';
-import { getStudentProducts, requireProduct } from '@/features/products/server/access';
+import { requireProduct, requireProductAction } from '@/features/products/server/access';
 import { db } from '@/server/db';
 import { storeOnboarding } from '@/server/db/schema';
 import { cleanAnswers } from '../answers';
@@ -17,8 +17,8 @@ export type Onboarding = {
 
 const EMPTY: Onboarding = { answers: {}, whatsapp: null, completedAt: null };
 
-/** Respostas da conversa inicial (sem linha: ainda não respondeu nada). */
-export async function getOnboarding(userId: string): Promise<Onboarding> {
+/** Respostas da conversa inicial (sem linha: ainda não respondeu nada). Lidas uma vez por requisição. */
+export const getOnboarding = cache(async (userId: string): Promise<Onboarding> => {
   const [row] = await db
     .select({
       answers: storeOnboarding.answers,
@@ -29,7 +29,7 @@ export async function getOnboarding(userId: string): Promise<Onboarding> {
     .where(eq(storeOnboarding.userId, userId));
   // Só as respostas que ainda valem com as perguntas de hoje (ver cleanAnswers).
   return row ? { ...row, answers: cleanAnswers(row.answers) } : EMPTY;
-}
+});
 
 /**
  * Quem pode abrir a conversa e como: respondendo (ainda não enviada, loja até a fase 2: na 2 sem a
@@ -57,16 +57,10 @@ export async function requireConversation(path: string) {
 /**
  * Mesma regra, pras Server Actions (que podem ser chamadas direto, sem passar pela página).
  */
-export async function requireConversationAction(): Promise<{ userId: string; revising: boolean }> {
-  const session = await getActiveSession();
-  if (!session || needsFirstPassword(session.user)) redirect('/entrar');
-  const userId = session.user.id;
-  const [{ products }, onboarding, phase] = await Promise.all([
-    getStudentProducts(userId),
-    getOnboarding(userId),
-    getStorePhase(userId),
-  ]);
+export async function requireConversationAction() {
+  const { userId } = await requireProductAction('loja-pronta');
+  const [onboarding, phase] = await Promise.all([getOnboarding(userId), getStorePhase(userId)]);
   const access = conversationAccess(onboarding, phase);
-  if (!products.includes('loja-pronta') || !access) redirect('/loja-pronta');
-  return { userId, revising: access === 'revising' };
+  if (!access) redirect('/loja-pronta');
+  return { userId, onboarding, revising: access === 'revising' };
 }

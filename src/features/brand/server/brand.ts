@@ -1,53 +1,22 @@
-import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { getActiveSession, needsFirstPassword } from '@/features/auth/server/session';
 import { canReviseDonePhases } from '@/features/loja-pronta/editing';
 import { getOnboarding } from '@/features/loja-pronta/server/conversation';
 import { getStorePhase } from '@/features/loja-pronta/server/store';
-import { getStudentProducts, requireProduct } from '@/features/products/server/access';
-import { db } from '@/server/db';
-import { storeBrand } from '@/server/db/schema';
-import { brandStepPath, type BrandDraft } from '../steps';
-
-/** `updatedAt`: muda a cada escolha salva, pra imagem do logo salvo não vir velha do cache. */
-export type Brand = BrandDraft & {
-  completedAt: Date | null;
-  updatedAt: Date | null;
-};
-
-const EMPTY: Brand = {
-  name: null,
-  logoImage: null,
-  description: null,
-  completedAt: null,
-  updatedAt: null,
-};
-
-/** A marca como está (sem linha: nada escolhido ainda). */
-export async function getBrand(userId: string): Promise<Brand> {
-  const [row] = await db
-    .select({
-      name: storeBrand.name,
-      logoImage: storeBrand.logoImage,
-      description: storeBrand.description,
-      completedAt: storeBrand.completedAt,
-      updatedAt: storeBrand.updatedAt,
-    })
-    .from(storeBrand)
-    .where(eq(storeBrand.userId, userId));
-  return row ?? EMPTY;
-}
+import {
+  getStudentProducts,
+  requireProduct,
+  requireProductAction,
+} from '@/features/products/server/access';
+import { brandStepPath } from '../steps';
+import { getBrand, type Brand } from './brand-store';
 
 /**
- * O logo escolhido no chat (a chave da imagem dela). Fica aqui, fora das Server Actions: quem
- * chama já conferiu o acesso e que a imagem é dela (ver logo-chat/server/actions).
+ * Quem pode abrir a marca e como (as guardas das páginas, das actions e das imagens). Ler e
+ * gravar a marca fica em brand-store.ts.
  */
-export async function setBrandLogo(userId: string, logoImage: string) {
-  await db
-    .insert(storeBrand)
-    .values({ userId, logoImage })
-    .onConflictDoUpdate({ target: storeBrand.userId, set: { logoImage } });
-}
+
+export { getBrand, type Brand };
 
 /**
  * A vez da marca: conversa enviada e loja ainda na fase 2 (ou na 1, com a conversa enviada: é a
@@ -103,17 +72,14 @@ export async function requireBrandStudio(path: string) {
  * logo (a única que vale no acesso "só o logo").
  */
 export async function requireBrandAction({ logo = false }: { logo?: boolean } = {}) {
-  const session = await getActiveSession();
-  if (!session || needsFirstPassword(session.user)) redirect('/entrar');
-  const userId = session.user.id;
-  const [{ products }, onboarding, phase, brand] = await Promise.all([
-    getStudentProducts(userId),
+  const { session, userId } = await requireProductAction('loja-pronta');
+  const [onboarding, phase, brand] = await Promise.all([
     getOnboarding(userId),
     getStorePhase(userId),
     getBrand(userId),
   ]);
   const access = brandAccess(phase, Boolean(onboarding.completedAt), brand);
-  if (!products.includes('loja-pronta') || !access) redirect('/loja-pronta');
+  if (!access) redirect('/loja-pronta');
   if (access === 'logo-only' && !logo) redirect('/loja-pronta');
   return {
     userId,

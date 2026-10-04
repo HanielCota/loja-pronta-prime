@@ -34,9 +34,9 @@ test('marca completa: nome, chat do logo, texto, revisão com mudança e logo pr
   await expect(page.getByRole('radio', { name: 'Patinhas da Ana' })).toBeChecked();
   await expectNoA11yViolations(page);
   await name.fill('Um nome comprido demais pra caber na Shopee');
-  await expect(page.getByText('Passou 13 letras do limite da Shopee.')).toBeVisible();
+  await expect(page.getByText('Passou 13 letras do limite da Shopee.').first()).toBeVisible();
   await name.press('Enter');
-  await expect(page.getByText('Use até 30 letras. Esse nome tem 43.')).toBeVisible();
+  await expect(page.getByText('Use até 30 letras. Esse nome tem 43.').first()).toBeVisible();
   await expect(name).toBeFocused();
   await page.getByText('Patinhas da Ana', { exact: true }).click();
   await expect(name).toHaveValue('Patinhas da Ana');
@@ -58,7 +58,7 @@ test('marca completa: nome, chat do logo, texto, revisão com mudança e logo pr
   await expect(page.getByText('uma patinha · rosa e dourado')).toBeVisible();
   await expectNoA11yViolations(page);
   await page.getByRole('button', { name: 'Criar meu logo' }).click();
-  const logo = conversation.getByRole('img', { name: 'Logo criado pra sua loja' });
+  const logo = conversation.getByRole('img', { name: 'Logo 1 criado pra sua loja' });
   await expect(logo).toBeVisible();
   await expect
     .poll(() => logo.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0))
@@ -80,7 +80,7 @@ test('marca completa: nome, chat do logo, texto, revisão com mudança e logo pr
   await expect(page.getByRole('radio', { name: 'Direto' })).toBeChecked();
   await page.getByRole('button', { name: 'Apagar' }).click();
   await page.getByRole('button', { name: 'Continuar com esse texto' }).click();
-  await expect(page.getByText('Escolha um dos textos ou escreva o seu.')).toBeVisible();
+  await expect(page.getByText('Escolha um dos textos ou escreva o seu.').first()).toBeVisible();
   await expect(description).toBeFocused();
   await page.getByText('Direto', { exact: true }).click();
   await page.getByRole('button', { name: 'Continuar com esse texto' }).click();
@@ -93,8 +93,17 @@ test('marca completa: nome, chat do logo, texto, revisão com mudança e logo pr
   await expect(page).toHaveURL(/\/marca\/nome\?editar=1$/);
   await page.getByLabel('Nome da loja').fill('Gatinhos & Cia');
   await page.getByRole('button', { name: 'Continuar com “Gatinhos & Cia”' }).click();
+  // O logo traz o nome escrito: ela volta pro chat, que avisa e oferece criar outro.
+  await expect(page).toHaveURL(/\/marca\/logo\?editar=1$/);
+  const renamed = page.getByRole('log', { name: 'Conversa sobre o seu logo' });
+  await expect(renamed).toContainText('Você mudou o nome pra Gatinhos & Cia');
+  await page.getByRole('button', { name: 'Criar outro logo' }).click();
+  await expect(renamed.getByRole('img', { name: 'Logo 2 criado pra sua loja' })).toBeVisible();
+  await page.getByRole('button', { name: 'Usar esse logo (logo 2)' }).click();
   await expect(page).toHaveURL(step('revisao'));
+  // O texto da loja já veio com o nome novo.
   await expect(page.getByRole('main')).toContainText('Gatinhos & Cia');
+  await expect(page.getByRole('main')).not.toContainText('Patinhas da Ana');
 
   // Confirmar: a loja vai pra fase 3, e o logo pode ser baixado em PNG.
   await page.getByRole('button', { name: 'Está tudo certo' }).click();
