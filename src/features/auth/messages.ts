@@ -42,6 +42,11 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, AuthMessage> = {
     title: 'Aguarde 1 minuto pra tentar novamente',
     hint: 'É uma proteção da sua conta. Enquanto isso, confira se o email é o mesmo da compra.',
   },
+  // Os links pedidos hoje (mesmo os que outra pessoa pediu) chegaram no email dela e ainda valem.
+  recover_daily_limit: {
+    title: 'Já enviamos vários links hoje',
+    hint: 'Abra o mais recente no seu email (olhe também no spam). Se nenhum chegou, fale com o suporte.',
+  },
   account_disabled: {
     title: 'Sua conta foi desativada. Entre em contato com o suporte.',
     hint: 'Isso acontece depois de um reembolso ou cancelamento. Se achar que é engano, fale com o suporte.',

@@ -3,6 +3,7 @@ const AUTH_ERROR_CODES = [
   'invalid_credentials',
   'email_not_confirmed',
   'rate_limited',
+  'recover_daily_limit',
   'account_disabled',
   'session_expired',
   'reset_link_invalid',
