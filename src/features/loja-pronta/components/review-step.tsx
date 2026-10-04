@@ -9,6 +9,7 @@ import { panelCard, sectionTitleClass } from '@/features/member/components/area-
 import { cn } from '@/lib/utils';
 import { answerText } from '../answers';
 import { stepPath, WHATSAPP_STEP } from '../steps';
+import { formatWhatsapp } from '../whatsapp';
 import { FocusOnArrival } from './focus-on-arrival';
 import { MascotBubble } from './mascot-bubble';
 import { StickyAction } from './sticky-action';
@@ -20,9 +21,12 @@ const TITLE_ID = 'revisao-titulo';
  * enviada e ela voltou pra rever; cada mudança já fica salva, e o botão só leva de volta. */
 export function ReviewStep({
   answers,
+  whatsapp = null,
   revising = false,
 }: {
   answers: OnboardingAnswers;
+  /** O WhatsApp dos avisos (já enviada a conversa, dá pra corrigir aqui). */
+  whatsapp?: string | null;
   revising?: boolean;
 }) {
   const groups = Object.entries(ONBOARDING_BLOCKS).map(([block, title]) => ({
@@ -76,6 +80,25 @@ export function ReviewStep({
           </dl>
         </section>
       ))}
+      {revising && whatsapp ? (
+        <section aria-labelledby="grupo-avisos" className={cn(panelCard, 'gap-1')}>
+          <h2 id="grupo-avisos" className={sectionTitleClass}>
+            Avisos
+          </h2>
+          <dl className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-0.5 py-3">
+            <dt className="col-start-1 text-sm text-muted-foreground">WhatsApp</dt>
+            <dd className="col-start-1 text-body font-semibold">{formatWhatsapp(whatsapp)}</dd>
+            <dd className="col-start-2 row-span-2 row-start-1">
+              <Link
+                href={stepPath(WHATSAPP_STEP)}
+                className="inline-flex min-h-11 items-center rounded-full px-2 font-semibold text-link outline-none hover:underline focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-solid"
+              >
+                Editar<span className="sr-only"> WhatsApp</span>
+              </Link>
+            </dd>
+          </dl>
+        </section>
+      ) : null}
       <StickyAction>
         <Button asChild>
           {revising ? (

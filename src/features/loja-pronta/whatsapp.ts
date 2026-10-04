@@ -49,17 +49,14 @@ export function cleanWhatsapp(input: string): { digits: string; removed?: Remove
 }
 
 /**
- * WhatsApp brasileiro com DDD: só os dígitos (10 ou 11), sem o 55 do país. Vale celular (11
- * números, com o 9 depois do DDD) ou fixo (10 números, começando com 2 a 5: o WhatsApp Business
- * aceita fixo), sempre com um DDD que existe.
+ * WhatsApp brasileiro com DDD: só os dígitos (11), sem o 55 do país: celular, com o 9 depois de
+ * um DDD que existe. Telefone fixo não vale: a tela já pede o número do WhatsApp (fixo com
+ * WhatsApp é raro, e aceitar seria contrariar o aviso que ela acabou de ler).
  */
 export function parseWhatsapp(input: string): string | undefined {
   const { digits } = cleanWhatsapp(input);
   if (!isValidDdd(digits.slice(0, 2))) return undefined;
-  const first = digits.charAt(2);
-  if (digits.length === 11 && first === '9') return digits;
-  if (digits.length === 10 && '2345'.includes(first)) return digits;
-  return undefined;
+  return digits.length === 11 && digits.charAt(2) === '9' ? digits : undefined;
 }
 
 /** (11) 98765-4321 */

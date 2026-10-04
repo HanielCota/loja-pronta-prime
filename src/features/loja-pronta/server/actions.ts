@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { db } from '@/server/db';
 import { storeOnboarding, stores } from '@/server/db/schema';
 import {
+  canOpen,
   DONE_PATH,
   findQuestion,
   isStep,
@@ -15,7 +16,7 @@ import {
 } from '../steps';
 import { parseAnswer } from '../answers';
 import { parseWhatsapp, WHATSAPP_EXAMPLE } from '../whatsapp';
-import { getOnboarding, requireConversationAction } from './conversation';
+import { requireConversationAction } from './conversation';
 
 /** Resposta pra tela quando algo não passa (sem erro, a action redireciona). */
 export type StepResult = { error?: string } | undefined;
@@ -26,13 +27,15 @@ export type StepResult = { error?: string } | undefined;
  * ela continuar de onde parou.
  */
 export async function saveAnswer(_state: StepResult, formData: FormData): Promise<StepResult> {
-  const { userId, revising } = await requireConversationAction();
+  const { userId, onboarding, revising } = await requireConversationAction();
 
   const step = String(formData.get('step') ?? '');
   const question = isStep(step) ? findQuestion(step) : undefined;
   if (!isStep(step) || !question) {
     return { error: 'Não encontramos essa pergunta. Recarregue a página.' };
   }
+  // Sem pular pergunta (a página já impede; aqui, por quem chama a action direto).
+  if (!canOpen(step, onboarding.answers)) redirect(stepPath(resumeStep(onboarding.answers)));
 
   const parsed = parseAnswer(question, formData);
   if (!parsed.ok) return { error: parsed.error };
@@ -53,24 +56,27 @@ export async function saveAnswer(_state: StepResult, formData: FormData): Promis
 
 /**
  * Última etapa: confirma o WhatsApp e envia a conversa. A loja passa pra fase 2: ela já pode
- * criar a marca.
+ * criar a marca. Revendo (conversa já enviada), só troca o número: é o único canal dos avisos, e
+ * um número errado a deixaria sem nenhum.
  */
 export async function finishConversation(
   _state: StepResult,
   formData: FormData,
 ): Promise<StepResult> {
-  const { userId, revising } = await requireConversationAction();
-  // Revendo, a conversa já foi enviada: não há o que enviar de novo.
-  if (revising) redirect('/loja-pronta');
+  const { userId, onboarding, revising } = await requireConversationAction();
 
   const whatsapp = parseWhatsapp(String(formData.get('whatsapp') ?? ''));
   if (!whatsapp) {
     return { error: `Confira o número com DDD, como ${WHATSAPP_EXAMPLE}.` };
   }
 
+  if (revising) {
+    await db.update(storeOnboarding).set({ whatsapp }).where(eq(storeOnboarding.userId, userId));
+    redirect(stepPath(REVIEW_STEP));
+  }
+
   // Alguma pergunta ficou sem resposta (outra aba, envio direto): volta pra ela.
-  const { answers } = await getOnboarding(userId);
-  const missing = resumeStep(answers);
+  const missing = resumeStep(onboarding.answers);
   if (missing !== REVIEW_STEP) redirect(stepPath(missing));
 
   await db.transaction(async (tx) => {
