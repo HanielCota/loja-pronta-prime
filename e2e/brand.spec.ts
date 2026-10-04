@@ -44,9 +44,9 @@ test('marca completa: nome, chat do logo, texto, revisão com mudança e logo pr
 
   // Logo: o chat pergunta (com respostas rápidas), monta o resumo e cria o logo; ela escolhe.
   await expect(page).toHaveURL(step('logo'));
-  await expect(
-    page.getByRole('heading', { name: 'Vamos criar o logo da Patinhas da Ana' }),
-  ).toBeAttached();
+  await expect(page.getByRole('heading', { name: 'Logo da Patinhas da Ana' })).toBeFocused();
+  // Antes da primeira resposta, nada de "Nova conversa" (não há o que recomeçar).
+  await expect(page.getByRole('button', { name: 'Nova conversa' })).toHaveCount(0);
   const conversation = page.getByRole('log', { name: 'Conversa sobre o seu logo' });
   await expect(conversation).toContainText('Vamos criar o logo da Patinhas da Ana?');
   await expectNoA11yViolations(page);
@@ -55,7 +55,12 @@ test('marca completa: nome, chat do logo, texto, revisão com mudança e logo pr
   await page.getByLabel('Sua mensagem').fill('Rosa e dourado');
   await page.getByLabel('Sua mensagem').press('Enter');
   await expect(conversation).toContainText('Vai ser uma patinha rosa');
-  await expect(page.getByText('uma patinha · rosa e dourado')).toBeVisible();
+  // O resumo, item por item, pra ela conferir antes de criar.
+  const summary = page.getByRole('region', { name: 'Tudo pronto pra criar o seu logo' });
+  await expect(summary).toContainText('Desenho');
+  await expect(summary).toContainText('uma patinha');
+  await expect(summary).toContainText('rosa e dourado');
+  await expect(summary).toContainText('Você pode criar mais 4 logos.');
   await expectNoA11yViolations(page);
   await page.getByRole('button', { name: 'Criar meu logo' }).click();
   const logo = conversation.getByRole('img', { name: 'Logo 1 criado pra sua loja' });
@@ -63,6 +68,10 @@ test('marca completa: nome, chat do logo, texto, revisão com mudança e logo pr
   await expect
     .poll(() => logo.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0))
     .toBe(true);
+  // Do lado, como fica no perfil da Shopee (redondo, com o nome).
+  await expect(conversation).toContainText('Assim aparece no perfil da Shopee');
+  await expect(page.getByRole('button', { name: 'Fazer outro' })).toBeVisible();
+  await expectNoA11yViolations(page);
   await page.getByRole('button', { name: 'Usar esse logo' }).click();
 
   // Texto: já vem um pronto no cartão; um jeito de falar troca o texto, "Outro texto" traz
@@ -144,12 +153,36 @@ test('chat do logo pelo teclado: escreve, Enter manda, e a conversa continua dep
   // Sem nada escrito, "Enviar" fica desligado.
   await expect(page.getByRole('button', { name: 'Enviar' })).toBeDisabled();
 
-  // Saiu e voltou: a conversa está lá; "Nova conversa" volta ao começo.
+  // Saiu e voltou: a conversa está lá. "Nova conversa" pede confirmação: Esc desiste (e o foco
+  // volta pro botão); "Começar de novo" volta ao começo, com o cursor na caixa de escrever.
   await page.reload();
   await expect(conversation).toContainText('Uma flor');
-  await page.getByRole('button', { name: 'Nova conversa' }).click();
+  const restart = page.getByRole('button', { name: 'Nova conversa' });
+  await restart.click();
+  const dialog = page.getByRole('dialog', { name: 'Começar uma conversa nova?' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText('Você ainda pode criar 4 logos.');
+  await expectNoA11yViolations(page);
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(restart).toBeFocused();
+  await expect(conversation).toContainText('Uma flor');
+  await restart.click();
+  await dialog.getByRole('button', { name: 'Começar de novo' }).click();
   await expect(conversation).not.toContainText('Uma flor');
   await expect(conversation).toContainText('Vamos criar o logo da Patinhas da Ana?');
+  await expect(field).toBeFocused();
+
+  // A IA falhou: o aviso aparece e "Tentar de novo" pede a resposta outra vez.
+  await field.fill('simular falha');
+  await field.press('Enter');
+  const problem = page.getByRole('main').getByRole('alert');
+  await expect(problem).toContainText('Tentar de novo');
+  await page.getByRole('button', { name: 'Tentar de novo' }).click();
+  await expect(conversation).toContainText('Que cores você quer no logo?');
+  // Sem aviso: o espaço dele some (vazio, fica escondido).
+  await expect(problem).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Tentar de novo' })).toHaveCount(0);
 });
 
 test('a marca só abre depois da conversa; o logo é só da dona', async ({ page }) => {
