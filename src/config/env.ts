@@ -21,8 +21,18 @@ const envSchema = z.object({
    * X-Forwarded-For). 1: atrás de um proxy (o comum em hospedagem). 0: exposto direto, sem
    * proxy: o cabeçalho viria do próprio cliente, então o limite por IP é desligado em vez de
    * confiar num valor que o atacante inventa.
+   *
+   * Em produção é obrigatória: um 1 suposto, sem proxy na frente, deixaria trocar de IP a cada
+   * tentativa e fugir dos limites. Fora dela, 1 (o Next preenche o cabeçalho no dev).
    */
-  TRUSTED_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
+  TRUSTED_PROXY_HOPS: z
+    .string()
+    .optional()
+    .refine((value) => process.env.NODE_ENV !== 'production' || value !== undefined, {
+      error: 'em produção, defina TRUSTED_PROXY_HOPS (0 sem proxy, 1 atrás de um proxy)',
+    })
+    .transform((value) => value ?? '1')
+    .pipe(z.coerce.number<string>().int().min(0).max(5)),
   /** Chat do logo (DeepSeek). Sem a chave, o chat responde que está fora do ar. */
   DEEPSEEK_API_KEY: z.string().min(1).optional(),
   /** Imagem do logo (OpenAI). Sem a chave, gerar o logo responde que está fora do ar. */
