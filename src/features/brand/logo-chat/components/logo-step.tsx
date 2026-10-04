@@ -1,4 +1,3 @@
-import { env } from '@/config/env';
 import type { OnboardingAnswers } from '@/config/onboarding';
 import { FocusOnArrival } from '@/features/loja-pronta/components/focus-on-arrival';
 import { loadChatView } from '../server/load';
@@ -27,13 +26,7 @@ export async function LogoStep({
   return (
     <>
       <FocusOnArrival targetId={TITLE_ID} />
-      <LogoChat
-        initial={initial}
-        editing={editing}
-        storeName={storeName}
-        titleId={TITLE_ID}
-        testMode={env.AI_FAKE === '1'}
-      />
+      <LogoChat initial={initial} editing={editing} storeName={storeName} titleId={TITLE_ID} />
     </>
   );
 }

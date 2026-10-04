@@ -1,8 +1,8 @@
 import { randomBytes } from 'node:crypto';
-import { mkdir, writeFile } from 'node:fs/promises';
-import path from 'node:path';
+import { readFile } from 'node:fs/promises';
 import type { ProductId } from '@/config/products';
 import { auth } from '@/server/auth/auth';
+import { storage } from '@/server/storage';
 import { database, PASSWORD, studentEmail, type StudentKind } from './support/students';
 
 type Student = {
@@ -207,18 +207,12 @@ export default async function globalSetup() {
   }
 }
 
-/** Um PNG de exemplo (8×8 rosa), como o logo criado no chat. */
-const SAMPLE_LOGO =
-  'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAEklEQVR4nGP4/+M/VsQwKoEXAQB3h5ZJ6UMsdwAAAABJRU5ErkJggg==';
-
 /**
- * Guarda o logo de exemplo na pasta local (o servidor dos testes roda com STORAGE_DRIVER=local) e
- * devolve a chave, no mesmo formato das do chat (logos/<aluna>/<id>.png).
+ * Guarda um logo de verdade no bucket (a imagem do mascote, um PNG real) e devolve a chave, no
+ * mesmo formato das do chat (logos/<aluna>/<id>.png). O teardown apaga a pasta da aluna.
  */
 async function seedLogo(userId: string): Promise<string> {
   const key = `logos/${userId.replace(/[^\w-]/g, '')}/e2e-logo-0001.png`;
-  const file = path.join(process.cwd(), '.data', 'storage', ...key.split('/'));
-  await mkdir(path.dirname(file), { recursive: true });
-  await writeFile(file, Buffer.from(SAMPLE_LOGO, 'base64'));
+  await storage().put(key, new Uint8Array(await readFile('public/brand/mascote.png')), 'image/png');
   return key;
 }
