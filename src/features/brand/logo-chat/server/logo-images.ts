@@ -1,9 +1,7 @@
-import { env } from '@/config/env';
-import { openAiImage, type ImageGenerator } from '@/server/ai/images';
+import { openAiImage } from '@/server/ai/images';
 import { storage } from '@/server/storage';
 import { logoImagePrompt } from '../image-prompt';
 import type { LogoBrief } from '../model';
-import { fakeImage } from './fake-ai';
 
 /**
  * As imagens do logo: gerar (pela IA) e guardar, e ler de volta. Cada aluna só alcança as dela:
@@ -31,13 +29,9 @@ export function imageIdFromKey(key: string): string | null {
   return id && isLogoImageId(id) ? id : null;
 }
 
-function imageModel(): ImageGenerator {
-  return env.AI_FAKE === '1' ? fakeImage : openAiImage;
-}
-
 /** Desenha o logo com o resumo da conversa (a parte que custa: chama a IA). */
 export function drawLogo(brief: LogoBrief, storeName: string): Promise<Uint8Array> {
-  return imageModel()(logoImagePrompt(brief, storeName));
+  return openAiImage(logoImagePrompt(brief, storeName));
 }
 
 /** Guarda um logo dela. Devolve a chave. */

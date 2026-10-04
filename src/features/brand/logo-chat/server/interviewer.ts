@@ -1,14 +1,7 @@
-import { env } from '@/config/env';
-import { deepseekJsonChat, type ChatMessage, type JsonChat } from '@/server/ai/chat';
+import { deepseekJsonChat, type ChatMessage } from '@/server/ai/chat';
 import { FALLBACK_TURN, parseAssistantTurn, serializeAssistantTurn } from '../assistant-turn';
 import { interviewerSystemPrompt, type InterviewContext } from '../interviewer-prompt';
 import { HISTORY_WINDOW, type AssistantTurn, type LogoChatMessage } from '../model';
-import { fakeJsonChat } from './fake-ai';
-
-/** O modelo de texto em uso: o DeepSeek, ou o de mentira nos testes. */
-function chatModel(): JsonChat {
-  return env.AI_FAKE === '1' ? fakeJsonChat : deepseekJsonChat;
-}
 
 /** Tentativas quando a IA devolve algo fora do formato (às vezes vem só espaço em branco). */
 const ATTEMPTS = 2;
@@ -41,7 +34,7 @@ export async function nextAssistantTurn(
     ...history,
   ];
   for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
-    const raw = await chatModel()(prompt);
+    const raw = await deepseekJsonChat(prompt);
     const turn = parseAssistantTurn(raw);
     if (turn) return turn;
     // Só o tamanho: o texto pode repetir o que ela escreveu.
