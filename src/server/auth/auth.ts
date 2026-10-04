@@ -105,6 +105,11 @@ export const auth = betterAuth({
     '/revoke-session',
     '/revoke-sessions',
     '/revoke-other-sessions',
+    '/list-sessions',
+    '/update-session',
+    // Confere a senha de quem está logada: aberta, seria um jeito de chutar a senha sem o limite
+    // de 5 por minuto da troca de senha (o "scope: server" dela não fecha o HTTP).
+    '/verify-password',
   ],
   rateLimit: {
     enabled: true,

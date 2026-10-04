@@ -1,12 +1,12 @@
 import { headers } from 'next/headers';
+import { cache } from 'react';
 import { auth } from '@/server/auth/auth';
 
 // A regra mora num arquivo sem dependências de servidor, pra ser testada sozinha.
 export { needsFirstPassword } from '../first-password';
 
-async function readSession() {
-  return auth.api.getSession({ headers: await headers() });
-}
+/** A sessão do cookie (lida uma vez por requisição, mesmo com várias guardas pedindo). */
+const readSession = cache(async () => auth.api.getSession({ headers: await headers() }));
 
 /**
  * Sessão de quem pode estar dentro. Conta bloqueada (reembolso, cancelamento) conta como sem

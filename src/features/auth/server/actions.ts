@@ -87,12 +87,15 @@ export async function requestPasswordReset(
     ? `/redefinir-senha?${new URLSearchParams({ next })}`
     : '/redefinir-senha';
 
-  // Por email: ninguém consegue encher a caixa de entrada de outra pessoa com links.
-  // Por IP: ninguém dispara links pra uma lista inteira de emails.
+  // Por email (no minuto e no dia): ninguém consegue encher a caixa de entrada de outra pessoa
+  // com links. Por IP: ninguém dispara links pra uma lista inteira de emails.
   const ip = await getClientIp();
-  const byEmail = await consumeAttempt('recoverPerEmail', email);
-  const byIp = ip ? await consumeAttempt('recoverPerIp', ip) : true;
-  if (!byEmail || !byIp) return { submission: reject(submission, 'rate_limited') };
+  const allowed = await Promise.all([
+    consumeAttempt('recoverPerEmail', email),
+    consumeAttempt('recoverPerEmailPerDay', email),
+    ip ? consumeAttempt('recoverPerIp', ip) : true,
+  ]);
+  if (allowed.includes(false)) return { submission: reject(submission, 'rate_limited') };
 
   // Depois da resposta: com conta, o Better Auth grava o token no banco; sem conta, só consulta.
   // Respondendo antes, o tempo de resposta é o mesmo nos dois casos e não revela se o email existe.

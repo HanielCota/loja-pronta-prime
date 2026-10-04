@@ -33,3 +33,11 @@ export const RATE_LIMITS_PER_MINUTE = {
   /** Trocar o nome no perfil: por conta. */
   profileNamePerUser: 10,
 } as const;
+
+/**
+ * Limites com janela mais longa que um minuto (em segundos). Pedir link de recuperação: 3 por
+ * minuto ainda deixaria encher a caixa de entrada de alguém com milhares de emails por dia.
+ */
+export const RATE_LIMITS_LONG = {
+  recoverPerEmailPerDay: { max: 10, windowSeconds: 24 * 60 * 60 },
+} as const;
