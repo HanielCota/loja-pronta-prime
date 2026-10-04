@@ -12,6 +12,8 @@ type ConversationLayoutProps = {
   header: StepHeader;
   /** Pra onde o "Voltar" leva. */
   backHref: string;
+  /** Coluna mais larga no computador (o chat do logo, que mostra imagens e conversa). */
+  wide?: boolean;
   children: ReactNode;
 };
 
@@ -33,9 +35,13 @@ export function ConversationLayout({
   account,
   header,
   backHref,
+  wide = false,
   children,
 }: ConversationLayoutProps) {
-  const column = 'mx-auto flex w-full max-w-[560px] flex-col px-4 sm:px-6 lg:max-w-[680px]';
+  const column = cn(
+    'mx-auto flex w-full max-w-[560px] flex-col px-4 sm:px-6',
+    wide ? 'sm:max-w-[720px] lg:max-w-[840px]' : 'lg:max-w-[680px]',
+  );
   return (
     <div className="flex min-h-dvh flex-col">
       <MemberNavbar account={account} />

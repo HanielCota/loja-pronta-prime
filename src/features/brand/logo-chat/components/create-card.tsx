@@ -25,7 +25,7 @@ export function CreateCard({
   return (
     <section
       aria-labelledby="criar-titulo"
-      className="ml-11 flex flex-col gap-4 rounded-3xl border border-border bg-card p-5 shadow-card forced-colors:border-[CanvasText]"
+      className="ml-13 flex flex-col gap-4 rounded-3xl border border-border bg-card p-5 shadow-card forced-colors:border-[CanvasText]"
     >
       <h2 id="criar-titulo" className="text-body font-semibold">
         {again ? 'Pronto pra criar outro logo' : 'Tudo pronto pra criar o seu logo'}

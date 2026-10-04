@@ -40,7 +40,7 @@ export function Composer({
               key={suggestion}
               type="button"
               onClick={() => onSend(suggestion)}
-              className="min-h-11 rounded-full border border-input bg-card px-4 text-body font-medium text-foreground shadow-sm transition-[background-color,transform] duration-100 outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid active:scale-[0.97] motion-reduce:active:scale-100 forced-colors:border-[ButtonText]"
+              className="min-h-12 rounded-full border border-input bg-card px-5 text-lg font-medium text-foreground shadow-sm transition-[background-color,transform] duration-100 outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid active:scale-[0.97] motion-reduce:active:scale-100 forced-colors:border-[ButtonText]"
             >
               {suggestion}
             </button>
@@ -49,7 +49,7 @@ export function Composer({
       ) : null}
 
       <form
-        className="flex items-end gap-2 rounded-[28px] border border-input bg-card py-2 pr-2 pl-5 shadow-card transition-colors duration-150 focus-within:border-primary motion-reduce:transition-none forced-colors:border-[CanvasText]"
+        className="flex items-end gap-2 rounded-[32px] border border-input bg-card py-2.5 pr-2.5 pl-6 shadow-card transition-colors duration-150 focus-within:border-primary motion-reduce:transition-none forced-colors:border-[CanvasText]"
         onSubmit={(event) => {
           event.preventDefault();
           onSend(draft);
@@ -73,15 +73,15 @@ export function Composer({
               onSend(draft);
             }
           }}
-          className="[field-sizing:content] max-h-48 min-h-11 flex-1 resize-none bg-transparent py-2.5 text-body leading-normal text-foreground outline-none placeholder:text-muted-foreground"
+          className="[field-sizing:content] max-h-48 min-h-12 flex-1 resize-none bg-transparent py-3 text-lg leading-normal text-foreground outline-none placeholder:text-muted-foreground"
         />
         <button
           type="submit"
           aria-label="Enviar"
           disabled={!draft.trim() || disabled}
-          className="grid size-11 shrink-0 place-items-center rounded-full bg-foreground text-background transition-[opacity,transform] duration-100 outline-none hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid active:scale-[0.94] disabled:bg-muted disabled:text-muted-foreground motion-reduce:active:scale-100 forced-colors:border-2 forced-colors:border-[ButtonText]"
+          className="grid size-12 shrink-0 place-items-center rounded-full bg-foreground text-background transition-[opacity,transform] duration-100 outline-none hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid active:scale-[0.94] disabled:bg-muted disabled:text-muted-foreground motion-reduce:active:scale-100 forced-colors:border-2 forced-colors:border-[ButtonText]"
         >
-          <ArrowUpIcon aria-hidden="true" className="size-5" strokeWidth={2.5} />
+          <ArrowUpIcon aria-hidden="true" className="size-6" strokeWidth={2.5} />
         </button>
       </form>
     </div>

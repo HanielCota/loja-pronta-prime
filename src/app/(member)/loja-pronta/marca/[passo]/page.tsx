@@ -50,6 +50,7 @@ export default async function BrandStepPage({ params, searchParams }: PageProps)
     <ConversationLayout
       account={student.session.user}
       header={brandStepHeader(passo)}
+      wide={passo === 'logo'}
       backHref={
         // Sem logo ainda (marca antiga, ou rever com o logo pendente), a revisão mandaria de volta
         // pra cá: o "Voltar" vai pro painel.
