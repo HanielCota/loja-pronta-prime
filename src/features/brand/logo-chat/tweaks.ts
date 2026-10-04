@@ -33,9 +33,9 @@ export function isLogoTweak(value: unknown): value is LogoTweak {
   return typeof value === 'string' && Object.hasOwn(LOGO_TWEAKS, value);
 }
 
-/** O resumo com o ajuste guardado (só os que continuam valendo, sem repetir). */
-export function briefWithTweak(brief: LogoBrief, tweak: LogoTweak): LogoBrief {
-  if (tweak === 'outro-desenho') return brief;
-  const tweaks = brief.tweaks ?? [];
-  return tweaks.includes(tweak) ? brief : { ...brief, tweaks: [...tweaks, tweak] };
+/** Os ajustes que ficam guardados no resumo (o "Outro desenho" vale só uma vez). */
+export type LastingTweak = NonNullable<LogoBrief['tweaks']>[number];
+
+export function isLastingTweak(tweak: LogoTweak): tweak is LastingTweak {
+  return tweak !== 'outro-desenho';
 }

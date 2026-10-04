@@ -18,6 +18,7 @@ import {
   type LogoChatMessage,
 } from '../model';
 import {
+  addBriefTweak,
   appendMessages,
   clearLogoChat,
   releaseGeneration,
@@ -26,7 +27,7 @@ import {
 } from './chat-store';
 import { nextAssistantTurn } from './interviewer';
 import { currentChat, view } from './load';
-import { briefWithTweak, isLogoTweak, LOGO_TWEAKS } from '../tweaks';
+import { isLastingTweak, isLogoTweak, LOGO_TWEAKS } from '../tweaks';
 import { drawLogo, logoImageKey, normalizeUploadedLogo, storeLogoImage } from './logo-images';
 
 /**
@@ -41,6 +42,13 @@ export type ChatResult = {
   error?: string;
   /** Escolheu o logo: a tela vai pra cá (sem redirect na action, que a tela leria como erro). */
   next?: string;
+  /**
+   * A mensagem dela ficou guardada (só no mandar mensagem). Sem isso, o texto volta pro campo. Não
+   * dá pra conferir pelo texto: o servidor junta os espaços, e ela pode repetir uma mensagem.
+   */
+  saved?: boolean;
+  /** Acabaram as respostas da IA: "Tentar de novo" não adianta mais (criar e ajustar ainda dá). */
+  limited?: boolean;
 };
 
 const AI_DOWN = 'O assistente está com dificuldade agora. Toque em "Tentar de novo".';
@@ -76,21 +84,33 @@ async function reply(
 ): Promise<ChatResult> {
   const options = openingOf(chat);
   if (!(await reserveTurn(userId, MAX_TOTAL_TURNS))) {
-    return { chat: view(await appendMessages(userId, pending, options)), error: TOO_MANY };
+    // Nada guardado: guardada sem resposta, a mensagem dela prenderia a tela no "Tentar de novo"
+    // (que só daria esse aviso de novo). O texto volta pro campo e criar/ajustar continua.
+    const before = chat.messages.slice(0, chat.messages.length - pending.length);
+    return {
+      chat: view({ ...chat, messages: before }),
+      error: TOO_MANY,
+      saved: false,
+      limited: true,
+    };
   }
   try {
-    const turn = await nextAssistantTurn(context, chat.messages);
+    const turn = await nextAssistantTurn(context, chat.messages, chat.brief);
     const answer = assistantMessage(turn);
     const saved = await appendMessages(userId, [...pending, answer], {
       ...options,
       brief: turn.brief,
     });
-    return { chat: view(saved) };
+    return { chat: view(saved), saved: true };
   } catch (error) {
     if (!(error instanceof AiUnavailableError)) throw error;
     console.error('[chat do logo]', error.message);
     // A mensagem dela fica guardada: ela não precisa escrever de novo.
-    return { chat: view(await appendMessages(userId, pending, options)), error: AI_DOWN };
+    return {
+      chat: view(await appendMessages(userId, pending, options)),
+      error: AI_DOWN,
+      saved: true,
+    };
   }
 }
 
@@ -101,11 +121,12 @@ export async function sendLogoMessage(text: string): Promise<ChatResult> {
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, MAX_MESSAGE_CHARS);
-  if (!message) return { chat: view(chat), error: 'Escreva uma mensagem.' };
+  if (!message) return { chat: view(chat), error: 'Escreva uma mensagem.', saved: false };
   if (userMessageCount(chat) >= MAX_USER_MESSAGES) {
     return {
       chat: view(chat),
       error: 'A conversa já está bem completa. Toque em "Criar meu logo" ou recomece.',
+      saved: false,
     };
   }
   const mine: LogoChatMessage = { role: 'user', text: message };
@@ -153,6 +174,8 @@ export async function createLogo(tweak?: string): Promise<ChatResult> {
   // Daqui pra frente a imagem já foi paga: uma falha ao guardar não devolve a criação.
   const key = await storeLogoImage(userId, png);
   const asked: LogoChatMessage[] = tweak ? [{ role: 'user', text: LOGO_TWEAKS[tweak].label }] : [];
+  // O ajuste vai pro resumo como ele está agora (não o lido antes da criação): ver addBriefTweak.
+  if (tweak && isLastingTweak(tweak)) await addBriefTweak(userId, tweak);
   const saved = await appendMessages(
     userId,
     [
@@ -160,15 +183,13 @@ export async function createLogo(tweak?: string): Promise<ChatResult> {
       {
         role: 'assistant',
         text: tweak
-          ? 'Prontinho, fiz a versão nova! Gostou? Compare com os outros e escolha o seu.'
-          : 'Prontinho! Gostou? Se quiser, peça um ajuste aqui embaixo ou me diga o que mudar.',
+          ? 'Fiz a versão nova! Compare com os outros e escolha o seu.'
+          : // "Ajuste", sem dizer onde: no computador ele fica ao lado; no celular, embaixo.
+            'Seu logo chegou! Gostou? Toque num ajuste ou me diga o que mudar.',
         image: key,
       },
     ],
-    {
-      ...openingOf(chat),
-      ...(tweak ? { brief: briefWithTweak(chat.brief, tweak) } : {}),
-    },
+    openingOf(chat),
   );
   return { chat: view(saved) };
 }
@@ -194,7 +215,9 @@ export async function uploadLogo(form: FormData): Promise<ChatResult> {
       error: 'Não consegui abrir essa imagem. Mande uma foto ou imagem (PNG ou JPG).',
     };
   }
-  if (!(await reserveTurn(userId, MAX_TOTAL_TURNS))) return { chat: view(chat), error: TOO_MANY };
+  if (!(await reserveTurn(userId, MAX_TOTAL_TURNS))) {
+    return { chat: view(chat), error: TOO_MANY, limited: true };
+  }
   const key = await storeLogoImage(userId, png);
   const saved = await appendMessages(
     userId,

@@ -62,15 +62,27 @@ test('marca completa: nome, chat do logo, texto, revisão com mudança e logo pr
   await expectNoA11yViolations(page);
   await createLogo(page, 1);
   // Do lado, como fica no perfil da Shopee (redondo, com o nome).
-  await expect(conversation).toContainText('Assim aparece no perfil da Shopee');
+  const panel = page.getByRole('region', { name: 'Logo 1' });
+  await expect(panel).toContainText('Assim aparece no perfil da Shopee');
   await expectNoA11yViolations(page);
   // Um ajuste de um toque cria a versão nova direto; o pedido dela entra na conversa.
   await tweakLogo(page, 'Mais simples', 2);
-  await expect(conversation).toContainText('Mais simples');
-  await expect(page.getByText('Você ainda pode criar 2 logos', { exact: true })).toBeVisible();
-  // "Seus logos": os dois lado a lado; tocar abre grande, com fundo claro e escuro.
-  const gallery = page.getByRole('region', { name: 'Seus logos (2)' });
-  await gallery.getByRole('button', { name: /Logo 1/ }).click();
+  await expect(page.locator('details')).toContainText('Você: Mais simples');
+  // No painel, o logo novo já aparece; "Seus logos" troca entre eles. O logo grande abre a janela,
+  // com fundo claro e escuro.
+  await expect(page.getByRole('region', { name: 'Logo 2' })).toContainText(
+    'Você ainda pode criar 2 logos.',
+  );
+  const gallery = page.getByRole('group', { name: 'Seus logos (2)' });
+  await gallery.getByRole('button', { name: 'Logo 1', exact: true }).click();
+  await expect(gallery.getByRole('button', { name: 'Logo 1', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  const openLarge = page
+    .getByRole('region', { name: 'Logo 1' })
+    .getByRole('button', { name: 'Logo 1 criado pra sua loja' });
+  await openLarge.click();
   const viewer = page.getByRole('dialog', { name: 'Logo 1' });
   await expect(viewer).toBeVisible();
   await viewer.getByText('Fundo escuro').click();
@@ -79,7 +91,7 @@ test('marca completa: nome, chat do logo, texto, revisão com mudança e logo pr
   await page.keyboard.press('Escape');
   await expect(viewer).toBeHidden();
   // Escolhe o logo 1 pela janela grande.
-  await gallery.getByRole('button', { name: /Logo 1/ }).click();
+  await openLarge.click();
   await viewer.getByRole('button', { name: 'Usar esse logo (logo 1)' }).click();
 
   // Texto: já vem um pronto no cartão; um jeito de falar troca o texto, "Outro texto" traz
@@ -164,7 +176,8 @@ test('chat do logo pelo teclado: escreve, Enter manda, e a conversa continua dep
   // Saiu e voltou: a conversa está lá. "Nova conversa" pede confirmação: Esc desiste (e o foco
   // volta pro botão); "Começar de novo" volta ao começo, com o cursor na caixa de escrever.
   await page.reload();
-  await expect(conversation).toContainText('Uma flor');
+  const answers = page.getByRole('region', { name: 'Suas respostas' });
+  await expect(answers).toContainText('Uma flor');
   const restart = page.getByRole('button', { name: 'Nova conversa' });
   await restart.click();
   const dialog = page.getByRole('dialog', { name: 'Começar uma conversa nova?' });
@@ -174,10 +187,10 @@ test('chat do logo pelo teclado: escreve, Enter manda, e a conversa continua dep
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
   await expect(restart).toBeFocused();
-  await expect(conversation).toContainText('Uma flor');
+  await expect(answers).toContainText('Uma flor');
   await restart.click();
   await dialog.getByRole('button', { name: 'Começar de novo' }).click();
-  await expect(conversation).not.toContainText('Uma flor');
+  await expect(answers).toHaveCount(0);
   await expect(conversation).toContainText('Vamos criar o logo da Patinhas da Ana?');
   await expect(field).toBeFocused();
 });

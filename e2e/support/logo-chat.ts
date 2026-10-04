@@ -20,23 +20,24 @@ export function conversation(page: Page) {
   return page.getByRole('log', { name: 'Conversa sobre o seu logo' });
 }
 
-/** As falas da assistente (cada uma começa com "Assistente:" pro leitor de tela). */
-function replies(page: Page) {
-  return conversation(page).getByText('Assistente:', { exact: true });
+/** A fala da vez da assistente (a tela mostra uma pergunta por vez). */
+async function currentReply(page: Page) {
+  return (await conversation(page).textContent()) ?? '';
 }
 
 /**
- * Espera a próxima fala da assistente. Se a IA falhar (acontece), toca em "Tentar de novo", como
- * a aluna faria.
+ * Espera a próxima fala da assistente (a fala da vez muda). Se a IA falhar (acontece), toca em
+ * "Tentar de novo", como a aluna faria.
  */
-async function waitForReply(page: Page, before: number) {
+async function waitForReply(page: Page, before: string) {
   const retry = page.getByRole('button', { name: 'Tentar de novo' });
+  const thinking = page.getByText('Pensando…');
   await expect
     .poll(
       async () => {
-        if ((await replies(page).count()) > before) return true;
         if (await retry.isVisible()) await retry.click();
-        return false;
+        if (await thinking.isVisible()) return false;
+        return (await currentReply(page)) !== before;
       },
       { timeout: REPLY_TIMEOUT, intervals: [500] },
     )
@@ -46,7 +47,7 @@ async function waitForReply(page: Page, before: number) {
 
 /** Escreve e manda uma mensagem (Enter), e espera a resposta. */
 export async function say(page: Page, text: string) {
-  const before = await replies(page).count();
+  const before = await currentReply(page);
   const field = page.getByLabel('Sua mensagem');
   await field.fill(text);
   await field.press('Enter');
@@ -76,7 +77,8 @@ export async function tweakLogo(page: Page, label: string, number: number) {
 
 /** O logo número `number` na conversa, com a imagem carregada de verdade. */
 export async function expectLogo(page: Page, number: number) {
-  const logo = conversation(page).getByRole('img', { name: `Logo ${number} criado pra sua loja` });
+  // No computador, no painel "Seu logo"; no celular, na conversa (só o que está à vista conta).
+  const logo = page.getByRole('img', { name: `Logo ${number} criado pra sua loja`, exact: true });
   await expect(logo).toBeVisible({ timeout: IMAGE_TIMEOUT });
   await expect
     .poll(() => logo.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0))

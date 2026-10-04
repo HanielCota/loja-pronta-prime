@@ -23,13 +23,13 @@ export function CreateCard({
   return (
     <section
       aria-labelledby="criar-titulo"
-      className="ml-13 flex flex-col gap-4 rounded-3xl border border-border bg-card p-5 shadow-card forced-colors:border-[CanvasText]"
+      className="flex flex-col gap-5 rounded-card bg-card p-5 shadow-card sm:p-8 forced-colors:border forced-colors:border-[CanvasText]"
     >
-      <h2 id="criar-titulo" className="text-body font-semibold">
+      <h2 id="criar-titulo" className="text-xl font-semibold sm:text-2xl">
         {again ? 'Pronto pra criar outro logo' : 'Tudo pronto pra criar o seu logo'}
       </h2>
       {summary.length ? (
-        <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-body">
+        <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-5 gap-y-2 text-lg">
           {summary.map((item) => (
             <div key={item.label} className="contents">
               <dt className="text-muted-foreground">{item.label}</dt>
@@ -41,7 +41,7 @@ export function CreateCard({
       <p className="text-body text-pretty text-muted-foreground">
         {generationsLeft
           ? `Você pode criar mais ${generationsLeft} ${generationsLeft === 1 ? 'logo' : 'logos'}. Quer mudar algo? É só escrever.`
-          : 'Você já criou todos os logos que dava. Escolha um deles aqui em cima.'}
+          : 'Você já criou todos os logos que dava. Escolha um deles em "Seus logos".'}
       </p>
       <Button
         type="button"
