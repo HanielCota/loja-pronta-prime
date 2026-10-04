@@ -2,6 +2,7 @@
 
 import { ArrowUpIcon, RefreshCwIcon, SparklesIcon, SquarePenIcon } from 'lucide-react';
 import Image from 'next/image';
+import { mascotBase } from '@/components/brand/mascot/art';
 import { useRouter } from 'next/navigation';
 import { useEffect, useId, useRef, useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
@@ -263,9 +264,7 @@ export function LogoChat({ initial, editing }: { initial: ChatView; editing: boo
 
 /** O mascote, como "rosto" da assistente (só desenho: quem fala já vai escrito pro leitor). */
 function Avatar() {
-  return (
-    <Image src="/brand/mascote.png" alt="" width={32} height={32} className="size-8 shrink-0" />
-  );
+  return <Image src={mascotBase} alt="" width={32} height={32} className="size-8 shrink-0" />;
 }
 
 function Message({

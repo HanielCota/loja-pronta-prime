@@ -6,49 +6,66 @@ const isSecureOrigin = (url: string) => {
 };
 
 /** Variáveis de infraestrutura, validadas uma vez. Só podem ser usadas no servidor. */
-const envSchema = z.object({
-  DATABASE_URL: z.url(),
-  BETTER_AUTH_SECRET: z.string().min(32),
-  BETTER_AUTH_URL: z
-    .url()
-    // Em produção, só https: o cookie de sessão só ganha a marca "Secure" com https.
-    // Exceção: localhost (testar o build de produção na própria máquina).
-    .refine((url) => process.env.NODE_ENV !== 'production' || isSecureOrigin(url), {
-      error: 'em produção, BETTER_AUTH_URL precisa ser https://',
-    }),
-  /**
-   * Quantos proxies confiáveis ficam na frente do sistema (cada um acrescenta um IP ao
-   * X-Forwarded-For). 1: atrás de um proxy (o comum em hospedagem). 0: exposto direto, sem
-   * proxy: o cabeçalho viria do próprio cliente, então o limite por IP é desligado em vez de
-   * confiar num valor que o atacante inventa.
-   */
-  TRUSTED_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
-  /** Chat do logo (DeepSeek). Sem a chave, o chat responde que está fora do ar. */
-  DEEPSEEK_API_KEY: z.string().min(1).optional(),
-  /** Imagem do logo (OpenAI). Sem a chave, gerar o logo responde que está fora do ar. */
-  OPENAI_API_KEY: z.string().min(1).optional(),
-  /**
-   * "1": o chat e a imagem respondem de mentira, sem chamar ninguém (testes e2e: sem custo, sem
-   * depender da internet). Nunca em produção.
-   */
-  AI_FAKE: z
-    .enum(['0', '1'])
-    .default('0')
-    .refine((value) => value === '0' || process.env.NODE_ENV !== 'production', {
-      error: 'AI_FAKE não pode ser ligado em produção',
-    }),
-  /**
-   * Onde os arquivos ficam: "s3" (o bucket) ou "local" (uma pasta do projeto, só fora de
-   * produção). Sem dizer: s3 quando o bucket está configurado, senão local.
-   */
-  STORAGE_DRIVER: z.enum(['s3', 'local']).optional(),
-  S3_ENDPOINT: z.url().optional(),
-  S3_REGION: z.string().min(1).default('us-east-1'),
-  S3_FORCE_PATH_STYLE: z.enum(['true', 'false']).default('false'),
-  S3_BUCKET: z.string().min(1).optional(),
-  S3_ACCESS_KEY_ID: z.string().min(1).optional(),
-  S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
-});
+const envSchema = z
+  .object({
+    DATABASE_URL: z.url(),
+    BETTER_AUTH_SECRET: z.string().min(32),
+    BETTER_AUTH_URL: z
+      .url()
+      // Em produção, só https: o cookie de sessão só ganha a marca "Secure" com https.
+      // Exceção: localhost (testar o build de produção na própria máquina).
+      .refine((url) => process.env.NODE_ENV !== 'production' || isSecureOrigin(url), {
+        error: 'em produção, BETTER_AUTH_URL precisa ser https://',
+      }),
+    /**
+     * Quantos proxies confiáveis ficam na frente do sistema (cada um acrescenta um IP ao
+     * X-Forwarded-For). 1: atrás de um proxy (o comum em hospedagem). 0: exposto direto, sem
+     * proxy: o cabeçalho viria do próprio cliente, então o limite por IP é desligado em vez de
+     * confiar num valor que o atacante inventa.
+     */
+    TRUSTED_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
+    /** Chat do logo (DeepSeek). Sem a chave, o chat responde que está fora do ar. */
+    DEEPSEEK_API_KEY: z.string().min(1).optional(),
+    /** Imagem do logo (OpenAI). Sem a chave, gerar o logo responde que está fora do ar. */
+    OPENAI_API_KEY: z.string().min(1).optional(),
+    /**
+     * "1": o chat e a imagem respondem de mentira, sem chamar ninguém (testes e2e: sem custo, sem
+     * depender da internet). Nunca em produção.
+     */
+    AI_FAKE: z
+      .enum(['0', '1'])
+      .default('0')
+      .refine((value) => value === '0' || process.env.NODE_ENV !== 'production', {
+        error: 'AI_FAKE não pode ser ligado em produção',
+      }),
+    /**
+     * Onde os arquivos ficam: "s3" (o bucket) ou "local" (uma pasta do projeto, só fora de
+     * produção). Sem dizer: s3 quando o bucket está configurado, senão local.
+     */
+    STORAGE_DRIVER: z.enum(['s3', 'local']).optional(),
+    S3_ENDPOINT: z.url().optional(),
+    S3_REGION: z.string().min(1).default('us-east-1'),
+    S3_FORCE_PATH_STYLE: z.enum(['true', 'false']).default('false'),
+    S3_BUCKET: z.string().min(1).optional(),
+    S3_ACCESS_KEY_ID: z.string().min(1).optional(),
+    S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+  })
+  // Em produção, os arquivos vão pro bucket: sem ele configurado, o sistema nem sobe (melhor do
+  // que a primeira aluna a criar um logo descobrir o erro).
+  .superRefine((value, context) => {
+    if (process.env.NODE_ENV !== 'production') return;
+    if (value.STORAGE_DRIVER === 'local') {
+      context.addIssue({
+        code: 'custom',
+        path: ['STORAGE_DRIVER'],
+        message: 'local não vale em produção',
+      });
+    }
+    for (const key of ['S3_BUCKET', 'S3_ACCESS_KEY_ID', 'S3_SECRET_ACCESS_KEY'] as const) {
+      if (!value[key])
+        context.addIssue({ code: 'custom', path: [key], message: 'obrigatória em produção' });
+    }
+  });
 
 type Env = z.infer<typeof envSchema>;
 

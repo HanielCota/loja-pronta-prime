@@ -25,6 +25,10 @@ const flags = new Set(args.filter((arg) => arg.startsWith('--')));
 const [email, password] = args.filter((arg) => !arg.startsWith('--'));
 
 const phaseFlag = args.find((arg) => arg.startsWith('--fase='));
+if (phaseFlag && flags.has('--marca')) {
+  console.error('Use --marca ou --fase, não os dois: --marca já põe a loja na fase da marca (2).');
+  process.exit(1);
+}
 const phase = phaseFlag ? Number(phaseFlag.slice('--fase='.length)) : 1;
 
 if (!email || !password || !Number.isInteger(phase) || phase < 1 || phase > STORE_PHASES.length) {
