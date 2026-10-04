@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { logoBriefSchema, MAX_SUGGESTIONS, type AssistantTurn } from './model';
+import { logoBriefSchema, MAX_SUGGESTIONS, type AssistantTurn, type LogoBrief } from './model';
 
 /**
  * Lê a resposta da IA (o JSON das instruções) e devolve só o que vale: a fala, as respostas
@@ -40,14 +40,19 @@ export function parseAssistantTurn(raw: string): AssistantTurn | null {
   const { reply, suggestions, brief } = parsed.data;
   return {
     reply,
+    // Os ajustes de um toque são do sistema: a IA não liga nem desliga.
+    brief: brief ? withoutTweaks(brief) : null,
     // "Criar meu logo" é um botão da tela: como resposta rápida, só mandaria o texto.
     suggestions: suggestions.filter((suggestion) => !CREATE_LIKE.test(suggestion)),
-    brief: brief ?? null,
   };
 }
 
+function withoutTweaks({ tweaks: _tweaks, ...brief }: LogoBrief): LogoBrief {
+  return brief;
+}
+
 /** Sugestões que imitam o botão de criar ("Criar meu logo", "criar o logo"...). */
-const CREATE_LIKE = /(criar|gerar|fazer).*logo/i;
+const CREATE_LIKE = /\b(criar|gerar|fazer)\b.*\blogo\b/i;
 
 /**
  * Uma fala do assistente como a IA a escreveria (o mesmo JSON das instruções). O histórico vai

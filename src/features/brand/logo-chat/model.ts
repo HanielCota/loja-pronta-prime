@@ -20,6 +20,8 @@ export const HISTORY_WINDOW = 16;
 export const MAX_GENERATIONS = 4;
 /** Respostas rápidas que o chat oferece (os botões embaixo da mensagem). */
 export const MAX_SUGGESTIONS = 4;
+/** O logo que ela manda: até 5 MB (a tela já reduz pra 1024px antes de mandar). */
+export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
 /** Texto curto vindo da IA: sem quebra de linha, sem aspas, sem espaço sobrando. */
 const short = (max: number) =>
@@ -46,15 +48,25 @@ export const logoBriefSchema = z.object({
   background: short(80),
   look: z.enum(['ilustracao', 'realista']).catch('ilustracao'),
   extras: short(200).optional().catch(undefined),
+  /** Ajustes de um toque que continuam valendo (ver tweaks.ts). Só o sistema põe. */
+  tweaks: z
+    .array(z.enum(['mais-colorido', 'letra-maior', 'mais-simples']))
+    .max(3)
+    .optional()
+    .catch(undefined),
 });
 export type LogoBrief = z.infer<typeof logoBriefSchema>;
 
-/** Uma mensagem guardada. `image`: a chave do logo gerado, quando a mensagem é ele. */
+/**
+ * Uma mensagem guardada. `image`: a chave do logo, quando a mensagem é ele; `uploaded`: o logo
+ * foi ela que mandou (não a IA que criou).
+ */
 export const chatMessageSchema = z.object({
   role: z.enum(['assistant', 'user']),
   text: z.string().max(2000),
   suggestions: z.array(z.string().max(80)).max(MAX_SUGGESTIONS).optional(),
   image: z.string().max(200).optional(),
+  uploaded: z.literal(true).optional(),
 });
 export type LogoChatMessage = z.infer<typeof chatMessageSchema>;
 

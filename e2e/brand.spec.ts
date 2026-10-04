@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectNoA11yViolations, signIn } from './support/auth';
-import { chatUntilReady, createLogo, say } from './support/logo-chat';
+import { chatUntilReady, createLogo, expectLogo, say, tweakLogo } from './support/logo-chat';
 import { PASSWORD, studentEmail } from './support/students';
 
 const step = (name: string) => new RegExp(`/loja-pronta/marca/${name}(\\?.*)?$`);
@@ -63,9 +63,24 @@ test('marca completa: nome, chat do logo, texto, revisão com mudança e logo pr
   await createLogo(page, 1);
   // Do lado, como fica no perfil da Shopee (redondo, com o nome).
   await expect(conversation).toContainText('Assim aparece no perfil da Shopee');
-  await expect(page.getByRole('button', { name: 'Fazer outro' })).toBeVisible();
   await expectNoA11yViolations(page);
-  await page.getByRole('button', { name: 'Usar esse logo' }).click();
+  // Um ajuste de um toque cria a versão nova direto; o pedido dela entra na conversa.
+  await tweakLogo(page, 'Mais simples', 2);
+  await expect(conversation).toContainText('Mais simples');
+  await expect(page.getByText('Você ainda pode criar 2 logos', { exact: true })).toBeVisible();
+  // "Seus logos": os dois lado a lado; tocar abre grande, com fundo claro e escuro.
+  const gallery = page.getByRole('region', { name: 'Seus logos (2)' });
+  await gallery.getByRole('button', { name: /Logo 1/ }).click();
+  const viewer = page.getByRole('dialog', { name: 'Logo 1' });
+  await expect(viewer).toBeVisible();
+  await viewer.getByText('Fundo escuro').click();
+  await expect(viewer.getByRole('radio', { name: 'Fundo escuro' })).toBeChecked();
+  await expectNoA11yViolations(page);
+  await page.keyboard.press('Escape');
+  await expect(viewer).toBeHidden();
+  // Escolhe o logo 1 pela janela grande.
+  await gallery.getByRole('button', { name: /Logo 1/ }).click();
+  await viewer.getByRole('button', { name: 'Usar esse logo (logo 1)' }).click();
 
   // Texto: já vem um pronto no cartão; um jeito de falar troca o texto, "Outro texto" traz
   // outra versão do mesmo jeito, e vazio não segue.
@@ -99,8 +114,8 @@ test('marca completa: nome, chat do logo, texto, revisão com mudança e logo pr
   await expect(page).toHaveURL(/\/marca\/logo\?editar=1$/);
   const renamed = page.getByRole('log', { name: 'Conversa sobre o seu logo' });
   await expect(renamed).toContainText('Você mudou o nome pra Gatinhos & Cia');
-  await createLogo(page, 2);
-  await page.getByRole('button', { name: 'Usar esse logo (logo 2)' }).click();
+  await createLogo(page, 3);
+  await page.getByRole('button', { name: 'Usar esse logo (logo 3)' }).click();
   await expect(page).toHaveURL(step('revisao'));
   // O texto da loja já veio com o nome novo.
   await expect(page.getByRole('main')).toContainText('Gatinhos & Cia');
@@ -143,6 +158,8 @@ test('chat do logo pelo teclado: escreve, Enter manda, e a conversa continua dep
   const conversation = page.getByRole('log', { name: 'Conversa sobre o seu logo' });
   // Sem nada escrito, "Enviar" fica desligado.
   await expect(page.getByRole('button', { name: 'Enviar' })).toBeDisabled();
+  // Falar em vez de escrever (o Chrome tem reconhecimento de voz).
+  await expect(page.getByRole('button', { name: 'Falar em vez de escrever' })).toBeVisible();
 
   // Saiu e voltou: a conversa está lá. "Nova conversa" pede confirmação: Esc desiste (e o foco
   // volta pro botão); "Começar de novo" volta ao começo, com o cursor na caixa de escrever.
@@ -177,7 +194,6 @@ test('a marca só abre depois da conversa; o logo é só da dona', async ({ page
 test('marca confirmada antes do chat, sem logo: só o logo reabre, mesmo com a loja publicada', async ({
   page,
 }) => {
-  test.setTimeout(400_000);
   await signIn(page, studentEmail('marcasemlogo'), PASSWORD, '/loja-pronta/marca');
   await expect(page).toHaveURL(step('logo'));
   // Os outros passos continuam fechados: levam pro logo.
@@ -185,8 +201,18 @@ test('marca confirmada antes do chat, sem logo: só o logo reabre, mesmo com a l
     await page.goto(`/loja-pronta/marca/${other}`);
     await expect(page).toHaveURL(step('logo'));
   }
-  await chatUntilReady(page);
-  await createLogo(page, 1);
+  // "Já tenho um logo": a imagem dela entra na conversa (sem gastar criação), pronta pra usar.
+  const [chooser] = await Promise.all([
+    page.waitForEvent('filechooser'),
+    page.getByRole('button', { name: 'Já tenho um logo' }).click(),
+  ]);
+  await chooser.setFiles('public/brand/mascote.png');
+  await expectLogo(page, 1);
+  await expect(page.getByRole('log', { name: 'Conversa sobre o seu logo' })).toContainText(
+    'Recebi o seu logo!',
+  );
+  // Logo dela: sem ajustes de um toque (eles redesenham pela IA).
+  await expect(page.getByRole('button', { name: 'Mais simples', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Usar esse logo' }).click();
   // Escolheu: volta pro painel, com o logo; a marca fecha de novo.
   await expect(page).toHaveURL(/\/loja-pronta$/);

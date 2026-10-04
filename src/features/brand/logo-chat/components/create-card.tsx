@@ -11,7 +11,6 @@ export function CreateCard({
   generationsLeft,
   again,
   busy,
-  creating,
   onCreate,
 }: {
   summary: ChatView['summary'];
@@ -19,7 +18,6 @@ export function CreateCard({
   /** Já criou um logo nesta conversa. */
   again: boolean;
   busy: boolean;
-  creating: boolean;
   onCreate: () => void;
 }) {
   return (
@@ -49,8 +47,6 @@ export function CreateCard({
         type="button"
         className="sm:w-auto sm:self-start sm:px-8"
         disabled={busy || generationsLeft === 0}
-        loading={creating}
-        loadingText="Criando…"
         onClick={onCreate}
       >
         <SparklesIcon aria-hidden="true" />
