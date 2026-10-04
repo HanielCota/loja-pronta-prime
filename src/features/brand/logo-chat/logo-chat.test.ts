@@ -136,7 +136,8 @@ describe('chat-view', () => {
     expect(view.messages[0]).toEqual({ role: 'assistant', text: 'Pronto' });
     expect(view.messages[1]).toEqual({ role: 'assistant', text: 'Olha', imageId: 'abc12345-6789' });
     expect(view.ready).toBe(true);
-    expect(view.summary).toContain('uma patinha');
+    expect(view.summary).toContainEqual({ label: 'Desenho', value: 'uma patinha' });
+    expect(view.summary).toContainEqual({ label: 'Estilo', value: 'ilustração' });
     expect(view.generationsLeft).toBe(MAX_GENERATIONS - 1);
   });
 });

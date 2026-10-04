@@ -18,8 +18,8 @@ export type ChatView = {
   messages: ChatViewMessage[];
   /** A conversa já tem o resumo: aparece "Criar meu logo". */
   ready: boolean;
-  /** Um resumo do logo pra ela conferir antes de criar. */
-  summary: string | null;
+  /** O resumo do logo pra ela conferir antes de criar (vazio sem resumo). */
+  summary: { label: string; value: string }[];
   generationsLeft: number;
 };
 
@@ -57,10 +57,14 @@ export function toChatView(
     }),
     ready: Boolean(brief),
     summary: brief
-      ? [brief.symbol, brief.colors, `letras ${brief.lettering}`, `fundo ${brief.background}`].join(
-          ' · ',
-        )
-      : null,
+      ? [
+          { label: 'Desenho', value: brief.symbol },
+          { label: 'Cores', value: brief.colors },
+          { label: 'Letras', value: brief.lettering },
+          { label: 'Fundo', value: brief.background },
+          { label: 'Estilo', value: brief.look === 'realista' ? 'realista' : 'ilustração' },
+        ]
+      : [],
     generationsLeft: Math.max(0, MAX_GENERATIONS - chat.generations),
   };
 }
