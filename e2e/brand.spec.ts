@@ -44,7 +44,9 @@ test('marca completa: nome, chat do logo, texto, revisão com mudança e logo pr
 
   // Logo: o chat pergunta (com respostas rápidas), monta o resumo e cria o logo; ela escolhe.
   await expect(page).toHaveURL(step('logo'));
-  await expect(page.getByRole('heading', { name: 'Vamos criar o seu logo' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Vamos criar o logo da Patinhas da Ana' }),
+  ).toBeAttached();
   const conversation = page.getByRole('log', { name: 'Conversa sobre o seu logo' });
   await expect(conversation).toContainText('Vamos criar o logo da Patinhas da Ana?');
   await expectNoA11yViolations(page);
@@ -133,10 +135,10 @@ test('chat do logo pelo teclado: escreve, Enter manda, e a conversa continua dep
   // Sem nada escrito, "Enviar" fica desligado.
   await expect(page.getByRole('button', { name: 'Enviar' })).toBeDisabled();
 
-  // Saiu e voltou: a conversa está lá; "Recomeçar conversa" volta ao começo.
+  // Saiu e voltou: a conversa está lá; "Nova conversa" volta ao começo.
   await page.reload();
   await expect(conversation).toContainText('Uma flor');
-  await page.getByRole('button', { name: 'Recomeçar conversa' }).click();
+  await page.getByRole('button', { name: 'Nova conversa' }).click();
   await expect(conversation).not.toContainText('Uma flor');
   await expect(conversation).toContainText('Vamos criar o logo da Patinhas da Ana?');
 });
