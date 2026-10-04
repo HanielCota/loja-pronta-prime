@@ -67,6 +67,11 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, AuthMessage> = {
     title: 'Escolha uma senha diferente da temporária',
     hint: 'Crie uma senha só sua, diferente da que chegou por email.',
   },
+  // Outra aba (ou outro envio) criou a senha antes: a que ela digitou agora não foi salva.
+  first_password_already_set: {
+    title: 'Sua senha já foi criada',
+    hint: 'Você criou uma senha há pouco, talvez em outra aba. Use aquela pra entrar. Se não lembrar, saia e toque em "Esqueceu a senha?".',
+  },
   wrong_current_password: {
     title: 'A senha atual não confere',
     hint: 'Digite a senha que você usa pra entrar. Se não lembrar, saia da conta e use "Esqueceu a senha?" no login.',

@@ -9,6 +9,7 @@ const AUTH_ERROR_CODES = [
   'reset_link_invalid',
   'verification_link_invalid',
   'same_password',
+  'first_password_already_set',
   'wrong_current_password',
   'unchanged_password',
   'unknown',
