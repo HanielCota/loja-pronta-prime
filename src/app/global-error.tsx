@@ -4,7 +4,7 @@ import { Manrope } from 'next/font/google';
 import { CardHeading } from '@/components/brand/card-heading';
 import { PageShell } from '@/components/brand/page-shell';
 import { Button } from '@/components/ui/button';
-import { THEME_INIT_SCRIPT } from '@/features/theme/theme';
+import { ThemeProvider } from '@/features/theme/use-theme';
 import './globals.css';
 
 // O layout raiz não vale aqui: a fonte e o tema vêm deste arquivo (senão, letra serifada e um
@@ -25,25 +25,25 @@ export default function GlobalError({ error, retry }: GlobalErrorProps) {
   return (
     <html lang="pt-BR" className={manrope.variable} suppressHydrationWarning>
       <body>
-        {/* eslint-disable-next-line react/no-danger -- o mesmo script do tema do layout raiz */}
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-        <PageShell>
-          <section className="flex flex-col gap-6 rounded-card bg-card px-6 py-10 shadow-card sm:px-10">
-            <CardHeading
-              title="Algo deu errado"
-              description="Tente de novo. Se continuar, fale com o suporte."
-            />
-            <Button type="button" onClick={() => retry()}>
-              Tentar de novo
-            </Button>
-            {error.digest ? (
-              // Código pra ajudar o suporte a achar o erro nos logs do servidor.
-              <p className="text-center text-sm text-muted-foreground">
-                Código do erro: {error.digest}
-              </p>
-            ) : null}
-          </section>
-        </PageShell>
+        <ThemeProvider>
+          <PageShell>
+            <section className="flex flex-col gap-6 rounded-card bg-card px-6 py-10 shadow-card sm:px-10">
+              <CardHeading
+                title="Algo deu errado"
+                description="Tente de novo. Se continuar, fale com o suporte."
+              />
+              <Button type="button" onClick={() => retry()}>
+                Tentar de novo
+              </Button>
+              {error.digest ? (
+                // Código pra ajudar o suporte a achar o erro nos logs do servidor.
+                <p className="text-center text-sm text-muted-foreground">
+                  Código do erro: {error.digest}
+                </p>
+              ) : null}
+            </section>
+          </PageShell>
+        </ThemeProvider>
       </body>
     </html>
   );
