@@ -13,7 +13,7 @@ import {
   type LogoBrief,
   type LogoStudio,
 } from '../model';
-import { briefFromPicks } from '../picks';
+import { briefFromPicks, missingStudioSteps, STUDIO_STEPS } from '../picks';
 import { isLastingTweak, isLogoTweak, type LogoTweak } from '../tweaks';
 import type { StudioView } from '../view';
 import { drawLogo, logoImageKey, normalizeUploadedLogo, storeLogoImage } from './logo-images';
@@ -95,9 +95,13 @@ export async function createLogo(picks: unknown): Promise<StudioResult> {
   const parsed = logoPicksSchema.safeParse(picks);
   const brief = parsed.success ? briefFromPicks(parsed.data, answers) : null;
   if (!parsed.success || !brief) {
+    const missing = parsed.success ? missingStudioSteps(parsed.data) : [];
+    const error = missing.length
+      ? `Falta escolher: ${missing.map((step) => STUDIO_STEPS[step].label).join(', ')}. Complete essas etapas antes de criar o logo.`
+      : 'Falta escolher alguma coisa. Confira as escolhas e tente de novo.';
     return {
       studio: view(await getLogoStudio(userId)),
-      error: 'Falta escolher alguma coisa. Confira as escolhas e tente de novo.',
+      error,
     };
   }
   const studio = await saveLogoPicks(userId, parsed.data);
