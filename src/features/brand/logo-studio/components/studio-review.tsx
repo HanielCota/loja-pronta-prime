@@ -109,8 +109,8 @@ export function StudioReview({
               aria-describedby={missingMessage || error ? errorId : undefined}
               onClick={onCreate}
             >
-              <SparklesIcon aria-hidden="true" />
               {hasLogos ? 'Criar outro logo' : 'Criar meu logo'}
+              <SparklesIcon aria-hidden="true" />
             </Button>
             <p className="text-center text-body text-pretty text-muted-foreground">
               Você ainda pode criar {generationsLeft} {generationsLeft === 1 ? 'logo' : 'logos'}.
