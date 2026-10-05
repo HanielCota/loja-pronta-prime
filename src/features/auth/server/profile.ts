@@ -12,14 +12,10 @@ import { revokeOtherSessions } from '@/server/auth/sessions';
 import { db } from '@/server/db';
 import { user } from '@/server/db/schema';
 import { storage } from '@/server/storage';
-import {
-  normalizeProfilePhoto,
-  profilePhotoId,
-  profilePhotoKey,
-  profilePhotoUrl,
-} from '../profile-photo';
+import { profilePhotoId, profilePhotoKey, profilePhotoUrl } from '../profile-photo';
 import { changePasswordSchema, profileNameSchema } from '../schemas';
 import { toAuthErrorCode } from './better-auth-errors';
+import { normalizeProfilePhoto } from './profile-photo-image';
 import { getActiveSession, needsFirstPassword } from './session';
 import { HIDDEN_FIELDS, reject, type FormResult } from './submission';
 
