@@ -93,6 +93,10 @@ o tema escuro e o alto contraste.
   mostra a cor real. Tocar de novo na cor marcada remove a seleção. O painel usa a superfície neutra
   do tema, e “Limpar cor” é um botão secundário contornado.
 - Ícones: `lucide-react`, sempre com `aria-hidden="true"` quando há texto junto.
+- Escolher arquivo (a foto do perfil): nada do campo cinza do navegador. Uma prévia redonda de
+  como vai ficar, um botão `soft` "Escolher foto" (que é o rótulo do campo de arquivo, escondido
+  com `sr-only`) e o nome e o tamanho do arquivo embaixo. Sem JavaScript, aparece o campo do
+  navegador, que já envia sozinho.
 - Nas telas de dentro, o cabeçalho tem um botão de tema de 44px ao lado da conta: a lua acompanha o
   escuro e o sol acompanha o claro; tocar alterna para o outro tema. Ele usa a mesma preferência
   local dos ajustes em Perfil; a pessoa ainda pode escolher "Automático" ou ajustar o tema escuro

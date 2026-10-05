@@ -24,6 +24,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from 'react';
+import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError } from '@/components/ui/field';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
@@ -36,6 +37,7 @@ import { TEXT_SIZES, type TextSize } from '@/features/theme/display';
 import { useDisplay } from '@/features/theme/use-display';
 import { useTheme } from '@/features/theme/use-theme';
 import { prefersReducedMotion } from '@/lib/reduced-motion';
+import { formatBytes } from '@/lib/format-bytes';
 import { shrinkImage } from '@/lib/shrink-image';
 import { cn } from '@/lib/utils';
 import { rememberEmail } from '../email-storage';
@@ -114,7 +116,8 @@ export function ProfileSettings({ name, email, image, emailHelp }: ProfileSettin
           onToggle={() => toggle('photo')}
         >
           <ProfilePhotoForm
-            hasPhoto={Boolean(image)}
+            name={name}
+            image={image}
             onCancel={() => close('photo')}
             onSaved={(removed) => onSaved('photo', removed ? 'Foto removida' : 'Foto salva')}
           />
@@ -557,12 +560,20 @@ function useOnSaved(state: { saved?: boolean } | undefined, onSaved: () => void)
 
 type FormProps = { onCancel: () => void; onSaved: () => void };
 
+/**
+ * Trocar a foto: o círculo mostra como ela vai ficar (a atual, ou a escolhida antes de salvar), ao
+ * lado do botão "Escolher foto" e do nome do arquivo. O botão é o rótulo do campo de arquivo de
+ * verdade (escondido), então o teclado e o leitor de tela usam o campo normal. Sem JavaScript,
+ * aparece o campo do navegador, que já funciona sozinho.
+ */
 function ProfilePhotoForm({
-  hasPhoto,
+  name,
+  image,
   onCancel,
   onSaved,
 }: {
-  hasPhoto: boolean;
+  name: string;
+  image: string | null | undefined;
   onCancel: () => void;
   onSaved: (removed: boolean) => void;
 }) {
@@ -574,6 +585,15 @@ function ProfilePhotoForm({
   /** A resposta do servidor que ela já deixou pra trás ao escolher outra foto. */
   const [dismissed, setDismissed] = useState(state);
   const error = localError ?? (state === dismissed ? undefined : state?.error);
+  const hydrated = useSyncExternalStore(
+    noSubscribe,
+    () => true,
+    () => false,
+  );
+  /** A escolhida, pra mostrar no círculo antes de salvar. */
+  const [chosen, setChosen] = useState<{ url: string; name: string; size: number } | null>(null);
+  useEffect(() => (chosen ? () => URL.revokeObjectURL(chosen.url) : undefined), [chosen]);
+  const hasPhoto = Boolean(image);
   return (
     <form
       action={action}
@@ -585,43 +605,104 @@ function ProfilePhotoForm({
       className="flex flex-col gap-4"
     >
       <Field data-invalid={Boolean(error) || undefined}>
-        <label htmlFor="perfil-foto-arquivo" className="text-body font-semibold">
+        <label
+          id="perfil-foto-titulo"
+          htmlFor="perfil-foto-arquivo"
+          className="text-body font-semibold"
+        >
           Escolha sua foto
         </label>
-        <input
-          id="perfil-foto-arquivo"
-          name="photo"
-          type="file"
-          accept={PROFILE_PHOTO_ACCEPT}
-          required
-          aria-invalid={Boolean(error) || undefined}
-          aria-describedby={error ? 'perfil-foto-ajuda perfil-foto-erro' : 'perfil-foto-ajuda'}
-          onChange={async (event) => {
-            // Foto do celular passa fácil de 5 MB (e acima de 6 MB o servidor nem recebe): reduz
-            // aqui mesmo. O servidor corta pra 512px de qualquer jeito. Sem JavaScript, vale o
-            // limite escrito na ajuda.
-            const input = event.currentTarget;
-            const file = input.files?.[0];
-            setLocalError(undefined);
-            setDismissed(state);
-            if (!file || file.size <= PROFILE_PHOTO_MAX_BYTES) return;
-            setPreparing(true);
-            const smaller = await shrinkImage(file);
-            setPreparing(false);
-            if (!smaller) {
-              input.value = '';
-              setLocalError('Não deu pra abrir essa foto. Escolha uma imagem JPG, PNG ou WebP.');
-              return;
-            }
-            const extension = smaller.type === 'image/webp' ? 'webp' : 'jpg';
-            const transfer = new DataTransfer();
-            transfer.items.add(new File([smaller], `foto.${extension}`, { type: smaller.type }));
-            input.files = transfer.files;
-          }}
-          className="min-h-12 w-full min-w-0 rounded-field border border-input bg-card p-3 text-sm text-foreground outline-none file:mr-3 file:min-h-11 file:rounded-full file:border-0 file:bg-primary-soft file:px-4 file:text-sm file:font-semibold file:text-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring forced-colors:file:border forced-colors:file:border-[ButtonText]"
-        />
+        <div className={cn(hydrated && 'flex items-center gap-4')}>
+          {hydrated ? (
+            <Avatar
+              name={name}
+              image={chosen?.url ?? image}
+              className="size-20 text-title [&_svg]:size-8"
+            />
+          ) : null}
+          <div className={cn(hydrated && 'flex min-w-0 flex-col items-start gap-1')}>
+            <input
+              id="perfil-foto-arquivo"
+              name="photo"
+              type="file"
+              accept={PROFILE_PHOTO_ACCEPT}
+              required
+              aria-labelledby="perfil-foto-titulo"
+              aria-invalid={Boolean(error) || undefined}
+              aria-describedby={[
+                hydrated && 'perfil-foto-arquivo-nome',
+                'perfil-foto-ajuda',
+                error && 'perfil-foto-erro',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              onChange={async (event) => {
+                // Foto do celular passa fácil de 5 MB (e acima de 6 MB o servidor nem recebe): reduz
+                // aqui mesmo. O servidor corta pra 512px de qualquer jeito. Sem JavaScript, vale o
+                // limite escrito na ajuda.
+                const input = event.currentTarget;
+                const file = input.files?.[0];
+                setLocalError(undefined);
+                setDismissed(state);
+                setChosen(null);
+                if (!file) return;
+                let upload: File = file;
+                if (file.size > PROFILE_PHOTO_MAX_BYTES) {
+                  setPreparing(true);
+                  const smaller = await shrinkImage(file);
+                  setPreparing(false);
+                  if (!smaller) {
+                    input.value = '';
+                    setLocalError(
+                      'Não deu pra abrir essa foto. Escolha uma imagem JPG, PNG ou WebP.',
+                    );
+                    return;
+                  }
+                  const extension = smaller.type === 'image/webp' ? 'webp' : 'jpg';
+                  upload = new File([smaller], `foto.${extension}`, { type: smaller.type });
+                  const transfer = new DataTransfer();
+                  transfer.items.add(upload);
+                  input.files = transfer.files;
+                }
+                // O nome é o que ela escolheu; o tamanho, o que vai de fato (já reduzida).
+                setChosen({ url: URL.createObjectURL(upload), name: file.name, size: upload.size });
+              }}
+              className={
+                hydrated
+                  ? 'peer sr-only'
+                  : 'min-h-12 w-full min-w-0 rounded-field border border-input bg-card p-3 text-sm text-foreground outline-none file:mr-3 file:min-h-11 file:rounded-full file:border-0 file:bg-primary-soft file:px-4 file:text-sm file:font-semibold file:text-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring forced-colors:file:border forced-colors:file:border-[ButtonText]'
+              }
+            />
+            {hydrated ? (
+              <>
+                {/* O "botão" é o rótulo do campo: tocar abre a escolha de arquivo. O campo já tem
+                nome pelo título acima, então este texto não é lido de novo. */}
+                <Button
+                  asChild
+                  variant="soft"
+                  className="w-auto cursor-pointer px-5 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring peer-focus-visible:outline-solid"
+                >
+                  <label htmlFor="perfil-foto-arquivo" aria-hidden="true">
+                    <CameraIcon aria-hidden="true" />
+                    {chosen || hasPhoto ? 'Escolher outra foto' : 'Escolher foto'}
+                  </label>
+                </Button>
+                <p
+                  id="perfil-foto-arquivo-nome"
+                  className="max-w-full truncate text-sm text-muted-foreground"
+                >
+                  {preparing
+                    ? 'Preparando a foto…'
+                    : chosen
+                      ? `${chosen.name} · ${formatBytes(chosen.size)}`
+                      : 'Nenhuma foto escolhida'}
+                </p>
+              </>
+            ) : null}
+          </div>
+        </div>
         <p id="perfil-foto-ajuda" className="text-sm text-pretty text-muted-foreground">
-          JPG, PNG ou WebP, de até 5 MB. A foto fica redonda, com o centro da imagem.
+          JPG, PNG ou WebP. A foto fica redonda, com o centro da imagem.
         </p>
         <FieldError id="perfil-foto-erro">{error}</FieldError>
       </Field>
