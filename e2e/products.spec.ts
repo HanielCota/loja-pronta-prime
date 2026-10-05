@@ -124,6 +124,21 @@ test('com um produto só: entra direto nele, sem tela de escolha', async ({ page
   await expect(page).toHaveURL(/\/sll$/);
 });
 
+test('menu da marca mostra a área única e permite voltar à conversa', async ({ page }) => {
+  await signIn(page, studentEmail('marca'), PASSWORD);
+  await expect(page).toHaveURL(/\/loja-pronta$/);
+
+  await page.getByRole('banner').getByRole('link', { name: 'Loja Pronta Prime' }).click();
+  await expect(page).toHaveURL(/\/menu$/);
+  await expect(page.getByRole('heading', { name: /Pra onde vamos/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /^(Entrar|Continuar), Loja Pronta$/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Sistema Loja Lucrativa/ })).toHaveCount(0);
+  await expectNoA11yViolations(page);
+
+  await page.getByRole('link', { name: 'Voltar à etapa 1: Conte sobre você e sua loja' }).click();
+  await expect(page).toHaveURL(/\/loja-pronta\/conversa/);
+});
+
 test('sem nenhum produto: avisa que o acesso ainda não foi liberado', async ({ page }) => {
   await signIn(page, studentEmail('semproduto'), PASSWORD);
   await expect(
