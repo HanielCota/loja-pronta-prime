@@ -14,9 +14,10 @@ describe('storeChooserCard', () => {
     });
   });
 
-  test('marca: depende dela; fases ainda fechadas, não', () => {
+  test('marca e conta na Shopee: dependem dela; fases ainda fechadas, não', () => {
     expect(storeChooserCard(2).waitsOnStudent).toBe(true);
-    expect(storeChooserCard(3).waitsOnStudent).toBe(false);
+    expect(storeChooserCard(3).waitsOnStudent).toBe(true);
+    expect(storeChooserCard(4).waitsOnStudent).toBe(false);
     expect(storeChooserCard(5).status.caption).toBe('Etapa 3 de 3');
     expect(storeChooserCard(5).status.detail).toBe(STORE_PHASES[4]?.detail);
   });

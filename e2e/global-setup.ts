@@ -23,9 +23,13 @@ type Student = {
   storePhase?: number;
   /** Conversa inicial já enviada (com respostas de exemplo): a loja está na fase da marca. */
   conversationSent?: boolean;
+  /** Respostas que trocam as de exemplo (ex.: quem já tem loja na Shopee). */
+  answers?: Record<string, unknown>;
+  /** Marca feita e ainda não confirmada (nome, logo e texto): ela está na revisão. */
+  brandReady?: boolean;
   /** Marca já confirmada (nome, um logo de exemplo e um texto de exemplo). */
   brandDone?: boolean;
-  /** Marca começada: só o nome (está no chat do logo). */
+  /** Marca começada: só o nome (está no estúdio do logo). */
   brandStarted?: boolean;
   /**
    * Marca confirmada antes do chat do logo (nome e texto, sem imagem: o logo antigo saiu na
@@ -44,7 +48,7 @@ const SENT_ANSWERS = {
   nome: 'Patinhas da Ana',
   estilo: 'Divertido',
   cor: 'Verde',
-  sentimento: ['Acolhidas'],
+  sentimento: ['Acolhimento'],
   toque: '',
 };
 
@@ -84,6 +88,7 @@ const STUDENTS: Student[] = [
   { kind: 'conversasemjs', emailVerified: true, banned: false, products: ['loja-pronta'] },
   { kind: 'conversasemloja', emailVerified: true, banned: false, products: ['sll'] },
   { kind: 'conversatoques', emailVerified: true, banned: false, products: ['loja-pronta'] },
+  { kind: 'conversacor', emailVerified: true, banned: false, products: ['loja-pronta'] },
   // Correções de acesso (e2e/auth-hardening.spec.ts).
   { kind: 'travadaip', emailVerified: true, banned: false },
   { kind: 'loginsemjs', emailVerified: true, banned: false },
@@ -139,6 +144,26 @@ const STUDENTS: Student[] = [
     products: ['loja-pronta'],
     storePhase: 2,
     conversationSent: true,
+  },
+  // Shopee: a conta (fase 3) e quem já tem loja lá (pula a conta ao confirmar a marca).
+  {
+    kind: 'shopeeconta',
+    emailVerified: true,
+    banned: false,
+    products: ['loja-pronta'],
+    storePhase: 3,
+    conversationSent: true,
+    brandDone: true,
+  },
+  {
+    kind: 'shopeeloja',
+    emailVerified: true,
+    banned: false,
+    products: ['loja-pronta'],
+    storePhase: 2,
+    conversationSent: true,
+    answers: { vendas: 'Tenho loja ativa na Shopee' },
+    brandReady: true,
   },
   {
     kind: 'marcateclado',
@@ -201,7 +226,7 @@ async function createStudents() {
       await database().query(
         `insert into store_onboarding (user_id, answers, whatsapp, completed_at)
          values ($1, $2, '11987654321', now())`,
-        [user.id, JSON.stringify(SENT_ANSWERS)],
+        [user.id, JSON.stringify({ ...SENT_ANSWERS, ...student.answers })],
       );
     }
     if (student.brandStarted) {
@@ -217,6 +242,13 @@ async function createStudents() {
         [user.id],
       );
     }
+    if (student.brandReady) {
+      await database().query(
+        `insert into store_brand (user_id, name, logo_image, description)
+         values ($1, 'Patinhas da Ana', $2, 'Tudo pro seu pet, com carinho.')`,
+        [user.id, await seedLogo(user.id)],
+      );
+    }
     if (student.brandDone) {
       await database().query(
         `insert into store_brand (user_id, name, logo_image, description, completed_at)
@@ -229,7 +261,7 @@ async function createStudents() {
 
 /**
  * Guarda um logo de verdade no bucket (a imagem do mascote, um PNG real) e devolve a chave, no
- * mesmo formato das do chat (logos/<aluna>/<id>.png). O teardown apaga a pasta da aluna.
+ * mesmo formato das do estúdio (logos/<aluna>/<id>.png). O teardown apaga a pasta da aluna.
  */
 async function seedLogo(userId: string): Promise<string> {
   const key = `logos/${userId.replace(/[^\w-]/g, '')}/e2e-logo-0001.png`;

@@ -2,6 +2,7 @@
 
 import { and, eq, isNull, lte } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
+import { SHOPEE_STORE } from '@/config/onboarding';
 import { db } from '@/server/db';
 import { storeBrand, stores } from '@/server/db/schema';
 import { parseBrandDescription, parseBrandName } from '../fields';
@@ -60,14 +61,18 @@ export async function saveBrandDescription(
   after(formData, revising, 'revisao');
 }
 
-/** Confirma a marca: a loja passa pra fase 3 (abrir a conta na Shopee). */
+/**
+ * Confirma a marca: a loja passa pra fase 3 (abrir a conta na Shopee) ou, pra quem já tem loja
+ * na Shopee (respondeu na conversa), direto pra 4 (conectar a loja).
+ */
 export async function finishBrand(): Promise<BrandResult> {
-  const { userId, brand, revising } = await requireBrandAction();
+  const { userId, brand, revising, answers } = await requireBrandAction();
   // Revendo, a marca já foi confirmada e cada mudança já está salva: só volta pro painel.
   if (revising) redirect('/loja-pronta');
   if (!brand.name || !brand.logoImage || !brand.description) {
     redirect(brandStepPath(!brand.name ? 'nome' : !brand.logoImage ? 'logo' : 'descricao'));
   }
+  const next = answers.vendas === SHOPEE_STORE ? 4 : 3;
   await db.transaction(async (tx) => {
     await tx
       .update(storeBrand)
@@ -76,10 +81,10 @@ export async function finishBrand(): Promise<BrandResult> {
     // Só avança quem está na fase da marca (a 1 conta: a conversa enviada já é a fase 2).
     await tx
       .insert(stores)
-      .values({ userId, phase: 3 })
+      .values({ userId, phase: next })
       .onConflictDoUpdate({
         target: stores.userId,
-        set: { phase: 3 },
+        set: { phase: next },
         setWhere: lte(stores.phase, 2),
       });
   });

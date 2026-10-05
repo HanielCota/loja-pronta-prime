@@ -10,6 +10,7 @@ import { Mascot } from '@/components/brand/mascot';
 import { Button } from '@/components/ui/button';
 import { STORE_PHASES, STORE_STAGES } from '@/config/store-phases';
 import { TEAM_WHATSAPP } from '@/config/support';
+import { SHOPEE_CONNECT_PATH, SHOPEE_PATH } from '@/config/shopee';
 import { BRAND_PATH, brandStepPath } from '@/features/brand/steps';
 import { AreaShell, panelCard } from '@/features/member/components/area-shell';
 import { greetingName } from '@/features/products/names';
@@ -105,7 +106,7 @@ function heroFor(
     return {
       eyebrow: stageEyebrow(2),
       title: 'Crie a marca da sua loja',
-      text: 'Escolha o nome, crie o logo conversando com a nossa assistente e defina o texto da loja.',
+      text: 'Escolha o nome, crie o logo escolhendo vendo (a nossa IA desenha) e defina o texto da loja.',
       action: {
         href: BRAND_PATH,
         label: brand.started ? 'Continuar minha marca' : 'Criar minha marca',
@@ -118,11 +119,28 @@ function heroFor(
     return {
       eyebrow: 'Falta o logo',
       title: 'Crie o logo da sua loja',
-      text: 'Agora o logo é feito conversando com a nossa assistente. Leva poucos minutos.',
+      text: 'Agora o logo é feito no estúdio: você escolhe vendo, e a nossa IA desenha. Leva poucos minutos.',
       action: { href: brandStepPath('logo'), label: 'Criar meu logo' },
     };
   }
   const current = STORE_PHASES[phase - 1];
+  if (phase === 3) {
+    return {
+      eyebrow: stageEyebrow(3),
+      title: current?.title ?? '',
+      text: 'É lá que a sua loja vai ficar. A conta é sua, no seu nome, e leva uns 15 minutos.',
+      action: { href: SHOPEE_PATH, label: 'Abrir minha conta na Shopee' },
+    };
+  }
+  if (phase === 4) {
+    return {
+      eyebrow: stageEyebrow(3, 'Em breve'),
+      title: current?.title ?? '',
+      text: current?.detail ?? '',
+      action: { href: SHOPEE_CONNECT_PATH, label: 'Ver como funciona a conexão' },
+      note: 'A conexão abre em breve. Avisamos no WhatsApp quando der pra conectar.',
+    };
+  }
   if (phase >= STORE_PHASES.length) {
     return {
       eyebrow: 'Pronto',

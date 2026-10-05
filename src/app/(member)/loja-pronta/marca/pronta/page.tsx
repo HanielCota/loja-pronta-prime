@@ -1,9 +1,10 @@
-import { DownloadIcon } from 'lucide-react';
+import { ArrowRightIcon, DownloadIcon } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { CardHeading } from '@/components/brand/card-heading';
 import { Button } from '@/components/ui/button';
+import { SHOPEE_CONNECT_PATH, SHOPEE_PATH } from '@/config/shopee';
 import { getBrand } from '@/features/brand/server/brand';
 import {
   BRAND_DONE_PATH,
@@ -16,6 +17,7 @@ import {
   panelCard,
   sectionTitleClass,
 } from '@/features/member/components/area-shell';
+import { getStorePhase } from '@/features/loja-pronta/server/store';
 import { greetingName } from '@/features/products/names';
 import { requireProduct } from '@/features/products/server/access';
 import { cn } from '@/lib/utils';
@@ -27,9 +29,27 @@ export const metadata: Metadata = {
 /** Fim da marca: o logo grande, o arquivo pra baixar e o que vem depois. */
 export default async function BrandDonePage() {
   const { session } = await requireProduct('loja-pronta', BRAND_DONE_PATH);
-  const brand = await getBrand(session.user.id);
+  const [brand, phase] = await Promise.all([
+    getBrand(session.user.id),
+    getStorePhase(session.user.id),
+  ]);
   if (!brand.completedAt || !brand.logoImage || !brand.name) redirect(BRAND_PATH);
   const name = greetingName(session.user);
+  // Quem já tinha loja na Shopee pula a criação da conta e vai direto pra conexão (fase 4).
+  const next =
+    phase === 4
+      ? {
+          title: 'Próximo passo: conectar a sua Shopee',
+          text: 'Como você já tem loja na Shopee, falta só ligar ela aqui pra gente publicar a sua marca e os produtos.',
+          href: SHOPEE_CONNECT_PATH,
+          label: 'Ver como funciona a conexão',
+        }
+      : {
+          title: 'Próximo passo: sua conta na Shopee',
+          text: 'Você abre sua conta de vendedora na Shopee, com um passo a passo bem explicado. Leva uns 15 minutos.',
+          href: SHOPEE_PATH,
+          label: 'Abrir minha conta na Shopee',
+        };
 
   return (
     <CenteredMemberPage
@@ -63,16 +83,21 @@ export default async function BrandDonePage() {
       </div>
       <section aria-labelledby="proximo-passo" className={cn(panelCard, 'gap-3')}>
         <h2 id="proximo-passo" className={sectionTitleClass}>
-          Próximo passo: sua conta na Shopee
+          {next.title}
         </h2>
-        <p className="text-body text-pretty text-muted-foreground">
-          Você vai abrir sua conta de vendedora na Shopee, com um passo a passo bem explicado.
-          Estamos preparando essa parte e avisamos no WhatsApp quando ela abrir.
-        </p>
+        <p className="text-body text-pretty text-muted-foreground">{next.text}</p>
       </section>
-      <Button asChild>
-        <Link href="/loja-pronta">Ver a minha loja</Link>
-      </Button>
+      <div className="flex flex-col gap-2">
+        <Button asChild>
+          <Link href={next.href}>
+            {next.label}
+            <ArrowRightIcon aria-hidden="true" />
+          </Link>
+        </Button>
+        <Button asChild variant="ghost">
+          <Link href="/loja-pronta">Fazer depois</Link>
+        </Button>
+      </div>
     </CenteredMemberPage>
   );
 }
