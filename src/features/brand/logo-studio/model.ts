@@ -58,6 +58,11 @@ export type LogoBrief = z.infer<typeof logoBriefSchema>;
 
 const enumOf = <T extends string>(ids: readonly T[]) => z.enum(ids as [T, ...T[]]);
 
+/** Escolha antiga vira branco para preservar o progresso de quem já tinha salvo "Clarinho". */
+const backgroundChoice = z
+  .union([enumOf(LOGO_BACKGROUND_IDS), z.literal('claro')])
+  .transform((background) => (background === 'claro' ? 'branco' : background));
+
 /** Uma escolha da lista (`id`) ou o que ela escreveu (`text`). */
 const choice = <T extends string>(ids: readonly T[]) =>
   z.union([z.object({ id: enumOf(ids) }), z.object({ text: short(MAX_OWN_TEXT) })]);
@@ -71,7 +76,7 @@ export const logoPicksSchema = z.object({
   symbol: choice(LOGO_SYMBOL_IDS).optional().catch(undefined),
   colors: choice(LOGO_PALETTE_IDS).optional().catch(undefined),
   lettering: choice(LOGO_LETTERING_IDS).optional().catch(undefined),
-  background: enumOf(LOGO_BACKGROUND_IDS).optional().catch(undefined),
+  background: backgroundChoice.optional().catch(undefined),
   look: enumOf(LOGO_LOOK_IDS).optional().catch(undefined),
 });
 export type LogoPicks = z.infer<typeof logoPicksSchema>;

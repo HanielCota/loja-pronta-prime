@@ -94,12 +94,24 @@ test('marca completa: nome, estúdio do logo, texto, revisão com mudança e log
   }).toPass({ timeout: 15_000 });
   await expect(page.getByText('Você ainda pode criar 4 logos.')).toBeVisible();
   await expectNoA11yViolations(page);
-  // "Mudar" volta direto na escolha; dali, "Continuar" passa pelas outras (já escolhidas).
+  // "Mudar" volta direto na escolha; confirmar retorna ao resumo sem repetir outras perguntas.
   await page.getByRole('button', { name: 'Mudar cores' }).click();
   await expect(page.getByRole('heading', { name: 'Quais cores?' })).toBeFocused();
   await choose(page, 'Lilás e rosa');
-  for (let screen = 0; screen < 4; screen++) await goOn(page);
+  await page.getByRole('button', { name: 'Confirmar mudança' }).click();
+  await expect(page.getByRole('heading', { name: 'Confira e crie o seu logo' })).toBeFocused();
   await expect(page.getByRole('definition').filter({ hasText: 'Lilás e rosa' })).toBeVisible();
+  // "Voltar" cancela uma edição ainda não confirmada.
+  await page.getByRole('button', { name: 'Mudar cores' }).click();
+  await choose(page, 'Azul e céu');
+  await page.getByRole('button', { name: 'Voltar' }).click();
+  await expect(page.getByRole('definition').filter({ hasText: 'Lilás e rosa' })).toBeVisible();
+  await expect(async () => {
+    await page.reload();
+    await expect(page.getByRole('definition').filter({ hasText: 'Lilás e rosa' })).toBeVisible({
+      timeout: 2_000,
+    });
+  }).toPass({ timeout: 15_000 });
 
   await createLogo(page, 1);
   await expect(

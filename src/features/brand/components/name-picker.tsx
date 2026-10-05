@@ -71,11 +71,16 @@ export function NamePicker({ id, initial, featured, ideas, max }: NamePickerProp
         <label htmlFor={id} className="sr-only">
           Nome da loja
         </label>
-        {/* Só desenho: diz que o cartão se escreve (o toque nele já põe o cursor). */}
-        <PencilIcon
-          aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 left-5 size-5 -translate-y-1/2 text-muted-foreground"
-        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Editar nome da loja"
+          className="absolute top-1/2 left-2 size-11 -translate-y-1/2 rounded-full text-muted-foreground"
+          onClick={() => ref.current?.focus()}
+        >
+          <PencilIcon aria-hidden="true" />
+        </Button>
         <input
           ref={ref}
           id={id}

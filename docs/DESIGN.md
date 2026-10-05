@@ -81,6 +81,13 @@ o tema escuro e o alto contraste.
   - `MascotBubble` (a pergunta em destaque), `StickyAction` (o botão preso embaixo no celular),
     `FocusOnArrival` (foco no título ao chegar).
 - Opções de escolha: `optionFocus` / `optionChecked` (`question/option-styles.ts`).
+- No estúdio do logo, a barra acompanha a numeração: a etapa atual e as anteriores ficam azuis;
+  avançar não apaga o progresso já mostrado. Sugestões nas etapas futuras não antecipam a barra.
+- Na pergunta de cor, a seleção é indicada por um aro azul fino e um check na amostra, sem contornar
+  o cartão. Ao abrir “Outra cor”, a opção anterior é desmarcada e o mesmo aro aparece na amostra
+  redonda, indicando o seletor aberto; a resposta é marcada só depois da escolha, quando a amostra
+  mostra a cor real. Tocar de novo na cor marcada remove a seleção. O painel usa a superfície neutra
+  do tema, e “Limpar cor” é um botão secundário contornado.
 - Ícones: `lucide-react`, sempre com `aria-hidden="true"` quando há texto junto.
 - Nas telas de dentro, o cabeçalho tem um botão de tema de 44px ao lado da conta: a lua acompanha o
   escuro e o sol acompanha o claro; tocar alterna para o outro tema. Ele usa a mesma preferência
@@ -91,9 +98,15 @@ o tema escuro e o alto contraste.
 
 - **Uma decisão por tela.** Título grande com a pergunta ou o que fazer, uma linha de ajuda, as
   opções, e um botão principal. Nada de várias ações competindo.
+- No estúdio do logo, a alternativa escrita fica visível abaixo das opções. O campo diz “Escreva do
+  seu jeito”, inclui um exemplo no placeholder e um botão “Usar essa ideia”; não fica escondido atrás
+  de um link. “Usar essa ideia” compartilha o azul de ação com “Continuar”, mas permanece compacto ao
+  lado do campo; fica desativado enquanto estiver vazio.
+- No estúdio do logo, os botões “Voltar” das etapas de escolha e do resumo usam formato de pílula,
+  contorno `border-border` e texto `text-link`.
 - O botão principal fica embaixo, largura toda no celular (`StickyAction` nos passo a passo).
-- Toque: resposta no instante (`active:scale-[0.97]`, 100 a 150ms). Escolha única avança sozinha
-  ao tocar; pelo teclado, não.
+- Toque: resposta no instante (`active:scale-[0.97]`, 100 a 150ms). Escolher uma opção só marca a
+  resposta; a pessoa confirma no botão principal, também pelo teclado.
 - Larguras: acesso 480 a 640px; passo a passo 560 a 680px (mais largo no estúdio do logo); áreas
   1040px.
 

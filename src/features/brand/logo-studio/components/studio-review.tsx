@@ -19,6 +19,7 @@ export function StudioReview({
   errorId,
   busy,
   onChange,
+  onBack,
   onCreate,
   onShowLogos,
   rail,
@@ -32,6 +33,7 @@ export function StudioReview({
   errorId: string;
   busy: boolean;
   onChange: (step: StudioStep) => void;
+  onBack: () => void;
   onCreate: () => void;
   onShowLogos: () => void;
   rail: ReactNode;
@@ -101,27 +103,39 @@ export function StudioReview({
       </p>
 
       <div className="flex flex-col gap-3">
-        {generationsLeft ? (
-          <>
+        <div className="flex items-center gap-3">
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-auto border border-border px-5 text-link"
+            disabled={busy}
+            onClick={onBack}
+          >
+            Voltar
+          </Button>
+          {generationsLeft ? (
             <Button
               type="button"
+              className="w-auto flex-1"
               disabled={busy || missing.length > 0}
               aria-describedby={missingMessage || error ? errorId : undefined}
               onClick={onCreate}
             >
-              <SparklesIcon aria-hidden="true" />
               {hasLogos ? 'Criar outro logo' : 'Criar meu logo'}
+              <SparklesIcon aria-hidden="true" />
             </Button>
-            <p className="text-center text-body text-pretty text-muted-foreground">
-              Você ainda pode criar {generationsLeft} {generationsLeft === 1 ? 'logo' : 'logos'}.
-              Leva uns 15 segundos.
+          ) : (
+            <p className="min-w-0 flex-1 text-body text-pretty text-muted-foreground">
+              Você já criou todos os logos que dava. Escolha um deles pra seguir.
             </p>
-          </>
-        ) : (
-          <p className="text-body text-pretty text-muted-foreground">
-            Você já criou todos os logos que dava. Escolha um deles pra seguir.
+          )}
+        </div>
+        {generationsLeft ? (
+          <p className="text-center text-body text-pretty text-muted-foreground">
+            Você ainda pode criar {generationsLeft} {generationsLeft === 1 ? 'logo' : 'logos'}.
+            Leva uns 15 segundos.
           </p>
-        )}
+        ) : null}
         {hasLogos ? (
           <Button type="button" variant="soft" disabled={busy} onClick={onShowLogos}>
             Ver os meus logos

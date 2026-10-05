@@ -3,8 +3,9 @@ import type { LogoPicks } from '../model';
 import { pickLabel, STUDIO_STEPS, type StudioStep } from '../picks';
 
 /**
- * As telas do estúdio numa barra (um tracinho por escolha, com o nome embaixo): as já escolhidas
- * ficam azuis e, tocando, ela volta direto nelas. No celular, só o nome da tela da vez aparece.
+ * As telas do estúdio numa barra (um tracinho por escolha, com o nome embaixo): a tela da vez e as
+ * anteriores ficam azuis. Sugestões nas telas seguintes não adiantam o progresso. As já escolhidas
+ * continuam clicáveis pra ela voltar e mudar. No celular, só o nome da tela da vez aparece.
  */
 export function StepRail({
   steps,
@@ -20,16 +21,18 @@ export function StepRail({
   disabled: boolean;
   onJump: (step: StudioStep) => void;
 }) {
+  const currentIndex = current === null ? steps.length - 1 : steps.indexOf(current);
+
   return (
     <nav aria-label="Escolhas do logo">
       <ol className="flex gap-1.5">
-        {steps.map((step) => {
+        {steps.map((step, index) => {
           const label = STUDIO_STEPS[step].label;
           const value = pickLabel(step, picks);
           const active = step === current;
           const bar = cn(
             'h-1.5 w-full rounded-full',
-            active || value ? 'bg-primary' : 'bg-progress-track',
+            index <= currentIndex ? 'bg-primary' : 'bg-progress-track',
           );
           const name = cn(
             'truncate text-left text-sm',
@@ -47,7 +50,14 @@ export function StepRail({
                   className="group flex min-h-11 w-full min-w-0 flex-col gap-1.5 rounded-md pt-2 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid"
                 >
                   <span aria-hidden="true" className={bar} />
-                  <span className={cn(name, 'text-link group-hover:underline')}>{label}</span>
+                  <span
+                    className={cn(
+                      name,
+                      'text-muted-foreground group-hover:text-foreground group-hover:underline',
+                    )}
+                  >
+                    {label}
+                  </span>
                 </button>
               ) : (
                 <span

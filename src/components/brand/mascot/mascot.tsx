@@ -41,8 +41,9 @@ type MascotProps = {
 };
 
 /**
- * Mascote que acompanha o que a pessoa faz na tela: segue o mouse, olha o texto digitado
- * (e sorri), fecha os olhos na senha (e espia com um olho ao mostrar), fecha a cara com senha
+ * Mascote que acompanha o que a pessoa faz na tela: segue o mouse mesmo durante a digitação;
+ * sem posição conhecida do mouse, olha o texto digitado (e sorri). Fecha os olhos na senha (e
+ * espia com um olho ao mostrar), fecha a cara com senha
  * errada, se espanta com Caps Lock, desconfia de email digitado errado, acena quando o email
  * fica completo, ri quando tocado, cochila quando ninguém mexe (onde pode) e comemora quando dá certo.
  *

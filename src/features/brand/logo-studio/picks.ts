@@ -169,9 +169,7 @@ export function briefFromPicks(picks: LogoPicks, answers: OnboardingAnswers): Lo
     background:
       background === 'branco'
         ? 'branco liso'
-        : background === 'claro'
-          ? `liso, num tom bem clarinho das cores (${colorText})`
-          : `liso, na cor principal (${colorText}), com o desenho e o nome em branco`,
+        : `liso, na cor principal (${colorText}), com o desenho e o nome em branco`,
     look,
     ...(touch ? { extras: touch } : {}),
   };

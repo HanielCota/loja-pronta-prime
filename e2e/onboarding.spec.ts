@@ -218,9 +218,7 @@ test('pelo teclado, trocar a opção com as setas não avança sozinho', async (
   await expect(page).toHaveURL(step('estilo'));
 });
 
-test('dois toques rápidos em opções diferentes: um envio só, com a última escolha', async ({
-  page,
-}) => {
+test('clique duplo numa opção não avança até tocar em Continuar', async ({ page }) => {
   await signIn(page, studentEmail('conversatoques'), PASSWORD, '/loja-pronta/conversa');
   await expect(page).toHaveURL(step('vendas'));
 
@@ -228,13 +226,18 @@ test('dois toques rápidos em opções diferentes: um envio só, com a última e
   page.on('request', (request) => {
     if (request.method() === 'POST' && request.url().includes('/loja-pronta/conversa/')) posts += 1;
   });
-  await page.getByText('Nunca vendi').click();
-  await page.getByText('Vendo em outro lugar').click();
+
+  await page.getByRole('radio', { name: 'Nunca vendi' }).dblclick();
+  await expect(page.getByRole('radio', { name: 'Nunca vendi' })).toBeChecked();
+  await expect(page).toHaveURL(step('vendas'));
+  expect(posts).toBe(0);
+
+  await page.getByRole('button', { name: 'Continuar' }).click();
   await expect(page).toHaveURL(step('motivacao'));
   expect(posts).toBe(1);
 
   await page.getByRole('link', { name: 'Voltar' }).click();
-  await expect(page.getByRole('radio', { name: 'Vendo em outro lugar' })).toBeChecked();
+  await expect(page.getByRole('radio', { name: 'Nunca vendi' })).toBeChecked();
 });
 
 test.describe('sem JavaScript', () => {

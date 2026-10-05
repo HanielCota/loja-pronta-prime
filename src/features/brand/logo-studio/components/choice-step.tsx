@@ -128,7 +128,7 @@ const GRID: Record<StudioStep, string> = {
   symbol: 'grid-cols-4 gap-2 sm:gap-3',
   colors: 'grid-cols-2 sm:grid-cols-3',
   lettering: 'grid-cols-2 sm:grid-cols-3',
-  background: 'grid-cols-3',
+  background: 'grid-cols-2',
   look: 'grid-cols-2',
 };
 
@@ -145,6 +145,7 @@ export function ChoiceStep({
   picks,
   storeName,
   suggestions,
+  confirmingChange,
   error,
   errorId,
   disabled,
@@ -162,6 +163,8 @@ export function ChoiceStep({
   picks: LogoPicks;
   storeName: string;
   suggestions: StudioSuggestions;
+  /** A edição veio do resumo; confirmar volta direto para ele. */
+  confirmingChange: boolean;
   error: string | undefined;
   errorId: string;
   disabled: boolean;
@@ -255,7 +258,7 @@ export function ChoiceStep({
           <Button
             type="button"
             variant="ghost"
-            className="w-auto px-5 text-link"
+            className="w-auto border border-border px-5 text-link"
             disabled={disabled}
             onClick={onBack}
           >
@@ -269,8 +272,12 @@ export function ChoiceStep({
           aria-describedby={error ? errorId : undefined}
           onClick={onNext}
         >
-          {number === total ? 'Ver o resumo' : 'Continuar'}
-          <ArrowRightIcon aria-hidden="true" />
+          {confirmingChange ? 'Confirmar mudança' : number === total ? 'Ver o resumo' : 'Continuar'}
+          {confirmingChange ? (
+            <CheckIcon aria-hidden="true" />
+          ) : (
+            <ArrowRightIcon aria-hidden="true" />
+          )}
         </Button>
       </div>
     </div>

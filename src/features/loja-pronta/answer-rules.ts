@@ -21,11 +21,6 @@ export function missingAnswer(question: OnboardingQuestion, draft: Draft): strin
   }
 }
 
-/** Escolha única: tocar na opção já envia. */
-export function advancesOnTap(question: OnboardingQuestion): boolean {
-  return question.kind === 'single' || question.kind === 'color';
-}
-
 /** Máximo de opções marcadas (1 nas de escolha única). */
 export function maxChoices(question: OnboardingQuestion): number {
   return question.kind === 'multi' ? question.max : 1;
@@ -45,13 +40,15 @@ export function choiceCounter(question: OnboardingQuestion, selected: number): s
 }
 
 /**
- * Linha logo abaixo da pergunta: a ajuda dela ou, na escolha única, o aviso de que tocar já segue
- * (WCAG 3.2.2: avisar antes de mudar de página, e aqui ela lê antes de escolher).
+ * Linha logo abaixo da pergunta: a ajuda dela ou a instrução de selecionar e confirmar no botão.
  */
 export function questionHelp(question: OnboardingQuestion, editing: boolean): string | undefined {
-  if (question.help) return question.help;
-  if (!advancesOnTap(question)) return undefined;
-  return editing ? 'Toque numa opção pra voltar à revisão.' : 'Toque numa opção pra seguir.';
+  const action = editing ? 'Salvar e voltar' : 'Continuar';
+  if (question.help) return `${question.help} Quando terminar, toque em ${action}.`;
+  if (question.kind === 'single' || question.kind === 'color') {
+    return `Escolha uma opção e toque em ${action}.`;
+  }
+  return undefined;
 }
 
 /** Nota fixa abaixo do campo de texto livre: quanto texto ainda cabe. Sem nota: vazio. */

@@ -1,15 +1,14 @@
 'use client';
 
 import { ArrowRightIcon } from 'lucide-react';
-import { useActionState, useEffect, useId, useRef, useState } from 'react';
+import { useActionState, useEffect, useId, useState } from 'react';
 import { nodMascot, upsetMascot } from '@/components/brand/mascot';
 import { Button } from '@/components/ui/button';
 import { FieldError } from '@/components/ui/field';
-import { isCustomColor, type AnswerValue, type OnboardingQuestion } from '@/config/onboarding';
+import { type AnswerValue, type OnboardingQuestion } from '@/config/onboarding';
 import { submitWithoutReset } from '@/lib/forms';
 import { cn } from '@/lib/utils';
 import {
-  advancesOnTap,
   choiceCounter,
   fieldNote,
   maxChoices,
@@ -21,7 +20,6 @@ import { saveAnswer } from '../../server/actions';
 import { StickyAction } from '../sticky-action';
 import { OptionField } from './option-field';
 import { LongTextField, NameField } from './text-fields';
-import { useAutoAdvance } from './use-auto-advance';
 
 type QuestionFormProps = {
   question: OnboardingQuestion;
@@ -44,16 +42,14 @@ function initialDraft(question: OnboardingQuestion, saved: QuestionFormProps['sa
 
 /**
  * Uma pergunta da conversa. Formulário de verdade: sem JavaScript, o botão envia e o servidor
- * confere. Com JavaScript, a escolha única avança sozinha ao tocar (useAutoAdvance), a múltipla
- * trava as outras opções no limite, e nada é enviado com a pergunta incompleta: o aviso aparece
- * na hora. As regras de cada tipo ficam em answer-rules.ts; aqui só se juntam as peças.
+ * confere. A escolha só marca a resposta; o botão confirma. A múltipla trava as outras opções no
+ * limite, e nada é enviado com a pergunta incompleta: o aviso aparece na hora. As regras de cada
+ * tipo ficam em answer-rules.ts; aqui só se juntam as peças.
  */
 export function QuestionForm({ question, saved, editing, titleId, helpId }: QuestionFormProps) {
   const [state, formAction, pending] = useActionState(saveAnswer, undefined);
   const [draft, setDraft] = useState(() => initialDraft(question, saved));
   const [clientError, setClientError] = useState<string>();
-  const formRef = useRef<HTMLFormElement>(null);
-  const autoAdvance = useAutoAdvance(formRef, pending);
   const errorId = useId();
   const noteId = useId();
   const error = clientError ?? state?.error;
@@ -68,12 +64,11 @@ export function QuestionForm({ question, saved, editing, titleId, helpId }: Ques
   }
 
   function validate(event: { preventDefault: () => void }) {
-    // Já salvando (Enter duas vezes, toque e clique juntos): um envio só.
-    if (autoAdvance.isSending()) {
+    // Enquanto salva, não inicia outro envio (por exemplo, com clique duplo no botão).
+    if (pending) {
       event.preventDefault();
       return;
     }
-    autoAdvance.cancel();
     const message = missingAnswer(question, draft);
     if (message) {
       event.preventDefault();
@@ -86,18 +81,18 @@ export function QuestionForm({ question, saved, editing, titleId, helpId }: Ques
     // Salvando: a escolha já foi enviada. Ignorar o toque (o campo controlado volta ao que
     // estava) é melhor que mostrar uma opção marcada que não seria salva.
     if (pending) return;
-    const single = advancesOnTap(question);
+    const single = question.kind === 'single' || question.kind === 'color';
     update({
       selected: single
-        ? [value]
+        ? checked
+          ? [value]
+          : []
         : checked
           ? [...draft.selected, value]
           : draft.selected.filter((item) => item !== value),
     });
     if (!checked) return;
     nodMascot();
-    // A cor escolhida por ela não segue sozinha: ela ainda vai escolher no seletor.
-    if (single && !isCustomColor(value)) autoAdvance.afterChoice();
   }
 
   const note = fieldNote(question, draft);
@@ -107,7 +102,6 @@ export function QuestionForm({ question, saved, editing, titleId, helpId }: Ques
 
   return (
     <form
-      ref={formRef}
       action={formAction}
       onSubmit={(event) => submitWithoutReset(validate, formAction)(event)}
       className="flex flex-col gap-5"

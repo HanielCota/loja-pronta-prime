@@ -8,7 +8,7 @@ export const IDLE: Gaze = { x: 0.9, y: -0.3 };
 const LOOK_AWAY: Gaze = { x: -0.95, y: -0.75 };
 /** Distância (px) a partir da qual o olhar chega no limite. */
 const FULL_REACH_PX = 140;
-/** Campos com texto digitável: neles o olhar segue o cursor de texto. Nos demais, o centro. */
+/** Campos com texto digitável: sem posição do mouse, o olhar segue o cursor de texto. */
 const TEXT_INPUT_TYPES = new Set(['text', 'email', 'password', 'search', 'tel', 'url']);
 
 const measure = typeof document === 'undefined' ? null : document.createElement('canvas');
@@ -61,15 +61,16 @@ export function focusedPasswordField(): HTMLInputElement | undefined {
 }
 
 /**
- * Olhar pelo que está acontecendo na tela, nesta ordem: algo que pediu atenção (ex.: um erro),
- * o campo com foco (o cursor de texto; a senha escondida faz ele virar o rosto), o botão ou link
- * com foco, o mouse e, sem nada disso, a pose original.
+ * O mouse tem prioridade para que o olhar continue acompanhando o movimento durante a digitação.
+ * Sem uma posição conhecida do mouse, olha primeiro algo que pediu atenção (ex.: um erro), depois
+ * o campo ou controle com foco e, sem nada disso, mantém a pose original.
  */
 export function gazeFor(
   face: Element,
   attention: Element | undefined,
   pointer: Point | null,
 ): Gaze {
+  if (pointer) return lookAt(face, pointer);
   if (attention?.isConnected) return lookAt(face, center(attention));
   const active = document.activeElement;
   if (active instanceof HTMLInputElement && TEXT_INPUT_TYPES.has(active.type)) {
@@ -84,5 +85,5 @@ export function gazeFor(
   ) {
     return lookAt(face, center(active));
   }
-  return pointer ? lookAt(face, pointer) : IDLE;
+  return IDLE;
 }

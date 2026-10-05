@@ -106,7 +106,7 @@ export function draftOf(picks: LogoPicks): Draft {
       ? LOGO_PALETTES[picks.colors.id]
       : ownColors(picks.colors.text);
   const strong = picks.background === 'forte';
-  const background = strong ? colors.primary : picks.background === 'claro' ? colors.tint : WHITE;
+  const background = strong ? colors.primary : WHITE;
   const font = !picks.lettering
     ? PLAIN_FONT
     : 'id' in picks.lettering
@@ -125,11 +125,7 @@ export function draftOf(picks: LogoPicks): Draft {
     accent: colors.accent,
     background,
     ink: strong ? WHITE : colors.primary,
-    badge: strong
-      ? mixColor(colors.primary, WHITE, 0.2)
-      : picks.background === 'claro'
-        ? WHITE
-        : colors.tint,
+    badge: strong ? mixColor(colors.primary, WHITE, 0.2) : colors.tint,
     font,
     symbol,
     volume: picks.look === 'realista',
