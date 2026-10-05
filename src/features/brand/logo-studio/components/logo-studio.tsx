@@ -26,7 +26,7 @@ import { ChoiceStep } from './choice-step';
 import { CreatingProgress } from './creating-progress';
 import { DraftFonts, DraftLogo } from './draft-logo';
 import { logoSrc } from './logo-src';
-import { shrinkImage } from './shrink-image';
+import { shrinkImage } from '@/lib/shrink-image';
 import { StepRail } from './step-rail';
 import { StudioBoard } from './studio-board';
 import { StudioResult } from './studio-result';

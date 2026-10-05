@@ -31,6 +31,7 @@ export async function removeStudents(where: string, params: unknown[]) {
   if (!rows.length) return;
   const ids = rows.map(({ id }) => id);
   await Promise.all(ids.map((id) => storage().removeAll(`logos/${id.replace(/[^\w-]/g, '')}/`)));
+  await Promise.all(ids.map((id) => storage().removeAll(`avatars/${id.replace(/[^\w-]/g, '')}/`)));
   await db.query(`delete from verification where value = any($1)`, [ids]);
   await db.query(`delete from "user" where id = any($1)`, [ids]);
 }

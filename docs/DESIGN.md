@@ -67,6 +67,10 @@ o tema escuro e o alto contraste.
   `icon`. Tem `loading` com texto ("Salvando…").
 - `FloatingLabelInput`, `PasswordInput`, `Field`/`FieldError`, `Switch`, `Avatar`, `Spinner`,
   `LiveRegion` (`components/ui`).
+- `Avatar` mostra a foto privada do perfil, com as iniciais de reserva. A foto é ajustada para o
+  círculo no envio. Em Perfil, adicionar, trocar e remover ficam na linha "Foto de perfil", com o
+  mesmo formulário expansível dos outros ajustes; o campo de arquivo tem rótulo e ajuda visíveis
+  e funciona sem JavaScript.
 - Mascote (`components/brand/mascot`), `Logo`, `BrandCard`, `CardHeading`. O mascote cochila
   depois de 10s sem mexer (com "Zzz"), mas só nas telas de acesso: onde ele faz a pergunta
   (`MascotBubble`) ou acompanha a leitura (painel da loja), use `canSleep={false}`.

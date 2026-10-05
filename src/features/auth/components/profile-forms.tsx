@@ -8,32 +8,42 @@ import {
   LockIcon,
   MailIcon,
   MoonIcon,
+  CameraIcon,
   SunMoonIcon,
   UserRoundIcon,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import {
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react';
 import { Button } from '@/components/ui/button';
-import { Field } from '@/components/ui/field';
+import { Field, FieldError } from '@/components/ui/field';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { LiveRegion } from '@/components/ui/live-region';
 import { Switch } from '@/components/ui/switch';
 import { PASSWORD_MIN_LENGTH } from '@/config/auth';
+import { PROFILE_PHOTO_ACCEPT, PROFILE_PHOTO_MAX_BYTES } from '@/config/profile-photo';
 import { listCard } from '@/features/member/list-card';
 import { useTheme } from '@/features/theme/use-theme';
+import { shrinkImage } from '@/lib/shrink-image';
 import { cn } from '@/lib/utils';
 import { rememberEmail } from '../email-storage';
 import { getAuthErrorCode } from '../error-codes';
 import { authHref } from '../links';
 import { changePasswordSchema, NAME_MAX_LENGTH, profileNameSchema } from '../schemas';
-import { changePassword, updateName } from '../server/profile';
+import { changePassword, updateName, updateProfilePhoto } from '../server/profile';
 import { useAuthForm } from '../use-auth-form';
 import { AuthErrorAlert } from './auth-error-alert';
 import { FieldErrorMessage } from './field-error-message';
 import { PasswordField } from './password-field';
 import { PasswordStrengthMeter } from './password-strength-meter';
 
-type Section = 'name' | 'password';
+type Section = 'name' | 'password' | 'photo';
 
 /** Quanto tempo o "Nome salvo" fica na linha, no lugar do "Editar". */
 const SAVED_NOTICE_MS = 4000;
@@ -42,6 +52,7 @@ type ProfileSettingsProps = {
   /** Como ela quer ser chamada (vazio quando ainda não deu pra saber). */
   name: string;
   email: string;
+  image: string | null | undefined;
   /** Como trocar o email (o link do suporte, quando existe). */
   emailHelp: ReactNode;
 };
@@ -51,7 +62,7 @@ type ProfileSettingsProps = {
  * o formulário abre ali mesmo, um por vez. Fechada, a página fica limpa: trocar a senha é raro e
  * não precisa ocupar a tela o tempo todo.
  */
-export function ProfileSettings({ name, email, emailHelp }: ProfileSettingsProps) {
+export function ProfileSettings({ name, email, image, emailHelp }: ProfileSettingsProps) {
   const [open, setOpen] = useState<Section | null>(null);
   const [saved, setSaved] = useState<{ section: Section; message: string } | null>(null);
   const rows = useRef<Partial<Record<Section, HTMLButtonElement | null>>>({});
@@ -83,6 +94,25 @@ export function ProfileSettings({ name, email, emailHelp }: ProfileSettingsProps
         <style>{NO_SCRIPT_CSS}</style>
       </noscript>
       <SettingsGroup id="perfil-conta" title="Sua conta" footer={emailHelp}>
+        <ExpandableRow
+          section="photo"
+          rowRef={(element) => {
+            rows.current.photo = element;
+          }}
+          icon={<CameraIcon />}
+          label="Foto de perfil"
+          value={image ? 'Sua foto' : 'Suas iniciais'}
+          action={image ? 'Trocar' : 'Adicionar'}
+          open={open === 'photo'}
+          saved={saved?.section === 'photo' ? saved.message : null}
+          onToggle={() => toggle('photo')}
+        >
+          <ProfilePhotoForm
+            hasPhoto={Boolean(image)}
+            onCancel={() => close('photo')}
+            onSaved={(removed) => onSaved('photo', removed ? 'Foto removida' : 'Foto salva')}
+          />
+        </ExpandableRow>
         <ExpandableRow
           section="name"
           rowRef={(element) => {
@@ -449,6 +479,104 @@ function useOnSaved(state: { saved?: boolean } | undefined, onSaved: () => void)
 }
 
 type FormProps = { onCancel: () => void; onSaved: () => void };
+
+function ProfilePhotoForm({
+  hasPhoto,
+  onCancel,
+  onSaved,
+}: {
+  hasPhoto: boolean;
+  onCancel: () => void;
+  onSaved: (removed: boolean) => void;
+}) {
+  const [state, action, pending] = useActionState(updateProfilePhoto, undefined);
+  useOnSaved(state, () => onSaved(Boolean(state?.removed)));
+  /** Problema achado no navegador, antes de enviar (some ao escolher outra foto ou enviar). */
+  const [localError, setLocalError] = useState<string>();
+  const [preparing, setPreparing] = useState(false);
+  /** A resposta do servidor que ela já deixou pra trás ao escolher outra foto. */
+  const [dismissed, setDismissed] = useState(state);
+  const error = localError ?? (state === dismissed ? undefined : state?.error);
+  return (
+    <form
+      action={action}
+      onSubmit={(event) => {
+        // Ainda reduzindo a foto: espera, pra não mandar o arquivo grande.
+        if (preparing) event.preventDefault();
+        else setLocalError(undefined);
+      }}
+      className="flex flex-col gap-4"
+    >
+      <Field data-invalid={Boolean(error) || undefined}>
+        <label htmlFor="perfil-foto-arquivo" className="text-body font-semibold">
+          Escolha sua foto
+        </label>
+        <input
+          id="perfil-foto-arquivo"
+          name="photo"
+          type="file"
+          accept={PROFILE_PHOTO_ACCEPT}
+          required
+          aria-invalid={Boolean(error) || undefined}
+          aria-describedby={error ? 'perfil-foto-ajuda perfil-foto-erro' : 'perfil-foto-ajuda'}
+          onChange={async (event) => {
+            // Foto do celular passa fácil de 5 MB (e acima de 6 MB o servidor nem recebe): reduz
+            // aqui mesmo. O servidor corta pra 512px de qualquer jeito. Sem JavaScript, vale o
+            // limite escrito na ajuda.
+            const input = event.currentTarget;
+            const file = input.files?.[0];
+            setLocalError(undefined);
+            setDismissed(state);
+            if (!file || file.size <= PROFILE_PHOTO_MAX_BYTES) return;
+            setPreparing(true);
+            const smaller = await shrinkImage(file);
+            setPreparing(false);
+            if (!smaller) {
+              input.value = '';
+              setLocalError('Não deu pra abrir essa foto. Escolha uma imagem JPG, PNG ou WebP.');
+              return;
+            }
+            const extension = smaller.type === 'image/webp' ? 'webp' : 'jpg';
+            const transfer = new DataTransfer();
+            transfer.items.add(new File([smaller], `foto.${extension}`, { type: smaller.type }));
+            input.files = transfer.files;
+          }}
+          className="min-h-12 w-full min-w-0 rounded-field border border-input bg-card p-3 text-sm text-foreground outline-none file:mr-3 file:min-h-11 file:rounded-full file:border-0 file:bg-primary-soft file:px-4 file:text-sm file:font-semibold file:text-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring forced-colors:file:border forced-colors:file:border-[ButtonText]"
+        />
+        <p id="perfil-foto-ajuda" className="text-sm text-pretty text-muted-foreground">
+          JPG, PNG ou WebP, de até 5 MB. A foto fica redonda, com o centro da imagem.
+        </p>
+        <FieldError id="perfil-foto-erro">{error}</FieldError>
+      </Field>
+      <FormActions onCancel={onCancel}>
+        {hasPhoto ? (
+          <Button
+            type="submit"
+            name="intent"
+            value="remove"
+            formNoValidate
+            variant="ghost"
+            className="sm:w-auto"
+            loading={pending}
+            loadingText="Aguarde…"
+          >
+            Remover foto
+          </Button>
+        ) : null}
+        <Button
+          type="submit"
+          name="intent"
+          value="upload"
+          className="sm:w-auto"
+          loading={pending || preparing}
+          loadingText={preparing ? 'Preparando foto…' : 'Salvando foto…'}
+        >
+          Salvar foto
+        </Button>
+      </FormActions>
+    </form>
+  );
+}
 
 export function ProfileNameForm({ name, onCancel, onSaved }: FormProps & { name: string }) {
   const { state, form, fields, pending, responseKey, formProps } = useAuthForm(
