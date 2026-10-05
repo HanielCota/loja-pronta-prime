@@ -53,7 +53,7 @@ Faça um deploy por vez. Antes de migrar um banco existente, tenha backup e conf
 pendentes: há migrações históricas que removem estruturas antigas do logo. Voltar a imagem não
 desfaz alterações do banco. Não gere novas migrações nem use `db:push` na hospedagem.
 
-## Variáveis: preencher manualmente antes de publicar
+## Variáveis: configurar antes de publicar
 
 Na aplicação, abra **Environment Variables**. Os exemplos de `.env.example` são fictícios e não
 devem ser copiados como credenciais de produção. Não envie secrets pelo Git ou por comentários
@@ -113,6 +113,24 @@ dos logos são lidas de `node_modules/@fontsource`; essas dependências precisam
 imagem. Sharp precisa dos binários Linux instalados pelo Bun: não copie `node_modules` do
 Windows para a VPS.
 
+### Armazenamento S3 novo no Coolify
+
+Para uma instalação nova, o serviço `LojaPrime S3` usa Garage 2.3.0 no mesmo servidor e
+ambiente da aplicação. Ele inicia com `/garage server --single-node --default-bucket`, cria
+o bucket privado `lojaprime` e recebe credenciais novas por variáveis de ambiente. Os valores
+de `GARAGE_DEFAULT_ACCESS_KEY` e `GARAGE_DEFAULT_SECRET_KEY` também configuram
+`S3_ACCESS_KEY_ID` e `S3_SECRET_ACCESS_KEY` da aplicação; nunca ficam no repositório.
+
+Configure `S3_REGION=garage`, `S3_FORCE_PATH_STYLE=true` e `S3_ENDPOINT` com o nome real
+do container Garage na rede interna, na porta `3900`. O serviço precisa conectar à rede Docker
+da aplicação. Não publique portas, domínio S3 nem API administrativa: logos e vídeos chegam
+ao navegador pelas rotas autenticadas da aplicação.
+
+Preserve os dois volumes: dados em `/var/lib/garage/data` e metadados em
+`/var/lib/garage/meta`, além da configuração `/etc/garage.toml`. Uma instalação com apenas
+um servidor não tem redundância; banco e arquivos precisam de backup fora da VPS. Criar o
+armazenamento não importa conteúdo do bucket de desenvolvimento.
+
 ## Domínio, autenticação e proxy
 
 Escolha um domínio público, configure o DNS para a VPS e habilite HTTPS nos **Domains** da
@@ -160,9 +178,6 @@ Depois de preencher e confirmar os valores reais:
    O script `dev:aluna` não funciona em produção e não deve ser usado para provisionar clientes.
 5. Com as credenciais reais, confira envio/download de logo e leitura de vídeo. Gere um logo
    somente quando quiser testar a OpenAI de verdade, pois isso tem custo.
-
-Não há acesso ao MCP/API do Coolify nesta sessão: nenhum recurso remoto foi criado ou alterado,
-e nenhum deploy público ou teste HTTP no domínio de produção foi executado.
 
 ## Limitações encontradas
 
