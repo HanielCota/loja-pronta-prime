@@ -47,6 +47,25 @@ function animationStarts(locator: Locator, timeoutMs: number) {
   );
 }
 
+/** A animação de cada "Z" do cochilo (`none`: parado). */
+function zzzAnimations(page: Page) {
+  return mascot(page)
+    .locator('svg text')
+    .evaluateAll((zs) => zs.map((z) => getComputedStyle(z).animationName));
+}
+
+/** Simula a aba indo pro fundo (ou voltando), como o navegador avisa. */
+function setHidden(page: Page, hidden: boolean) {
+  return page.evaluate((value) => {
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => value });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => (value ? 'hidden' : 'visible'),
+    });
+    document.dispatchEvent(new Event('visibilitychange'));
+  }, hidden);
+}
+
 async function failLogin(page: Page, email: string) {
   await page.getByLabel('Email da compra').fill(email);
   await page.getByLabel('Senha', { exact: true }).fill('senha-errada-mascote');
@@ -149,6 +168,8 @@ test('dorme aos 10 segundos sem interação e acorda abrindo os olhos devagar', 
   await expect(mascot(page)).toHaveAttribute('data-expression', 'sleepy');
   await page.clock.fastForward('00:03');
   await expect(mascot(page)).toHaveAttribute('data-expression', 'asleep');
+  // O "Zzz" anima de verdade ao adormecer (cada Z cresce e sobe), não só aparece.
+  expect(await zzzAnimations(page)).toEqual(['mascot-zzz', 'mascot-zzz', 'mascot-zzz']);
   await page.clock.runFor(3_000);
   await expect.poll(() => leftLid(page)).toBeGreaterThan(0.95);
 
@@ -162,8 +183,37 @@ test('dorme aos 10 segundos sem interação e acorda abrindo os olhos devagar', 
   await expect.poll(() => leftLid(page)).toBeLessThan(0.05);
 });
 
+test('não cochila com a aba escondida (o "Zzz" animaria sem ninguém ver)', async ({ page }) => {
+  await page.clock.install();
+  await page.goto('/entrar');
+  await setHidden(page, true);
+  await page.clock.fastForward('00:15');
+  await expect(mascot(page)).toHaveAttribute('data-expression', 'neutral');
+
+  // Voltou pra aba: o relógio recomeça, e ele adormece (animando) só depois de 10s parado.
+  await setHidden(page, false);
+  await page.clock.fastForward('00:05');
+  await expect(mascot(page)).toHaveAttribute('data-expression', 'neutral');
+  await page.clock.fastForward('00:06');
+  await expect(mascot(page)).toHaveAttribute('data-expression', 'asleep');
+  expect(await zzzAnimations(page)).toEqual(['mascot-zzz', 'mascot-zzz', 'mascot-zzz']);
+});
+
 test('pisca de tempos em tempos', async ({ page }) => {
   expect(await animationStarts(page.locator('[data-lid]').first(), 8_000)).toBe(true);
+});
+
+test('com "Reduzir animações" do perfil: olhar sem mola e "Zzz" parado', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('display-motion', 'reduce'));
+  await page.clock.install();
+  await page.goto('/entrar');
+  await page.getByLabel('Email da compra').focus();
+  await page.getByLabel('Senha', { exact: true }).focus();
+  await expect.poll(() => gazeX(page), { intervals: [50] }).toBe(-0.95);
+  await page.locator('body').click({ position: { x: 5, y: 5 } });
+  await page.clock.fastForward('00:11');
+  await expect(mascot(page)).toHaveAttribute('data-expression', 'asleep');
+  expect(await zzzAnimations(page)).toEqual(['none', 'none', 'none']);
 });
 
 test('com movimento reduzido, muda o olhar sem animar', async ({ page }) => {

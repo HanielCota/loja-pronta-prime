@@ -337,6 +337,14 @@ export function useMascot(
       move(BOUNCE);
     };
 
+    // Aba escondida (outra aba, janela minimizada ou coberta): ninguém está vendo, então ele não
+    // cochila. Sem isso, o "Zzz" animava escondido e ela voltava pra um mascote já dormindo, com
+    // os "Z" parados. Ao voltar, o relógio recomeça (se já dormia antes, continua dormindo).
+    const onVisibilityChange = () => {
+      if (document.hidden) window.clearTimeout(idleTimer);
+      else resetIdleTimer();
+    };
+
     // O campo de senha troca de tipo ao "Mostrar senha": os olhos precisam acompanhar.
     const typeObserver = new MutationObserver(requestUpdate);
     typeObserver.observe(document.body, {
@@ -356,6 +364,7 @@ export function useMascot(
     document.addEventListener('keydown', onKey);
     document.addEventListener('keyup', onKey);
     document.addEventListener('selectionchange', requestUpdate);
+    document.addEventListener('visibilitychange', onVisibilityChange);
     root.addEventListener('pointerdown', onPress);
     root.addEventListener('pointerup', onRelease);
     root.addEventListener('pointerleave', onCancelPress);
@@ -398,6 +407,7 @@ export function useMascot(
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('keyup', onKey);
       document.removeEventListener('selectionchange', requestUpdate);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       root.removeEventListener('pointerdown', onPress);
       root.removeEventListener('pointerup', onRelease);
       root.removeEventListener('pointerleave', onCancelPress);
