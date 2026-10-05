@@ -67,7 +67,9 @@ o tema escuro e o alto contraste.
   `icon`. Tem `loading` com texto ("Salvando…").
 - `FloatingLabelInput`, `PasswordInput`, `Field`/`FieldError`, `Switch`, `Avatar`, `Spinner`,
   `LiveRegion` (`components/ui`).
-- Mascote (`components/brand/mascot`), `Logo`, `BrandCard`, `CardHeading`.
+- Mascote (`components/brand/mascot`), `Logo`, `BrandCard`, `CardHeading`. O mascote cochila
+  depois de 10s sem mexer (com "Zzz"), mas só nas telas de acesso: onde ele faz a pergunta
+  (`MascotBubble`) ou acompanha a leitura (painel da loja), use `canSleep={false}`.
 - Molduras de tela:
   - `PageShell` + `BrandCard`: telas de acesso (entrar, senha), cartão centralizado com o mascote
     no topo.
