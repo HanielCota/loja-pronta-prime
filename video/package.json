@@ -1,0 +1,45 @@
+{
+  "name": "loja-pronta-prime-video",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "studio": "bun run audio && remotion studio",
+    "audio": "bun scripts/make-audio.ts",
+    "voice": "bun scripts/make-voice.ts",
+    "srt": "bun scripts/make-srt.ts",
+    "stills": "bun scripts/stills.ts",
+    "render:16x9": "remotion render Apresentacao16x9 out/loja-pronta-prime-16x9.mp4 --codec=h264 --crf=16 --audio-bitrate=320k",
+    "render:9x16": "remotion render Apresentacao9x16 out/loja-pronta-prime-9x16.mp4 --codec=h264 --crf=16 --audio-bitrate=320k",
+    "render": "bun run audio && bun run render:16x9 && bun run render:9x16 && bun run srt",
+    "docker:build": "docker build -t lpp-video .",
+    "docker": "docker run --rm -v \"$(pwd)/..:/repo\" -v lpp-video-modules:/repo/video/node_modules lpp-video sh -c \"bun install --frozen-lockfile && bun run render\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource/dancing-script": "^5.3.0",
+    "@fontsource/fredoka": "^5.3.0",
+    "@fontsource/montserrat": "^5.3.0",
+    "@fontsource/playfair-display": "^5.3.0",
+    "@fontsource/poppins": "^5.3.0",
+    "@remotion/bundler": "4.0.533",
+    "@remotion/cli": "4.0.533",
+    "@remotion/fonts": "4.0.533",
+    "@remotion/google-fonts": "4.0.533",
+    "@remotion/media": "4.0.533",
+    "@remotion/renderer": "4.0.533",
+    "@remotion/tailwind-v4": "4.0.533",
+    "@remotion/transitions": "4.0.533",
+    "lucide-react": "1.51.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "remotion": "4.0.533",
+    "tailwindcss": "4"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^5"
+  }
+}

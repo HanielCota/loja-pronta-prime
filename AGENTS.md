@@ -57,6 +57,9 @@ bun run format                        # Prettier
 bun run test:e2e                      # Playwright (usa a OpenAI e o bucket de verdade: custa centavos)
 ```
 
+O vídeo de apresentação (Remotion) fica em `video/`, com o próprio `package.json`: ver
+`video/README.md`.
+
 Antes de entregar: typecheck, lint, testes e, em telas, abrir no navegador (celular e computador,
 claro e escuro).
 
