@@ -1,5 +1,6 @@
 import { CheckIcon } from 'lucide-react';
 import { useId, useState, type ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
 import { COLOR_OTHER, isCustomColor, type OnboardingQuestion } from '@/config/onboarding';
 import { cn } from '@/lib/utils';
 import { optionChecked, optionFocus } from './option-styles';
@@ -33,6 +34,7 @@ export function OptionField({
   const isMulti = question.kind === 'multi';
   const layout =
     question.kind === 'color' ? 'color' : question.kind === 'multi' ? question.layout : 'list';
+  const [customColorOpen, setCustomColorOpen] = useState(() => selected.some(isCustomColor));
 
   return (
     <fieldset
@@ -48,7 +50,15 @@ export function OptionField({
     >
       {question.options.map((option) => {
         if (layout === 'color' && option.label === COLOR_OTHER) {
-          return <CustomColor key={option.label} selected={selected} onChoose={onChoose} />;
+          return (
+            <CustomColor
+              key={option.label}
+              selected={selected}
+              open={customColorOpen}
+              onOpenChange={setCustomColorOpen}
+              onChoose={onChoose}
+            />
+          );
         }
         const checked = selected.includes(option.label);
         const input = (
@@ -58,7 +68,18 @@ export function OptionField({
             value={option.label}
             checked={checked}
             disabled={isMulti && !checked && selected.length >= max}
-            onChange={(event) => onChoose(option.label, event.target.checked)}
+            onClick={() => {
+              if (layout !== 'color' || !checked) return;
+              setCustomColorOpen(false);
+              onChoose(option.label, false);
+            }}
+            onChange={(event) => {
+              const nextChecked = event.target.checked;
+              // No rádio, a troca vem da nova opção marcada; ignorar o false preserva essa escolha.
+              if (!isMulti && !nextChecked) return;
+              if (layout === 'color') setCustomColorOpen(false);
+              onChoose(option.label, nextChecked);
+            }}
             className="sr-only"
           />
         );
@@ -165,14 +186,14 @@ function Swatch({ label, color, children }: { label: string; color: string; chil
       className={cn(
         'group/opt flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-[1.5px] border-transparent px-1 py-3 text-body font-medium',
         optionFocus,
-        optionChecked,
+        'forced-colors:has-checked:border-[Highlight]',
       )}
     >
       {children}
       <span
         aria-hidden="true"
         style={{ backgroundColor: color }}
-        className="grid size-12 place-items-center rounded-full text-white ring-1 ring-foreground/10 lg:size-14 forced-colors:border forced-colors:border-[CanvasText]"
+        className="grid size-12 place-items-center rounded-full text-white ring-1 ring-foreground/10 group-has-checked/opt:ring-2 group-has-checked/opt:ring-primary group-has-checked/opt:ring-offset-2 group-has-checked/opt:ring-offset-background lg:size-14 forced-colors:border forced-colors:border-[CanvasText]"
       >
         <CheckIcon className="hidden size-6 group-has-checked/opt:block" />
       </span>
@@ -181,42 +202,45 @@ function Swatch({ label, color, children }: { label: string; color: string; chil
   );
 }
 
-/** A cor que aparece no seletor antes de ela escolher (um lilás, entre as cores da lista). */
-const FIRST_CUSTOM_COLOR = '#7b4fc9';
-
 /**
- * "Outra cor": um círculo com todas as cores. Marcado, aparece o seletor de cor do aparelho; a
- * resposta é a cor escolhida ("#rrggbb"). Não segue sozinho ao tocar: ela ainda vai escolher a
- * cor, e o "Continuar" confirma.
+ * "Outra cor" abre o seletor sem marcar uma cor por conta própria. A resposta só é marcada quando
+ * ela escolhe uma cor; daí o círculo mostra essa cor e o painel oferece uma saída para limpar.
  */
 function CustomColor({
   selected,
+  open,
+  onOpenChange,
   onChoose,
 }: {
   selected: string[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onChoose: (value: string, checked: boolean) => void;
 }) {
   const current = selected.find(isCustomColor);
-  const [color, setColor] = useState(current ?? FIRST_CUSTOM_COLOR);
+  const [color, setColor] = useState(current ?? '#2f7de1');
   const pickerId = useId();
   const checked = Boolean(current);
+
   return (
     <>
-      <label
+      <input type="hidden" name="value" value={current ?? ''} disabled={!checked} />
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={`${pickerId}-panel`}
+        onClick={() => {
+          const nextOpen = !open;
+          const previous = selected[0];
+          if (nextOpen && !checked && previous) onChoose(previous, false);
+          onOpenChange(nextOpen);
+        }}
         className={cn(
-          'group/opt flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-[1.5px] border-transparent px-1 py-3 text-body font-medium',
-          optionFocus,
-          optionChecked,
+          'group/opt flex min-h-11 cursor-pointer flex-col items-center gap-2 rounded-2xl border-[1.5px] px-1 py-3 text-body font-medium transition-[background-color,border-color,transform] duration-100 active:scale-[0.98] motion-reduce:active:scale-100',
+          'border-transparent',
+          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid',
         )}
       >
-        <input
-          type="radio"
-          name="value"
-          value={color}
-          checked={checked}
-          onChange={(event) => onChoose(color, event.target.checked)}
-          className="sr-only"
-        />
         <span
           aria-hidden="true"
           style={{
@@ -224,17 +248,33 @@ function CustomColor({
               ? color
               : 'conic-gradient(#e85d8e, #f5a623, #f8e71c, #3ba776, #2f7de1, #9b7bd4, #e85d8e)',
           }}
-          className="grid size-12 place-items-center rounded-full text-white ring-1 ring-foreground/10 lg:size-14 forced-colors:border forced-colors:border-[CanvasText]"
+          className={cn(
+            'grid size-12 place-items-center rounded-full text-white ring-1 ring-foreground/10 lg:size-14 forced-colors:border forced-colors:border-[CanvasText]',
+            (checked || open) &&
+              'ring-2 ring-primary ring-offset-2 ring-offset-background forced-colors:border-[Highlight]',
+          )}
         >
-          <CheckIcon className="hidden size-6 group-has-checked/opt:block" />
+          {checked ? <CheckIcon className="size-6" /> : null}
         </span>
         {COLOR_OTHER}
-      </label>
-      {checked ? (
-        <p className="col-span-3 flex flex-wrap items-center gap-3 rounded-2xl bg-primary-soft px-4 py-3 text-body">
-          <label htmlFor={pickerId} className="font-semibold">
-            Toque no quadrado pra escolher a sua cor:
-          </label>
+      </button>
+      <div
+        id={`${pickerId}-panel`}
+        hidden={!open}
+        className={cn(
+          open ? 'flex' : 'hidden',
+          'col-span-3 flex-wrap items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-body',
+        )}
+      >
+        <label htmlFor={pickerId} className="font-semibold">
+          Escolha a sua cor:
+        </label>
+        <div className="relative grid h-11 w-[4.5rem] shrink-0 place-items-center rounded-xl border border-input bg-card p-1 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring has-focus-visible:outline-solid">
+          <span
+            aria-hidden="true"
+            style={{ backgroundColor: color }}
+            className="size-full rounded-lg"
+          />
           <input
             id={pickerId}
             type="color"
@@ -243,10 +283,25 @@ function CustomColor({
               setColor(event.target.value);
               onChoose(event.target.value, true);
             }}
-            className="h-12 w-20 cursor-pointer rounded-xl border border-input bg-card p-1"
+            className="absolute inset-0 size-full cursor-pointer opacity-0"
           />
-        </p>
-      ) : null}
+        </div>
+        {current ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="inline"
+            onClick={() => {
+              onChoose(current, false);
+              setColor('#2f7de1');
+              onOpenChange(false);
+            }}
+            className="min-h-11 rounded-full border border-input bg-card px-4 text-foreground"
+          >
+            Limpar cor
+          </Button>
+        ) : null}
+      </div>
     </>
   );
 }

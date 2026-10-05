@@ -34,7 +34,7 @@ import { StudioReview } from './studio-review';
 
 /** O que está no painel ao lado do quadro: uma escolha, o resumo, a criação ou o logo pronto. */
 type Screen =
-  | { kind: 'step'; step: StudioStep }
+  | { kind: 'step'; step: StudioStep; after: 'next' | 'review' }
   | { kind: 'review' }
   | { kind: 'creating' }
   | { kind: 'result' };
@@ -47,7 +47,7 @@ function openingScreen(studio: StudioView, renamed: boolean): Screen {
   if (renamed && isComplete(studio.picks)) return { kind: 'review' };
   if (studio.logos.length && !renamed) return { kind: 'result' };
   const open = firstOpenStep(studio.picks);
-  return open ? { kind: 'step', step: open } : { kind: 'review' };
+  return open ? { kind: 'step', step: open, after: 'next' } : { kind: 'review' };
 }
 
 /**
@@ -87,6 +87,8 @@ export function LogoStudio({
   const router = useRouter();
   const errorId = useId();
   const focusTitle = useRef(false);
+  /** Guarda as escolhas do resumo para descartar uma edição cancelada. */
+  const reviewEditSnapshot = useRef<LogoPicks | null>(null);
   /**
    * Guardando as escolhas: o Next roda uma action por vez, então vai uma de cada vez, e a próxima
    * leva sempre as escolhas mais novas (sem fila de versões velhas atrasando a última).
@@ -184,26 +186,39 @@ export function LogoStudio({
       setError('Toque numa opção pra continuar.');
       return;
     }
+    if (screen.kind === 'step' && screen.after === 'review') {
+      const open = firstOpenStep(picks);
+      if (open) {
+        // Ao trocar para "Com desenho", peça a escolha nova que passou a faltar.
+        go({ kind: 'step', step: open, after: 'review' });
+        return;
+      }
+      // Só salva quando a edição inteira está confirmada; Voltar ainda pode descartá-la.
+      save(picks);
+      reviewEditSnapshot.current = null;
+      go({ kind: 'review' });
+      return;
+    }
     const after = steps[steps.indexOf(step) + 1];
     if (!after) {
       const missing = missingStudioSteps(picks);
       if (missing.length) {
         const labels = missing.map((missingStep) => STUDIO_STEPS[missingStep].label).join(', ');
-        go({ kind: 'step', step: missing[0]! });
+        go({ kind: 'step', step: missing[0]!, after: 'next' });
         setError(`Falta escolher: ${labels}. Complete essas etapas antes de criar o logo.`);
         return;
       }
     }
     // Guarda sem esperar: ela sai e volta de onde parou (criar o logo guarda de novo).
     save(picks);
-    go(after ? { kind: 'step', step: after } : { kind: 'review' });
+    go(after ? { kind: 'step', step: after, after: 'next' } : { kind: 'review' });
   }
 
   function create() {
     const missing = missingStudioSteps(picks);
     if (missing.length) {
       const labels = missing.map((step) => STUDIO_STEPS[step].label).join(', ');
-      go({ kind: 'step', step: missing[0]! });
+      go({ kind: 'step', step: missing[0]!, after: 'next' });
       setError(`Falta escolher: ${labels}. Complete essas etapas antes de criar o logo.`);
       return;
     }
@@ -238,7 +253,9 @@ export function LogoStudio({
       current={current}
       picks={picks}
       disabled={Boolean(busy)}
-      onJump={(step) => go({ kind: 'step', step })}
+      onJump={(step) =>
+        go({ kind: 'step', step, after: screen.kind === 'step' ? screen.after : 'next' })
+      }
     />
   );
 
@@ -305,6 +322,7 @@ export function LogoStudio({
             picks={picks}
             storeName={storeName}
             suggestions={suggestions}
+            confirmingChange={screen.after === 'review'}
             error={error}
             errorId={errorId}
             disabled={Boolean(busy)}
@@ -312,9 +330,20 @@ export function LogoStudio({
             onPeek={setPeek}
             onUpload={upload}
             onBack={
-              steps.indexOf(screen.step) > 0
-                ? () => go({ kind: 'step', step: steps[steps.indexOf(screen.step) - 1]! })
-                : null
+              screen.after === 'review'
+                ? () => {
+                    if (reviewEditSnapshot.current) setPicks(reviewEditSnapshot.current);
+                    reviewEditSnapshot.current = null;
+                    go({ kind: 'review' });
+                  }
+                : steps.indexOf(screen.step) > 0
+                  ? () =>
+                      go({
+                        kind: 'step',
+                        step: steps[steps.indexOf(screen.step) - 1]!,
+                        after: 'next',
+                      })
+                  : null
             }
             onNext={() => goOn(screen.step)}
             rail={rail(screen.step)}
@@ -330,7 +359,11 @@ export function LogoStudio({
             error={error}
             errorId={errorId}
             busy={Boolean(busy)}
-            onChange={(step) => go({ kind: 'step', step })}
+            onBack={() => go({ kind: 'step', step: steps.at(-1)!, after: 'next' })}
+            onChange={(step) => {
+              reviewEditSnapshot.current = picks;
+              go({ kind: 'step', step, after: 'review' });
+            }}
             onCreate={create}
             onShowLogos={() => go({ kind: 'result' })}
             rail={rail(null)}
@@ -362,7 +395,7 @@ export function LogoStudio({
               go(
                 isComplete(picks)
                   ? { kind: 'review' }
-                  : { kind: 'step', step: firstOpenStep(picks)! },
+                  : { kind: 'step', step: firstOpenStep(picks)!, after: 'next' },
               )
             }
           />

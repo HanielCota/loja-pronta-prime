@@ -33,7 +33,7 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
   // (incluindo qual é o recomendado) vem como descrição.
   await expect(page.getByRole('heading', { level: 2, name: 'Loja Pronta' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Entrar, Loja Pronta' })).toHaveAccessibleDescription(
-    /^Recomendado agora\. Sua loja na Shopee, passo a passo Etapa 1 de 3 Conte mais sobre você Suas respostas vão ajudar a sugerir ideias para sua loja/,
+    /^Recomendado agora\. Sua loja na Shopee, passo a passo Etapa 1 de 3 Conte sobre você e sua loja Responda a algumas perguntas sobre suas preferências e seus planos/,
   );
   // A Loja Pronta vem primeiro.
   await expect(page.getByRole('main').getByRole('link').first()).toContainText('Loja Pronta');
@@ -42,11 +42,11 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
     'Etapa 1 de 3',
   );
   await expect(page.getByRole('link', { name: 'Entrar, Loja Pronta' })).toContainText(
-    'Conte mais sobre você',
+    'Conte sobre você e sua loja',
   );
   // E o que acontece agora, no lugar do resumo do produto.
   await expect(page.getByRole('link', { name: 'Entrar, Loja Pronta' })).toContainText(
-    'Suas respostas vão ajudar a sugerir ideias para sua loja',
+    'Responda a algumas perguntas sobre suas preferências e seus planos.',
   );
   await expectNoA11yViolations(page);
 
@@ -122,6 +122,21 @@ test('com um produto só: entra direto nele, sem tela de escolha', async ({ page
   // A área do produto que ela não tem leva de volta (e o início manda pro produto dela).
   await page.goto('/loja-pronta');
   await expect(page).toHaveURL(/\/sll$/);
+});
+
+test('menu da marca mostra a área única e permite voltar à conversa', async ({ page }) => {
+  await signIn(page, studentEmail('marca'), PASSWORD);
+  await expect(page).toHaveURL(/\/loja-pronta$/);
+
+  await page.getByRole('banner').getByRole('link', { name: 'Loja Pronta Prime' }).click();
+  await expect(page).toHaveURL(/\/menu$/);
+  await expect(page.getByRole('heading', { name: /Pra onde vamos/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /^(Entrar|Continuar), Loja Pronta$/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Sistema Loja Lucrativa/ })).toHaveCount(0);
+  await expectNoA11yViolations(page);
+
+  await page.getByRole('link', { name: 'Voltar à etapa 1: Conte sobre você e sua loja' }).click();
+  await expect(page).toHaveURL(/\/loja-pronta\/conversa/);
 });
 
 test('sem nenhum produto: avisa que o acesso ainda não foi liberado', async ({ page }) => {

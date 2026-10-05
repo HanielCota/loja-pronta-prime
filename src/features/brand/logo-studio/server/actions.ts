@@ -22,6 +22,7 @@ import {
   addLogo,
   getLogoStudio,
   releaseGeneration,
+  releaseUpload,
   reserveGeneration,
   reserveUpload,
   saveLogoPicks,
@@ -151,8 +152,50 @@ export async function uploadLogo(form: FormData): Promise<StudioResult> {
       error: 'Você já mandou muitas imagens. Escolha uma das que estão aqui.',
     };
   }
-  const key = await storeLogoImage(userId, png);
+  let key: string;
+  try {
+    key = await storeLogoImage(userId, png);
+  } catch (error) {
+    // A vaga só é consumida quando a imagem chega ao bucket. Registra apenas metadados seguros.
+    try {
+      await releaseUpload(userId);
+    } catch (releaseError) {
+      console.error(
+        '[logo-upload] não consegui devolver a vaga reservada',
+        uploadErrorDetails(releaseError),
+      );
+    }
+    console.error('[logo-upload] falha ao guardar a imagem', uploadErrorDetails(error));
+    return {
+      studio: view(await getLogoStudio(userId)),
+      error: 'Não consegui salvar essa imagem agora. Tente de novo daqui a pouco.',
+    };
+  }
   return { studio: view(await addLogo(userId, { key, uploaded: true })) };
+}
+
+/** Código e status bastam pra investigar sem registrar chaves, caminhos ou dados do logo. */
+function uploadErrorDetails(error: unknown) {
+  if (!error || typeof error !== 'object') return { name: 'UnknownError' };
+  const details = error as {
+    name?: unknown;
+    Code?: unknown;
+    code?: unknown;
+    $metadata?: { httpStatusCode?: unknown };
+  };
+  return {
+    name: typeof details.name === 'string' ? details.name : 'UnknownError',
+    code:
+      typeof details.Code === 'string'
+        ? details.Code
+        : typeof details.code === 'string'
+          ? details.code
+          : undefined,
+    status:
+      typeof details.$metadata?.httpStatusCode === 'number'
+        ? details.$metadata.httpStatusCode
+        : undefined,
+  };
 }
 
 /** A chave de um logo dela pelo id (id inválido: `null`). */

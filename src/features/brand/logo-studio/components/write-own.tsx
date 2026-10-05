@@ -1,15 +1,15 @@
 'use client';
 
-import { MicIcon, PenLineIcon, SquareIcon } from 'lucide-react';
-import { useEffect, useId, useRef, useState } from 'react';
+import { MicIcon, SquareIcon } from 'lucide-react';
+import { useId, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { MAX_OWN_TEXT } from '../model';
 import { useSpeechInput } from './use-speech-input';
 
 /**
- * "Não achei o que queria": um campo pra ela escrever (ou falar) do jeito dela. O que ela
- * escreve vira a escolha da tela e vai como está pra IA desenhar.
+ * Campo sempre visível para ela escrever (ou falar) outra ideia de desenho. O que ela escreve
+ * vira a escolha da tela e vai como está pra IA desenhar.
  */
 export function WriteOwn({
   placeholder,
@@ -23,36 +23,10 @@ export function WriteOwn({
   disabled: boolean;
   onUse: (text: string) => void;
 }) {
-  const [open, setOpen] = useState(Boolean(initial));
   const [text, setText] = useState(initial);
   const speech = useSpeechInput(setText);
   const fieldId = useId();
-  const fieldRef = useRef<HTMLInputElement>(null);
-  /** Ela tocou pra abrir: o cursor vai pro campo (abrindo com o texto de antes, não). */
-  const [opened, setOpened] = useState(false);
-  useEffect(() => {
-    if (opened) fieldRef.current?.focus();
-  }, [opened]);
   const voiceId = useId();
-
-  if (!open) {
-    return (
-      <Button
-        type="button"
-        variant="link"
-        size="inline"
-        className="self-start text-body font-semibold whitespace-normal"
-        disabled={disabled}
-        onClick={() => {
-          setOpen(true);
-          setOpened(true);
-        }}
-      >
-        <PenLineIcon aria-hidden="true" />
-        Não achei o que queria. Escrever do meu jeito
-      </Button>
-    );
-  }
 
   return (
     <form
@@ -69,7 +43,6 @@ export function WriteOwn({
       <div className="flex items-center gap-2">
         <input
           id={fieldId}
-          ref={fieldRef}
           value={text}
           maxLength={MAX_OWN_TEXT}
           autoComplete="off"
@@ -102,8 +75,13 @@ export function WriteOwn({
             )}
           </button>
         ) : null}
-        <Button type="submit" variant="soft" className="w-auto px-5" disabled={disabled}>
-          Usar
+        <Button
+          type="submit"
+          variant="default"
+          className="w-auto px-5"
+          disabled={disabled || !text.trim()}
+        >
+          Usar essa ideia
         </Button>
       </div>
       {/* O que o microfone está fazendo (ou o problema dele), lido pelo leitor de tela. */}

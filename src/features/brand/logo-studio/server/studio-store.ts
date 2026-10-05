@@ -99,6 +99,14 @@ export function reserveUpload(userId: string, max: number): Promise<boolean> {
   return reserve('uploads', userId, max);
 }
 
+/** Devolve a vaga quando a imagem não chegou a ser guardada no bucket. */
+export async function releaseUpload(userId: string) {
+  await db
+    .update(logoStudio)
+    .set({ uploads: sql`greatest(${logoStudio.uploads} - 1, 0)` })
+    .where(eq(logoStudio.userId, userId));
+}
+
 /** Devolve o logo reservado quando a IA não desenhou nada (ela não pagou por nada). */
 export async function releaseGeneration(userId: string) {
   await db

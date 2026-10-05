@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { PERSONAL_TOUCH_MAX } from '@/config/onboarding';
 import {
-  advancesOnTap,
   choiceCounter,
   fieldNote,
   maxChoices,
@@ -29,10 +28,7 @@ describe('missingAnswer', () => {
 });
 
 describe('escolhas', () => {
-  test('só a escolha única avança ao tocar; o máximo vem da pergunta', () => {
-    expect(advancesOnTap(question('vendas'))).toBe(true);
-    expect(advancesOnTap(question('cor'))).toBe(true);
-    expect(advancesOnTap(question('motivacao'))).toBe(false);
+  test('o máximo de escolhas vem da pergunta', () => {
     expect(maxChoices(question('categorias'))).toBe(3);
     expect(maxChoices(question('vendas'))).toBe(1);
   });
@@ -47,11 +43,13 @@ describe('escolhas', () => {
 });
 
 describe('questionHelp, fieldNote e submitButton', () => {
-  test('ajuda: a da pergunta, ou o aviso de que tocar já segue', () => {
-    expect(questionHelp(question('vendas'), false)).toMatch(/pra seguir/);
-    expect(questionHelp(question('vendas'), true)).toMatch(/voltar à revisão/);
-    expect(questionHelp(question('cor'), false)).toMatch(/pra seguir/);
-    expect(questionHelp(question('motivacao'), false)).toBe('Pode marcar mais de uma.');
+  test('ajuda: a da pergunta, ou o aviso de confirmar no botão', () => {
+    expect(questionHelp(question('vendas'), false)).toMatch(/Continuar/);
+    expect(questionHelp(question('vendas'), true)).toMatch(/Salvar e voltar/);
+    expect(questionHelp(question('cor'), false)).toMatch(/Continuar/);
+    expect(questionHelp(question('motivacao'), false)).toBe(
+      'Pode marcar mais de uma. Quando terminar, toque em Continuar.',
+    );
   });
 
   test('nota: quanto texto cabe', () => {

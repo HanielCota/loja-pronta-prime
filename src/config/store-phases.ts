@@ -8,13 +8,12 @@
 export const STORE_PHASES = [
   {
     title: 'Conversa inicial',
-    // Mesmas palavras do painel da Loja Pronta.
-    detail: 'Suas respostas vão ajudar a sugerir ideias para sua loja. Leva cerca de 5 minutos.',
+    detail: 'Responda a algumas perguntas sobre suas preferências e seus planos.',
     needsStudent: true,
   },
   {
     title: 'Sua marca',
-    detail: 'Escolha o nome, o logo e o texto da sua loja.',
+    detail: 'Escolha o nome, personalize o logo e defina a descrição.',
     needsStudent: true,
   },
   // A 3 tem o passo a passo (/loja-pronta/shopee). A 4 tem a tela explicando a conexão, mas o
@@ -55,18 +54,18 @@ export const STORE_PHASES = [
  */
 export const STORE_STAGES = [
   {
-    title: 'Conte mais sobre você',
-    detail: 'Responda algumas perguntas sobre seus planos para a loja.',
+    title: 'Conte sobre você e sua loja',
+    detail: 'Responda a algumas perguntas sobre suas preferências e seus planos.',
     phases: [1],
   },
   {
-    title: 'Crie sua marca',
-    detail: 'Escolha o nome, o logo e o texto da sua loja.',
+    title: 'Crie a marca da sua loja',
+    detail: 'Escolha o nome, personalize o logo e defina a descrição.',
     phases: [2],
   },
   {
     title: 'Prepare sua loja para a Shopee',
-    detail: 'Conta, produtos e publicação da loja.',
+    detail: 'Abra sua conta, escolha os produtos e publique a loja.',
     phases: [3, 4, 5, 6, 7],
   },
 ] as const;

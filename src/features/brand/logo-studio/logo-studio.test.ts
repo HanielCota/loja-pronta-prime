@@ -64,6 +64,10 @@ describe('logoPicksSchema', () => {
     });
   });
 
+  test('converte a escolha antiga Clarinho em Branco sem perder o progresso', () => {
+    expect(logoPicksSchema.parse({ ...ALL_PICKS, background: 'claro' })).toEqual(ALL_PICKS);
+  });
+
   test('escolha que não existe (ou texto vazio) volta a faltar, sem travar as outras', () => {
     const picks = logoPicksSchema.parse({
       kind: 'desenho',

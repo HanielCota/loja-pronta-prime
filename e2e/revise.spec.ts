@@ -7,7 +7,7 @@ test('conversa enviada: ela revê e muda uma resposta, sem voltar de fase', asyn
   await expect(page).toHaveURL(/\/loja-pronta$/);
   // Só a etapa feita tem o link; a marca (a atual) ainda não.
   await expect(page.getByRole('link', { name: /^Ver e editar/ })).toHaveCount(1);
-  await page.getByRole('link', { name: 'Ver e editar: Conte mais sobre você' }).click();
+  await page.getByRole('link', { name: 'Ver e editar: Conte sobre você e sua loja' }).click();
 
   await expect(page).toHaveURL(/\/conversa\/revisao$/);
   await expect(page.getByRole('heading', { name: 'Suas respostas' })).toBeVisible();
@@ -38,7 +38,7 @@ test('marca confirmada: ela muda o nome e volta pro painel na mesma fase', async
   await signIn(page, studentEmail('revisamarca'), PASSWORD, '/loja-pronta');
   await expect(page.getByRole('heading', { level: 1, name: 'Patinhas da Ana' })).toBeVisible();
   await expect(page.getByRole('link', { name: /^Ver e editar/ })).toHaveCount(2);
-  await page.getByRole('link', { name: 'Ver e editar: Crie sua marca' }).click();
+  await page.getByRole('link', { name: 'Ver e editar: Crie a marca da sua loja' }).click();
 
   await expect(page).toHaveURL(/\/marca\/revisao$/);
   await expect(page.getByRole('heading', { name: 'Sua marca' }).first()).toBeVisible();

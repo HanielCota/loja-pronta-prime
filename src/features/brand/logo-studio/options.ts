@@ -192,7 +192,6 @@ export const LOGO_LETTERING_IDS = Object.keys(LOGO_LETTERINGS) as LogoLetteringI
 
 export const LOGO_BACKGROUNDS = {
   branco: { label: 'Branco', description: 'Limpo, combina com tudo' },
-  claro: { label: 'Clarinho', description: 'Um tom suave da cor' },
   forte: { label: 'Na cor forte', description: 'O nome fica em branco' },
 } as const;
 export type LogoBackgroundId = keyof typeof LOGO_BACKGROUNDS;
