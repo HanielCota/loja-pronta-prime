@@ -1,0 +1,1 @@
+ALTER TABLE "learning_lessons" ADD COLUMN "counts_toward_progress" boolean DEFAULT true NOT NULL;

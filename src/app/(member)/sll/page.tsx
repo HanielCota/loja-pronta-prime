@@ -1,6 +1,11 @@
 import type { Metadata } from 'next';
 import { PRODUCTS } from '@/features/products/catalog';
 import { SllArea } from '@/features/products/components/sll-area';
+import {
+  getFirstSllPublishedTrack,
+  getSllPublishedBanners,
+  getSllPublishedTracks,
+} from '@/features/sll/server/catalog';
 import { requireProduct } from '@/features/products/server/access';
 
 export const metadata: Metadata = {
@@ -9,6 +14,25 @@ export const metadata: Metadata = {
 
 /** Área do produto: só pra quem tem o produto (os outros voltam pro início). */
 export default async function Page() {
-  const { session, products, firstVisit } = await requireProduct('sll');
-  return <SllArea user={session.user} firstVisit={firstVisit} hasChoice={products.length > 1} />;
+  const [{ session, products, firstVisit }, welcome, method, courses, banners] = await Promise.all([
+    requireProduct('sll'),
+    getFirstSllPublishedTrack('welcome'),
+    getFirstSllPublishedTrack('method'),
+    getSllPublishedTracks('complementary_course'),
+    getSllPublishedBanners(),
+  ]);
+  const welcomeHref = welcome?.resumeLessonId ? `/sll/aula/${welcome.resumeLessonId}` : null;
+  const methodHref = method ? '/sll/metodo' : null;
+  const coursesHref = courses.length ? '/sll/cursos' : null;
+  return (
+    <SllArea
+      user={session.user}
+      firstVisit={firstVisit}
+      hasChoice={products.length > 1}
+      welcomeHref={welcomeHref}
+      methodHref={methodHref}
+      coursesHref={coursesHref}
+      banners={banners}
+    />
+  );
 }

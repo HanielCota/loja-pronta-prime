@@ -1,0 +1,125 @@
+import { describe, expect, it } from 'bun:test';
+import {
+  isProgressId,
+  parseProgressLocation,
+  parseProgressPosition,
+  resolveSequentialStageAccess,
+  summarizeTrackProgress,
+  type LessonProgressRecord,
+} from './progress-rules';
+
+const lessons = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
+
+describe('progresso da trilha', () => {
+  it('confere os identificadores e o ponto do vídeo', () => {
+    expect(isProgressId('44408d11-f282-4a43-9949-8b3c44b94ee4')).toBe(true);
+    expect(isProgressId('fora')).toBe(false);
+    expect(
+      parseProgressLocation(
+        '44408d11-f282-4a43-9949-8b3c44b94ee4',
+        'e29efc3c-8334-48d6-8b74-ebcb11affab8',
+      ),
+    ).not.toBeNull();
+    expect(parseProgressLocation('fora', 'e29efc3c-8334-48d6-8b74-ebcb11affab8')).toBeNull();
+    expect(parseProgressPosition(73)).toBe(73);
+    expect(parseProgressPosition(-1)).toBeNull();
+    expect(parseProgressPosition(2.5)).toBeNull();
+    expect(parseProgressPosition(86_401)).toBeNull();
+  });
+
+  it('conta aulas concluídas e retoma a aula atual no ponto salvo', () => {
+    const progress: LessonProgressRecord[] = [
+      { lessonId: 'a', completedAt: new Date(), lastPositionSeconds: 0, lastViewedAt: new Date() },
+      { lessonId: 'b', completedAt: null, lastPositionSeconds: 73, lastViewedAt: new Date() },
+    ];
+    expect(summarizeTrackProgress(lessons, progress, 'b')).toMatchObject({
+      completedCount: 1,
+      totalCount: 3,
+      resumeLessonId: 'b',
+      resumePositionSeconds: 73,
+    });
+  });
+
+  it('volta para a primeira aula pendente quando a última foi concluída', () => {
+    const progress: LessonProgressRecord[] = [
+      { lessonId: 'a', completedAt: null, lastPositionSeconds: 18, lastViewedAt: new Date() },
+      { lessonId: 'b', completedAt: new Date(), lastPositionSeconds: 0, lastViewedAt: new Date() },
+    ];
+    expect(summarizeTrackProgress(lessons, progress, 'b')).toMatchObject({
+      completedCount: 1,
+      resumeLessonId: 'a',
+      resumePositionSeconds: 18,
+    });
+  });
+
+  it('começa pela primeira aula incompleta e lida com trilha vazia', () => {
+    expect(summarizeTrackProgress(lessons, [], null).resumeLessonId).toBe('a');
+    expect(summarizeTrackProgress([], [], null)).toMatchObject({
+      completedCount: 0,
+      totalCount: 0,
+      resumeLessonId: null,
+      resumePositionSeconds: 0,
+    });
+  });
+
+  it('ao concluir tudo, mantém a última aula como destino', () => {
+    const progress = lessons.map(({ id }) => ({
+      lessonId: id,
+      completedAt: new Date(),
+      lastPositionSeconds: 0,
+      lastViewedAt: new Date(),
+    }));
+    expect(summarizeTrackProgress(lessons, progress, 'b').resumeLessonId).toBe('c');
+  });
+
+  it('mantém ações opcionais fora da contagem do progresso', () => {
+    const progress: LessonProgressRecord[] = [
+      { lessonId: 'a', completedAt: new Date(), lastPositionSeconds: 0, lastViewedAt: new Date() },
+      { lessonId: 'b', completedAt: null, lastPositionSeconds: 0, lastViewedAt: null },
+      { lessonId: 'c', completedAt: null, lastPositionSeconds: 0, lastViewedAt: null },
+    ];
+    expect(
+      summarizeTrackProgress(
+        [{ id: 'a' }, { id: 'b' }, { id: 'c', countsTowardProgress: false }],
+        progress,
+        null,
+      ),
+    ).toMatchObject({ completedCount: 1, totalCount: 2, resumeLessonId: 'b' });
+  });
+});
+
+describe('desbloqueio das etapas do método', () => {
+  it('libera a etapa seguinte só quando todas as aulas da etapa anterior terminam', () => {
+    expect(
+      resolveSequentialStageAccess([
+        {
+          id: 'etapa-1',
+          title: 'Etapa 1',
+          lessons: [{ completed: true }, { completed: false }],
+        },
+        { id: 'etapa-2', title: 'Etapa 2', lessons: [{ completed: false }] },
+        { id: 'etapa-3', title: 'Etapa 3', lessons: [{ completed: false }] },
+      ]),
+    ).toMatchObject([
+      { isUnlocked: true, isComplete: false, completedCount: 1, totalCount: 2 },
+      {
+        isUnlocked: false,
+        isComplete: false,
+        lockMessage: 'Conclua Etapa 1 para abrir Etapa 2.',
+      },
+      { isUnlocked: false, lockMessage: 'Conclua Etapa 2 para abrir Etapa 3.' },
+    ]);
+  });
+
+  it('não considera uma etapa vazia como concluída', () => {
+    expect(
+      resolveSequentialStageAccess([
+        { id: 'etapa-1', title: 'Etapa 1', lessons: [] },
+        { id: 'etapa-2', title: 'Etapa 2', lessons: [{ completed: false }] },
+      ]),
+    ).toMatchObject([
+      { isUnlocked: true, isComplete: false, totalCount: 0 },
+      { isUnlocked: false, lockMessage: 'Conclua Etapa 1 para abrir Etapa 2.' },
+    ]);
+  });
+});
