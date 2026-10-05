@@ -92,6 +92,20 @@
       "when": 1791071442109,
       "tag": "0012_logo_chat_turns",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791205784654,
+      "tag": "0013_logo_studio",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1791205797607,
+      "tag": "0014_drop_logo_chat",
+      "breakpoints": true
     }
   ]
 }

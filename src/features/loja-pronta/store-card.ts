@@ -3,7 +3,7 @@ import type { ProductStatus } from '@/features/products/chooser';
 import { stageNumber } from './stages';
 
 /** O que falta quando a marca foi confirmada antes do chat do logo (o logo antigo saiu). */
-export const MISSING_LOGO_DETAIL = 'Falta o logo: crie conversando com a nossa assistente.';
+export const MISSING_LOGO_DETAIL = 'Falta o logo: crie no estúdio, escolhendo vendo.';
 
 /**
  * O cartão da Loja Pronta na escolha de área: a etapa (das 3 que ela vê no painel, a partir da

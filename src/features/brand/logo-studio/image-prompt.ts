@@ -2,7 +2,7 @@ import type { LogoBrief } from './model';
 import { LOGO_TWEAKS, type LogoTweak } from './tweaks';
 
 /**
- * O pedido da imagem do logo, montado com o resumo da conversa. Em inglês (o modelo de imagem
+ * O pedido da imagem do logo, montado com o resumo das escolhas dela. Em inglês (o modelo de imagem
  * segue melhor), com o nome da loja entre aspas pra ele escrever certinho, e as regras que fazem
  * um logo funcionar na Shopee: quadrado, centralizado, legível pequeno, sem enfeite de foto.
  */

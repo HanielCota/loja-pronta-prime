@@ -12,7 +12,7 @@ type ConversationLayoutProps = {
   header: StepHeader;
   /** Pra onde o "Voltar" leva. */
   backHref: string;
-  /** Coluna mais larga no computador (o chat do logo, que mostra imagens e conversa). */
+  /** Coluna mais larga no computador (o estúdio do logo, com o rascunho ao lado das escolhas). */
   wide?: boolean;
   children: ReactNode;
 };

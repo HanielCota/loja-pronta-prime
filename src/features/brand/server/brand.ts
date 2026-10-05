@@ -68,8 +68,8 @@ export async function requireBrandStudio(path: string) {
 }
 
 /**
- * Mesma regra, pras Server Actions (que podem ser chamadas direto). `logo`: a action é do chat do
- * logo (a única que vale no acesso "só o logo").
+ * Mesma regra, pras Server Actions (que podem ser chamadas direto). `logo`: a action é do estúdio
+ * do logo (a única que vale no acesso "só o logo").
  */
 export async function requireBrandAction({ logo = false }: { logo?: boolean } = {}) {
   const { session, userId } = await requireProductAction('loja-pronta');

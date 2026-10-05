@@ -3,7 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { BrandReview } from '@/features/brand/components/brand-review';
 import { DescriptionStep } from '@/features/brand/components/description-step';
 import { NameStep } from '@/features/brand/components/name-step';
-import { LogoStep } from '@/features/brand/logo-chat/components/logo-step';
+import { LogoStep } from '@/features/brand/logo-studio/components/logo-step';
 import { requireBrandStudio } from '@/features/brand/server/brand';
 import {
   brandLogoSrc,
@@ -28,11 +28,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return { title: isBrandStep(passo) ? `${brandStepTitle(passo)}, sua marca` : 'Sua marca' };
 }
 
-/** Endereços dos passos antigos do logo (estúdio, modelos, editor): hoje, o chat do logo. */
+/** Endereços dos passos antigos do logo (estúdio, modelos, editor): hoje, o estúdio do logo. */
 const OLD_LOGO_STEPS = new Set(['ajustar', 'modelo', 'editor']);
 
 /**
- * Um passo da marca: nome, o chat do logo, descrição ou revisão. Ela pode voltar aos
+ * Um passo da marca: nome, o estúdio do logo, descrição ou revisão. Ela pode voltar aos
  * passos feitos, mas não pular os que faltam. Com "?editar=1" (vindo da revisão), salvar volta
  * pra revisão.
  */
@@ -75,8 +75,8 @@ export default async function BrandStepPage({ params, searchParams }: PageProps)
         <LogoStep
           userId={student.session.user.id}
           storeName={brand.name}
-          studentName={student.session.user.name}
           answers={answers}
+          oldName={editing ? getParam(query.antigo)?.slice(0, 60) : undefined}
           editing={editing}
         />
       ) : null}

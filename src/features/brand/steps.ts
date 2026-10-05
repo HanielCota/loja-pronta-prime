@@ -32,7 +32,7 @@ export function brandStepPath(step: BrandStep): string {
   return `${BRAND_PATH}/${step}`;
 }
 
-/** Onde ela parou: sem nome, o nome; sem logo, o chat do logo; sem texto, o texto; senão, a revisão. */
+/** Onde ela parou: sem nome, o nome; sem logo, o estúdio do logo; sem texto, o texto; senão, a revisão. */
 export function resumeBrandStep(draft: BrandDraft): BrandStep {
   if (!draft.name) return 'nome';
   if (!draft.logoImage) return 'logo';

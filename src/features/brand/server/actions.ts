@@ -5,7 +5,6 @@ import { redirect } from 'next/navigation';
 import { db } from '@/server/db';
 import { storeBrand, stores } from '@/server/db/schema';
 import { parseBrandDescription, parseBrandName } from '../fields';
-import { appendMessages, getLogoChat } from '../logo-chat/server/chat-store';
 import { BRAND_DONE_PATH, brandStepPath } from '../steps';
 import { requireBrandAction } from './brand';
 import { saveBrand } from './brand-store';
@@ -26,9 +25,9 @@ function after(
 }
 
 /**
- * O nome da loja; depois, o chat do logo. Trocando o nome de uma marca já feita, o texto da loja
+ * O nome da loja; depois, o estúdio do logo. Trocando o nome de uma marca já feita, o texto da loja
  * troca o nome antigo pelo novo, e o logo (que traz o nome escrito na imagem) pede pra ser
- * criado de novo: ela volta pro chat, com um aviso. O logo de agora fica (se ela não tiver mais
+ * criado de novo: ela volta pro estúdio, com um aviso. O logo de agora fica (se ela não tiver mais
  * criações, ainda dá pra seguir com ele).
  */
 export async function saveBrandName(_state: BrandResult, formData: FormData): Promise<BrandResult> {
@@ -44,18 +43,8 @@ export async function saveBrandName(_state: BrandResult, formData: FormData): Pr
       : undefined;
   await saveBrand(userId, { name, ...(description?.ok ? { description: description.value } : {}) });
   if (renamed && brand.logoImage) {
-    // Com o resumo da conversa, o "Criar outro logo" já aparece; sem ele, ela conta de novo.
-    const { brief } = await getLogoChat(userId);
-    const next = brief
-      ? 'toque em "Criar outro logo" pra fazer um com o nome novo.'
-      : 'me conta como você quer o logo novo, ou volte pra seguir com ele.';
-    await appendMessages(userId, [
-      {
-        role: 'assistant',
-        text: `Você mudou o nome pra ${name}. O seu logo ainda mostra ${brand.name}: ${next}`,
-      },
-    ]);
-    redirect(`${brandStepPath('logo')}?editar=1`);
+    // O estúdio abre no resumo, com o aviso: o nome antigo vai no endereço (é só o que ela digitou).
+    redirect(`${brandStepPath('logo')}?editar=1&antigo=${encodeURIComponent(brand.name!)}`);
   }
   after(formData, revising, 'logo');
 }
