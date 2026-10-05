@@ -63,6 +63,7 @@ export function LogoStudio({
   oldName,
   editing,
   titleId,
+  speechAvailable,
 }: {
   initial: StudioView;
   suggestions: StudioSuggestions;
@@ -72,6 +73,8 @@ export function LogoStudio({
   editing: boolean;
   /** O id do título (o foco vai pra ele ao chegar e a cada tela nova). */
   titleId: string;
+  /** Sem transcrição configurada, a tela explica que falar ainda não está disponível. */
+  speechAvailable: boolean;
 }) {
   const [studio, setStudio] = useState(initial);
   const [picks, setPicks] = useState<LogoPicks>(initial.picks);
@@ -347,6 +350,7 @@ export function LogoStudio({
             }
             onNext={() => goOn(screen.step)}
             rail={rail(screen.step)}
+            speechAvailable={speechAvailable}
           />
         ) : null}
         {screen.kind === 'review' ? (

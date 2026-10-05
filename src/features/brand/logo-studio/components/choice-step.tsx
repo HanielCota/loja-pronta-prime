@@ -155,6 +155,7 @@ export function ChoiceStep({
   onBack,
   onNext,
   rail,
+  speechAvailable,
 }: {
   step: StudioStep;
   number: number;
@@ -175,6 +176,7 @@ export function ChoiceStep({
   onBack: (() => void) | null;
   onNext: () => void;
   rail: ReactNode;
+  speechAvailable: boolean;
 }) {
   const choices = choicesOf(step, picks, suggestions);
   const chosen = chosenValue(step, picks, suggestions);
@@ -241,6 +243,7 @@ export function ChoiceStep({
           placeholder={own}
           initial={ownText}
           disabled={disabled}
+          speechAvailable={speechAvailable}
           onUse={(text) => onPick({ [step]: { text } }, `“${text}”`)}
         />
       ) : null}

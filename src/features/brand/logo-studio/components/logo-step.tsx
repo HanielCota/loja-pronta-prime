@@ -1,4 +1,5 @@
 import type { OnboardingAnswers } from '@/config/onboarding';
+import { env } from '@/config/env';
 import { FocusOnArrival } from '@/features/loja-pronta/components/focus-on-arrival';
 import { studioSuggestions } from '../picks';
 import { loadStudioView } from '../server/load';
@@ -36,6 +37,7 @@ export async function LogoStep({
         oldName={oldName}
         editing={editing}
         titleId={TITLE_ID}
+        speechAvailable={Boolean(env.OPENAI_API_KEY)}
       />
     </>
   );

@@ -15,16 +15,19 @@ export function WriteOwn({
   placeholder,
   initial,
   disabled,
+  speechAvailable,
   onUse,
 }: {
   placeholder: string;
   /** O que ela já tinha escrito nesta tela. */
   initial: string;
   disabled: boolean;
+  speechAvailable: boolean;
   onUse: (text: string) => void;
 }) {
   const [text, setText] = useState(initial);
   const speech = useSpeechInput(setText);
+  const speechReady = speechAvailable && speech.supported;
   const speechBusy = speech.status !== 'idle';
   const tooLong = text.length > MAX_OWN_TEXT;
   const fieldId = useId();
@@ -57,7 +60,7 @@ export function WriteOwn({
             speech.status === 'recording' ? 'border-destructive' : 'border-input',
           )}
         />
-        {speech.supported ? (
+        {speechReady ? (
           <button
             type="button"
             aria-pressed={speech.status === 'recording'}
@@ -110,9 +113,11 @@ export function WriteOwn({
               : (speech.error ??
                 (tooLong
                   ? `A fala ficou longa demais. Apague um pedaço até caber em ${MAX_OWN_TEXT} letras.`
-                  : speech.supported
+                  : speechReady
                     ? 'Toque no microfone pra falar. O áudio vai para a OpenAI, que faz a transcrição. A plataforma não guarda a gravação.'
-                    : null))}
+                    : speechAvailable
+                      ? 'Falar em vez de escrever não funciona neste navegador. Você pode escrever no campo.'
+                      : 'Falar em vez de escrever: em breve. Você pode escrever no campo.'))}
       </p>
     </form>
   );

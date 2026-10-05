@@ -250,8 +250,13 @@ test('microfone: grava, para e coloca a transcrição no campo para revisão', a
     Object.defineProperty(window, 'MediaRecorder', { configurable: true, value: TestRecorder });
   });
   let received = false;
+  let failNetwork = false;
   await page.route('**/loja-pronta/marca/transcrever', async (route) => {
     received = route.request().method() === 'POST';
+    if (failNetwork) {
+      await route.abort();
+      return;
+    }
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -292,6 +297,20 @@ test('microfone: grava, para e coloca a transcrição no campo para revisão', a
   });
   await page.getByRole('button', { name: 'Falar em vez de escrever' }).click();
   await expect(page.getByText('Libere o microfone pra este site e tente de novo.')).toBeVisible();
+  // Sem internet, conserva o que ela já escreveu e mostra uma frase simples.
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, 'mediaDevices', {
+      configurable: true,
+      value: { getUserMedia: async () => ({ getTracks: () => [{ stop: () => {} }] }) },
+    });
+  });
+  failNetwork = true;
+  await page.getByRole('button', { name: 'Falar em vez de escrever' }).click();
+  await page.getByRole('button', { name: 'Parar gravação e transcrever' }).click();
+  await expect(page.getByText('Não consegui transcrever. Tente de novo ou escreva.')).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Escreva do seu jeito' })).toHaveValue(
+    'um gatinho com laço',
+  );
   // A rota real recusa arquivo que não é áudio, antes de chamar a OpenAI.
   const invalid = await page.request.post('/loja-pronta/marca/transcrever', {
     headers: { origin: new URL(page.url()).origin },
@@ -300,6 +319,17 @@ test('microfone: grava, para e coloca a transcrição no campo para revisão', a
     },
   });
   expect(invalid.status()).toBe(415);
+  const oversized = await page.request.post('/loja-pronta/marca/transcrever', {
+    headers: { origin: new URL(page.url()).origin },
+    multipart: {
+      audio: {
+        name: 'fala.webm',
+        mimeType: 'audio/webm',
+        buffer: Buffer.alloc(3 * 1024 * 1024 + 25_000),
+      },
+    },
+  });
+  expect(oversized.status()).toBe(413);
 });
 
 test('a marca só abre depois da conversa; o logo é só da dona', async ({ page }) => {

@@ -33,7 +33,7 @@ const envSchema = z.object({
     })
     .transform((value) => value ?? '1')
     .pipe(z.coerce.number<string>().int().min(0).max(5)),
-  /** Imagem do logo (OpenAI). Sem a chave, gerar o logo responde que está fora do ar. */
+  /** Imagem do logo e transcrição (OpenAI). Sem chave, o microfone fica "em breve". */
   OPENAI_API_KEY: z.string().min(1).optional(),
   /** Os arquivos (o logo gerado) ficam sempre no bucket S3, em dev e em produção. */
   S3_ENDPOINT: z.url().optional(),

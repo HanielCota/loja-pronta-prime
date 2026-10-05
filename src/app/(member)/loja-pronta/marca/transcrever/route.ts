@@ -1,10 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { env } from '@/config/env';
 import { requireBrandAction } from '@/features/brand/server/brand';
 import { transcribeSpeech } from '@/features/brand/logo-studio/server/transcribe';
 import { consumeAttempts } from '@/server/auth/rate-limit';
 
 /** Uma fala curta cabe aqui mesmo nos formatos menos compactos do celular. */
 const MAX_AUDIO_BYTES = 3 * 1024 * 1024;
+const MAX_REQUEST_BYTES = MAX_AUDIO_BYTES + 20_000;
 const AUDIO_TYPES = new Set(['audio/webm', 'audio/mp4', 'audio/ogg']);
 const TRANSCRIPTION_ERROR = 'Não consegui transcrever agora. Tente de novo ou escreva.';
 
@@ -18,8 +20,9 @@ export async function POST(request: NextRequest) {
     return failure('Pedido inválido.', 403);
   }
   const { userId } = await requireBrandAction({ logo: true });
+  if (!env.OPENAI_API_KEY) return failure('Falar em vez de escrever: em breve.', 503);
   const length = Number(request.headers.get('content-length'));
-  if (length > MAX_AUDIO_BYTES + 20_000) return failure('A gravação ficou longa demais.', 413);
+  if (length > MAX_REQUEST_BYTES) return failure('A gravação ficou longa demais.', 413);
   const limited = await consumeAttempts([
     ['speechPerUser', userId],
     ['speechPerUserPerDay', userId],
@@ -29,7 +32,31 @@ export async function POST(request: NextRequest) {
 
   let audio: FormDataEntryValue | null;
   try {
-    audio = (await request.formData()).get('audio');
+    // Não confia só no Content-Length: pedidos sem esse cabeçalho também param no limite.
+    const reader = request.body?.getReader();
+    const contentType = request.headers.get('content-type');
+    if (!reader || !contentType?.startsWith('multipart/form-data')) {
+      return failure('Não consegui receber a gravação. Tente de novo.', 400);
+    }
+    const chunks: Uint8Array[] = [];
+    let received = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      received += value.byteLength;
+      if (received > MAX_REQUEST_BYTES) {
+        void reader.cancel().catch(() => {});
+        return failure('A gravação ficou longa demais.', 413);
+      }
+      chunks.push(value);
+    }
+    const body = new Blob([new Uint8Array(Buffer.concat(chunks))]);
+    const bounded = new Request(request.url, {
+      method: 'POST',
+      headers: { 'content-type': contentType },
+      body,
+    });
+    audio = (await bounded.formData()).get('audio');
   } catch {
     return failure('Não consegui receber a gravação. Tente de novo.', 400);
   }

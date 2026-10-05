@@ -12,13 +12,20 @@ const noSubscribe = () => () => {};
 function canRecord(): boolean {
   return (
     typeof navigator.mediaDevices?.getUserMedia === 'function' &&
-    typeof window.MediaRecorder === 'function'
+    typeof window.MediaRecorder === 'function' &&
+    Boolean(recordingMimeType())
   );
 }
 
 /** Um formato que o navegador grava e a transcrição aceita. */
 function recordingMimeType(): string | undefined {
-  for (const mime of ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']) {
+  for (const mime of [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/mp4',
+    'audio/ogg;codecs=opus',
+    'audio/ogg',
+  ]) {
     if (MediaRecorder.isTypeSupported?.(mime)) return mime;
   }
   return undefined;
@@ -90,7 +97,13 @@ export function useSpeechInput(onText: (text: string) => void) {
         current.addEventListener('error', () => {
           recordingFailed = true;
           setError('Não consegui gravar. Tente de novo ou escreva.');
-          if (current.state === 'recording') current.stop();
+          if (current.state === 'recording') {
+            current.stop();
+          } else {
+            releaseMicrophone();
+            active.current = false;
+            setStatus('idle');
+          }
         });
         current.addEventListener('stop', async () => {
           releaseMicrophone();
@@ -100,7 +113,21 @@ export function useSpeechInput(onText: (text: string) => void) {
             setStatus('idle');
             return;
           }
-          const audio = new Blob(chunks, { type: current.mimeType || mimeType || 'audio/webm' });
+          const format = current.mimeType || mimeType;
+          const extension = format?.startsWith('audio/mp4')
+            ? 'mp4'
+            : format?.startsWith('audio/ogg')
+              ? 'ogg'
+              : format?.startsWith('audio/webm')
+                ? 'webm'
+                : null;
+          if (!format || !extension) {
+            setError('Este navegador não conseguiu gravar num formato aceito. Tente outro.');
+            setStatus('idle');
+            active.current = false;
+            return;
+          }
+          const audio = new Blob(chunks, { type: format });
           if (!audio.size) {
             setError('Não ouvi nada. Toque no microfone e fale de novo.');
             setStatus('idle');
@@ -110,9 +137,10 @@ export function useSpeechInput(onText: (text: string) => void) {
           setStatus('transcribing');
           const controller = new AbortController();
           request.current = controller;
+          let visibleError = 'Não consegui transcrever. Tente de novo ou escreva.';
           try {
             const form = new FormData();
-            form.set('audio', audio, audio.type.includes('mp4') ? 'fala.mp4' : 'fala.webm');
+            form.set('audio', audio, `fala.${extension}`);
             const response = await fetch('/loja-pronta/marca/transcrever', {
               method: 'POST',
               body: form,
@@ -120,19 +148,13 @@ export function useSpeechInput(onText: (text: string) => void) {
             });
             const result = (await response.json().catch(() => ({}))) as TranscriptResponse;
             if (!response.ok || !result.text?.trim()) {
-              throw new Error(
-                result.error || 'Não consegui transcrever. Tente de novo ou escreva.',
-              );
+              visibleError = result.error || visibleError;
+              throw new Error('Transcrição sem texto');
             }
-            onTextRef.current([before.trim(), result.text.trim()].filter(Boolean).join(' '));
-          } catch (problem) {
-            if (!controller.signal.aborted) {
-              setError(
-                problem instanceof Error
-                  ? problem.message
-                  : 'Não consegui transcrever. Tente de novo ou escreva.',
-              );
-            }
+            const spoken = result.text.replace(/\s+/g, ' ').trim();
+            onTextRef.current([before.trim(), spoken].filter(Boolean).join(' '));
+          } catch {
+            if (!controller.signal.aborted) setError(visibleError);
           } finally {
             request.current = null;
             active.current = false;
