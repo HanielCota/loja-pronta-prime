@@ -91,7 +91,7 @@ test('quem esqueceu a senha atual vai pra recuperação com o email preenchido',
   await expect(page.getByLabel('Email da compra')).toHaveValue(email);
 });
 
-test('aparência: automático segue o aparelho, e o escuro fixo continua ao recarregar', async ({
+test('aparência: claro por padrão, automático segue o aparelho, escuro fixo continua', async ({
   page,
 }) => {
   await signIn(page, studentEmail('perfilnome'), PASSWORD, '/perfil');
@@ -100,13 +100,14 @@ test('aparência: automático segue o aparelho, e o escuro fixo continua ao reca
   const automatic = page.getByRole('switch', { name: 'Automático' });
   const dark = page.getByRole('switch', { name: 'Tema escuro' });
 
-  // Padrão: automático, seguindo o aparelho (claro aqui).
-  await expect(automatic).toBeChecked();
+  // Padrão: claro e sem automático, mesmo com o aparelho no escuro.
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect(automatic).not.toBeChecked();
   await expect(dark).not.toBeChecked();
   await expect(html).not.toHaveClass(/\bdark\b/);
 
-  // O aparelho escurece: a página acompanha, e a chave do escuro mostra o que está na tela.
-  await page.emulateMedia({ colorScheme: 'dark' });
+  // Ligou o automático: segue o aparelho (escuro aqui), e a chave do escuro mostra o que está na tela.
+  await automatic.click();
   await expect(html).toHaveClass(/\bdark\b/);
   await expect(dark).toBeChecked();
   await expect(automatic).toBeChecked();

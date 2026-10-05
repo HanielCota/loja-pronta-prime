@@ -2,8 +2,8 @@
 /* Animações de entrada e saída (menus e janelas). */
 @import 'tw-animate-css';
 
-/* Tema escuro: pela classe `dark` no html, que o script do tema põe (o aparelho, por padrão, ou
-   a escolha dela no perfil). */
+/* Tema escuro: pela classe `dark` no html, que o script do tema põe quando ela escolhe no perfil
+   (o escuro, ou o automático com o aparelho no escuro). O padrão é o claro. */
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* Telas baixas (celular deitado): layout compacto pra os campos aparecerem sem rolar. */

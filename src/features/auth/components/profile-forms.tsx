@@ -201,8 +201,8 @@ export function ProfileSettings({ name, email, image, emailHelp }: ProfileSettin
 }
 
 /**
- * Aparência, como nos Ajustes do iPhone: "Automático" segue o tema do aparelho (o padrão), e a
- * chave do escuro mostra o tema que está na tela. Mexer nela desliga o automático. Depois, os
+ * Aparência, como nos Ajustes do iPhone: o claro é o padrão; "Automático" segue o tema do
+ * aparelho, e a chave do escuro mostra o tema que está na tela. Mexer nela desliga o automático. Depois, os
  * ajustes de leitura: tamanho do texto, menos animação e mais contraste. Tudo vale na hora, sem
  * salvar.
  */
