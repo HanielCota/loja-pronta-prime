@@ -22,7 +22,7 @@ describe('passos da marca', () => {
 
   test('continua de onde parou e não pula passo', () => {
     expect(resumeBrandStep(EMPTY)).toBe('nome');
-    // Com o nome, o chat do logo; com o logo, o texto; com tudo, a revisão.
+    // Com o nome, o estúdio do logo; com o logo, o texto; com tudo, a revisão.
     expect(resumeBrandStep({ ...EMPTY, name: 'Bella' })).toBe('logo');
     expect(resumeBrandStep({ ...EMPTY, name: 'Bella', logoImage: 'logos/a/b.png' })).toBe(
       'descricao',

@@ -2,11 +2,13 @@
 
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
+import { getVideo } from '@/features/videos/server/videos';
 import { db } from '@/server/db';
 import { storeOnboarding, stores } from '@/server/db/schema';
 import {
   canOpen,
   DONE_PATH,
+  VIDEO_PATH,
   findQuestion,
   isStep,
   nextStep,
@@ -95,5 +97,6 @@ export async function finishConversation(
       });
   });
 
-  redirect(DONE_PATH);
+  // Com o vídeo de orientação enviado, ele vem antes do "pronto".
+  redirect((await getVideo('orientacao')) ? VIDEO_PATH : DONE_PATH);
 }

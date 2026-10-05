@@ -38,7 +38,7 @@ export default async function ConversationDonePage() {
 
   const next: ReactNode[] = [
     'Escolher o nome da loja.',
-    'Criar o seu logo conversando com a nossa assistente.',
+    'Criar o seu logo: você escolhe vendo, e a nossa IA desenha.',
     'Escolher o texto que aparece na loja.',
   ];
 

@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { ConversationLayout } from '@/features/loja-pronta/components/conversation-layout';
+import { BrandIntroStep } from '@/features/loja-pronta/components/brand-intro-step';
 import { QuestionStep } from '@/features/loja-pronta/components/question-step';
 import { ReviewStep } from '@/features/loja-pronta/components/review-step';
 import { WhatsappStep } from '@/features/loja-pronta/components/whatsapp-step';
 import { requireConversation } from '@/features/loja-pronta/server/conversation';
 import {
+  BRAND_INTRO_STEP,
   canOpen,
   findQuestion,
   isStep,
@@ -17,6 +19,7 @@ import {
   stepTitle,
   WHATSAPP_STEP,
 } from '@/features/loja-pronta/steps';
+import { getVideo } from '@/features/videos/server/videos';
 import { getParam, type SearchParams } from '@/lib/search-params';
 
 type PageProps = { params: Promise<{ passo: string }>; searchParams: Promise<SearchParams> };
@@ -27,7 +30,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 /**
- * Uma etapa da conversa inicial: uma pergunta, a revisão das respostas ou o WhatsApp. Ela pode
+ * Uma etapa da conversa inicial: uma pergunta, a passagem pra marca, a revisão das respostas ou o
+ * WhatsApp. Ela pode
  * voltar pras perguntas já respondidas, mas não pular as que faltam. Revendo a conversa já
  * enviada, toda pergunta (e o WhatsApp, pra corrigir o número) volta pra revisão ao salvar.
  */
@@ -53,6 +57,9 @@ export default async function ConversationStepPage({ params, searchParams }: Pag
     >
       {passo === REVIEW_STEP ? (
         <ReviewStep answers={answers} whatsapp={onboarding.whatsapp} revising={revising} />
+      ) : null}
+      {passo === BRAND_INTRO_STEP ? (
+        <BrandIntroStep withVideo={Boolean(await getVideo('orientacao'))} />
       ) : null}
       {passo === WHATSAPP_STEP ? (
         <WhatsappStep saved={onboarding.whatsapp} revising={revising} />

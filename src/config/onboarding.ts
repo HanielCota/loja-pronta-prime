@@ -45,6 +45,17 @@ type QuestionDefinition =
 /** Texto da opção "escolho depois" na pergunta da cor (ela escolhe no estúdio do logo). */
 const COLOR_LATER = 'Escolho depois';
 
+/** A opção da cor escolhida por ela: a resposta guarda a cor ("#rrggbb"), não este texto. */
+export const COLOR_OTHER = 'Outra cor';
+
+/** Uma cor escolhida por ela, no formato que fica guardado ("#rrggbb"). */
+export function isCustomColor(value: unknown): value is string {
+  return typeof value === 'string' && /^#[0-9a-f]{6}$/.test(value);
+}
+
+/** A resposta de quem já tem loja na Shopee: ela pula a criação da conta (fase 3). */
+export const SHOPEE_STORE = 'Tenho loja ativa na Shopee';
+
 export const ONBOARDING_QUESTIONS = [
   {
     id: 'vendas',
@@ -52,7 +63,12 @@ export const ONBOARDING_QUESTIONS = [
     kind: 'single',
     ask: 'Você já vendeu pela internet?',
     label: 'Já vendeu',
-    options: [{ label: 'Nunca vendi' }, { label: 'Já vendi um pouco' }, { label: 'Já vendo hoje' }],
+    options: [
+      { label: SHOPEE_STORE, description: 'Já vendo ou já tenho a loja criada lá' },
+      { label: 'Vendo em outro lugar', description: 'Instagram, WhatsApp ou outro site' },
+      { label: 'Já vendi, mas parei', description: 'Já tive loja, hoje não vendo' },
+      { label: 'Nunca vendi', description: 'É a primeira vez' },
+    ],
   },
   {
     id: 'motivacao',
@@ -78,11 +94,12 @@ export const ONBOARDING_QUESTIONS = [
     ask: 'O que mais preocupa você hoje?',
     label: 'Maior preocupação',
     options: [
-      { label: 'Escolher bons produtos' },
-      { label: 'Criar bons anúncios' },
-      { label: 'Medo de errar' },
-      { label: 'Falta de tempo' },
-      { label: 'Não sei por onde começar' },
+      { label: 'Escolher bons produtos', description: 'Não sei o que vale a pena vender' },
+      { label: 'Configurar a Shopee', description: 'Tenho receio da parte técnica da loja' },
+      { label: 'Criar bons anúncios', description: 'Título, fotos, descrição e preço' },
+      { label: 'Medo de errar', description: 'Quero evitar perder tempo ou dinheiro' },
+      { label: 'Falta de tempo', description: 'Preciso de um caminho mais direto' },
+      { label: 'Não sei por onde começar', description: 'Quero um passo a passo claro' },
     ],
   },
   {
@@ -104,6 +121,8 @@ export const ONBOARDING_QUESTIONS = [
       { label: 'Cozinha' },
       { label: 'Fitness' },
       { label: 'Papelaria' },
+      { label: 'Tecnologia' },
+      { label: 'Outros' },
     ],
   },
   {
@@ -113,10 +132,10 @@ export const ONBOARDING_QUESTIONS = [
     ask: 'Quanto tempo por semana você tem pra loja?',
     label: 'Tempo por semana',
     options: [
-      { label: 'Até 3 horas' },
-      { label: 'De 3 a 7 horas' },
-      { label: 'De 7 a 14 horas' },
-      { label: 'Mais de 14 horas' },
+      { label: 'Até 3 horas', description: 'Um pouquinho por semana' },
+      { label: 'De 3 a 7 horas', description: 'Uma hora por dia, mais ou menos' },
+      { label: 'De 7 a 14 horas', description: 'Umas duas horas por dia' },
+      { label: 'Mais de 14 horas', description: 'Vou me dedicar bastante' },
     ],
   },
   {
@@ -135,9 +154,12 @@ export const ONBOARDING_QUESTIONS = [
     label: 'Estilo',
     options: [
       { label: 'Delicado', description: 'Traços suaves e ar acolhedor' },
+      { label: 'Elegante', description: 'Sofisticado, que não sai de moda' },
       { label: 'Moderno', description: 'Linhas limpas e diretas' },
-      { label: 'Divertido', description: 'Cores e formas alegres' },
-      { label: 'Elegante', description: 'Sofisticado e discreto' },
+      { label: 'Natural', description: 'Orgânico, com cara de natureza' },
+      { label: 'Divertido', description: 'Colorido e animado' },
+      { label: 'Profissional', description: 'Confiável e sério' },
+      { label: 'Artesanal', description: 'Feito à mão, com carinho' },
     ],
   },
   {
@@ -153,6 +175,8 @@ export const ONBOARDING_QUESTIONS = [
       { label: 'Verde', color: '#3ba776' },
       { label: 'Terracota', color: '#c8643b' },
       { label: 'Preto', color: '#1d1d1f' },
+      // "Outra cor": a resposta guarda a cor que ela escolheu ("#rrggbb"), ver isCustomColor.
+      { label: COLOR_OTHER },
       { label: COLOR_LATER },
     ],
   },
@@ -161,17 +185,21 @@ export const ONBOARDING_QUESTIONS = [
     block: 'marca',
     kind: 'multi',
     layout: 'chips',
-    max: 3,
-    ask: 'Como você quer que as clientes se sintam?',
-    help: 'Escolha até 3.',
-    label: 'Sentimento',
+    max: 2,
+    ask: 'Qual sensação a sua marca deve passar?',
+    help: 'Escolha até 2.',
+    label: 'Sensação',
     options: [
-      { label: 'Acolhidas' },
-      { label: 'Seguras' },
-      { label: 'Alegres' },
-      { label: 'Especiais' },
-      { label: 'Bem atendidas' },
-      { label: 'Inspiradas' },
+      { label: 'Confiança' },
+      { label: 'Acolhimento' },
+      { label: 'Sofisticação' },
+      { label: 'Energia' },
+      { label: 'Sustentabilidade' },
+      { label: 'Diversão' },
+      { label: 'Exclusividade' },
+      { label: 'Praticidade' },
+      { label: 'Delicadeza' },
+      { label: 'Inovação' },
     ],
   },
   {

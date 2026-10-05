@@ -1,0 +1,1 @@
+DROP TABLE "logo_chat" CASCADE;

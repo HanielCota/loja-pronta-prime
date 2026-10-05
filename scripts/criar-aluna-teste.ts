@@ -81,7 +81,7 @@ if (products.includes('loja-pronta')) {
         nome: 'Bella Flor',
         estilo: 'Delicado',
         cor: 'Rosa',
-        sentimento: ['Acolhidas', 'Especiais'],
+        sentimento: ['Acolhimento', 'Sofisticação'],
         toque: '',
       },
       whatsapp: '11987654321',

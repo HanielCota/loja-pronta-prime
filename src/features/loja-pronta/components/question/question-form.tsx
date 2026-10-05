@@ -5,7 +5,7 @@ import { useActionState, useEffect, useId, useRef, useState } from 'react';
 import { nodMascot, upsetMascot } from '@/components/brand/mascot';
 import { Button } from '@/components/ui/button';
 import { FieldError } from '@/components/ui/field';
-import type { AnswerValue, OnboardingQuestion } from '@/config/onboarding';
+import { isCustomColor, type AnswerValue, type OnboardingQuestion } from '@/config/onboarding';
 import { submitWithoutReset } from '@/lib/forms';
 import { cn } from '@/lib/utils';
 import {
@@ -96,7 +96,8 @@ export function QuestionForm({ question, saved, editing, titleId, helpId }: Ques
     });
     if (!checked) return;
     nodMascot();
-    if (single) autoAdvance.afterChoice();
+    // A cor escolhida por ela não segue sozinha: ela ainda vai escolher no seletor.
+    if (single && !isCustomColor(value)) autoAdvance.afterChoice();
   }
 
   const note = fieldNote(question, draft);

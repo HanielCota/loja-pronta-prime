@@ -17,12 +17,13 @@ export const STORE_PHASES = [
     detail: 'Escolha o nome, o logo e o texto da sua loja.',
     needsStudent: true,
   },
-  // Fases 3 a 7: as telas ainda não existem. A 3 depende de um passo a passo com as telas da
-  // Shopee; a 4 e a 6, do cadastro de parceiro na Shopee; a 5, da API do fornecedor.
+  // A 3 tem o passo a passo (/loja-pronta/shopee). A 4 tem a tela explicando a conexão, mas o
+  // botão depende do cadastro de parceiro na Shopee (por isso ainda não pede nada dela); a 6
+  // também. A 5 depende da API do fornecedor.
   {
     title: 'Conta na Shopee',
     detail: 'Abra sua conta de vendedora na Shopee, com o nosso passo a passo.',
-    needsStudent: false,
+    needsStudent: true,
   },
   {
     title: 'Conexão com a Shopee',
@@ -55,17 +56,17 @@ export const STORE_PHASES = [
 export const STORE_STAGES = [
   {
     title: 'Você conta sobre você',
-    detail: 'Umas perguntas rápidas',
+    detail: 'Umas perguntas rápidas, uns 5 minutos',
     phases: [1],
   },
   {
     title: 'Você cria a marca',
-    detail: 'Nome, logo e texto',
+    detail: 'Nome, logo e texto, uns 10 minutos',
     phases: [2],
   },
   {
     title: 'A loja vai pra Shopee',
-    detail: 'Conta, produtos e publicação',
+    detail: 'Conta, produtos e publicação, alguns dias',
     phases: [3, 4, 5, 6, 7],
   },
 ] as const;

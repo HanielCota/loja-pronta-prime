@@ -145,10 +145,13 @@ test('Loja Pronta mostra o que fazer agora e o caminho em 3 etapas', async ({ pa
   await expect(stages.nth(1)).toContainText('(feita)');
   await expect(stages.nth(2)).toHaveAttribute('aria-current', 'step');
   await expect(stages.nth(2)).toContainText('Passo 1 de 5: Conta na Shopee');
-  // Fase ainda sem tela: avisa que está chegando, sem pedir nada.
+  // A conta na Shopee: um botão só, pro passo a passo (e2e/shopee.spec.ts).
   await expect(page.getByRole('heading', { name: 'Conta na Shopee' })).toBeVisible();
-  await expect(page.getByText(/Avisamos no WhatsApp quando ela abrir/)).toBeVisible();
-  await expect(page.getByRole('main').getByRole('link')).toHaveCount(0);
+  await expect(page.getByRole('main').getByRole('link')).toHaveCount(1);
+  await expect(page.getByRole('link', { name: 'Abrir minha conta na Shopee' })).toHaveAttribute(
+    'href',
+    '/loja-pronta/shopee',
+  );
   await expectNoA11yViolations(page);
 });
 

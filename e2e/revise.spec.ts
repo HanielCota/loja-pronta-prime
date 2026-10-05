@@ -46,11 +46,9 @@ test('marca confirmada: ela muda o nome e volta pro painel na mesma fase', async
   await page.getByRole('link', { name: 'Mudar o nome' }).click();
   await page.getByLabel('Nome da loja').fill('Patinhas & Cia');
   await page.getByRole('button', { name: 'Continuar com “Patinhas & Cia”' }).click();
-  // O logo traz o nome antigo: o chat avisa; ela pode seguir com ele, voltando pra revisão.
-  await expect(page).toHaveURL(/\/marca\/logo\?editar=1$/);
-  await expect(page.getByRole('log', { name: 'Conversa sobre o seu logo' })).toContainText(
-    'Você mudou o nome pra Patinhas & Cia',
-  );
+  // O logo traz o nome antigo: o estúdio avisa; ela pode seguir com ele, voltando pra revisão.
+  await expect(page).toHaveURL(/\/marca\/logo\?editar=1&antigo=Patinhas/);
+  await expect(page.getByText('Você mudou o nome pra Patinhas & Cia')).toBeVisible();
   await page.getByRole('link', { name: 'Voltar' }).click();
   await expect(page).toHaveURL(/\/marca\/revisao$/);
   await expect(page.getByText('Patinhas & Cia', { exact: true })).toBeVisible();

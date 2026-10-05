@@ -33,8 +33,6 @@ const envSchema = z.object({
     })
     .transform((value) => value ?? '1')
     .pipe(z.coerce.number<string>().int().min(0).max(5)),
-  /** Chat do logo (DeepSeek). Sem a chave, o chat responde que está fora do ar. */
-  DEEPSEEK_API_KEY: z.string().min(1).optional(),
   /** Imagem do logo (OpenAI). Sem a chave, gerar o logo responde que está fora do ar. */
   OPENAI_API_KEY: z.string().min(1).optional(),
   /** Os arquivos (o logo gerado) ficam sempre no bucket S3, em dev e em produção. */

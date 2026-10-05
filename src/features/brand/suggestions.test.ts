@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { BRAND_DESCRIPTION_MAX, BRAND_NAME_MAX } from '@/config/brand';
+import { fontForStyle } from './fonts';
 import { descriptionTones, joinList, nameSuggestions } from './suggestions';
 
 describe('joinList', () => {
@@ -57,7 +58,7 @@ describe('nameSuggestions', () => {
 describe('descriptionTones', () => {
   test('3 jeitos de falar, 3 textos cada, com o nome da loja, as categorias e o sentimento', () => {
     const tones = descriptionTones(
-      { categorias: ['Pets', 'Beleza'], sentimento: ['Acolhidas', 'Especiais'] },
+      { categorias: ['Pets', 'Beleza'], sentimento: ['Acolhimento', 'Sofisticação'] },
       'Pet da Ana',
     );
     expect(tones.map((tone) => tone.label)).toEqual(['Carinhoso', 'Direto', 'Animado']);
@@ -85,5 +86,26 @@ describe('descriptionTones', () => {
     for (const text of descriptionTones({}, 'Loja').flatMap((tone) => tone.texts)) {
       expect(text).not.toMatch(/undefined|de \.|  /);
     }
+  });
+});
+
+describe('fontForStyle', () => {
+  test('cada estilo da conversa puxa uma letra; sem estilo, a simples', () => {
+    expect(fontForStyle('Delicado')).toBe('delicada');
+    expect(fontForStyle('Artesanal')).toBe('delicada');
+    expect(fontForStyle('Profissional')).toBe('simples');
+    expect(fontForStyle(undefined)).toBe('simples');
+    expect(fontForStyle('Inventado')).toBe('simples');
+  });
+});
+
+describe('sensações e "Outros" nos textos', () => {
+  test('a sensação vira como a cliente se sente; "Outros" não aparece na frase', () => {
+    const [carinhoso] = descriptionTones(
+      { categorias: ['Outros'], sentimento: ['Confiança'] },
+      'Loja X',
+    );
+    expect(carinhoso?.texts[0]).toContain('você encontra produtos escolhidos');
+    expect(carinhoso?.texts[0]).toContain('se sentir segura');
   });
 });

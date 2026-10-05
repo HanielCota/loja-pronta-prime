@@ -16,6 +16,7 @@ const CATEGORY_WORDS: Record<string, readonly string[]> = {
   Cozinha: ['Cozinha', 'Sabor', 'Panelinha'],
   Fitness: ['Fit', 'Movimento', 'Energia'],
   Papelaria: ['Papel', 'Rabisco', 'Papelaria'],
+  Tecnologia: ['Tech', 'Conecta', 'Digital'],
 };
 
 const STYLE_WORDS: Record<string, readonly string[]> = {
@@ -23,16 +24,26 @@ const STYLE_WORDS: Record<string, readonly string[]> = {
   Moderno: ['Nova', 'Prime', 'Up'],
   Divertido: ['Alegria', 'Mundo', 'Festa'],
   Elegante: ['Maison', 'Bella', 'Luxo'],
+  Natural: ['Natural', 'Raiz', 'Terra'],
+  Profissional: ['Pro', 'Select', 'Central'],
+  Artesanal: ['Feito à Mão', 'Arte', 'Ateliê'],
 };
 
-/** "Acolhidas" vira "acolhida": a cliente, no singular, na frase da descrição. */
+/**
+ * A sensação da marca como a cliente se sente ("Confiança" vira "segura"), pra frase da
+ * descrição: "pra você se sentir segura".
+ */
 const FEELING: Record<string, string> = {
-  Acolhidas: 'acolhida',
-  Seguras: 'segura',
-  Alegres: 'alegre',
-  Especiais: 'especial',
-  'Bem atendidas': 'bem atendida',
-  Inspiradas: 'inspirada',
+  Confiança: 'segura',
+  Acolhimento: 'acolhida',
+  Sofisticação: 'especial',
+  Energia: 'cheia de energia',
+  Sustentabilidade: 'consciente',
+  Diversão: 'alegre',
+  Exclusividade: 'única',
+  Praticidade: 'tranquila',
+  Delicadeza: 'cuidada',
+  Inovação: 'inspirada',
 };
 
 const list = (value: unknown): string[] =>
@@ -110,6 +121,7 @@ const CATEGORY_PRODUCTS: Record<string, string> = {
   Cozinha: 'cozinha',
   Fitness: 'fitness',
   Papelaria: 'papelaria',
+  Tecnologia: 'tecnologia',
 };
 
 /** Um jeito de falar da descrição, com as versões dele (o "Outro texto" passa de uma pra outra). */
@@ -126,6 +138,8 @@ export type DescriptionTone = {
  */
 export function descriptionTones(answers: OnboardingAnswers, storeName: string): DescriptionTone[] {
   const categories = list(answers.categorias)
+    // "Outros" não diz o que ela vende: na frase, fica só "produtos".
+    .filter((category) => category !== 'Outros')
     .map((category) => CATEGORY_PRODUCTS[category] ?? category.toLowerCase())
     .slice(0, 3);
   const products = categories.length ? `produtos de ${joinList(categories)}` : 'produtos';

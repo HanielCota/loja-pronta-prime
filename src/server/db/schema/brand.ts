@@ -2,15 +2,15 @@ import { sql } from 'drizzle-orm';
 import { check, integer, jsonb, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 // Caminhos relativos: o drizzle-kit lê este arquivo fora do Next, sem os atalhos "@/".
 import { BRAND_DESCRIPTION_MAX, BRAND_NAME_MAX } from '../../../config/brand';
-import type { LogoBrief, LogoChatMessage } from '../../../features/brand/logo-chat/model';
+import type { LogoPicks, StudioLogo } from '../../../features/brand/logo-studio/model';
 import { user } from './auth';
 
 /**
  * Marca da loja (fase 2 da Loja Pronta): o nome, o logo e a descrição que a aluna escolhe,
  * salvos a cada passo (pra ela continuar de onde parou). `logoImage`: a chave, no armazenamento,
- * do logo que ela escolheu no chat (uma imagem PNG). `completedAt` marca a confirmação: a loja
+ * do logo que ela escolheu no estúdio (uma imagem PNG). `completedAt` marca a confirmação: a loja
  * passa pra fase 3. A confirmação pede o logo na tela (finishBrand), não aqui: marcas confirmadas
- * antes do chat ficaram sem imagem e criam o logo de novo ao rever.
+ * antes do chat do logo ficaram sem imagem e criam o logo de novo ao rever.
  */
 export const storeBrand = pgTable(
   'store_brand',
@@ -46,29 +46,29 @@ export const storeBrand = pgTable(
 );
 
 /**
- * A conversa do chat do logo de cada aluna: as mensagens (pra ela sair e voltar de onde parou),
- * o resumo que a conversa montou, quantos logos ela já gerou e quantas respostas da IA já pediu
- * (os limites seguram o custo).
+ * O estúdio do logo de cada aluna: as escolhas (pra ela sair e voltar de onde parou), os logos
+ * criados ou enviados (em ordem), quantos ela já gerou e quantos mandou (os limites seguram o
+ * custo e nunca voltam a zero).
  */
-export const logoChat = pgTable(
-  'logo_chat',
+export const logoStudio = pgTable(
+  'logo_studio',
   {
     userId: text('user_id')
       .primaryKey()
       .references(() => user.id, { onDelete: 'cascade' }),
-    messages: jsonb('messages').$type<LogoChatMessage[]>().notNull().default([]),
-    brief: jsonb('brief').$type<LogoBrief>(),
+    picks: jsonb('picks').$type<LogoPicks>().notNull().default({}),
+    logos: jsonb('logos').$type<StudioLogo[]>().notNull().default([]),
     generations: integer('generations').notNull().default(0),
-    /** Respostas da IA que ela já pediu (nunca volta a zero, nem ao recomeçar: segura o custo). */
-    turns: integer('turns').notNull().default(0),
+    uploads: integer('uploads').notNull().default(0),
     updatedAt: timestamp('updated_at')
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
   },
   (table) => [
-    check('logo_chat_messages_check', sql`jsonb_typeof(${table.messages}) = 'array'`),
-    check('logo_chat_generations_check', sql`${table.generations} >= 0`),
-    check('logo_chat_turns_check', sql`${table.turns} >= 0`),
+    check('logo_studio_picks_check', sql`jsonb_typeof(${table.picks}) = 'object'`),
+    check('logo_studio_logos_check', sql`jsonb_typeof(${table.logos}) = 'array'`),
+    check('logo_studio_generations_check', sql`${table.generations} >= 0`),
+    check('logo_studio_uploads_check', sql`${table.uploads} >= 0`),
   ],
 );

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { ONBOARDING_QUESTIONS, type OnboardingAnswers } from '@/config/onboarding';
 import {
+  BRAND_INTRO_STEP,
   canOpen,
   findQuestion,
   nextStep,
@@ -85,5 +86,30 @@ describe('stepTitle', () => {
     expect(stepTitle('vendas')).toBe('Pergunta 1 de 10');
     expect(stepTitle(REVIEW_STEP)).toBe('Revisão');
     expect(stepTitle(WHATSAPP_STEP)).toBe('Último passo');
+  });
+});
+
+describe('passagem pra marca', () => {
+  test('vem entre as perguntas sobre ela e as da marca, sem contar como pergunta', () => {
+    expect(nextStep('tempo')).toBe(BRAND_INTRO_STEP);
+    expect(nextStep(BRAND_INTRO_STEP)).toBe('nome');
+    expect(previousPath('nome')).toBe(stepPath(BRAND_INTRO_STEP));
+    expect(stepTitle(BRAND_INTRO_STEP)).toBe('Agora, a sua marca');
+    expect(stepHeader(BRAND_INTRO_STEP).filled).toBe(stepHeader('tempo').filled);
+    expect(stepTitle('nome')).toBe(`Pergunta 6 de ${ONBOARDING_QUESTIONS.length}`);
+  });
+
+  test('abre junto com a primeira pergunta da marca (nunca é onde ela "parou")', () => {
+    const {
+      nome: _nome,
+      estilo: _estilo,
+      cor: _cor,
+      sentimento: _s,
+      toque: _t,
+      ...voce
+    } = ALL_ANSWERED;
+    expect(resumeStep(voce)).toBe('nome');
+    expect(canOpen(BRAND_INTRO_STEP, voce)).toBe(true);
+    expect(canOpen(BRAND_INTRO_STEP, {})).toBe(false);
   });
 });
