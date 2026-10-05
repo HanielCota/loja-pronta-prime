@@ -8,7 +8,7 @@ describe('storeChooserCard', () => {
     expect(card.waitsOnStudent).toBe(true);
     expect(card.status).toEqual({
       caption: 'Etapa 1 de 3',
-      label: 'Você conta sobre você',
+      label: 'Conte mais sobre você',
       bar: { step: 1, total: 3 },
       detail: STORE_PHASES[0]?.detail,
     });
