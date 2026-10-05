@@ -4,3 +4,4 @@ export * from './products';
 export * from './stores';
 export * from './onboarding';
 export * from './brand';
+export * from './videos';

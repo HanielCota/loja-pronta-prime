@@ -7,19 +7,35 @@ import {
 import { isAnswered } from './answers';
 
 /**
- * Etapas da conversa, na ordem: as perguntas, a revisão e o WhatsApp. Cada etapa é uma página
+ * Etapas da conversa, na ordem: as perguntas sobre ela, a passagem pra marca, as perguntas da
+ * marca, a revisão e o WhatsApp. Cada etapa é uma página
  * (`/loja-pronta/conversa/<etapa>`), com formulário de verdade: funciona sem JavaScript e,
  * como cada resposta é salva, ela continua de onde parou.
  */
 export const REVIEW_STEP = 'revisao';
 export const WHATSAPP_STEP = 'whatsapp';
+/** A pausa entre as perguntas sobre ela e as da marca ("Agora, a sua marca"). */
+export const BRAND_INTRO_STEP = 'sua-marca';
 export const CONVERSATION_PATH = '/loja-pronta/conversa';
 export const DONE_PATH = `${CONVERSATION_PATH}/pronto`;
+/** O vídeo de orientação, logo depois de enviar a conversa (só quando há vídeo enviado). */
+export const VIDEO_PATH = `${CONVERSATION_PATH}/video`;
 
-export type Step = OnboardingQuestionId | typeof REVIEW_STEP | typeof WHATSAPP_STEP;
+export type Step =
+  OnboardingQuestionId | typeof BRAND_INTRO_STEP | typeof REVIEW_STEP | typeof WHATSAPP_STEP;
 
 const QUESTION_IDS: OnboardingQuestionId[] = ONBOARDING_QUESTIONS.map((question) => question.id);
-export const STEPS: Step[] = [...QUESTION_IDS, REVIEW_STEP, WHATSAPP_STEP];
+/** Onde começam as perguntas da marca (a passagem vem logo antes). */
+const FIRST_BRAND_QUESTION = ONBOARDING_QUESTIONS.findIndex(
+  (question) => question.block === 'marca',
+);
+export const STEPS: Step[] = [
+  ...QUESTION_IDS.slice(0, FIRST_BRAND_QUESTION),
+  BRAND_INTRO_STEP,
+  ...QUESTION_IDS.slice(FIRST_BRAND_QUESTION),
+  REVIEW_STEP,
+  WHATSAPP_STEP,
+];
 
 export function stepPath(step: Step, { editing = false } = {}): string {
   return `${CONVERSATION_PATH}/${step}${editing ? '?editar=1' : ''}`;
@@ -72,6 +88,7 @@ export const QUESTION_COUNT = QUESTION_IDS.length;
 export function stepTitle(step: Step): string {
   if (step === REVIEW_STEP) return 'Revisão';
   if (step === WHATSAPP_STEP) return 'Último passo';
+  if (step === BRAND_INTRO_STEP) return 'Agora, a sua marca';
   return `Pergunta ${questionNumber(step)} de ${QUESTION_COUNT}`;
 }
 
@@ -84,6 +101,10 @@ export function stepHeader(step: Step): StepHeader {
   const total = QUESTION_COUNT;
   if (step === REVIEW_STEP) return { label: 'Revisão das respostas', filled: total, total };
   if (step === WHATSAPP_STEP) return { label: 'Último passo', filled: total, total };
+  // Na passagem, as perguntas sobre ela estão feitas (a barra cheia até elas).
+  if (step === BRAND_INTRO_STEP) {
+    return { label: 'Agora, a sua marca', filled: FIRST_BRAND_QUESTION, total };
+  }
   const number = questionNumber(step);
   const label =
     number === total

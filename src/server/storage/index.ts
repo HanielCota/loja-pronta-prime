@@ -1,4 +1,5 @@
 import {
+  DeleteObjectCommand,
   DeleteObjectsCommand,
   GetObjectCommand,
   ListObjectsV2Command,
@@ -9,16 +10,32 @@ import {
 import { env } from '@/config/env';
 
 /**
- * Onde os arquivos do sistema ficam (hoje, o logo gerado): o bucket S3, em dev e em produção.
- * Quem usa só conhece `put`, `get` e `removeAll` com uma chave ("logos/<aluna>/<id>.png"). As
- * chaves são sempre montadas pelo sistema, nunca vindas da URL.
+ * Onde os arquivos do sistema ficam (os logos e os vídeos): o bucket S3, em dev e em produção.
+ * Quem usa só conhece as operações abaixo, com uma chave ("logos/<aluna>/<id>.png"). As chaves
+ * são sempre montadas pelo sistema, nunca vindas da URL.
  */
 export type Storage = {
   put(key: string, body: Uint8Array, contentType: string): Promise<void>;
   /** O arquivo, ou `null` se não existe. */
   get(key: string): Promise<Uint8Array | null>;
+  /**
+   * Um pedaço do arquivo (ou ele todo), pra tocar vídeo: o navegador pede trechos (`range`, como
+   * o cabeçalho Range: "bytes=0-") pra avançar e voltar. Não existe: `null`.
+   */
+  stream(key: string, range?: string): Promise<StoredStream | null>;
+  /** Apaga um arquivo (não existir não é erro). */
+  remove(key: string): Promise<void>;
   /** Apaga tudo que começa com o prefixo (ex.: "logos/<aluna>/"). */
   removeAll(prefix: string): Promise<void>;
+};
+
+export type StoredStream = {
+  body: ReadableStream;
+  /** Bytes deste pedaço. */
+  length: number;
+  /** "bytes 0-999/5000", quando é um pedaço. */
+  contentRange: string | undefined;
+  contentType: string | undefined;
 };
 
 /** Chave segura: letras, números, "-", "_", "." e "/" (sem "..", sem começar com "/"). */
@@ -52,6 +69,28 @@ function s3Storage(): Storage {
         if (error instanceof NoSuchKey) return null;
         throw error;
       }
+    },
+    async stream(key, range) {
+      assertKey(key);
+      try {
+        const object = await client.send(
+          new GetObjectCommand({ Bucket, Key: key, ...(range ? { Range: range } : {}) }),
+        );
+        if (!object.Body) return null;
+        return {
+          body: object.Body.transformToWebStream(),
+          length: object.ContentLength ?? 0,
+          contentRange: object.ContentRange,
+          contentType: object.ContentType,
+        };
+      } catch (error) {
+        if (error instanceof NoSuchKey) return null;
+        throw error;
+      }
+    },
+    async remove(key) {
+      assertKey(key);
+      await client.send(new DeleteObjectCommand({ Bucket, Key: key }));
     },
     async removeAll(prefix) {
       // Um prefixo vazio ou curto demais apagaria o bucket inteiro: só pastas de verdade.
