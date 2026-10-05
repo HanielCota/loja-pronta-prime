@@ -1,6 +1,6 @@
 /**
  * Reduz a imagem que ela escolheu pra no máximo 1024px antes de mandar (uma foto do celular tem
- * vários MB; o servidor só aceita até 1 MB por envio). WebP mantém o fundo transparente; se ainda
+ * vários MB; o logo aceita até 1 MB por envio e a foto de perfil, até 5 MB). WebP mantém o fundo transparente; se ainda
  * ficar grande, vai em JPEG. Imagem que o navegador não abre: `null`.
  */
 
