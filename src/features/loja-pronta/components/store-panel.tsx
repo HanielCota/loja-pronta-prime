@@ -95,8 +95,8 @@ function heroFor(
   if (phase === 1 && conversation !== 'enviada') {
     return {
       eyebrow: stageEyebrow(1),
-      title: 'Conte sobre você e sua marca',
-      text: 'Umas perguntas rápidas, uma por vez. Com elas, já preparamos ideias de nome, logo e texto pra sua loja.',
+      title: 'Conte sobre você e sua loja',
+      text: 'Responda a algumas perguntas sobre suas preferências e seus planos. Vamos usar suas respostas para sugerir ideias de nome, logo e descrição.',
       action: {
         href: CONVERSATION_PATH,
         label: conversation === 'em-andamento' ? 'Continuar a conversa' : 'Começar a conversa',
@@ -107,7 +107,7 @@ function heroFor(
     return {
       eyebrow: stageEyebrow(2),
       title: 'Crie a marca da sua loja',
-      text: 'Escolha o nome, crie o logo escolhendo vendo (a nossa IA desenha) e defina o texto da loja.',
+      text: 'Escolha o nome, personalize o logo e defina a descrição da loja.',
       action: {
         href: BRAND_PATH,
         label: brand.started ? 'Continuar minha marca' : 'Criar minha marca',
@@ -120,7 +120,7 @@ function heroFor(
     return {
       eyebrow: 'Falta o logo',
       title: 'Crie o logo da sua loja',
-      text: 'Agora o logo é feito no estúdio: você escolhe vendo, e a nossa IA desenha. Leva poucos minutos.',
+      text: 'Personalize o logo no estúdio e veja o resultado antes de salvar.',
       action: { href: brandStepPath('logo'), label: 'Criar meu logo' },
     };
   }
@@ -129,7 +129,7 @@ function heroFor(
     return {
       eyebrow: stageEyebrow(3),
       title: current?.title ?? '',
-      text: 'É lá que a sua loja vai ficar. A conta é sua, no seu nome, e leva uns 15 minutos.',
+      text: 'Crie sua conta de vendedora na Shopee. Ela fica em seu nome.',
       action: { href: SHOPEE_PATH, label: 'Abrir minha conta na Shopee' },
     };
   }

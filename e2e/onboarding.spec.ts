@@ -29,7 +29,7 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
   test.slow();
   await signIn(page, studentEmail('conversa'), PASSWORD, '/loja-pronta');
   await expect(page).toHaveURL(/\/loja-pronta$/);
-  await expect(page.getByRole('heading', { name: 'Conte sobre você e sua marca' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Conte sobre você e sua loja' })).toBeVisible();
   await expectNoA11yViolations(page);
   await page.getByRole('link', { name: 'Começar a conversa' }).click();
 
