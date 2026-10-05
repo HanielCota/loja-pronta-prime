@@ -7,3 +7,6 @@ bun.lock
 next-env.d.ts
 *.tsbuildinfo
 drizzle
+# O Next.js reescreve o tsconfig.json no formato dele (listas abertas) ao rodar: formatar aqui
+# só criaria diferença a cada dev/build.
+tsconfig.json
