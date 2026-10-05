@@ -27,7 +27,8 @@ for (const mobile of [false, true]) {
       await page.getByRole('button', { name: 'Salvar foto', exact: true }).click();
       await expect(row).toContainText('Foto salva');
       await expect(row).toBeFocused();
-      const photo = page.locator('main img[src^="/perfil/foto/"]');
+      // A primeira é a do topo do perfil (a prévia no formulário repete a mesma foto).
+      const photo = page.locator('main img[src^="/perfil/foto/"]').first();
       await expect(photo).toBeVisible();
       const firstUrl = (await photo.getAttribute('src'))!;
       await expect(page.getByRole('button', { name: 'Sua conta' }).locator('img')).toHaveAttribute(
@@ -95,7 +96,7 @@ test('recusa arquivos falsos, grandes ou pequenos, sem substituir a foto', async
   await file.setInputFiles('public/brand/mascote.png');
   await page.getByRole('button', { name: 'Salvar foto', exact: true }).click();
   await expect(row).toContainText('Foto salva');
-  const photo = page.locator('main img[src^="/perfil/foto/"]');
+  const photo = page.locator('main img[src^="/perfil/foto/"]').first();
   const savedUrl = (await photo.getAttribute('src'))!;
   await row.click();
   await file.setInputFiles({
@@ -135,7 +136,7 @@ test('foto do celular acima de 6 MB é reduzida no navegador e salva', async ({ 
     .setInputFiles({ name: 'celular.png', mimeType: 'image/png', buffer });
   await page.getByRole('button', { name: 'Salvar foto', exact: true }).click();
   await expect(row).toContainText('Foto salva', { timeout: 30_000 });
-  await expect(page.locator('main img[src^="/perfil/foto/"]')).toBeVisible();
+  await expect(page.locator('main img[src^="/perfil/foto/"]').first()).toBeVisible();
 });
 
 test('envia e remove a foto sem JavaScript', async ({ browser }) => {
