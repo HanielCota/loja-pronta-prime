@@ -176,11 +176,11 @@ sequenceDiagram
 
 ## 🚀 Getting started
 
-**Prerequisites:** [Bun](https://bun.sh) 1.4+ and [Docker](https://www.docker.com). Node.js is only needed to run the tests.
+**Prerequisites:** [Bun](https://bun.sh) 1.4.2 and [Docker](https://www.docker.com). Use Node.js 24 LTS for build tools and end-to-end tests; the application runs on Bun.
 
 ```bash
 bun install
-cp .env.example .env.local          # then fill in BETTER_AUTH_SECRET
+cp .env.example .env.local          # replace all fictitious values (database, auth and S3)
 bun run db:up                       # Postgres 17 in Docker (port 5433)
 bun run db:migrate                  # create the tables
 bun run dev:aluna ana@test.com my-password-123   # create a test student (add --primeiro-acesso to
@@ -195,11 +195,25 @@ bun run dev                         # http://localhost:3000
 
 Only infrastructure settings live here. Business settings (Hotmart, emails, copy) will be managed from the admin panel.
 
-| Variable             | Description                                                         |
-| -------------------- | ------------------------------------------------------------------- |
-| `DATABASE_URL`       | Postgres connection string                                          |
-| `BETTER_AUTH_SECRET` | Session secret, at least 32 characters                              |
-| `BETTER_AUTH_URL`    | Public URL of the app (`https://lojaprontaprime.com` in production) |
+| Variable               | Description                                                          |
+| ---------------------- | -------------------------------------------------------------------- |
+| `DATABASE_URL`         | Postgres connection string                                           |
+| `BETTER_AUTH_SECRET`   | Session secret, at least 32 characters                               |
+| `BETTER_AUTH_URL`      | Public URL of the app; HTTPS in production                           |
+| `TRUSTED_PROXY_HOPS`   | Actual number of trusted proxies; required in production             |
+| `S3_BUCKET`            | Private bucket for logos, videos and captions                        |
+| `S3_ACCESS_KEY_ID`     | Storage access key                                                   |
+| `S3_SECRET_ACCESS_KEY` | Storage secret key                                                   |
+| `S3_ENDPOINT`          | Optional endpoint for S3-compatible providers                        |
+| `S3_REGION`            | Actual bucket region; defaults to `us-east-1`                        |
+| `S3_FORCE_PATH_STYLE`  | Whether the provider requires path-style access; defaults to `false` |
+| `OPENAI_API_KEY`       | Optional at startup; required for AI logo generation                 |
+| `PORT`                 | Internal server port; defaults to `3000`                             |
+
+There are no `NEXT_PUBLIC_*` variables. Runtime secrets are not needed for `next build`.
+For production settings, migrations, persistence and current feature limitations, follow
+[the Coolify deployment guide](docs/DEPLOY-COOLIFY.md) (Portuguese). Node.js 24 LTS is selected
+for build tools; the application runs on Bun 1.4.2.
 
 <details>
 <summary><b>Generate a secret</b></summary>
@@ -305,6 +319,7 @@ src/
 
 - [Product overview](docs/PRODUTO.md) (Portuguese)
 - [Hotmart integration](docs/INTEGRACAO-HOTMART.md) (Portuguese): vision, decisions and next steps.
+- [Coolify deployment](docs/DEPLOY-COOLIFY.md) (Portuguese): fields, environment variables and validation.
 
 ---
 

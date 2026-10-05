@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "bun --bun next dev",
     "build": "bun --bun next build",
-    "start": "bun --bun next start",
+    "start": "bun --bun next start --hostname 0.0.0.0",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "format": "prettier --write .",
@@ -68,6 +68,9 @@
     "typescript": "^7"
   },
   "packageManager": "bun@1.4.2",
+  "engines": {
+    "node": "24.x"
+  },
   "trustedDependencies": [
     "sharp"
   ]
