@@ -1,4 +1,5 @@
 import { useEffect, useRef, type RefObject } from 'react';
+import { prefersReducedMotion } from '@/lib/reduced-motion';
 import { BOUNCE, JUMP, NOD, PRESS, SHAKE, blinkMotion } from './body-motions';
 import { onMascotSignal, type MascotSignal } from './events';
 import { EXPRESSIONS, toFaceState, type Expression, type FaceState } from './face';
@@ -72,7 +73,8 @@ export function useMascot(
     const face: HTMLElement = faceElement;
     const renderer: FaceRenderer = faceRenderer;
 
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    // O aparelho ou o perfil (Aparência) podem pedir menos movimento; lido a cada vez.
+    const reducedMotion = prefersReducedMotion;
     const reasons = createReasons();
 
     let pointer: { x: number; y: number } | null = null;
@@ -163,7 +165,7 @@ export function useMascot(
       gazeTarget = gazeFor(face, currentAttention(), pointer);
       faceTarget = toFaceState(EXPRESSIONS[current], eyeOverride());
 
-      if (reducedMotion.matches) {
+      if (reducedMotion()) {
         Object.assign(gaze, gazeTarget);
         Object.assign(faceState, faceTarget);
         Object.assign(gazeVelocity, { x: 0, y: 0 });
@@ -200,11 +202,11 @@ export function useMascot(
       keyframes: Keyframe[];
       options: KeyframeAnimationOptions;
     }) {
-      return reducedMotion.matches ? undefined : root.animate(keyframes, options);
+      return reducedMotion() ? undefined : root.animate(keyframes, options);
     }
 
     function blink() {
-      if (!reducedMotion.matches && !document.hidden && current !== 'asleep' && !eyeOverride()) {
+      if (!reducedMotion() && !document.hidden && current !== 'asleep' && !eyeOverride()) {
         const twice = Math.random() < 0.2;
         renderer.lids.forEach((lid, index) => {
           const { keyframes, options } = blinkMotion(

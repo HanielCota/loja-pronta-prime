@@ -3,6 +3,7 @@
 import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme } from 'next-themes';
 import { useEffect, useSyncExternalStore, type ReactNode } from 'react';
 import { parsePreference, THEME_COLORS, THEME_STORAGE_KEY, type Theme } from './theme';
+import { DisplaySync } from './use-display';
 
 /**
  * O tema do site, pelo next-themes: guarda a escolha no aparelho, segue o tema do aparelho no
@@ -20,6 +21,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       disableTransitionOnChange
     >
       <BrowserBarColor />
+      <DisplaySync />
       {children}
     </NextThemesProvider>
   );

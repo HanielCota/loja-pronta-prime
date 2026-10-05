@@ -9,6 +9,25 @@
 /* Telas baixas (celular deitado): layout compacto pra os campos aparecerem sem rolar. */
 @custom-variant short (@media (max-height: 32rem));
 
+/* Menos movimento: o pedido do aparelho ou a chave do perfil (Aparência), que põe
+   data-motion="reduce" no html. Substituem as variantes padrão do Tailwind, então todo
+   `motion-safe:` e `motion-reduce:` do app já obedece às duas. */
+@custom-variant motion-safe {
+  @media (prefers-reduced-motion: no-preference) {
+    &:not(:where([data-motion='reduce'], [data-motion='reduce'] *)) {
+      @slot;
+    }
+  }
+}
+@custom-variant motion-reduce {
+  @media (prefers-reduced-motion: reduce) {
+    @slot;
+  }
+  &:where([data-motion='reduce'], [data-motion='reduce'] *) {
+    @slot;
+  }
+}
+
 /*
  * Tokens de design Loja Pronta Prime, estilo Apple, no formato do shadcn/ui.
  * Use pelas classes geradas: bg-primary, text-muted-foreground, rounded-card, text-body...
@@ -116,6 +135,40 @@
   --card-shadow: 0 0 0 1px rgb(255 255 255 / 0.06), 0 16px 48px -12px rgb(0 0 0 / 0.5);
 }
 
+/*
+ * Mais contraste (chave do perfil, data-contrast="more" no html): textos de apoio quase da cor do
+ * texto principal, bordas e trilhos de 3:1 ou mais, links mais escuros (ou mais claros, no escuro)
+ * e um contorno visível em volta dos cartões. O azul do botão e o verde do caminho não mudam.
+ */
+:root:not(.dark)[data-contrast='more'] {
+  /* 11,3:1 no branco e 10,4:1 no cinza do fundo. */
+  --muted-foreground: #3a3a3d;
+  /* 3,3:1 no branco: a linha entre as respostas e a borda dos cartões aparecem. */
+  --border: #8e8e93;
+  /* 5,1:1 no branco. */
+  --input: #6e6e73;
+  --track: #6e6e73;
+  /* 7,6:1 no branco. */
+  --link: #0052a8;
+  --segment: rgb(0 0 0 / 0.12);
+  --card-shadow: 0 0 0 1px #8e8e93, 0 16px 48px -12px rgb(0 0 0 / 0.12);
+}
+
+:root.dark[data-contrast='more'] {
+  --foreground: #ffffff;
+  /* 10:1 no cartão. */
+  --muted-foreground: #d8d8dc;
+  /* 4,4:1 no cartão. */
+  --border: #8e8e93;
+  /* 8,5:1 no cartão. */
+  --input: #c7c7cc;
+  --track: #aeaeb2;
+  /* 7,8:1 no cartão. */
+  --link: #8cc4ff;
+  --segment-thumb: #5a5a60;
+  --card-shadow: 0 0 0 1px #8e8e93, 0 16px 48px -12px rgb(0 0 0 / 0.5);
+}
+
 @theme inline {
   --font-sans: var(--font-manrope), 'Helvetica Neue', sans-serif;
   --font-mono: var(--font-inconsolata), Consolas, 'Courier New', monospace;
@@ -214,6 +267,25 @@
     html {
       scroll-padding-bottom: 7rem;
     }
+  }
+  /* Tamanho do texto (perfil, Aparência): muda a base do rem, então texto, botões e espaços
+     crescem juntos. Os valores são os de TEXT_SIZES (features/theme/display.ts). */
+  html[data-text='grande'] {
+    font-size: 112.5%;
+  }
+  html[data-text='maior'] {
+    font-size: 125%;
+  }
+  /* Menos movimento pelo perfil: também para o que não usa motion-safe (menus, janelas, rolagem
+     suave). Quase zero, e não zero, pra os eventos de fim de animação continuarem chegando. */
+  [data-motion='reduce'],
+  [data-motion='reduce'] *,
+  [data-motion='reduce'] *::before,
+  [data-motion='reduce'] *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
   body {
     @apply bg-background text-foreground antialiased;

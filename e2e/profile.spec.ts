@@ -134,3 +134,60 @@ test('aparência: automático segue o aparelho, e o escuro fixo continua ao reca
   await expect(html).not.toHaveClass(/\bdark\b/);
   await expect(dark).not.toBeChecked();
 });
+
+test('aparência: tamanho do texto, menos animação e mais contraste valem na hora e ao recarregar', async ({
+  page,
+}) => {
+  await signIn(page, studentEmail('perfilnome'), PASSWORD, '/perfil');
+  await expect(page).toHaveURL(/\/perfil$/);
+  const html = page.locator('html');
+  const fontSize = () => html.evaluate((root) => getComputedStyle(root).fontSize);
+  const muted = () =>
+    html.evaluate((root) => getComputedStyle(root).getPropertyValue('--muted-foreground').trim());
+  const normalMuted = await muted();
+  await expect(page.getByRole('radio', { name: 'Normal' })).toBeChecked();
+  expect(await fontSize()).toBe('16px');
+
+  // Rádios de verdade: pelo teclado, as setas trocam o tamanho, e o app inteiro cresce na hora.
+  await page.getByRole('radio', { name: 'Normal' }).focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByRole('radio', { name: 'Grande' })).toBeChecked();
+  await expect(html).toHaveAttribute('data-text', 'grande');
+  expect(await fontSize()).toBe('18px');
+  await page.keyboard.press('ArrowRight');
+  await expect(html).toHaveAttribute('data-text', 'maior');
+  expect(await fontSize()).toBe('20px');
+
+  const motion = page.getByRole('switch', { name: 'Reduzir animações' });
+  const contrast = page.getByRole('switch', { name: 'Mais contraste' });
+  await motion.click();
+  await expect(html).toHaveAttribute('data-motion', 'reduce');
+  await contrast.click();
+  await expect(html).toHaveAttribute('data-contrast', 'more');
+  expect(await muted()).not.toBe(normalMuted);
+  await expectNoA11yViolations(page);
+  // Mesmo no maior, nada passa da largura da tela.
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+
+  // Recarrega: os atributos já vêm do script do head, antes do React (sem o texto pular).
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  expect(
+    await html.evaluate((root) => [
+      root.getAttribute('data-text'),
+      root.getAttribute('data-motion'),
+      root.getAttribute('data-contrast'),
+    ]),
+  ).toEqual(['maior', 'reduce', 'more']);
+  await expect(page.getByRole('radio', { name: 'Maior' })).toBeChecked();
+  await expect(motion).toBeChecked();
+  await expect(contrast).toBeChecked();
+
+  // Tudo de volta ao padrão: sem atributo nenhum.
+  await page.locator('label', { hasText: 'Normal' }).click();
+  await motion.click();
+  await contrast.click();
+  await expect(html).not.toHaveAttribute('data-text');
+  await expect(html).not.toHaveAttribute('data-motion');
+  await expect(html).not.toHaveAttribute('data-contrast');
+});
