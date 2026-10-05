@@ -1,0 +1,5 @@
+/* Os mesmos tokens, fontes e raios do app: o vídeo mostra o produto como ele é. */
+@import '../../src/app/globals.css';
+
+/* As classes usadas no vídeo (o Tailwind gera só o que encontra aqui). */
+@source './';

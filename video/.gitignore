@@ -1,0 +1,4 @@
+node_modules
+out
+# Gerados por scripts/make-audio.ts (bun run audio): o render e o Studio geram antes de usar.
+public/audio
