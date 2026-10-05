@@ -2,88 +2,160 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
-/**
- * Falar em vez de escrever: o reconhecimento de voz do próprio navegador (Chrome, Edge, Safari),
- * em português. O que ela fala aparece no campo enquanto fala. Sem suporte (Firefox), o botão nem
- * aparece.
- */
-
-type Recognition = EventTarget & {
-  lang: string;
-  interimResults: boolean;
-  continuous: boolean;
-  start(): void;
-  stop(): void;
-  abort(): void;
-};
-type ResultEvent = Event & { results: ArrayLike<ArrayLike<{ transcript: string }>> };
-type RecognitionErrorEvent = Event & { error: string };
-
-type RecognitionConstructor = new () => Recognition;
-
-function recognitionConstructor(): RecognitionConstructor | undefined {
-  const source = window as unknown as {
-    SpeechRecognition?: RecognitionConstructor;
-    webkitSpeechRecognition?: RecognitionConstructor;
-  };
-  return source.SpeechRecognition ?? source.webkitSpeechRecognition;
-}
+/** A fala é curta: reduz a espera e impede que uma gravação esquecida continue aberta. */
+const MAX_RECORDING_MS = 45_000;
+type SpeechStatus = 'idle' | 'starting' | 'recording' | 'transcribing';
+type TranscriptResponse = { text?: string; error?: string };
 
 const noSubscribe = () => () => {};
 
-export function useSpeechInput(onText: (text: string) => void) {
-  const supported = useSyncExternalStore(
-    noSubscribe,
-    () => Boolean(recognitionConstructor()),
-    () => false,
+function canRecord(): boolean {
+  return (
+    typeof navigator.mediaDevices?.getUserMedia === 'function' &&
+    typeof window.MediaRecorder === 'function'
   );
-  const [listening, setListening] = useState(false);
+}
+
+/** Um formato que o navegador grava e a transcrição aceita. */
+function recordingMimeType(): string | undefined {
+  for (const mime of ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']) {
+    if (MediaRecorder.isTypeSupported?.(mime)) return mime;
+  }
+  return undefined;
+}
+
+/** Grava, envia só depois de parar e coloca a transcrição no campo para ela revisar. */
+export function useSpeechInput(onText: (text: string) => void) {
+  const supported = useSyncExternalStore(noSubscribe, canRecord, () => false);
+  const [status, setStatus] = useState<SpeechStatus>('idle');
   const [error, setError] = useState<string>();
-  const recognition = useRef<Recognition | null>(null);
+  const recorder = useRef<MediaRecorder | null>(null);
+  const stream = useRef<MediaStream | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const request = useRef<AbortController | null>(null);
+  const active = useRef(false);
   const onTextRef = useRef(onText);
+
   useEffect(() => {
     onTextRef.current = onText;
   });
 
-  // Saiu da tela ouvindo: desliga o microfone.
-  useEffect(() => () => recognition.current?.abort(), []);
-
-  /** Começa a ouvir. `before`: o que já estava escrito (a fala entra depois). */
-  const start = useCallback((before: string) => {
-    const Constructor = recognitionConstructor();
-    if (!Constructor) return;
-    recognition.current?.abort();
-    const current = new Constructor();
-    current.lang = 'pt-BR';
-    current.interimResults = true;
-    current.continuous = true;
-    const prefix = before.trim() ? `${before.trim()} ` : '';
-    current.addEventListener('result', (event) => {
-      const { results } = event as ResultEvent;
-      const spoken = Array.from(results, (result) => result[0]?.transcript ?? '').join('');
-      onTextRef.current(prefix + spoken.trimStart());
-    });
-    current.addEventListener('error', (event) => {
-      const { error: problem } = event as RecognitionErrorEvent;
-      if (problem === 'not-allowed' || problem === 'service-not-allowed') {
-        setError('Libere o microfone pra este site (no cadeado, ao lado do endereço).');
-      } else if (problem === 'no-speech') {
-        setError('Não ouvi nada. Toque no microfone e fale de novo.');
-      } else if (problem !== 'aborted') {
-        setError('Não consegui ouvir agora. Tente de novo ou escreva.');
-      }
-    });
-    current.addEventListener('end', () => {
-      setListening(false);
-      if (recognition.current === current) recognition.current = null;
-    });
-    recognition.current = current;
-    setError(undefined);
-    setListening(true);
-    current.start();
+  const releaseMicrophone = useCallback(() => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+    stream.current?.getTracks().forEach((track) => track.stop());
+    stream.current = null;
+    recorder.current = null;
   }, []);
 
-  const stop = useCallback(() => recognition.current?.stop(), []);
+  // Saiu da tela: solta o microfone e cancela a requisição; não altera o campo desmontado.
+  useEffect(
+    () => () => {
+      active.current = false;
+      request.current?.abort();
+      if (recorder.current?.state === 'recording') recorder.current.stop();
+      releaseMicrophone();
+    },
+    [releaseMicrophone],
+  );
 
-  return { supported, listening, error, start, stop };
+  const stop = useCallback(() => {
+    if (recorder.current?.state === 'recording') {
+      setStatus('transcribing');
+      recorder.current.stop();
+    }
+  }, []);
+
+  const start = useCallback(
+    async (before: string) => {
+      if (active.current || !canRecord()) return;
+      active.current = true;
+      setError(undefined);
+      setStatus('starting');
+      try {
+        const microphone = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (!active.current) {
+          microphone.getTracks().forEach((track) => track.stop());
+          return;
+        }
+        stream.current = microphone;
+        const mimeType = recordingMimeType();
+        const current = new MediaRecorder(microphone, mimeType ? { mimeType } : undefined);
+        const chunks: BlobPart[] = [];
+        let recordingFailed = false;
+        recorder.current = current;
+        current.addEventListener('dataavailable', (event) => {
+          if (event.data.size) chunks.push(event.data);
+        });
+        current.addEventListener('error', () => {
+          recordingFailed = true;
+          setError('Não consegui gravar. Tente de novo ou escreva.');
+          if (current.state === 'recording') current.stop();
+        });
+        current.addEventListener('stop', async () => {
+          releaseMicrophone();
+          if (!active.current) return;
+          if (recordingFailed) {
+            active.current = false;
+            setStatus('idle');
+            return;
+          }
+          const audio = new Blob(chunks, { type: current.mimeType || mimeType || 'audio/webm' });
+          if (!audio.size) {
+            setError('Não ouvi nada. Toque no microfone e fale de novo.');
+            setStatus('idle');
+            active.current = false;
+            return;
+          }
+          setStatus('transcribing');
+          const controller = new AbortController();
+          request.current = controller;
+          try {
+            const form = new FormData();
+            form.set('audio', audio, audio.type.includes('mp4') ? 'fala.mp4' : 'fala.webm');
+            const response = await fetch('/loja-pronta/marca/transcrever', {
+              method: 'POST',
+              body: form,
+              signal: controller.signal,
+            });
+            const result = (await response.json().catch(() => ({}))) as TranscriptResponse;
+            if (!response.ok || !result.text?.trim()) {
+              throw new Error(
+                result.error || 'Não consegui transcrever. Tente de novo ou escreva.',
+              );
+            }
+            onTextRef.current([before.trim(), result.text.trim()].filter(Boolean).join(' '));
+          } catch (problem) {
+            if (!controller.signal.aborted) {
+              setError(
+                problem instanceof Error
+                  ? problem.message
+                  : 'Não consegui transcrever. Tente de novo ou escreva.',
+              );
+            }
+          } finally {
+            request.current = null;
+            active.current = false;
+            setStatus('idle');
+          }
+        });
+        current.start();
+        setStatus('recording');
+        timer.current = setTimeout(stop, MAX_RECORDING_MS);
+      } catch (problem) {
+        releaseMicrophone();
+        active.current = false;
+        setStatus('idle');
+        setError(
+          problem instanceof DOMException &&
+            (problem.name === 'NotAllowedError' || problem.name === 'PermissionDeniedError')
+            ? 'Libere o microfone pra este site e tente de novo.'
+            : 'Não consegui ligar o microfone. Tente de novo ou escreva.',
+        );
+      }
+    },
+    [releaseMicrophone, stop],
+  );
+
+  return { supported, status, error, start, stop };
 }
