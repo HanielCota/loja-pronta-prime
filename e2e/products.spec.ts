@@ -33,7 +33,7 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
   // (incluindo qual é o recomendado) vem como descrição.
   await expect(page.getByRole('heading', { level: 2, name: 'Loja Pronta' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Entrar, Loja Pronta' })).toHaveAccessibleDescription(
-    /^Recomendado agora\. Sua loja na Shopee, passo a passo Etapa 1 de 3 Você conta sobre você Conte sobre você/,
+    /^Recomendado agora\. Sua loja na Shopee, passo a passo Etapa 1 de 3 Conte mais sobre você Suas respostas vão ajudar a sugerir ideias para sua loja/,
   );
   // A Loja Pronta vem primeiro.
   await expect(page.getByRole('main').getByRole('link').first()).toContainText('Loja Pronta');
@@ -42,11 +42,11 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
     'Etapa 1 de 3',
   );
   await expect(page.getByRole('link', { name: 'Entrar, Loja Pronta' })).toContainText(
-    'Você conta sobre você',
+    'Conte mais sobre você',
   );
   // E o que acontece agora, no lugar do resumo do produto.
   await expect(page.getByRole('link', { name: 'Entrar, Loja Pronta' })).toContainText(
-    'Conte sobre você e sua marca',
+    'Suas respostas vão ajudar a sugerir ideias para sua loja',
   );
   await expectNoA11yViolations(page);
 
