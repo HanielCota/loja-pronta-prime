@@ -1,4 +1,4 @@
-import { ArrowRightIcon } from 'lucide-react';
+import { ArrowRightIcon, ChevronLeftIcon } from 'lucide-react';
 import Link from 'next/link';
 import type { ProductId } from '@/config/products';
 import { cn } from '@/lib/utils';
@@ -23,8 +23,9 @@ type ProductChooserProps = {
 
 /**
  * Escolha da área, pra quem tem os dois produtos: um cartão por produto, lado a lado no
- * computador e um embaixo do outro no celular. Cada cartão é um link de verdade (abre em outra
- * aba, funciona sem JavaScript) com área de toque grande e o mesmo botão cheio.
+ * computador e um embaixo do outro no celular. O cartão é um link de verdade (abre em outra aba,
+ * funciona sem JavaScript); quando tem uma ação secundária, os dois links ficam separados dentro
+ * do mesmo cartão.
  *
  * Leitor de tela: o link se chama pelo que faz ("Entrar, Loja Pronta") e o resto do cartão vira
  * a descrição, pra o nome continuar curto. O nome do produto é um título, pra quem navega
@@ -35,57 +36,87 @@ export function ProductChooser({ products, lastArea, status, primary }: ProductC
   const ordered = ORDER.filter((product) => products.includes(product));
   const main = primary ?? lastArea ?? ordered[0];
   return (
-    <ul className="grid gap-4 sm:grid-cols-2 sm:gap-6">
+    <ul className={cn('grid gap-4', ordered.length > 1 && 'sm:grid-cols-2 sm:gap-6')}>
       {ordered.map((product) => {
         const { title, tag, pitch, path } = PRODUCTS[product];
         const current = status?.[product];
         const isMain = product === main;
         const verb = current?.cta ?? (product === lastArea ? 'Continuar' : 'Entrar');
         const id = `produto-${product}`;
+        const description = [
+          isMain && `${id}-recomendado`,
+          `${id}-tag`,
+          !current?.detail && `${id}-resumo`,
+          current && `${id}-andamento`,
+        ]
+          .filter(Boolean)
+          .join(' ');
+        const content = (
+          <>
+            <span className="flex flex-col gap-1">
+              {isMain ? (
+                <span id={`${id}-recomendado`} className="sr-only">
+                  Recomendado agora.
+                </span>
+              ) : null}
+              <h2 className="text-xl font-semibold tracking-tight text-foreground">{title}</h2>
+              <span id={`${id}-tag`} className="text-body text-muted-foreground">
+                {tag}
+              </span>
+              {current?.detail ? null : (
+                <span id={`${id}-resumo`} className="text-body text-pretty text-muted-foreground">
+                  {pitch}
+                </span>
+              )}
+            </span>
+            {current ? <StatusBlock {...current} id={`${id}-andamento`} /> : null}
+            <span
+              aria-hidden="true"
+              className="mt-auto inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border border-transparent bg-primary text-body font-semibold text-primary-foreground transition-colors duration-100 group-hover/product:bg-primary-hover forced-colors:border-[LinkText]"
+            >
+              {verb}
+              <ArrowRightIcon
+                aria-hidden="true"
+                className="size-5 transition-transform duration-150 ease-out group-hover/product:translate-x-0.5 motion-reduce:transition-none"
+              />
+            </span>
+          </>
+        );
         return (
           <li key={product} className="flex">
-            <Link
-              href={path}
-              aria-label={`${verb}, ${title}`}
-              aria-describedby={[
-                isMain && `${id}-recomendado`,
-                `${id}-tag`,
-                !current?.detail && `${id}-resumo`,
-                current && `${id}-andamento`,
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              className="group/product flex flex-1 flex-col gap-5 rounded-card border border-transparent bg-card p-6 text-left shadow-card transition-transform duration-100 ease-out outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid active:scale-[0.98] motion-reduce:active:scale-100 sm:p-8 forced-colors:border-[CanvasText]"
-            >
-              <span className="flex flex-col gap-1">
-                {isMain ? (
-                  <span id={`${id}-recomendado`} className="sr-only">
-                    Recomendado agora.
+            {current?.secondaryAction ? (
+              <div className="flex flex-1 flex-col rounded-card border border-transparent bg-card p-6 text-left shadow-card sm:p-8 forced-colors:border-[CanvasText]">
+                <Link
+                  href={path}
+                  aria-label={`${verb}, ${title}`}
+                  aria-describedby={description}
+                  className="group/product flex flex-1 flex-col gap-5 rounded-2xl outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid active:scale-[0.98] motion-reduce:active:scale-100"
+                >
+                  {content}
+                </Link>
+                <Link
+                  href={current.secondaryAction.href}
+                  className="group/back -mx-2 mt-2 inline-flex min-h-11 items-center gap-1 self-start rounded-full px-2 font-semibold text-link outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid"
+                >
+                  <ChevronLeftIcon
+                    aria-hidden="true"
+                    className="size-4 motion-safe:transition-transform motion-safe:group-hover/back:-translate-x-0.5"
+                  />
+                  <span className="text-left underline-offset-4 group-hover/back:underline">
+                    {current.secondaryAction.label}
                   </span>
-                ) : null}
-                <h2 className="text-xl font-semibold tracking-tight text-foreground">{title}</h2>
-                <span id={`${id}-tag`} className="text-body text-muted-foreground">
-                  {tag}
-                </span>
-                {current?.detail ? null : (
-                  <span id={`${id}-resumo`} className="text-body text-pretty text-muted-foreground">
-                    {pitch}
-                  </span>
-                )}
-              </span>
-              {current ? <StatusBlock {...current} id={`${id}-andamento`} /> : null}
-              {/* O mesmo botão cheio nos dois cartões: o recomendado só muda pro leitor de tela. */}
-              <span
-                aria-hidden="true"
-                className="mt-auto inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border border-transparent bg-primary text-body font-semibold text-primary-foreground transition-colors duration-100 group-hover/product:bg-primary-hover forced-colors:border-[LinkText]"
+                </Link>
+              </div>
+            ) : (
+              <Link
+                href={path}
+                aria-label={`${verb}, ${title}`}
+                aria-describedby={description}
+                className="group/product flex flex-1 flex-col gap-5 rounded-card border border-transparent bg-card p-6 text-left shadow-card transition-transform duration-100 ease-out outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid active:scale-[0.98] motion-reduce:active:scale-100 sm:p-8 forced-colors:border-[CanvasText]"
               >
-                {verb}
-                <ArrowRightIcon
-                  aria-hidden="true"
-                  className="size-5 transition-transform duration-150 ease-out group-hover/product:translate-x-0.5 motion-reduce:transition-none"
-                />
-              </span>
-            </Link>
+                {content}
+              </Link>
+            )}
           </li>
         );
       })}

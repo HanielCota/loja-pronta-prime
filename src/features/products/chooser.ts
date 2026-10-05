@@ -13,6 +13,8 @@ export type ProductStatus = {
   detail?: string | undefined;
   /** Texto do botão no lugar de "Entrar"/"Continuar", quando a área ainda não tem o que fazer. */
   cta?: string | undefined;
+  /** Ação secundária dentro do cartão, sem alterar o destino de continuar. */
+  secondaryAction?: { href: string; label: string } | undefined;
 };
 
 /**

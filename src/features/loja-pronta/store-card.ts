@@ -1,5 +1,6 @@
 import { STORE_PHASES, STORE_STAGES } from '@/config/store-phases';
 import type { ProductStatus } from '@/features/products/chooser';
+import { CONVERSATION_PATH } from './steps';
 import { stageNumber } from './stages';
 
 /** O que falta quando a marca foi confirmada antes do chat do logo (o logo antigo saiu). */
@@ -28,6 +29,14 @@ export function storeChooserCard(
       label: STORE_STAGES[stage - 1]?.title ?? '',
       bar: { step: stage, total: STORE_STAGES.length },
       detail: missingLogo ? MISSING_LOGO_DETAIL : current?.detail,
+      ...(stage === 2
+        ? {
+            secondaryAction: {
+              href: CONVERSATION_PATH,
+              label: `Voltar à etapa 1: ${STORE_STAGES[0].title}`,
+            },
+          }
+        : {}),
     },
     waitsOnStudent: missingLogo || (current?.needsStudent ?? false),
   };
