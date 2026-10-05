@@ -195,20 +195,20 @@ bun run dev                         # http://localhost:3000
 
 Only infrastructure settings live here. Business settings (Hotmart, emails, copy) will be managed from the admin panel.
 
-| Variable               | Description                                                          |
-| ---------------------- | -------------------------------------------------------------------- |
-| `DATABASE_URL`         | Postgres connection string                                           |
-| `BETTER_AUTH_SECRET`   | Session secret, at least 32 characters                               |
-| `BETTER_AUTH_URL`      | Public URL of the app; HTTPS in production                           |
-| `TRUSTED_PROXY_HOPS`   | Actual number of trusted proxies; required in production             |
-| `S3_BUCKET`            | Private bucket for logos, videos and captions                        |
-| `S3_ACCESS_KEY_ID`     | Storage access key                                                   |
-| `S3_SECRET_ACCESS_KEY` | Storage secret key                                                   |
-| `S3_ENDPOINT`          | Optional endpoint for S3-compatible providers                        |
-| `S3_REGION`            | Actual bucket region; defaults to `us-east-1`                        |
-| `S3_FORCE_PATH_STYLE`  | Whether the provider requires path-style access; defaults to `false` |
-| `OPENAI_API_KEY`       | Optional at startup; required for AI logo generation                 |
-| `PORT`                 | Internal server port; defaults to `3000`                             |
+| Variable               | Description                                                                  |
+| ---------------------- | ---------------------------------------------------------------------------- |
+| `DATABASE_URL`         | Postgres connection string                                                   |
+| `BETTER_AUTH_SECRET`   | Session secret, at least 32 characters                                       |
+| `BETTER_AUTH_URL`      | Public URL of the app; HTTPS in production                                   |
+| `TRUSTED_PROXY_HOPS`   | Actual number of trusted proxies; required in production                     |
+| `S3_BUCKET`            | Private bucket for logos, videos and captions                                |
+| `S3_ACCESS_KEY_ID`     | Storage access key                                                           |
+| `S3_SECRET_ACCESS_KEY` | Storage secret key                                                           |
+| `S3_ENDPOINT`          | Optional endpoint for S3-compatible providers                                |
+| `S3_REGION`            | Actual bucket region; defaults to `us-east-1`                                |
+| `S3_FORCE_PATH_STYLE`  | Whether the provider requires path-style access; defaults to `false`         |
+| `OPENAI_API_KEY`       | Optional at startup; required for AI logo generation and voice transcription |
+| `PORT`                 | Internal server port; defaults to `3000`                                     |
 
 There are no `NEXT_PUBLIC_*` variables. Runtime secrets are not needed for `next build`.
 For production settings, migrations, persistence and current feature limitations, follow

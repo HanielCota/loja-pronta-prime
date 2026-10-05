@@ -220,6 +220,117 @@ test('estúdio do logo pelo teclado: setas escolhem, "Só o nome" pula o desenho
   await expect(page.getByRole('radio', { name: 'Só o nome' })).toBeChecked();
 });
 
+test('microfone: grava, para e coloca a transcrição no campo para revisão', async ({ page }) => {
+  test.setTimeout(90_000);
+  // O navegador de teste não tem microfone: simula só a captura, preservando a tela real.
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'mediaDevices', {
+      configurable: true,
+      value: { getUserMedia: async () => ({ getTracks: () => [{ stop: () => {} }] }) },
+    });
+    class TestRecorder extends EventTarget {
+      static isTypeSupported() {
+        return true;
+      }
+      mimeType = 'audio/webm';
+      state = 'inactive';
+      start() {
+        this.state = 'recording';
+      }
+      stop() {
+        this.state = 'inactive';
+        const chunk = new Event('dataavailable');
+        Object.defineProperty(chunk, 'data', {
+          value: new Blob(['fala'], { type: this.mimeType }),
+        });
+        this.dispatchEvent(chunk);
+        this.dispatchEvent(new Event('stop'));
+      }
+    }
+    Object.defineProperty(window, 'MediaRecorder', { configurable: true, value: TestRecorder });
+  });
+  let received = false;
+  let failNetwork = false;
+  await page.route('**/loja-pronta/marca/transcrever', async (route) => {
+    received = route.request().method() === 'POST';
+    if (failNetwork) {
+      await route.abort();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ text: 'um gatinho com laço' }),
+    });
+  });
+  await signIn(page, studentEmail('marcavoz'), PASSWORD, '/loja-pronta/marca');
+  await expect(page).toHaveURL(/\/loja-pronta\/marca\/(nome|logo)$/, { timeout: 20_000 });
+  if (page.url().endsWith('/nome')) {
+    await page.getByRole('button', { name: /^Continuar com/ }).click();
+  }
+  await expect(page).toHaveURL(step('logo'), { timeout: 20_000 });
+  if (await page.getByRole('radio', { name: 'Com um desenho' }).count()) {
+    await choose(page, 'Com um desenho');
+    await goOn(page);
+  }
+  await page.getByRole('button', { name: 'Falar em vez de escrever' }).click();
+  await expect(page.getByRole('button', { name: 'Parar gravação e transcrever' })).toBeVisible();
+  await page.getByRole('button', { name: 'Parar gravação e transcrever' }).click();
+  await expect(page.getByRole('textbox', { name: 'Escreva do seu jeito' })).toHaveValue(
+    'um gatinho com laço',
+  );
+  expect(received).toBe(true);
+  await page.getByRole('button', { name: 'Usar essa ideia' }).click();
+  await expect(page.getByText('Você escreveu:')).toContainText('um gatinho com laço');
+  await expectNoA11yViolations(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole('button', { name: 'Falar em vez de escrever' })).toBeVisible();
+  await page.getByRole('button', { name: 'Ativar tema escuro' }).click();
+  await expect(page.locator('html')).toHaveClass(/dark/);
+  await expectNoA11yViolations(page);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.evaluate(() => {
+    navigator.mediaDevices.getUserMedia = async () => {
+      throw new DOMException('negado', 'NotAllowedError');
+    };
+  });
+  await page.getByRole('button', { name: 'Falar em vez de escrever' }).click();
+  await expect(page.getByText('Libere o microfone pra este site e tente de novo.')).toBeVisible();
+  // Sem internet, conserva o que ela já escreveu e mostra uma frase simples.
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, 'mediaDevices', {
+      configurable: true,
+      value: { getUserMedia: async () => ({ getTracks: () => [{ stop: () => {} }] }) },
+    });
+  });
+  failNetwork = true;
+  await page.getByRole('button', { name: 'Falar em vez de escrever' }).click();
+  await page.getByRole('button', { name: 'Parar gravação e transcrever' }).click();
+  await expect(page.getByText('Não consegui transcrever. Tente de novo ou escreva.')).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Escreva do seu jeito' })).toHaveValue(
+    'um gatinho com laço',
+  );
+  // A rota real recusa arquivo que não é áudio, antes de chamar a OpenAI.
+  const invalid = await page.request.post('/loja-pronta/marca/transcrever', {
+    headers: { origin: new URL(page.url()).origin },
+    multipart: {
+      audio: { name: 'fala.txt', mimeType: 'text/plain', buffer: Buffer.from('não é áudio') },
+    },
+  });
+  expect(invalid.status()).toBe(415);
+  const oversized = await page.request.post('/loja-pronta/marca/transcrever', {
+    headers: { origin: new URL(page.url()).origin },
+    multipart: {
+      audio: {
+        name: 'fala.webm',
+        mimeType: 'audio/webm',
+        buffer: Buffer.alloc(3 * 1024 * 1024 + 25_000),
+      },
+    },
+  });
+  expect(oversized.status()).toBe(413);
+});
+
 test('a marca só abre depois da conversa; o logo é só da dona', async ({ page }) => {
   // Conversa ainda não enviada: volta pra área.
   await signIn(page, studentEmail('conversaretoma'), PASSWORD, '/loja-pronta/marca');

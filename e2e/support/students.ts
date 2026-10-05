@@ -39,6 +39,7 @@ export type StudentKind =
   | 'shopeeloja'
   | 'marca'
   | 'marcateclado'
+  | 'marcavoz'
   | 'marcasemlogo'
   | 'perfilnome'
   | 'perfilsenha'

@@ -12,7 +12,7 @@ export const RESET_LINK_TTL_HOURS = 1;
 export const VERIFICATION_LINK_TTL_HOURS = 24;
 
 /**
- * Tentativas por minuto nas Server Actions de acesso.
+ * Tentativas por minuto nas ações de acesso e na transcrição da marca.
  * - Login por email + IP: o limite apertado. Quem tenta adivinhar a senha de uma conta de um
  *   mesmo lugar para logo; a dona da conta, de outro IP, continua entrando.
  * - Login só por email: teto mais alto, pra quem troca de IP a cada tentativa. Alto o bastante
@@ -32,6 +32,8 @@ export const RATE_LIMITS_PER_MINUTE = {
   changePasswordPerUser: 5,
   /** Trocar o nome no perfil: por conta. */
   profileNamePerUser: 10,
+  /** Cada gravação usa a API de transcrição: evita chamadas em sequência sem fim. */
+  speechPerUser: 6,
 } as const;
 
 /**
@@ -40,4 +42,5 @@ export const RATE_LIMITS_PER_MINUTE = {
  */
 export const RATE_LIMITS_LONG = {
   recoverPerEmailPerDay: { max: 10, windowSeconds: 24 * 60 * 60 },
+  speechPerUserPerDay: { max: 30, windowSeconds: 24 * 60 * 60 },
 } as const;
