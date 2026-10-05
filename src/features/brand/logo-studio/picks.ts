@@ -38,13 +38,22 @@ export function studioSteps(picks: LogoPicks): StudioStep[] {
   return picks.kind === 'nome' ? ALL_STEPS.filter((step) => step !== 'symbol') : ALL_STEPS;
 }
 
+/** As escolhas que ainda faltam para ela poder criar o logo. */
+export function missingStudioSteps(picks: LogoPicks): StudioStep[] {
+  return studioSteps(picks).filter((step) => {
+    const pick = picks[step];
+    if (!pick) return true;
+    return typeof pick === 'object' && 'text' in pick && !pick.text.trim();
+  });
+}
+
 /** A primeira tela ainda sem escolha (todas escolhidas: `null`). */
 export function firstOpenStep(picks: LogoPicks): StudioStep | null {
-  return studioSteps(picks).find((step) => !picks[step]) ?? null;
+  return missingStudioSteps(picks)[0] ?? null;
 }
 
 export function isComplete(picks: LogoPicks): boolean {
-  return firstOpenStep(picks) === null;
+  return missingStudioSteps(picks).length === 0;
 }
 
 const list = (value: unknown): string[] =>

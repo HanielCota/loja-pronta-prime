@@ -6,6 +6,7 @@ import type { LogoPicks } from '../model';
 import {
   firstOpenStep,
   isComplete,
+  missingStudioSteps,
   STUDIO_STEPS,
   studioSteps,
   type StudioStep,
@@ -183,13 +184,29 @@ export function LogoStudio({
       setError('Toque numa opção pra continuar.');
       return;
     }
+    const after = steps[steps.indexOf(step) + 1];
+    if (!after) {
+      const missing = missingStudioSteps(picks);
+      if (missing.length) {
+        const labels = missing.map((missingStep) => STUDIO_STEPS[missingStep].label).join(', ');
+        go({ kind: 'step', step: missing[0]! });
+        setError(`Falta escolher: ${labels}. Complete essas etapas antes de criar o logo.`);
+        return;
+      }
+    }
     // Guarda sem esperar: ela sai e volta de onde parou (criar o logo guarda de novo).
     save(picks);
-    const after = steps[steps.indexOf(step) + 1];
     go(after ? { kind: 'step', step: after } : { kind: 'review' });
   }
 
   function create() {
+    const missing = missingStudioSteps(picks);
+    if (missing.length) {
+      const labels = missing.map((step) => STUDIO_STEPS[step].label).join(', ');
+      go({ kind: 'step', step: missing[0]! });
+      setError(`Falta escolher: ${labels}. Complete essas etapas antes de criar o logo.`);
+      return;
+    }
     go({ kind: 'creating' });
     run('creating', () => createLogo(picks), { kind: 'review' });
   }

@@ -14,6 +14,7 @@ import {
   briefFromPicks,
   firstOpenStep,
   isComplete,
+  missingStudioSteps,
   NAME_ONLY_SYMBOL,
   pickLabel,
   studioSteps,
@@ -122,6 +123,31 @@ describe('telas do estúdio', () => {
     const { symbol: _symbol, ...withoutSymbol } = ALL_PICKS;
     expect(isComplete(withoutSymbol)).toBe(false);
     expect(isComplete({ ...withoutSymbol, kind: 'nome' })).toBe(true);
+  });
+
+  test('a revisão encontra todas as etapas vazias, incluindo texto escrito só com espaços', () => {
+    expect(missingStudioSteps({ kind: 'desenho', colors: { id: 'azul' } })).toEqual([
+      'symbol',
+      'lettering',
+      'background',
+      'look',
+    ]);
+    expect(
+      missingStudioSteps({
+        ...ALL_PICKS,
+        kind: 'nome',
+        symbol: undefined,
+        lettering: { text: '   ' },
+      }),
+    ).toEqual(['lettering']);
+    expect(
+      firstOpenStep({
+        ...ALL_PICKS,
+        kind: 'nome',
+        symbol: undefined,
+        lettering: { text: '   ' },
+      }),
+    ).toBe('lettering');
   });
 
   test('cada escolha em palavras (o que ela escreveu, entre aspas)', () => {
