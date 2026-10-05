@@ -1,4 +1,6 @@
 import {
+  COLOR_OTHER,
+  isCustomColor,
   ONBOARDING_QUESTIONS,
   PERSONAL_TOUCH_MAX,
   STORE_NAME_MAX,
@@ -18,6 +20,7 @@ export function answerText(question: OnboardingQuestion, answers: OnboardingAnsw
   const value = answers[question.id];
   if (question.kind === 'name' && value === null) return `${UNKNOWN_NAME} (a gente sugere)`;
   if (question.kind === 'longtext' && !value) return 'Nada em especial';
+  if (question.kind === 'color' && isCustomColor(value)) return 'A cor que você escolheu';
   if (Array.isArray(value)) return value.join(', ');
   return value ?? '';
 }
@@ -45,7 +48,9 @@ export function cleanAnswers(answers: OnboardingAnswers): OnboardingAnswers {
     if (question.kind === 'multi') {
       const kept = Array.isArray(value) ? value.filter((item) => labels.includes(item)) : [];
       if (kept.length > 0) clean[id] = kept.slice(0, question.max);
-    } else if (typeof value === 'string' && labels.includes(value)) {
+    } else if (question.kind === 'color' && isCustomColor(value)) {
+      clean[id] = value;
+    } else if (typeof value === 'string' && labels.includes(value) && value !== COLOR_OTHER) {
       clean[id] = value;
     }
   }
@@ -66,8 +71,16 @@ export function parseAnswer(question: OnboardingQuestion, formData: FormData): P
   const labels = 'options' in question ? question.options.map((option) => option.label) : [];
 
   switch (question.kind) {
-    case 'single':
     case 'color': {
+      // "Outra cor" manda a cor escolhida ("#rrggbb"), não o nome da opção.
+      const value = values[0]?.toLowerCase();
+      if (isCustomColor(value)) return { ok: true, value };
+      if (values[0] === COLOR_OTHER) return { ok: false, error: 'Escolha a sua cor.' };
+      if (!values[0] || !labels.includes(values[0]))
+        return { ok: false, error: 'Escolha uma opção.' };
+      return { ok: true, value: values[0] };
+    }
+    case 'single': {
       const [value] = values;
       if (!value || !labels.includes(value)) return { ok: false, error: 'Escolha uma opção.' };
       return { ok: true, value };

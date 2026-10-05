@@ -1,39 +1,48 @@
 /**
  * Letras da marca: fontes livres (licença OFL), do pacote @fontsource. A tela do nome mostra o
  * nome na letra do estilo que ela escolheu na conversa (a rota marca/fontes serve o arquivo).
- * `style`: o estilo da conversa que puxa essa letra; sem estilo, a simples.
  */
 export const BRAND_FONTS = [
   {
     id: 'delicada',
     file: '@fontsource/dancing-script/files/dancing-script-latin-700-normal.woff',
-    style: 'Delicado',
   },
   {
     id: 'moderna',
     file: '@fontsource/montserrat/files/montserrat-latin-700-normal.woff',
-    style: 'Moderno',
   },
   {
     id: 'divertida',
     file: '@fontsource/fredoka/files/fredoka-latin-600-normal.woff',
-    style: 'Divertido',
   },
   {
     id: 'elegante',
     file: '@fontsource/playfair-display/files/playfair-display-latin-700-normal.woff',
-    style: 'Elegante',
   },
   {
     id: 'simples',
     file: '@fontsource/poppins/files/poppins-latin-600-normal.woff',
-    style: undefined,
+  },
+  {
+    id: 'marcante',
+    file: '@fontsource/poppins/files/poppins-latin-800-normal.woff',
   },
 ] as const;
 
-type BrandFontId = (typeof BRAND_FONTS)[number]['id'];
+export type BrandFontId = (typeof BRAND_FONTS)[number]['id'];
+
+/** A letra que cada estilo da conversa puxa. */
+const STYLE_FONTS: Record<string, BrandFontId> = {
+  Delicado: 'delicada',
+  Elegante: 'elegante',
+  Moderno: 'moderna',
+  Natural: 'delicada',
+  Divertido: 'divertida',
+  Profissional: 'simples',
+  Artesanal: 'delicada',
+};
 
 /** Letra do estilo escolhido na conversa (sem estilo: a simples). */
 export function fontForStyle(style: string | undefined): BrandFontId {
-  return BRAND_FONTS.find((font) => font.style === style)?.id ?? 'simples';
+  return (style && STYLE_FONTS[style]) || 'simples';
 }

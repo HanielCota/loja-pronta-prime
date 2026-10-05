@@ -1,6 +1,6 @@
 import { CheckIcon } from 'lucide-react';
-import type { ReactNode } from 'react';
-import type { OnboardingQuestion } from '@/config/onboarding';
+import { useId, useState, type ReactNode } from 'react';
+import { COLOR_OTHER, isCustomColor, type OnboardingQuestion } from '@/config/onboarding';
 import { cn } from '@/lib/utils';
 import { optionChecked, optionFocus } from './option-styles';
 
@@ -47,6 +47,9 @@ export function OptionField({
       )}
     >
       {question.options.map((option) => {
+        if (layout === 'color' && option.label === COLOR_OTHER) {
+          return <CustomColor key={option.label} selected={selected} onChoose={onChoose} />;
+        }
         const checked = selected.includes(option.label);
         const input = (
           <input
@@ -175,5 +178,75 @@ function Swatch({ label, color, children }: { label: string; color: string; chil
       </span>
       {label}
     </label>
+  );
+}
+
+/** A cor que aparece no seletor antes de ela escolher (um lilás, entre as cores da lista). */
+const FIRST_CUSTOM_COLOR = '#7b4fc9';
+
+/**
+ * "Outra cor": um círculo com todas as cores. Marcado, aparece o seletor de cor do aparelho; a
+ * resposta é a cor escolhida ("#rrggbb"). Não segue sozinho ao tocar: ela ainda vai escolher a
+ * cor, e o "Continuar" confirma.
+ */
+function CustomColor({
+  selected,
+  onChoose,
+}: {
+  selected: string[];
+  onChoose: (value: string, checked: boolean) => void;
+}) {
+  const current = selected.find(isCustomColor);
+  const [color, setColor] = useState(current ?? FIRST_CUSTOM_COLOR);
+  const pickerId = useId();
+  const checked = Boolean(current);
+  return (
+    <>
+      <label
+        className={cn(
+          'group/opt flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-[1.5px] border-transparent px-1 py-3 text-body font-medium',
+          optionFocus,
+          optionChecked,
+        )}
+      >
+        <input
+          type="radio"
+          name="value"
+          value={color}
+          checked={checked}
+          onChange={(event) => onChoose(color, event.target.checked)}
+          className="sr-only"
+        />
+        <span
+          aria-hidden="true"
+          style={{
+            background: checked
+              ? color
+              : 'conic-gradient(#e85d8e, #f5a623, #f8e71c, #3ba776, #2f7de1, #9b7bd4, #e85d8e)',
+          }}
+          className="grid size-12 place-items-center rounded-full text-white ring-1 ring-foreground/10 lg:size-14 forced-colors:border forced-colors:border-[CanvasText]"
+        >
+          <CheckIcon className="hidden size-6 group-has-checked/opt:block" />
+        </span>
+        {COLOR_OTHER}
+      </label>
+      {checked ? (
+        <p className="col-span-3 flex flex-wrap items-center gap-3 rounded-2xl bg-primary-soft px-4 py-3 text-body">
+          <label htmlFor={pickerId} className="font-semibold">
+            Toque no quadrado pra escolher a sua cor:
+          </label>
+          <input
+            id={pickerId}
+            type="color"
+            value={color}
+            onChange={(event) => {
+              setColor(event.target.value);
+              onChoose(event.target.value, true);
+            }}
+            className="h-12 w-20 cursor-pointer rounded-xl border border-input bg-card p-1"
+          />
+        </p>
+      ) : null}
+    </>
   );
 }

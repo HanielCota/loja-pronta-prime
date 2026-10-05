@@ -46,10 +46,17 @@ describe('parseAnswer', () => {
     expect(parseAnswer(nome, form({ value: 'a'.repeat(STORE_NAME_MAX + 1) })).ok).toBe(false);
   });
 
-  test('cor: uma das cores ou "Escolho depois"', () => {
+  test('cor: uma das cores, "Escolho depois" ou a cor que ela escolheu (#rrggbb)', () => {
     const cor = question('cor');
     expect(parseAnswer(cor, form({ value: 'Escolho depois' })).ok).toBe(true);
-    expect(parseAnswer(cor, form({ value: '#ff0000' })).ok).toBe(false);
+    expect(parseAnswer(cor, form({ value: '#FF0000' }))).toEqual({ ok: true, value: '#ff0000' });
+    // "Outra cor" sem cor escolhida, ou uma cor inventada, não vale.
+    expect(parseAnswer(cor, form({ value: 'Outra cor' }))).toEqual({
+      ok: false,
+      error: 'Escolha a sua cor.',
+    });
+    expect(parseAnswer(cor, form({ value: 'red' })).ok).toBe(false);
+    expect(parseAnswer(cor, form({ value: '#ff00' })).ok).toBe(false);
   });
 
   test('toque pessoal: quebra de linha do navegador (CRLF) conta 1, como no campo', () => {
@@ -76,6 +83,12 @@ describe('cleanAnswers', () => {
   test('mantém respostas válidas como estão', () => {
     expect(cleanAnswers(ALL_ANSWERED)).toEqual(ALL_ANSWERED);
     expect(cleanAnswers({ nome: null })).toEqual({ nome: null });
+  });
+
+  test('a cor escolhida por ela (#rrggbb) vale; o nome da opção "Outra cor" sozinho, não', () => {
+    expect(cleanAnswers({ cor: '#7a3cff' })).toEqual({ cor: '#7a3cff' });
+    expect(cleanAnswers({ cor: 'Outra cor' })).toEqual({});
+    expect(answerText(question('cor'), { cor: '#7a3cff' })).toBe('A cor que você escolheu');
   });
 
   test('descarta opção que saiu da lista; na múltipla, só ela sai', () => {

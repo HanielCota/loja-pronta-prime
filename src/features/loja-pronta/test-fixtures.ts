@@ -26,6 +26,6 @@ export const ALL_ANSWERED: OnboardingAnswers = {
   nome: 'Ateliê',
   estilo: 'Delicado',
   cor: 'Rosa',
-  sentimento: ['Alegres'],
+  sentimento: ['Diversão'],
   toque: '',
 };
