@@ -9,7 +9,7 @@ export const STORE_PHASES = [
   {
     title: 'Conversa inicial',
     // Mesmas palavras do painel da Loja Pronta.
-    detail: 'Conte sobre você e sua marca, em uns 5 minutos.',
+    detail: 'Suas respostas vão ajudar a sugerir ideias para sua loja. Leva cerca de 5 minutos.',
     needsStudent: true,
   },
   {
@@ -55,18 +55,18 @@ export const STORE_PHASES = [
  */
 export const STORE_STAGES = [
   {
-    title: 'Você conta sobre você',
-    detail: 'Umas perguntas rápidas, uns 5 minutos',
+    title: 'Conte mais sobre você',
+    detail: 'Responda algumas perguntas sobre seus planos para a loja.',
     phases: [1],
   },
   {
-    title: 'Você cria a marca',
-    detail: 'Nome, logo e texto, uns 10 minutos',
+    title: 'Crie sua marca',
+    detail: 'Escolha o nome, o logo e o texto da sua loja.',
     phases: [2],
   },
   {
-    title: 'A loja vai pra Shopee',
-    detail: 'Conta, produtos e publicação, alguns dias',
+    title: 'Prepare sua loja para a Shopee',
+    detail: 'Conta, produtos e publicação da loja.',
     phases: [3, 4, 5, 6, 7],
   },
 ] as const;
