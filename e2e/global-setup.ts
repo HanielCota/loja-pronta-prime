@@ -101,6 +101,12 @@ const STUDENTS: Student[] = [
   // Perfil (e2e/profile.spec.ts): cada uma no seu teste, porque nome e senha mudam.
   { kind: 'perfilnome', emailVerified: true, banned: false },
   { kind: 'perfilsenha', emailVerified: true, banned: false },
+  { kind: 'perfilfotodesktoplight', emailVerified: true, banned: false },
+  { kind: 'perfilfotodesktopdark', emailVerified: true, banned: false },
+  { kind: 'perfilfotocelularlight', emailVerified: true, banned: false },
+  { kind: 'perfilfotocelulardark', emailVerified: true, banned: false },
+  { kind: 'perfilfotoinvalida', emailVerified: true, banned: false },
+  { kind: 'perfilfotosemjs', emailVerified: true, banned: false },
   // Rever fases feitas (e2e/revise.spec.ts): a conversa enviada; a marca confirmada; e uma loja já
   // publicada, em que nada reabre.
   {

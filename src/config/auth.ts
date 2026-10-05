@@ -32,6 +32,8 @@ export const RATE_LIMITS_PER_MINUTE = {
   changePasswordPerUser: 5,
   /** Trocar o nome no perfil: por conta. */
   profileNamePerUser: 10,
+  /** Enviar ou remover a foto: limita o processamento de imagens e o uso do bucket. */
+  profilePhotoPerUser: 6,
   /** Cada gravação usa a API de transcrição: evita chamadas em sequência sem fim. */
   speechPerUser: 6,
 } as const;

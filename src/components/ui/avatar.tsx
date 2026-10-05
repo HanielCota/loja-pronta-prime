@@ -1,4 +1,7 @@
+'use client';
+
 import { UserIcon } from 'lucide-react';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 /** "Ana Souza Lima" → "AL"; "Ana" → "A"; sem nome, vazio (o círculo fica com o ícone de pessoa). */
@@ -11,23 +14,44 @@ export function initials(name: string): string {
 
 type AvatarProps = {
   name: string;
+  image?: string | null | undefined;
   className?: string;
 };
 
 /**
- * Círculo com as iniciais. Decorativo: quem o usa diz o nome por perto (ou no rótulo do botão),
+ * Foto com as iniciais de reserva. Decorativo: o nome está por perto (ou no rótulo do botão),
  * então o leitor de tela não lê "AL" solto.
  */
-export function Avatar({ name, className }: AvatarProps) {
+export function Avatar({ name, image, className }: AvatarProps) {
+  const [failedImage, setFailedImage] = useState<string | null>(null);
   return (
     <span
       aria-hidden="true"
       className={cn(
-        'flex size-9 shrink-0 items-center justify-center rounded-full bg-primary-soft text-sm font-semibold text-link select-none forced-colors:border forced-colors:border-[CanvasText]',
+        'relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-soft text-sm font-semibold text-link select-none forced-colors:border forced-colors:border-[CanvasText]',
         className,
       )}
     >
-      {initials(name) || <UserIcon className="size-5" />}
+      <span
+        className={cn(
+          'flex size-full items-center justify-center',
+          image && image !== failedImage && 'invisible',
+        )}
+      >
+        {initials(name) || <UserIcon className="size-5" />}
+      </span>
+      {image && image !== failedImage ? (
+        // Já redimensionada no envio: o navegador lê a rota privada com o cookie, mesmo sem JS.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={image}
+          alt=""
+          width={512}
+          height={512}
+          onError={() => setFailedImage(image)}
+          className="absolute inset-0 size-full object-cover"
+        />
+      ) : null}
     </span>
   );
 }

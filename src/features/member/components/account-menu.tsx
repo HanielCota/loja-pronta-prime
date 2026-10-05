@@ -15,13 +15,14 @@ const itemClass =
 type AccountMenuProps = {
   name: string;
   email: string;
+  image?: string | null | undefined;
 };
 
 /**
  * A conta, no canto do topo: o círculo com as iniciais abre o perfil e o sair. Fica num menu (e não
  * solto na barra) porque são coisas raras: o que ela veio fazer continua sendo o destaque da tela.
  */
-export function AccountMenu({ name, email }: AccountMenuProps) {
+export function AccountMenu({ name, email, image }: AccountMenuProps) {
   const signOutForm = useRef<HTMLFormElement>(null);
 
   return (
@@ -30,7 +31,7 @@ export function AccountMenu({ name, email }: AccountMenuProps) {
         aria-label="Sua conta"
         className="group -mr-1 flex min-h-11 items-center gap-1 rounded-full p-1 pr-2 outline-none hover:bg-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid data-[state=open]:bg-card motion-safe:transition-colors motion-safe:duration-150"
       >
-        <Avatar name={name} />
+        <Avatar name={name} image={image} />
         <ChevronDownIcon
           aria-hidden="true"
           className="size-4 text-muted-foreground group-data-[state=open]:rotate-180 motion-safe:transition-transform motion-safe:duration-150"
@@ -46,7 +47,7 @@ export function AccountMenu({ name, email }: AccountMenuProps) {
         >
           {/* Quem está logada: confirma a conta antes de mexer nela (útil em computador dividido). */}
           <div className="flex items-center gap-3 px-3 pt-2 pb-3">
-            <Avatar name={name} className="size-11 text-body" />
+            <Avatar name={name} image={image} className="size-11 text-body" />
             <div className="flex min-w-0 flex-col">
               <span className="text-body font-semibold wrap-anywhere text-foreground">
                 {name || 'Sua conta'}

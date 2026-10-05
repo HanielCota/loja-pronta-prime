@@ -31,8 +31,8 @@ export default async function ProfilePage() {
       title="Seu perfil"
       header={
         <div className="mt-2 flex items-center gap-4 sm:gap-5">
-          {/* As mesmas iniciais do canto do topo. */}
-          <Avatar name={user.name} className="size-16 text-title sm:size-20" />
+          {/* A mesma foto (ou iniciais) do canto do topo. */}
+          <Avatar name={user.name} image={user.image} className="size-16 text-title sm:size-20" />
           <div className="flex min-w-0 flex-col gap-1">
             <h1 className="text-title font-semibold text-balance wrap-anywhere sm:text-title-lg">
               {name || 'Seu perfil'}
@@ -45,6 +45,7 @@ export default async function ProfilePage() {
       <ProfileSettings
         name={name}
         email={user.email}
+        image={user.image}
         emailHelp={
           <>
             Pra trocar o email,{' '}

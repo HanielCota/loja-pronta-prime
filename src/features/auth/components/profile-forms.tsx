@@ -8,17 +8,26 @@ import {
   LockIcon,
   MailIcon,
   MoonIcon,
+  CameraIcon,
   SunMoonIcon,
   UserRoundIcon,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import {
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react';
 import { Button } from '@/components/ui/button';
-import { Field } from '@/components/ui/field';
+import { Field, FieldError } from '@/components/ui/field';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { LiveRegion } from '@/components/ui/live-region';
 import { Switch } from '@/components/ui/switch';
 import { PASSWORD_MIN_LENGTH } from '@/config/auth';
+import { PROFILE_PHOTO_ACCEPT } from '@/config/profile-photo';
 import { listCard } from '@/features/member/list-card';
 import { useTheme } from '@/features/theme/use-theme';
 import { cn } from '@/lib/utils';
@@ -26,14 +35,14 @@ import { rememberEmail } from '../email-storage';
 import { getAuthErrorCode } from '../error-codes';
 import { authHref } from '../links';
 import { changePasswordSchema, NAME_MAX_LENGTH, profileNameSchema } from '../schemas';
-import { changePassword, updateName } from '../server/profile';
+import { changePassword, updateName, updateProfilePhoto } from '../server/profile';
 import { useAuthForm } from '../use-auth-form';
 import { AuthErrorAlert } from './auth-error-alert';
 import { FieldErrorMessage } from './field-error-message';
 import { PasswordField } from './password-field';
 import { PasswordStrengthMeter } from './password-strength-meter';
 
-type Section = 'name' | 'password';
+type Section = 'name' | 'password' | 'photo';
 
 /** Quanto tempo o "Nome salvo" fica na linha, no lugar do "Editar". */
 const SAVED_NOTICE_MS = 4000;
@@ -42,6 +51,7 @@ type ProfileSettingsProps = {
   /** Como ela quer ser chamada (vazio quando ainda não deu pra saber). */
   name: string;
   email: string;
+  image: string | null | undefined;
   /** Como trocar o email (o link do suporte, quando existe). */
   emailHelp: ReactNode;
 };
@@ -51,7 +61,7 @@ type ProfileSettingsProps = {
  * o formulário abre ali mesmo, um por vez. Fechada, a página fica limpa: trocar a senha é raro e
  * não precisa ocupar a tela o tempo todo.
  */
-export function ProfileSettings({ name, email, emailHelp }: ProfileSettingsProps) {
+export function ProfileSettings({ name, email, image, emailHelp }: ProfileSettingsProps) {
   const [open, setOpen] = useState<Section | null>(null);
   const [saved, setSaved] = useState<{ section: Section; message: string } | null>(null);
   const rows = useRef<Partial<Record<Section, HTMLButtonElement | null>>>({});
@@ -83,6 +93,25 @@ export function ProfileSettings({ name, email, emailHelp }: ProfileSettingsProps
         <style>{NO_SCRIPT_CSS}</style>
       </noscript>
       <SettingsGroup id="perfil-conta" title="Sua conta" footer={emailHelp}>
+        <ExpandableRow
+          section="photo"
+          rowRef={(element) => {
+            rows.current.photo = element;
+          }}
+          icon={<CameraIcon />}
+          label="Foto de perfil"
+          value={image ? 'Sua foto' : 'Suas iniciais'}
+          action={image ? 'Trocar' : 'Adicionar'}
+          open={open === 'photo'}
+          saved={saved?.section === 'photo' ? saved.message : null}
+          onToggle={() => toggle('photo')}
+        >
+          <ProfilePhotoForm
+            hasPhoto={Boolean(image)}
+            onCancel={() => close('photo')}
+            onSaved={(removed) => onSaved('photo', removed ? 'Foto removida' : 'Foto salva')}
+          />
+        </ExpandableRow>
         <ExpandableRow
           section="name"
           rowRef={(element) => {
@@ -449,6 +478,70 @@ function useOnSaved(state: { saved?: boolean } | undefined, onSaved: () => void)
 }
 
 type FormProps = { onCancel: () => void; onSaved: () => void };
+
+function ProfilePhotoForm({
+  hasPhoto,
+  onCancel,
+  onSaved,
+}: {
+  hasPhoto: boolean;
+  onCancel: () => void;
+  onSaved: (removed: boolean) => void;
+}) {
+  const [state, action, pending] = useActionState(updateProfilePhoto, undefined);
+  useOnSaved(state, () => onSaved(Boolean(state?.removed)));
+  return (
+    <form action={action} className="flex flex-col gap-4">
+      <Field data-invalid={Boolean(state?.error) || undefined}>
+        <label htmlFor="perfil-foto-arquivo" className="text-body font-semibold">
+          Escolha sua foto
+        </label>
+        <input
+          id="perfil-foto-arquivo"
+          name="photo"
+          type="file"
+          accept={PROFILE_PHOTO_ACCEPT}
+          required
+          aria-invalid={Boolean(state?.error) || undefined}
+          aria-describedby={
+            state?.error ? 'perfil-foto-ajuda perfil-foto-erro' : 'perfil-foto-ajuda'
+          }
+          className="min-h-12 w-full min-w-0 rounded-field border border-input bg-card p-3 text-sm text-foreground outline-none file:mr-3 file:min-h-11 file:rounded-full file:border-0 file:bg-primary-soft file:px-4 file:text-sm file:font-semibold file:text-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring forced-colors:file:border forced-colors:file:border-[ButtonText]"
+        />
+        <p id="perfil-foto-ajuda" className="text-sm text-pretty text-muted-foreground">
+          JPG, PNG ou WebP, de até 5 MB. A foto fica redonda, com o centro da imagem.
+        </p>
+        <FieldError id="perfil-foto-erro">{state?.error}</FieldError>
+      </Field>
+      <FormActions onCancel={onCancel}>
+        {hasPhoto ? (
+          <Button
+            type="submit"
+            name="intent"
+            value="remove"
+            formNoValidate
+            variant="ghost"
+            className="sm:w-auto"
+            loading={pending}
+            loadingText="Aguarde…"
+          >
+            Remover foto
+          </Button>
+        ) : null}
+        <Button
+          type="submit"
+          name="intent"
+          value="upload"
+          className="sm:w-auto"
+          loading={pending}
+          loadingText="Salvando foto…"
+        >
+          Salvar foto
+        </Button>
+      </FormActions>
+    </form>
+  );
+}
 
 export function ProfileNameForm({ name, onCancel, onSaved }: FormProps & { name: string }) {
   const { state, form, fields, pending, responseKey, formProps } = useAuthForm(
