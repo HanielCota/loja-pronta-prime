@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { Breadcrumb, type Crumb } from './breadcrumb';
+import type { ProductId } from '@/config/products';
+import { AreaSwitcher } from './area-switcher';
 import { MemberNavbar, type NavbarAccount } from './member-navbar';
 
 /** Cartão branco das áreas; no alto contraste, a borda desenha o que a sombra desenhava. */
@@ -21,8 +23,13 @@ export function greeting(name: string, firstVisit: boolean, rest: string): strin
 type AreaShellProps = {
   /** Quem está logada (a barra do topo). */
   account: NavbarAccount;
-  /** Tem os dois produtos: a trilha acima do título leva de volta pra escolha. */
+  /**
+   * Tem os dois produtos: nas áreas (`area`), o seletor das duas fica acima do título; fora delas
+   * (o perfil), a trilha leva de volta pra escolha.
+   */
   hasChoice: boolean;
+  /** A área de produto em que ela está (a Loja Pronta ou o SLL). */
+  area?: ProductId | undefined;
   /** Nome do produto, em cima do título (sem ele, o título fala sozinho). */
   product?: string | undefined;
   /** Nome da página na trilha ("Início › Loja Pronta"); sem ele, o produto ou o título. */
@@ -47,6 +54,7 @@ const START: Crumb = { href: '/', label: 'Início' };
 export function AreaShell({
   account,
   hasChoice,
+  area,
   product,
   crumb,
   title,
@@ -65,8 +73,10 @@ export function AreaShell({
         )}
       >
         <div className="flex flex-col gap-2">
-          {/* Com pra onde voltar, a trilha já diz em que produto ela está: o nome não se repete. */}
-          {hasChoice ? (
+          {/* Com os dois produtos, o seletor (ou a trilha) já diz onde ela está: o nome não se repete. */}
+          {hasChoice && area ? (
+            <AreaSwitcher current={area} />
+          ) : hasChoice ? (
             <Breadcrumb trail={[START]} current={crumb ?? product ?? title} />
           ) : product ? (
             <p className="text-body font-medium text-muted-foreground">{product}</p>
