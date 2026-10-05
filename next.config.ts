@@ -12,6 +12,13 @@ const nextConfig: NextConfig = {
     serverFunctions: false,
   },
 
+  experimental: {
+    serverActions: {
+      // O logo já aceita até 5 MB; reserva mais 1 MB pro formulário que leva a imagem.
+      bodySizeLimit: '6mb',
+    },
+  },
+
   images: {
     // 100: qualidade máxima pro mascote (a arte é pequena na tela; o padrão 75 borra os detalhes).
     qualities: [75, 100],
