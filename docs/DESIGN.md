@@ -72,8 +72,9 @@ o tema escuro e o alto contraste.
   mesmo formulário expansível dos outros ajustes; o campo de arquivo tem rótulo e ajuda visíveis
   e funciona sem JavaScript.
 - Mascote (`components/brand/mascot`), `Logo`, `BrandCard`, `CardHeading`. O mascote cochila
-  depois de 10s sem mexer (com "Zzz"), mas só nas telas de acesso: onde ele faz a pergunta
-  (`MascotBubble`) ou acompanha a leitura (painel da loja), use `canSleep={false}`.
+  depois de 10s sem mexer (com "Zzz"; com a aba escondida, o relógio pausa), mas só nas telas de
+  acesso: onde ele faz a pergunta (`MascotBubble`) ou acompanha a leitura (painel da loja), use
+  `canSleep={false}`.
 - Molduras de tela:
   - `PageShell` + `BrandCard`: telas de acesso (entrar, senha), cartão centralizado com o mascote
     no topo.
