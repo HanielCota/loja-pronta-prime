@@ -105,6 +105,9 @@ o tema escuro e o alto contraste.
 - No estúdio do logo, os botões “Voltar” das etapas de escolha e do resumo usam formato de pílula,
   contorno `border-border` e texto `text-link`.
 - O botão principal fica embaixo, largura toda no celular (`StickyAction` nos passo a passo).
+- Lista longa (a revisão das respostas): uma seta redonda (`ScrollHint`) embaixo, no centro, avisa
+  que tem mais. Pula 3 vezes e para; some perto do fim; tocar rola um pedaço. Fica fora do Tab e do
+  leitor de tela.
 - Toque: resposta no instante (`active:scale-[0.97]`, 100 a 150ms). Escolher uma opção só marca a
   resposta; a pessoa confirma no botão principal, também pelo teclado.
 - Larguras: acesso 480 a 640px; passo a passo 560 a 680px (mais largo no estúdio do logo); áreas

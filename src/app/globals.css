@@ -186,6 +186,20 @@
   }
 }
 
+/*
+ * Seta de "tem mais embaixo": desce um pouco e volta. Só 3 vezes (uns 4s) e para: movimento
+ * automático com mais de 5s precisaria de um botão de pausa (WCAG 2.2.2).
+ */
+@keyframes scroll-hint {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(5px);
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

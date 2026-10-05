@@ -12,6 +12,7 @@ import { stepPath, WHATSAPP_STEP } from '../steps';
 import { formatWhatsapp } from '../whatsapp';
 import { FocusOnArrival } from './focus-on-arrival';
 import { MascotBubble } from './mascot-bubble';
+import { ScrollHint } from './scroll-hint';
 import { StickyAction } from './sticky-action';
 
 const TITLE_ID = 'revisao-titulo';
@@ -99,6 +100,7 @@ export function ReviewStep({
           </dl>
         </section>
       ) : null}
+      <ScrollHint />
       <StickyAction>
         <Button asChild>
           {revising ? (
