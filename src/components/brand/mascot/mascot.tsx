@@ -15,7 +15,6 @@ import {
   INK,
   MOUTH,
   SLEEP_Z,
-  SLEEP_Z_COLOR,
   imageSet,
   mascotBase,
   mascotClosedEyes,
@@ -234,7 +233,8 @@ export function Mascot({
             y={z.y}
             fontSize={z.size}
             fontWeight={800}
-            fill={SLEEP_Z_COLOR}
+            // O cinza secundário da interface (token): acompanha o tema, legível no claro e no escuro.
+            fill="var(--muted-foreground)"
             // Só anima enquanto ele dorme (e recomeça a cada cochilo); termina em ~2,2s, contando
             // o atraso, e fica parado. Cresce a partir da própria base (canto de baixo à esquerda).
             className="[transform-origin:left_bottom] [transform-box:fill-box] motion-safe:group-data-[expression=asleep]/mascot:animate-[mascot-zzz_1.2s_cubic-bezier(0.22,1,0.36,1)_both]"
