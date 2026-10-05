@@ -2,6 +2,7 @@
 
 import { ChevronDownIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { prefersReducedMotion } from '@/lib/reduced-motion';
 import { cn } from '@/lib/utils';
 
 /** Abaixo disso do fim da página, não há mais nada pra mostrar: a seta some. */
@@ -36,8 +37,8 @@ export function ScrollHint() {
       tabIndex={-1}
       inert={!visible}
       onClick={() => {
-        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        window.scrollBy({ top: window.innerHeight * 0.7, behavior: reduce ? 'auto' : 'smooth' });
+        const behavior = prefersReducedMotion() ? 'auto' : 'smooth';
+        window.scrollBy({ top: window.innerHeight * 0.7, behavior });
       }}
       className={cn(
         // No celular, fica acima do botão preso embaixo (StickyAction).

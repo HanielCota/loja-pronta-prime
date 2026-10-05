@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inconsolata, Manrope } from 'next/font/google';
 import type { ReactNode } from 'react';
+import { DISPLAY_SCRIPT } from '@/features/theme/display';
 import { THEME_COLORS } from '@/features/theme/theme';
 import { ThemeProvider } from '@/features/theme/use-theme';
 import './globals.css';
@@ -36,6 +37,11 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
       className={`${manrope.variable} ${inconsolata.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        {/* Tamanho do texto, movimento e contraste escolhidos no perfil, antes da página aparecer
+            (sem o texto mudar de tamanho depois). */}
+        <script dangerouslySetInnerHTML={{ __html: DISPLAY_SCRIPT }} />
+      </head>
       <body>
         {/* Barra do navegador no celular na cor do fundo. Fora do `viewport` do Next de propósito: a
             cada navegação ele reescreveria a cor clara por cima da escura. O React leva pro head. */}

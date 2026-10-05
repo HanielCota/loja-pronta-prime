@@ -97,6 +97,11 @@ o tema escuro e o alto contraste.
   escuro e o sol acompanha o claro; tocar alterna para o outro tema. Ele usa a mesma preferência
   local dos ajustes em Perfil; a pessoa ainda pode escolher "Automático" ou ajustar o tema escuro
   por lá.
+- Perfil, Aparência, depois do tema: **Tamanho do texto** (Normal, Grande, Maior, num controle
+  segmentado de rádios), **Reduzir animações** e **Mais contraste** (chaves). Valem na hora, só no
+  aparelho, e viram atributos no `<html>` (`data-text`, `data-motion`, `data-contrast`) que um
+  script do head põe antes da página aparecer. O tamanho muda a base do `rem`, então use `rem`
+  (as classes do Tailwind), não `px`, pra o que deve crescer junto.
 
 ## Padrões de tela
 
@@ -129,7 +134,12 @@ o tema escuro e o alto contraste.
 
 - Tudo pelo teclado, com foco visível (`focus-visible:outline-2 outline-ring outline-offset-2`).
 - Alvos de toque com pelo menos 44px (`min-h-11`).
-- `prefers-reduced-motion`: animação some (`motion-reduce:...`, `motion-safe:...`).
+- Menos movimento: o pedido do aparelho ou a chave do perfil. No CSS, use `motion-reduce:` e
+  `motion-safe:` (as duas obedecem às duas fontes). No JavaScript, `prefersReducedMotion()` de
+  `src/lib/reduced-motion.ts`, nunca `matchMedia` direto.
+- Mais contraste (chave do perfil): tokens próprios em `globals.css`
+  (`:root:not(.dark)[data-contrast='more']` e `:root.dark[data-contrast='more']`). Cor nova entra
+  também nesses blocos, se ela for texto de apoio, borda ou link.
 - Alto contraste do Windows: `forced-colors:` nos cartões, opções e botões.
 - Formulários de verdade: funcionam sem JavaScript; erro com `role="alert"` ligado ao campo por
   `aria-describedby`.

@@ -2,7 +2,10 @@
 
 import { getInputProps } from '@conform-to/react';
 import {
+  ALargeSmallIcon,
   CheckCircle2Icon,
+  CirclePauseIcon,
+  ContrastIcon,
   ChevronRightIcon,
   KeyRoundIcon,
   LockIcon,
@@ -29,7 +32,10 @@ import { Switch } from '@/components/ui/switch';
 import { PASSWORD_MIN_LENGTH } from '@/config/auth';
 import { PROFILE_PHOTO_ACCEPT, PROFILE_PHOTO_MAX_BYTES } from '@/config/profile-photo';
 import { listCard } from '@/features/member/list-card';
+import { TEXT_SIZES, type TextSize } from '@/features/theme/display';
+import { useDisplay } from '@/features/theme/use-display';
 import { useTheme } from '@/features/theme/use-theme';
+import { prefersReducedMotion } from '@/lib/reduced-motion';
 import { shrinkImage } from '@/lib/shrink-image';
 import { cn } from '@/lib/utils';
 import { rememberEmail } from '../email-storage';
@@ -193,11 +199,13 @@ export function ProfileSettings({ name, email, image, emailHelp }: ProfileSettin
 
 /**
  * Aparência, como nos Ajustes do iPhone: "Automático" segue o tema do aparelho (o padrão), e a
- * chave do escuro mostra o tema que está na tela. Mexer nela desliga o automático. Tudo vale na
- * hora, sem salvar.
+ * chave do escuro mostra o tema que está na tela. Mexer nela desliga o automático. Depois, os
+ * ajustes de leitura: tamanho do texto, menos animação e mais contraste. Tudo vale na hora, sem
+ * salvar.
  */
 function AppearanceRows() {
   const { preference, theme, setPreference } = useTheme();
+  const display = useDisplay();
   return (
     <>
       <SwitchRow
@@ -217,7 +225,76 @@ function AppearanceRows() {
         checked={theme === 'dark'}
         onCheckedChange={(checked) => setPreference(checked ? 'dark' : 'light')}
       />
+      <TextSizeRow value={display.settings.text} onChange={(text) => display.update({ text })} />
+      <SwitchRow
+        id="menos-movimento"
+        icon={<CirclePauseIcon />}
+        label="Reduzir animações"
+        description="Deixa o mascote e a tela mais parados."
+        checked={display.settings.reduceMotion}
+        onCheckedChange={(reduceMotion) => display.update({ reduceMotion })}
+      />
+      <SwitchRow
+        id="mais-contraste"
+        icon={<ContrastIcon />}
+        label="Mais contraste"
+        description="Textos cinza mais escuros e bordas mais fortes, pra ler melhor."
+        checked={display.settings.moreContrast}
+        onCheckedChange={(moreContrast) => display.update({ moreContrast })}
+      />
     </>
+  );
+}
+
+/**
+ * Tamanho do texto: três opções lado a lado, como um controle segmentado do iPhone. São rádios de
+ * verdade (as setas trocam a opção, o leitor de tela ouve "1 de 3"). Vale na hora, sem salvar.
+ */
+function TextSizeRow({ value, onChange }: { value: TextSize; onChange: (size: TextSize) => void }) {
+  return (
+    <li className="px-5 py-4 sm:px-6">
+      <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-[auto_1fr] items-center gap-4">
+          <RowIcon>
+            <ALargeSmallIcon />
+          </RowIcon>
+          <span className="flex min-w-0 flex-col">
+            <span id="tamanho-texto-rotulo" className="text-body font-semibold text-foreground">
+              Tamanho do texto
+            </span>
+            <span
+              id="tamanho-texto-descricao"
+              className="text-sm text-pretty text-muted-foreground"
+            >
+              Letras maiores no app inteiro.
+            </span>
+          </span>
+        </div>
+        <div
+          role="radiogroup"
+          aria-labelledby="tamanho-texto-rotulo"
+          aria-describedby="tamanho-texto-descricao"
+          className="grid grid-cols-3 gap-1 rounded-full bg-segment p-1 forced-colors:border forced-colors:border-[CanvasText]"
+        >
+          {(Object.keys(TEXT_SIZES) as TextSize[]).map((size) => (
+            <label
+              key={size}
+              className="relative flex min-h-11 cursor-pointer items-center justify-center rounded-full px-2 text-body font-semibold text-muted-foreground outline-ring hover:text-foreground has-checked:bg-segment-thumb has-checked:text-foreground has-checked:shadow-sm has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-solid motion-safe:transition-colors motion-safe:duration-150 forced-colors:has-checked:border-2 forced-colors:has-checked:border-[Highlight]"
+            >
+              <input
+                type="radio"
+                name="tamanho-texto"
+                value={size}
+                checked={value === size}
+                onChange={() => onChange(size)}
+                className="sr-only"
+              />
+              {TEXT_SIZES[size].label}
+            </label>
+          ))}
+        </div>
+      </div>
+    </li>
   );
 }
 
@@ -375,7 +452,7 @@ function ExpandableRow({
         ?.querySelector<HTMLInputElement>('input:not([type="hidden"]):not([hidden])')
         ?.focus({ preventScroll: true });
     }
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) revealPanel();
+    if (prefersReducedMotion()) revealPanel();
   }, [open, focusOnOpen]);
 
   /** Depois de abrir, rola só o necessário pra o formulário inteiro caber na tela. */
