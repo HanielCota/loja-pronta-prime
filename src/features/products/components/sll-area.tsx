@@ -19,6 +19,7 @@ export function SllArea({ user, firstVisit, hasChoice }: SllAreaProps) {
     <AreaShell
       account={user}
       hasChoice={hasChoice}
+      area="sll"
       product="Sistema Loja Lucrativa (SLL)"
       // As aulas ainda não estão no ar: o título diz isso, sem mandar ela "começar" algo fechado.
       title="As aulas abrem em breve"
