@@ -16,7 +16,10 @@ for (const mobile of [false, true]) {
       await page.setViewportSize(
         mobile ? { width: 390, height: 844 } : { width: 1280, height: 900 },
       );
-      await page.emulateMedia({ colorScheme: theme });
+      // O claro é o padrão: o escuro só vem pela escolha dela, guardada no aparelho.
+      if (theme === 'dark') {
+        await page.addInitScript(() => localStorage.setItem('theme', 'dark'));
+      }
       const email = studentEmail(kind);
       await signIn(page, email, PASSWORD, '/perfil');
       await expect(page).toHaveURL(/\/perfil$/);

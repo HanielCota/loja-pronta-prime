@@ -3,9 +3,9 @@ import { parsePreference, toggleTheme } from './theme';
 
 describe('parsePreference', () => {
   test('sem escolha guardada, ou com lixo, é o automático', () => {
-    expect(parsePreference(null)).toBe('system');
-    expect(parsePreference(undefined)).toBe('system');
-    expect(parsePreference('azul')).toBe('system');
+    expect(parsePreference(null)).toBe('light');
+    expect(parsePreference(undefined)).toBe('light');
+    expect(parsePreference('azul')).toBe('light');
     expect(parsePreference('system')).toBe('system');
   });
 

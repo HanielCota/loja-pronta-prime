@@ -12,10 +12,10 @@ export function toggleTheme(theme: Theme): Theme {
   return theme === 'dark' ? 'light' : 'dark';
 }
 
-/** O que ela escolheu: um tema fixo, ou seguir o aparelho ("Automático", o padrão). */
+/** O que ela escolheu: um tema fixo (o claro é o padrão), ou seguir o aparelho ("Automático"). */
 export type ThemePreference = Theme | 'system';
 
-/** Lê a escolha guardada. Sem nada guardado (ou com lixo), o automático. */
+/** Lê a escolha guardada. Sem nada guardado (ou com lixo), o claro: o padrão do produto. */
 export function parsePreference(value: string | null | undefined): ThemePreference {
-  return value === 'light' || value === 'dark' ? value : 'system';
+  return value === 'dark' || value === 'system' ? value : 'light';
 }

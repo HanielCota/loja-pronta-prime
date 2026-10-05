@@ -101,6 +101,8 @@ o tema escuro e o alto contraste.
   escuro e o sol acompanha o claro; tocar alterna para o outro tema. Ele usa a mesma preferência
   local dos ajustes em Perfil; a pessoa ainda pode escolher "Automático" ou ajustar o tema escuro
   por lá.
+- O tema padrão é o **claro**, com o "Automático" desligado, mesmo com o aparelho no escuro. O
+  escuro e o automático só valem quando ela escolhe (no perfil ou no botão do cabeçalho).
 - Perfil, Aparência, depois do tema: **Tamanho do texto** (Normal, Grande, Maior, num controle
   segmentado de rádios), **Reduzir animações** e **Mais contraste** (chaves). Valem na hora, só no
   aparelho, e viram atributos no `<html>` (`data-text`, `data-motion`, `data-contrast`) que um
