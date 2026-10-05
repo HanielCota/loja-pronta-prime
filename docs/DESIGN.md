@@ -80,6 +80,10 @@ o tema escuro e o alto contraste.
     `FocusOnArrival` (foco no título ao chegar).
 - Opções de escolha: `optionFocus` / `optionChecked` (`question/option-styles.ts`).
 - Ícones: `lucide-react`, sempre com `aria-hidden="true"` quando há texto junto.
+- Nas telas de dentro, o cabeçalho tem um botão de tema de 44px ao lado da conta: a lua acompanha o
+  escuro e o sol acompanha o claro; tocar alterna para o outro tema. Ele usa a mesma preferência
+  local dos ajustes em Perfil; a pessoa ainda pode escolher "Automático" ou ajustar o tema escuro
+  por lá.
 
 ## Padrões de tela
 
