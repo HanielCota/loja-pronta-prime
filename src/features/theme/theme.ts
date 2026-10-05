@@ -7,6 +7,11 @@ export const THEME_COLORS = { light: '#f5f5f7', dark: '#1f1f22' } as const;
 /** O tema na tela. */
 export type Theme = keyof typeof THEME_COLORS;
 
+/** Troca para o outro tema quando a pessoa toca no botão rápido do cabeçalho. */
+export function toggleTheme(theme: Theme): Theme {
+  return theme === 'dark' ? 'light' : 'dark';
+}
+
 /** O que ela escolheu: um tema fixo, ou seguir o aparelho ("Automático", o padrão). */
 export type ThemePreference = Theme | 'system';
 
