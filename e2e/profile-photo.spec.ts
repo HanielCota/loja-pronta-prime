@@ -86,7 +86,7 @@ for (const mobile of [false, true]) {
   }
 }
 
-test('recusa arquivos falsos e maiores que 5 MB sem substituir a foto', async ({ page }) => {
+test('recusa arquivos falsos, grandes ou pequenos, sem substituir a foto', async ({ page }) => {
   await signIn(page, studentEmail('perfilfotoinvalida'), PASSWORD, '/perfil');
   await expect(page).toHaveURL(/\/perfil$/);
   const row = page.getByRole('button', { name: /Foto de perfil/ });
@@ -111,9 +111,31 @@ test('recusa arquivos falsos e maiores que 5 MB sem substituir a foto', async ({
     mimeType: 'image/png',
     buffer: Buffer.alloc(PROFILE_PHOTO_MAX_BYTES + 1),
   });
-  await page.getByRole('button', { name: 'Salvar foto', exact: true }).click();
-  await expect(page.locator('#perfil-foto-erro')).toContainText('Escolha uma foto de até 5 MB');
+  // Acima de 5 MB, o navegador tenta reduzir antes de enviar; o que não é imagem para ali.
+  await expect(page.locator('#perfil-foto-erro')).toContainText('Não deu pra abrir essa foto');
   await expect(photo).toHaveAttribute('src', savedUrl);
+});
+
+test('foto do celular acima de 6 MB é reduzida no navegador e salva', async ({ page }) => {
+  // Ruído não comprime: um PNG de verdade com uns 11 MB, acima do limite das Server Actions.
+  const width = 2400;
+  const height = 1600;
+  const pixels = Buffer.alloc(width * height * 3);
+  for (let i = 0; i < pixels.length; i++) pixels[i] = (Math.random() * 256) | 0;
+  const buffer = await sharp(pixels, { raw: { width, height, channels: 3 } })
+    .png({ compressionLevel: 0 })
+    .toBuffer();
+  expect(buffer.length).toBeGreaterThan(6 * 1024 * 1024);
+  await signIn(page, studentEmail('perfilfotogrande'), PASSWORD, '/perfil');
+  await expect(page).toHaveURL(/\/perfil$/);
+  const row = page.getByRole('button', { name: /Foto de perfil/ });
+  await row.click();
+  await page
+    .getByLabel('Escolha sua foto')
+    .setInputFiles({ name: 'celular.png', mimeType: 'image/png', buffer });
+  await page.getByRole('button', { name: 'Salvar foto', exact: true }).click();
+  await expect(row).toContainText('Foto salva', { timeout: 30_000 });
+  await expect(page.locator('main img[src^="/perfil/foto/"]')).toBeVisible();
 });
 
 test('envia e remove a foto sem JavaScript', async ({ browser }) => {

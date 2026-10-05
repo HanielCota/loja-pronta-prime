@@ -48,6 +48,7 @@ export type StudentKind =
   | 'perfilfotocelularlight'
   | 'perfilfotocelulardark'
   | 'perfilfotoinvalida'
+  | 'perfilfotogrande'
   | 'perfilfotosemjs'
   | 'revisaconversa'
   | 'revisamarca'

@@ -27,9 +27,10 @@ import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { LiveRegion } from '@/components/ui/live-region';
 import { Switch } from '@/components/ui/switch';
 import { PASSWORD_MIN_LENGTH } from '@/config/auth';
-import { PROFILE_PHOTO_ACCEPT } from '@/config/profile-photo';
+import { PROFILE_PHOTO_ACCEPT, PROFILE_PHOTO_MAX_BYTES } from '@/config/profile-photo';
 import { listCard } from '@/features/member/list-card';
 import { useTheme } from '@/features/theme/use-theme';
+import { shrinkImage } from '@/lib/shrink-image';
 import { cn } from '@/lib/utils';
 import { rememberEmail } from '../email-storage';
 import { getAuthErrorCode } from '../error-codes';
@@ -490,9 +491,23 @@ function ProfilePhotoForm({
 }) {
   const [state, action, pending] = useActionState(updateProfilePhoto, undefined);
   useOnSaved(state, () => onSaved(Boolean(state?.removed)));
+  /** Problema achado no navegador, antes de enviar (some ao escolher outra foto ou enviar). */
+  const [localError, setLocalError] = useState<string>();
+  const [preparing, setPreparing] = useState(false);
+  /** A resposta do servidor que ela já deixou pra trás ao escolher outra foto. */
+  const [dismissed, setDismissed] = useState(state);
+  const error = localError ?? (state === dismissed ? undefined : state?.error);
   return (
-    <form action={action} className="flex flex-col gap-4">
-      <Field data-invalid={Boolean(state?.error) || undefined}>
+    <form
+      action={action}
+      onSubmit={(event) => {
+        // Ainda reduzindo a foto: espera, pra não mandar o arquivo grande.
+        if (preparing) event.preventDefault();
+        else setLocalError(undefined);
+      }}
+      className="flex flex-col gap-4"
+    >
+      <Field data-invalid={Boolean(error) || undefined}>
         <label htmlFor="perfil-foto-arquivo" className="text-body font-semibold">
           Escolha sua foto
         </label>
@@ -502,16 +517,36 @@ function ProfilePhotoForm({
           type="file"
           accept={PROFILE_PHOTO_ACCEPT}
           required
-          aria-invalid={Boolean(state?.error) || undefined}
-          aria-describedby={
-            state?.error ? 'perfil-foto-ajuda perfil-foto-erro' : 'perfil-foto-ajuda'
-          }
+          aria-invalid={Boolean(error) || undefined}
+          aria-describedby={error ? 'perfil-foto-ajuda perfil-foto-erro' : 'perfil-foto-ajuda'}
+          onChange={async (event) => {
+            // Foto do celular passa fácil de 5 MB (e acima de 6 MB o servidor nem recebe): reduz
+            // aqui mesmo. O servidor corta pra 512px de qualquer jeito. Sem JavaScript, vale o
+            // limite escrito na ajuda.
+            const input = event.currentTarget;
+            const file = input.files?.[0];
+            setLocalError(undefined);
+            setDismissed(state);
+            if (!file || file.size <= PROFILE_PHOTO_MAX_BYTES) return;
+            setPreparing(true);
+            const smaller = await shrinkImage(file);
+            setPreparing(false);
+            if (!smaller) {
+              input.value = '';
+              setLocalError('Não deu pra abrir essa foto. Escolha uma imagem JPG, PNG ou WebP.');
+              return;
+            }
+            const extension = smaller.type === 'image/webp' ? 'webp' : 'jpg';
+            const transfer = new DataTransfer();
+            transfer.items.add(new File([smaller], `foto.${extension}`, { type: smaller.type }));
+            input.files = transfer.files;
+          }}
           className="min-h-12 w-full min-w-0 rounded-field border border-input bg-card p-3 text-sm text-foreground outline-none file:mr-3 file:min-h-11 file:rounded-full file:border-0 file:bg-primary-soft file:px-4 file:text-sm file:font-semibold file:text-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring forced-colors:file:border forced-colors:file:border-[ButtonText]"
         />
         <p id="perfil-foto-ajuda" className="text-sm text-pretty text-muted-foreground">
           JPG, PNG ou WebP, de até 5 MB. A foto fica redonda, com o centro da imagem.
         </p>
-        <FieldError id="perfil-foto-erro">{state?.error}</FieldError>
+        <FieldError id="perfil-foto-erro">{error}</FieldError>
       </Field>
       <FormActions onCancel={onCancel}>
         {hasPhoto ? (
@@ -533,8 +568,8 @@ function ProfilePhotoForm({
           name="intent"
           value="upload"
           className="sm:w-auto"
-          loading={pending}
-          loadingText="Salvando foto…"
+          loading={pending || preparing}
+          loadingText={preparing ? 'Preparando foto…' : 'Salvando foto…'}
         >
           Salvar foto
         </Button>
