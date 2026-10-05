@@ -273,7 +273,6 @@ test('microfone: grava, para e coloca a transcrição no campo para revisão', a
     await choose(page, 'Com um desenho');
     await goOn(page);
   }
-  await page.getByRole('button', { name: 'Não achei o que queria. Escrever do meu jeito' }).click();
   await page.getByRole('button', { name: 'Falar em vez de escrever' }).click();
   await expect(page.getByRole('button', { name: 'Parar gravação e transcrever' })).toBeVisible();
   await page.getByRole('button', { name: 'Parar gravação e transcrever' }).click();
@@ -281,7 +280,7 @@ test('microfone: grava, para e coloca a transcrição no campo para revisão', a
     'um gatinho com laço',
   );
   expect(received).toBe(true);
-  await page.getByRole('button', { name: 'Usar', exact: true }).click();
+  await page.getByRole('button', { name: 'Usar essa ideia' }).click();
   await expect(page.getByText('Você escreveu:')).toContainText('um gatinho com laço');
   await expectNoA11yViolations(page);
   await page.setViewportSize({ width: 390, height: 844 });

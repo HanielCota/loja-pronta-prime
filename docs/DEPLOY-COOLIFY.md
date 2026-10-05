@@ -178,20 +178,10 @@ Depois de preencher e confirmar os valores reais:
    O script `dev:aluna` não funciona em produção e não deve ser usado para provisionar clientes.
 5. Com as credenciais reais, confira envio/download de logo e leitura de vídeo. Gere um logo
    somente quando quiser testar a OpenAI de verdade, pois isso tem custo.
-6. Na rota `/loja-pronta/marca/logo`, escolha **Escrever do meu jeito**, permita o microfone,
-   fale em português, pare a gravação e confira se o texto aparece no campo para revisão. A
-   transcrição usa a OpenAI e tem custo. Confira também a mensagem após negar a permissão e a
-   possibilidade de escrever manualmente. Sem `OPENAI_API_KEY`, o microfone aparece como **em breve**.
-
-### Pendências para validar a transcrição real
-
-O ambiente local usado na revisão não tinha `OPENAI_API_KEY`, e as credenciais S3 disponíveis
-retornaram `InvalidAccessKeyId`. O dono do projeto precisa preencher uma chave OpenAI válida no
-`.env.local` local e no ambiente Runtime do Coolify, com acesso a `gpt-transcribe`, e conferir as
-credenciais e permissões do bucket de teste usado pelo fluxo completo. Não coloque esses valores
-no Git. Depois, reinicie ou publique a aplicação, rode `bun run test:e2e` no ambiente de teste e
-repita o passo 6 com uma conta de aluna. O teste de ponta a ponta usa OpenAI e S3 reais e pode
-gerar custo. O resultado em produção só fica confirmado após esse teste no domínio publicado.
+6. Na rota `/loja-pronta/marca/logo`, no campo **Escreva do seu jeito**, toque no microfone,
+   permita o acesso, fale em português, pare a gravação e confira se o texto aparece no campo
+   para revisão. A transcrição usa a OpenAI e tem custo. Confira também a mensagem após negar a
+   permissão e a possibilidade de escrever manualmente. Sem `OPENAI_API_KEY`, o microfone aparece como **em breve**.
 
 ## Limitações encontradas
 
