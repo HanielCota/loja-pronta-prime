@@ -132,8 +132,8 @@ export function StudioReview({
         </div>
         {generationsLeft ? (
           <p className="text-center text-body text-pretty text-muted-foreground">
-            Você ainda pode criar {generationsLeft} {generationsLeft === 1 ? 'logo' : 'logos'}.
-            Leva uns 15 segundos.
+            Você ainda pode criar {generationsLeft} {generationsLeft === 1 ? 'logo' : 'logos'}. Leva
+            uns 15 segundos.
           </p>
         ) : null}
         {hasLogos ? (
