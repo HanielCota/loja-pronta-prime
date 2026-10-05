@@ -41,16 +41,25 @@ export function useMascot(
   rootRef: RefObject<HTMLDivElement | null>,
   faceRef: RefObject<HTMLDivElement | null>,
   baseExpression: Expression,
+  canSleep: boolean,
 ) {
   // Lida por referência: mudar a expressão de repouso não desmonta tudo (sono, erro, olhar);
   // só pede um recálculo.
   const baseRef = useRef(baseExpression);
   const updateRef = useRef<(() => void) | undefined>(undefined);
+  // Também por referência, pelo mesmo motivo; ligar ou desligar só reinicia o relógio do sono.
+  const canSleepRef = useRef(canSleep);
+  const resetSleepRef = useRef<(() => void) | undefined>(undefined);
 
   useEffect(() => {
     baseRef.current = baseExpression;
     updateRef.current?.();
   }, [baseExpression]);
+
+  useEffect(() => {
+    canSleepRef.current = canSleep;
+    resetSleepRef.current?.();
+  }, [canSleep]);
 
   useEffect(() => {
     const rootElement = rootRef.current;
@@ -245,6 +254,7 @@ export function useMascot(
 
     function resetIdleTimer() {
       window.clearTimeout(idleTimer);
+      if (!canSleepRef.current) return;
       idleTimer = window.setTimeout(() => {
         slowLidsUntil = performance.now() + SLOW_LIDS_MS;
         setReason('sleep', 'sleepy');
@@ -352,6 +362,11 @@ export function useMascot(
     resetIdleTimer();
     update();
     updateRef.current = update;
+    // Desligado no meio do cochilo: acorda na hora (sem pálpebra lenta) e não volta a dormir.
+    resetSleepRef.current = () => {
+      if (!canSleepRef.current && reasons.delete('sleep')) update();
+      resetIdleTimer();
+    };
 
     const visibility = new IntersectionObserver(([entry]) => {
       onScreen = entry?.isIntersecting ?? true;
@@ -362,6 +377,7 @@ export function useMascot(
     return () => {
       disposed = true;
       updateRef.current = undefined;
+      resetSleepRef.current = undefined;
       cancelAnimationFrame(frame);
       cancelAnimationFrame(queuedUpdate);
       for (const timer of [blinkTimer, attentionTimer, reasonTimer, idleTimer]) {

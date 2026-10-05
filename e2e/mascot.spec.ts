@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { nextFrames } from './support/auth';
+import { nextFrames, signIn } from './support/auth';
 import { PASSWORD, studentEmail } from './support/students';
 
 const mascot = (page: Page) => page.locator('[data-slot="mascot"]');
@@ -249,4 +249,14 @@ test('abre preocupado quando o login avisa que a sessão expirou', async ({ page
   await page.goto('/entrar?motivo=sessao-expirada');
   await expect(page.locator('[data-error-code="session_expired"]')).toBeVisible();
   await expect(mascot(page)).toHaveAttribute('data-expression', 'worried');
+});
+
+test('não cochila na tela de pergunta (ele está fazendo a pergunta)', async ({ page }) => {
+  await page.clock.install();
+  await signIn(page, studentEmail('mascotesono'), PASSWORD, '/loja-pronta/conversa');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Você já vendeu pela internet?');
+  await page.clock.fastForward('00:15');
+  await nextFrames(page);
+  await expect(mascot(page)).toHaveAttribute('data-expression', 'happy');
+  expect(await leftLid(page)).toBeLessThan(0.05);
 });

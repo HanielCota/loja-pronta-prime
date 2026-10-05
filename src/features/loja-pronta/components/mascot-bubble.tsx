@@ -23,6 +23,8 @@ export function MascotBubble({ title, help, titleId, helpId, compact = false }: 
       <Mascot
         expression="happy"
         displaySize={128}
+        // Ele está fazendo a pergunta: não cochila enquanto a pessoa lê.
+        canSleep={false}
         className={compact ? 'size-16 sm:size-20' : 'size-20 sm:size-24 lg:size-32'}
       />
       <div className="flex flex-col gap-2">

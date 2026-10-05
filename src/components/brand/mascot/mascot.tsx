@@ -15,7 +15,6 @@ import {
   INK,
   MOUTH,
   SLEEP_Z,
-  SLEEP_Z_COLOR,
   imageSet,
   mascotBase,
   mascotClosedEyes,
@@ -34,13 +33,18 @@ type MascotProps = {
   displaySize?: number | undefined;
   /** É o maior elemento da tela (ex.: o login): a arte é pedida antes de tudo. */
   preload?: boolean;
+  /**
+   * Cochila quando ninguém mexe. Desligado onde ele "faz a pergunta" ou acompanha a leitura: quem
+   * lê devagar no celular (sem tocar na tela) veria o mascote dormir no meio da pergunta.
+   */
+  canSleep?: boolean;
 };
 
 /**
  * Mascote que acompanha o que a pessoa faz na tela: segue o mouse, olha o texto digitado
  * (e sorri), fecha os olhos na senha (e espia com um olho ao mostrar), fecha a cara com senha
  * errada, se espanta com Caps Lock, desconfia de email digitado errado, acena quando o email
- * fica completo, ri quando tocado, cochila quando ninguém mexe e comemora quando dá certo.
+ * fica completo, ri quando tocado, cochila quando ninguém mexe (onde pode) e comemora quando dá certo.
  *
  * Este arquivo só desenha. O comportamento está em use-mascot.ts, e o que é específico de cada
  * tela (erro, sucesso, sugestão de email) chega pelos avisos de events.ts.
@@ -50,6 +54,7 @@ export function Mascot({
   expression = 'neutral',
   displaySize = DEFAULT_DISPLAY_SIZE,
   preload = false,
+  canSleep = true,
 }: MascotProps) {
   const closedEyesImage = useMemo(() => imageSet(mascotClosedEyes, displaySize), [displaySize]);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -63,7 +68,7 @@ export function Mascot({
     return { base: start, initialMouth: mouthShape(start.mouth) };
   });
 
-  useMascot(rootRef, faceRef, expression);
+  useMascot(rootRef, faceRef, expression, canSleep);
 
   return (
     <div
@@ -234,7 +239,8 @@ export function Mascot({
             y={z.y}
             fontSize={z.size}
             fontWeight={800}
-            fill={SLEEP_Z_COLOR}
+            // O cinza secundário da interface (token): acompanha o tema, legível no claro e no escuro.
+            fill="var(--muted-foreground)"
             // Só anima enquanto ele dorme (e recomeça a cada cochilo); termina em ~2,2s, contando
             // o atraso, e fica parado. Cresce a partir da própria base (canto de baixo à esquerda).
             className="[transform-origin:left_bottom] [transform-box:fill-box] motion-safe:group-data-[expression=asleep]/mascot:animate-[mascot-zzz_1.2s_cubic-bezier(0.22,1,0.36,1)_both]"

@@ -88,6 +88,8 @@ const STUDENTS: Student[] = [
   { kind: 'conversasemjs', emailVerified: true, banned: false, products: ['loja-pronta'] },
   { kind: 'conversasemloja', emailVerified: true, banned: false, products: ['sll'] },
   { kind: 'conversatoques', emailVerified: true, banned: false, products: ['loja-pronta'] },
+  // Só abre a primeira pergunta (não responde): própria pelo limite de logins por email.
+  { kind: 'mascotesono', emailVerified: true, banned: false, products: ['loja-pronta'] },
   { kind: 'conversacor', emailVerified: true, banned: false, products: ['loja-pronta'] },
   // Correções de acesso (e2e/auth-hardening.spec.ts).
   { kind: 'travadaip', emailVerified: true, banned: false },

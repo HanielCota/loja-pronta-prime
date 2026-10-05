@@ -49,8 +49,6 @@ export const SLEEP_Z = [
   { x: 438, y: 98, size: 84, delay: 0.5 },
   { x: 486, y: 34, size: 108, delay: 1 },
 ] as const;
-/** Cor dos Z: o cinza secundário da interface (aparece bem sobre o cartão branco). */
-export const SLEEP_Z_COLOR = '#6e6e73';
 /**
  * A área do olho (onde a pupila anda e a pálpebra desce) é um pouco maior que o branco medido,
  * pra pálpebra cobrir também a borda suavizada da arte enquanto fecha.

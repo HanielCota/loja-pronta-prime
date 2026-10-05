@@ -190,7 +190,13 @@ function NextStep({
             className="size-32 rounded-3xl border border-border lg:size-44"
           />
         ) : (
-          <Mascot expression="happy" displaySize={176} className="size-28 sm:size-36 lg:size-44" />
+          // Ao lado do que fazer agora: não cochila enquanto a pessoa lê o painel.
+          <Mascot
+            expression="happy"
+            displaySize={176}
+            canSleep={false}
+            className="size-28 sm:size-36 lg:size-44"
+          />
         )}
       </div>
       <div className="flex flex-1 flex-col gap-3">
