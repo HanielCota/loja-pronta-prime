@@ -8,15 +8,19 @@ import type { SllCopy } from '../copy';
 
 type NavItem = { href: string; label: string; icon: typeof Store; exact?: boolean };
 
+// Altura mínima, não fixa: nome de etapa comprido quebra a linha em vez de vazar do item.
 const itemClass =
-  'group flex h-16 min-h-16 shrink-0 items-center gap-3 rounded-2xl px-3 py-2 text-body outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-safe:transition-colors motion-safe:duration-200';
+  'group flex min-h-16 shrink-0 items-center gap-3 rounded-2xl px-3 py-2 text-body outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-safe:transition-colors motion-safe:duration-200';
 
 export function SllSidebarLinks({
   stages,
   copy,
+  currentSection,
 }: {
   stages: Array<{ href: string; label: string }>;
   copy: SllCopy;
+  /** A seção desta página quando o endereço não está no menu (a aula: a etapa ou a lista). */
+  currentSection?: string | undefined;
 }) {
   const pathname = usePathname();
   const operation: NavItem[] = [
@@ -29,25 +33,33 @@ export function SllSidebarLinks({
     { href: '/sll/recursos', label: copy.sidebarResources, icon: Wrench },
     { href: '/sll/cursos', label: copy.sidebarCourses, icon: GraduationCap },
   ];
-  const isActive = (item: NavItem) =>
-    item.exact
-      ? pathname === item.href
-      : pathname === item.href || pathname.startsWith(`${item.href}/`);
+  const section = currentSection ?? pathname;
+  /**
+   * O realce e o `aria-current` vêm da mesma conta, pra o leitor de tela ouvir o que a tela mostra:
+   * "page" no link desta página; "true" no link da seção em que ela está (a etapa de uma aula, o
+   * Método numa etapa, Cursos num curso).
+   */
+  const currentOf = (item: { href: string; exact?: boolean }): 'page' | 'true' | undefined => {
+    if (pathname === item.href) return 'page';
+    if (section === item.href) return 'true';
+    if (!item.exact && section.startsWith(`${item.href}/`)) return 'true';
+    return undefined;
+  };
 
   const navigation = (
     <nav aria-label="Seções do SLL" className="flex flex-col gap-5">
       <div>
-        <p className="px-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+        <p className="px-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
           Minha operação
         </p>
         <ul className="mt-2 flex flex-col gap-1">
           {operation.map((item) => (
             <li key={item.href}>
               <Link
-                aria-current={pathname === item.href ? 'page' : undefined}
+                aria-current={currentOf(item)}
                 className={cn(
                   itemClass,
-                  isActive(item) && 'bg-primary-soft font-semibold text-link',
+                  currentOf(item) && 'bg-primary-soft font-semibold text-link',
                 )}
                 href={item.href}
               >
@@ -62,17 +74,17 @@ export function SllSidebarLinks({
         </ul>
       </div>
       <div>
-        <p className="px-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+        <p className="px-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
           Aprender
         </p>
         <ul className="mt-2 flex flex-col gap-1">
           {learning.map((item) => (
             <li key={item.href}>
               <Link
-                aria-current={pathname === item.href ? 'page' : undefined}
+                aria-current={currentOf(item)}
                 className={cn(
                   itemClass,
-                  isActive(item) && 'bg-primary-soft font-semibold text-link',
+                  currentOf(item) && 'bg-primary-soft font-semibold text-link',
                 )}
                 href={item.href}
               >
@@ -87,11 +99,11 @@ export function SllSidebarLinks({
                   {stages.map((stage) => (
                     <li key={stage.href}>
                       <Link
-                        aria-current={pathname === stage.href ? 'page' : undefined}
+                        aria-current={currentOf(stage)}
                         className={cn(
                           itemClass,
                           'text-sm',
-                          pathname === stage.href
+                          currentOf(stage)
                             ? 'bg-primary-soft font-semibold text-link'
                             : 'text-muted-foreground',
                         )}
