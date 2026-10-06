@@ -7,6 +7,7 @@ import { SllAreaShell } from '@/features/sll/sll-area-shell';
 import { getSllPublishedTracks } from '@/features/sll/server/catalog';
 import { getSllCopy } from '@/features/sll/server/copy';
 import { requireProduct } from '@/features/products/server/access';
+import { SllProgress } from '@/features/sll/components/sll-progress';
 
 export const metadata: Metadata = { title: 'Cursos complementares · SLL' };
 
@@ -48,17 +49,20 @@ export default async function ComplementaryCoursesPage() {
               >
                 {copy.coursesFeaturedTitle}
               </h2>
-              <article className={`${panelCard} gap-4 sm:flex-row sm:items-center`}>
+              <article
+                className={`${panelCard} gap-6 md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-center`}
+              >
                 {featured.course.coverStorageKey ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     alt={featured.course.coverAlt ?? ''}
-                    className="aspect-video w-full rounded-2xl object-cover sm:w-64"
+                    className="aspect-video w-full rounded-2xl object-cover"
                     src={`/api/sll/course-cover/${featured.course.id}`}
                   />
-                ) : null}
-                <BookOpen aria-hidden="true" className="size-7 shrink-0 text-link" />
-                <div className="min-w-0 flex-1">
+                ) : (
+                  <CourseCoverPlaceholder />
+                )}
+                <div className="flex min-w-0 flex-col items-start gap-3">
                   <h3 className="text-title font-semibold text-balance text-foreground">
                     {featured.course.title}
                   </h3>
@@ -68,22 +72,22 @@ export default async function ComplementaryCoursesPage() {
                     </p>
                   ) : null}
                   {featured.lessonCount ? (
-                    <p className="mt-2 text-body text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                       {lessonSummary(featured.lessonCount, featured.minutes)}
                     </p>
                   ) : null}
-                </div>
-                {/* Igual aos cartões da lista: sem aula publicada, diz que vem aí em vez de
+                  {/* Igual aos cartões da lista: sem aula publicada, diz que vem aí em vez de
                     sumir com o botão sem explicar. */}
-                {featured.lessonCount ? (
-                  <Button asChild className="sm:w-auto" variant="soft">
-                    <Link href={`/sll/cursos/${featured.course.slug}`}>
-                      Abrir curso <ArrowRight aria-hidden="true" />
-                    </Link>
-                  </Button>
-                ) : (
-                  <p className="text-body text-muted-foreground">Aulas em breve</p>
-                )}
+                  {featured.lessonCount ? (
+                    <Button asChild className="mt-2 sm:w-auto" variant="soft">
+                      <Link href={`/sll/cursos/${featured.course.slug}`}>
+                        Abrir curso <ArrowRight aria-hidden="true" />
+                      </Link>
+                    </Button>
+                  ) : (
+                    <p className="text-body text-muted-foreground">Aulas em breve</p>
+                  )}
+                </div>
               </article>
             </section>
           ) : null}
@@ -96,9 +100,9 @@ export default async function ComplementaryCoursesPage() {
                 {catalog.length} {catalog.length === 1 ? 'curso' : 'cursos'}
               </p>
             </div>
-            <ul className="grid items-start gap-4 md:grid-cols-2">
+            <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {catalog.map(({ course, lessonCount, minutes }) => (
-                <li className={`${panelCard} gap-3`} key={course.id}>
+                <li className={`${panelCard} gap-4`} key={course.id}>
                   {course.coverStorageKey ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -106,15 +110,31 @@ export default async function ComplementaryCoursesPage() {
                       className="aspect-video w-full rounded-2xl object-cover"
                       src={`/api/sll/course-cover/${course.id}`}
                     />
-                  ) : null}
-                  <h3 className="text-body font-semibold text-foreground">{course.title}</h3>
+                  ) : (
+                    <CourseCoverPlaceholder />
+                  )}
+                  <h3 className="text-title font-semibold text-balance text-foreground">
+                    {course.title}
+                  </h3>
                   {course.description ? (
                     <p className="text-body text-muted-foreground">{course.description}</p>
                   ) : null}
                   {lessonCount ? (
-                    <p className="text-body text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                       {lessonSummary(lessonCount, minutes)}
                     </p>
+                  ) : null}
+                  {lessonCount ? (
+                    <div className="mt-auto flex flex-col gap-2 pt-2">
+                      <p className="text-sm text-muted-foreground">
+                        {course.completedCount} de {lessonCount} aulas concluídas
+                      </p>
+                      <SllProgress
+                        label={`Progresso de ${course.title}`}
+                        completed={course.completedCount}
+                        total={lessonCount}
+                      />
+                    </div>
                   ) : null}
                   {lessonCount ? (
                     <Button asChild className="mt-auto" variant="soft">
@@ -138,5 +158,15 @@ export default async function ComplementaryCoursesPage() {
         </section>
       )}
     </SllAreaShell>
+  );
+}
+
+/** Reserva a proporção da capa sem inventar uma imagem para um arquivo ainda não enviado. */
+function CourseCoverPlaceholder() {
+  return (
+    <div className="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-2xl bg-muted text-muted-foreground">
+      <BookOpen aria-hidden="true" className="size-8" />
+      <span className="text-sm">Capa em breve</span>
+    </div>
   );
 }

@@ -135,11 +135,30 @@ o tema escuro e o alto contraste.
 
 ### Área SLL
 
+- A referência visual conferida em 6 de outubro de 2026 está em
+  `docs/SLL-REFERENCIA-VISUAL.md`. A composição vem do SLL anterior; cores, letras, moldura e
+  componentes continuam sendo os da Loja Pronta Prime. Esta adaptação se limita ao SLL.
 - O SLL segue a navegação do site anterior: no computador, seções à esquerda e conteúdo à direita;
   no celular, a mesma lista abre pelo controle “Seções do SLL”. O conteúdo usa os tokens, a fonte,
   os cartões e os botões deste projeto. A moldura da Loja Pronta não muda.
 - O menu mostra Painel, Minhas Lojas, Comece aqui, Método, etapas publicadas, Recursos e Cursos
   complementares. A seção atual fica identificada; etapas em rascunho não viram links para alunas.
+- A navegação lateral usa um cartão compacto. As etapas aparecem quando a aluna está no Método
+  ou em Recursos; listas longas rolam dentro do menu no computador. No celular, o controle mostra
+  a seção atual e volta fechado ao navegar, para deixar o conteúdo à vista.
+- A aula usa vídeo em proporção 16:9 à esquerda e sequência à direita, com a aula atual numerada
+  em azul. A sequência acompanha a rolagem no computador. Anterior/próxima ficam acima do botão
+  de conclusão, que ocupa a largura do cartão. Sem vídeo disponível, o espaço diz “Vídeo em breve”.
+- As etapas têm cartões com ações alinhadas e progresso real. Um passo da Etapa 1 abre a lista
+  de aulas; o passo da aula a retomar começa aberto. Prioridades da Etapa 2 usam seta para baixo,
+  que vira ao abrir as instruções. A Biblioteca usa busca e cartões por categoria, em uma coluna
+  no celular e até três no computador, com conclusão e ação visíveis.
+- Cursos complementares têm destaque amplo e biblioteca em cartões com contagem e progresso
+  individuais. Sem o arquivo da capa, aparece uma superfície neutra “Capa em breve”, sem imagem
+  inventada. A lista do curso mantém numeração, duração e progresso.
+- O banner tem chamada grande e imagem ao lado no computador; no celular, os elementos se
+  empilham. A troca é manual, com setas e marcadores que têm alvos de 44px e nomes acessíveis.
+  Banners em rascunho continuam fora do painel da aluna.
 - Em Recursos, a calculadora sem fórmula validada aparece como aviso compacto “Em breve”. As
   ferramentas externas dizem o que fazem e mostram uma ação específica, com cartões de altura
   determinada pelo conteúdo.

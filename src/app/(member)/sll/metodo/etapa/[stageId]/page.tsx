@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Check, Circle, LockKeyhole } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, ChevronDown, Circle, LockKeyhole } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { panelCard } from '@/features/member/components/area-shell';
@@ -9,6 +9,7 @@ import { SllKnowledgeLibrary } from '@/features/sll/components/sll-knowledge-lib
 import { getFirstSllPublishedTrack } from '@/features/sll/server/catalog';
 import { requireProduct } from '@/features/products/server/access';
 import { getSllCopy } from '@/features/sll/server/copy';
+import { SllProgress } from '@/features/sll/components/sll-progress';
 
 export const metadata: Metadata = { title: 'Etapa do Método SLL' };
 
@@ -56,18 +57,17 @@ export default async function MethodStagePage({
       ) : (
         <section aria-label="Passos da etapa" className="flex flex-col gap-4">
           <div className={panelCard}>
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-body font-semibold text-foreground">{copy.stageProgressTitle}</h2>
               <p className="text-body text-foreground">
                 {stage.access?.completedCount ?? 0} / {stage.access?.totalCount ?? 0} concluídas
               </p>
             </div>
-            <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted" aria-hidden="true">
-              <div
-                className="h-full rounded-full bg-progress motion-safe:transition-[width] motion-safe:duration-500"
-                style={{
-                  width: `${stage.access?.totalCount ? (stage.access.completedCount / stage.access.totalCount) * 100 : 0}%`,
-                }}
+            <div className="mt-4">
+              <SllProgress
+                label={copy.stageProgressTitle}
+                completed={stage.access?.completedCount ?? 0}
+                total={stage.access?.totalCount ?? 0}
               />
             </div>
           </div>
@@ -96,15 +96,18 @@ export default async function MethodStagePage({
                   .map((module) => {
                     const lesson = module.lessons[0];
                     return (
-                      <details className={panelCard} key={module.id}>
+                      <details className={`${panelCard} group`} key={module.id}>
                         <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 text-body font-semibold text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
                           {lesson?.completedAt ? (
                             <Check aria-hidden="true" className="size-5 text-progress-text" />
                           ) : (
                             <Circle aria-hidden="true" className="size-5 text-muted-foreground" />
                           )}
-                          <span>{module.title}</span>
-                          <ArrowRight aria-hidden="true" className="ml-auto size-5 text-link" />
+                          <span className="min-w-0 flex-1">{module.title}</span>
+                          <ChevronDown
+                            aria-hidden="true"
+                            className="size-5 shrink-0 text-link group-open:rotate-180 motion-safe:transition-transform"
+                          />
                         </summary>
                         {lesson ? (
                           <div className="mt-4 border-t border-border pt-4">
@@ -179,20 +182,42 @@ export default async function MethodStagePage({
             stage.modules.map((module, moduleIndex) => {
               const completedCount = module.lessons.filter((lesson) => lesson.completedAt).length;
               return (
-                <article className={panelCard} key={module.id}>
-                  <div className="flex items-center gap-3">
-                    {module.lessons.length > 0 && completedCount === module.lessons.length ? (
-                      <Check aria-hidden="true" className="size-5 text-progress-text" />
-                    ) : (
-                      <Circle aria-hidden="true" className="size-5 text-muted-foreground" />
-                    )}
-                    <div>
-                      <p className="text-sm font-semibold text-link">PASSO {moduleIndex + 1}</p>
-                      <h2 className="text-body font-semibold text-foreground">{module.title}</h2>
+                <details
+                  className={`${panelCard} group`}
+                  key={module.id}
+                  open={module.lessons.some((lesson) => lesson.id === track.resumeLessonId)}
+                >
+                  <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      {module.lessons.length > 0 && completedCount === module.lessons.length ? (
+                        <Check aria-hidden="true" className="size-5 shrink-0 text-progress-text" />
+                      ) : (
+                        <Circle
+                          aria-hidden="true"
+                          className="size-5 shrink-0 text-muted-foreground"
+                        />
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-link">PASSO {moduleIndex + 1}</p>
+                        <h2 className="text-body font-semibold text-balance text-foreground">
+                          {module.title}
+                        </h2>
+                      </div>
                     </div>
-                    <span className="ml-auto text-body text-muted-foreground">
+                    <span className="ml-auto shrink-0 text-sm text-muted-foreground">
                       {completedCount} / {module.lessons.length}
                     </span>
+                    <ChevronDown
+                      aria-hidden="true"
+                      className="size-5 shrink-0 text-link group-open:rotate-180 motion-safe:transition-transform"
+                    />
+                  </summary>
+                  <div className="mt-4">
+                    <SllProgress
+                      label={`Progresso do passo ${moduleIndex + 1}`}
+                      completed={completedCount}
+                      total={module.lessons.length}
+                    />
                   </div>
                   <ol className="mt-4 flex flex-col divide-y divide-border border-t border-border">
                     {module.lessons.map((lesson, index) => (
@@ -201,8 +226,9 @@ export default async function MethodStagePage({
                           className="flex min-h-14 items-center gap-3 rounded-xl px-2 py-2 text-body text-foreground outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid"
                           href={`/sll/aula/${lesson.id}`}
                         >
-                          <span className="flex w-16 shrink-0 items-center px-1 py-1.5 text-sm whitespace-nowrap text-muted-foreground">
-                            AULA {index + 1}
+                          <span className="grid size-8 shrink-0 place-items-center rounded-full border border-border text-sm text-muted-foreground">
+                            <span className="sr-only">Aula </span>
+                            {index + 1}
                           </span>
                           <span className="min-w-0 flex-1">{lesson.title}</span>
                           {lesson.completedAt ? (
@@ -223,7 +249,7 @@ export default async function MethodStagePage({
                       As aulas deste passo ainda não foram publicadas.
                     </p>
                   )}
-                </article>
+                </details>
               );
             })
           )}

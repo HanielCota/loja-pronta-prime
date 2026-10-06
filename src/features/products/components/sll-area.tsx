@@ -26,8 +26,8 @@ type SllAreaProps = {
 };
 
 /**
- * Área do SLL, no mesmo formato da Loja Pronta: onde ela está no curso, o caminho dele e as
- * ferramentas ao lado. Quem confere o acesso é a página (requireProduct).
+ * Painel do SLL: avisos gerais no topo, situação individual e atalhos para o conteúdo.
+ * Quem confere o acesso é a página (requireProduct).
  */
 export function SllArea({
   user,

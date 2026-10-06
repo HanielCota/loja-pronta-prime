@@ -4,6 +4,8 @@ import { useActionState, useEffect, useState, type MouseEvent } from 'react';
 import Link from 'next/link';
 import {
   Check,
+  ArrowLeft,
+  ArrowRight,
   CirclePlay,
   Download,
   ExternalLink,
@@ -14,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { panelCard } from '@/features/member/components/area-shell';
 import { prefersReducedMotion } from '@/lib/reduced-motion';
 import { cn } from '@/lib/utils';
+import { SllProgress } from './sll-progress';
 import { setSllLessonCompletionForm, recordSllLessonView } from '../server/actions';
 
 export type SllLessonViewerData = {
@@ -90,6 +93,11 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
   const isLocked = !data.stage.access.isUnlocked;
   const hasVideo = data.blocks.some((block) => block.kind === 'video');
   const isCompleted = completion.completed ?? data.lesson.completed;
+  const completionChange = Number(isCompleted) - Number(data.lesson.completed);
+  const completedCount =
+    (progress?.completedCount ?? data.lessons.filter((lesson) => lesson.completed).length) +
+    completionChange;
+  const totalCount = progress?.totalCount ?? data.lessons.length;
 
   useEffect(() => {
     if (isLocked) return;
@@ -115,10 +123,11 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-body text-muted-foreground">
-        {data.track.title} <span aria-hidden="true">·</span> {data.stage.title}{' '}
-        <span aria-hidden="true">·</span> {data.module.title}
-      </p>
+      {data.track.kind === 'method' ? (
+        <p className="text-sm text-muted-foreground">
+          {data.stage.title} <span aria-hidden="true">·</span> {data.module.title}
+        </p>
+      ) : null}
       {isLocked ? (
         <section className={cn(panelCard, 'gap-4')} aria-labelledby="locked-lesson-title">
           <h2
@@ -136,16 +145,15 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
           </Button>
         </section>
       ) : (
-        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(280px,1fr)]">
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(17rem,1fr)]">
           <div className="flex min-w-0 flex-col gap-5">
             {hasVideo ? (
-              <section
-                className="flex aspect-video min-h-56 flex-col items-center justify-center gap-3 rounded-card border border-border bg-muted p-6 text-center shadow-card sm:min-h-80 forced-colors:border forced-colors:border-[CanvasText]"
-                aria-label="Vídeo da aula"
-              >
-                <CirclePlay aria-hidden="true" className="size-10 text-muted-foreground" />
-                <h2 className="text-body font-semibold text-foreground">Vídeo em breve</h2>
-                <p className="max-w-[48ch] text-body text-muted-foreground">
+              <section className="flex flex-col gap-3" aria-label="Vídeo da aula">
+                <div className="flex aspect-video flex-col items-center justify-center gap-3 rounded-card border border-border bg-muted p-4 text-center forced-colors:border forced-colors:border-[CanvasText]">
+                  <CirclePlay aria-hidden="true" className="size-12 text-muted-foreground" />
+                  <h2 className="text-body font-semibold text-foreground">Vídeo em breve</h2>
+                </div>
+                <p className="text-sm text-muted-foreground">
                   O vídeo desta aula ainda não está disponível.
                 </p>
               </section>
@@ -204,16 +212,16 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
               ) : null}
 
               <div className="flex flex-col gap-4 border-t border-border pt-5">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex flex-col gap-3 sm:flex-row">
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                     {data.lesson.previousId ? (
-                      <Button asChild variant="soft" size="inline" className="px-4">
+                      <Button asChild variant="soft" className="w-auto px-4">
                         <Link
                           href={`/sll/aula/${data.lesson.previousId}`}
                           onClick={openLesson(data.lesson.previousId)}
                           scroll={false}
                         >
-                          Aula anterior
+                          <ArrowLeft aria-hidden="true" /> Aula anterior
                         </Link>
                       </Button>
                     ) : (
@@ -222,13 +230,13 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
                       </span>
                     )}
                     {data.lesson.nextId ? (
-                      <Button asChild variant="soft" size="inline" className="px-4">
+                      <Button asChild variant="soft" className="w-auto px-4">
                         <Link
                           href={`/sll/aula/${data.lesson.nextId}`}
                           onClick={openLesson(data.lesson.nextId)}
                           scroll={false}
                         >
-                          Próxima aula
+                          Próxima aula <ArrowRight aria-hidden="true" />
                         </Link>
                       </Button>
                     ) : null}
@@ -238,7 +246,6 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
                     <input type="hidden" name="lessonId" value={data.lesson.id} />
                     <input type="hidden" name="completed" value={isCompleted ? 'false' : 'true'} />
                     <Button
-                      className="w-full sm:w-auto"
                       loading={isCompleting}
                       loadingText="Salvando…"
                       variant={isCompleted ? 'soft' : 'default'}
@@ -252,58 +259,56 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
                     </Button>
                   </form>
                 </div>
-                <p aria-live="polite" className="text-body text-muted-foreground">
+                <p aria-live="polite" className="text-body text-muted-foreground empty:hidden">
                   {completion.message || viewMessage}
                 </p>
               </div>
             </section>
           </div>
 
-          <aside className={cn(panelCard, 'gap-4')} aria-label="Aulas deste módulo">
+          <aside
+            className={cn(panelCard, 'gap-4 lg:sticky lg:top-6')}
+            aria-label="Aulas deste módulo"
+          >
             <div>
-              <h2 className="text-body font-semibold text-foreground">Aulas deste módulo</h2>
+              <h2 className="text-body font-semibold text-foreground">
+                {data.track.kind === 'welcome' ? 'Trilha de boas-vindas' : data.module.title}
+              </h2>
               <p className="mt-1 text-body text-muted-foreground">
                 {data.lessons.length} {data.lessons.length === 1 ? 'aula' : 'aulas'}
               </p>
             </div>
-            {progress ? (
-              <div className="flex flex-col gap-3 border-b border-border pb-4">
-                <p className="text-body text-foreground">
-                  {progress.completedCount} de {progress.totalCount} aulas concluídas
-                </p>
-                <progress
-                  aria-label="Progresso da trilha"
-                  className="h-2 w-full overflow-hidden rounded-full accent-primary"
-                  max={progress.totalCount || 1}
-                  value={progress.completedCount}
-                />
-                {completedHref &&
-                progress.totalCount > 0 &&
-                progress.completedCount === progress.totalCount ? (
-                  <Button asChild variant="soft">
-                    <Link href={completedHref}>Começar Etapa 1</Link>
-                  </Button>
-                ) : null}
-              </div>
-            ) : null}
-            <ol className="flex flex-col py-1">
+            <div className="flex flex-col gap-3 border-b border-border pb-4">
+              <p className="text-body text-foreground">
+                {completedCount} de {totalCount} aulas concluídas
+              </p>
+              <SllProgress
+                label="Progresso das aulas"
+                total={totalCount}
+                completed={completedCount}
+              />
+              {completedHref && totalCount > 0 && completedCount === totalCount ? (
+                <Button asChild variant="soft">
+                  <Link href={completedHref}>Começar Etapa 1</Link>
+                </Button>
+              ) : null}
+            </div>
+            <ol className="flex flex-col gap-1 p-1 lg:max-h-[calc(100dvh-18rem)] lg:overflow-y-auto">
               {data.lessons.map((lesson) => (
-                <li className="border-b border-border py-1 last:border-b-0" key={lesson.id}>
+                <li key={lesson.id}>
                   {lesson.current ? (
                     <div
                       aria-current="step"
-                      className="flex min-h-14 items-center gap-3 rounded-2xl bg-primary-soft px-3 py-3 text-body text-link"
+                      className="flex min-h-14 items-center gap-3 rounded-2xl bg-primary-soft px-3 py-3 text-body font-semibold text-link forced-colors:border forced-colors:border-[Highlight]"
                     >
                       <LessonNumber lesson={lesson} />
                       <span className="min-w-0 flex-1">{lesson.title}</span>
-                      {lesson.completed ? (
-                        <Check aria-label="Concluída" className="size-5" />
-                      ) : null}
+                      {isCompleted ? <Check aria-label="Concluída" className="size-5" /> : null}
                     </div>
                   ) : (
                     <Link
                       aria-label={`Abrir aula ${lesson.number}: ${lesson.title}`}
-                      className="flex min-h-14 items-center gap-3 rounded-2xl px-3 py-3 text-body text-foreground outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid forced-colors:border forced-colors:border-[CanvasText]"
+                      className="flex min-h-14 items-center gap-3 rounded-2xl px-3 py-3 text-body text-foreground outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid motion-safe:transition-colors forced-colors:border forced-colors:border-[CanvasText]"
                       href={`/sll/aula/${lesson.id}`}
                       onClick={openLesson(lesson.id)}
                       scroll={false}
@@ -327,7 +332,14 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
 
 function LessonNumber({ lesson }: { lesson: SllLessonViewerData['lessons'][number] }) {
   return (
-    <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-border text-base">
+    <span
+      className={cn(
+        'flex size-8 shrink-0 items-center justify-center rounded-full text-sm',
+        lesson.current
+          ? 'bg-primary text-primary-foreground forced-colors:border forced-colors:border-[Highlight]'
+          : 'border border-border text-muted-foreground',
+      )}
+    >
       {lesson.number}
     </span>
   );

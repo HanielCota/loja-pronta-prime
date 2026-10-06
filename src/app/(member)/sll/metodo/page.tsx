@@ -7,6 +7,7 @@ import { SllAreaShell } from '@/features/sll/sll-area-shell';
 import { getFirstSllPublishedTrack } from '@/features/sll/server/catalog';
 import { requireProduct } from '@/features/products/server/access';
 import { getSllCopy } from '@/features/sll/server/copy';
+import { SllProgress } from '@/features/sll/components/sll-progress';
 
 export const metadata: Metadata = { title: 'Método SLL' };
 
@@ -39,8 +40,9 @@ export default async function MethodPage() {
                 const totalCount = stage.access?.totalCount ?? 0;
                 const unlocked = stage.access?.isUnlocked ?? false;
                 return (
-                  <article className={panelCard} key={stage.id}>
-                    <div className="flex items-center gap-3">
+                  <article className={`${panelCard} gap-4`} key={stage.id}>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold text-link">ETAPA {index + 1}</p>
                       {stage.access?.isComplete ? (
                         <CircleCheck aria-hidden="true" className="size-6 text-progress-text" />
                       ) : unlocked ? (
@@ -48,37 +50,34 @@ export default async function MethodPage() {
                       ) : (
                         <LockKeyhole aria-hidden="true" className="size-6 text-muted-foreground" />
                       )}
-                      <p className="text-body font-semibold text-foreground">Etapa {index + 1}</p>
                     </div>
-                    <h3 className="mt-4 text-title font-semibold text-foreground">{stage.title}</h3>
+                    <h3 className="text-title font-semibold text-balance text-foreground">
+                      {stage.title}
+                    </h3>
                     {stage.description ? (
-                      <p className="mt-2 text-body text-muted-foreground">{stage.description}</p>
+                      <p className="text-body text-pretty text-muted-foreground">
+                        {stage.description}
+                      </p>
                     ) : null}
-                    <p className="mt-2 text-body text-muted-foreground">
+                    <p className="mt-auto pt-2 text-sm text-muted-foreground">
                       {unlocked
                         ? `${completedCount} de ${totalCount} ações concluídas`
                         : (stage.access?.lockMessage ??
                           'Conclua a etapa anterior para abrir esta etapa.')}
                     </p>
-                    <div
-                      className="mt-4 h-2 overflow-hidden rounded-full bg-muted"
-                      aria-hidden="true"
-                    >
-                      <div
-                        className="h-full rounded-full bg-progress motion-safe:transition-[width] motion-safe:duration-500"
-                        style={{
-                          width: `${totalCount ? (completedCount / totalCount) * 100 : 0}%`,
-                        }}
-                      />
-                    </div>
+                    <SllProgress
+                      label={`Progresso da Etapa ${index + 1}`}
+                      completed={completedCount}
+                      total={totalCount}
+                    />
                     {unlocked ? (
-                      <Button
-                        asChild
-                        className="mt-5"
-                        variant={completedCount ? 'soft' : 'default'}
-                      >
+                      <Button asChild variant="soft">
                         <Link href={`/sll/metodo/etapa/${stage.id}`}>
-                          {completedCount ? 'Revisar etapa' : 'Começar etapa'}
+                          {stage.access?.isComplete
+                            ? 'Revisar etapa'
+                            : completedCount
+                              ? 'Continuar etapa'
+                              : 'Começar etapa'}
                           <ArrowRight aria-hidden="true" />
                         </Link>
                       </Button>

@@ -27,7 +27,7 @@ export default async function SllLessonPage({ params }: { params: Promise<{ less
       title={data.track.title}
       intro="Assista à aula e acompanhe seu progresso."
     >
-      <SllLessonViewer data={data} />
+      <SllLessonViewer key={data.lesson.id} data={data} />
     </SllAreaShell>
   );
 }

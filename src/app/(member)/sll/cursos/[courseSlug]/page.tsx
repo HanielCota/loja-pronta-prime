@@ -7,6 +7,7 @@ import { panelCard } from '@/features/member/components/area-shell';
 import { SllAreaShell } from '@/features/sll/sll-area-shell';
 import { getSllPublishedTracks } from '@/features/sll/server/catalog';
 import { requireProduct } from '@/features/products/server/access';
+import { SllProgress } from '@/features/sll/components/sll-progress';
 
 export const metadata: Metadata = { title: 'Curso complementar · SLL' };
 
@@ -40,20 +41,33 @@ export default async function ComplementaryCoursePage({
         </Link>
       </Button>
       {lessons.length ? (
-        <section className={panelCard} aria-label="Aulas do curso">
+        <section className={`${panelCard} gap-4`} aria-label="Aulas do curso">
           <p className="text-body text-muted-foreground">
             {completedCount} de {lessons.length} aulas concluídas
           </p>
+          <SllProgress
+            label="Progresso do curso"
+            completed={completedCount}
+            total={lessons.length}
+          />
           <ol className="flex flex-col divide-y divide-border border-t border-border">
             {lessons.map((lesson, index) => (
               <li key={lesson.id}>
                 <Link
-                  className="flex min-h-14 items-center gap-3 py-2 text-body text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                  className="flex min-h-14 items-center gap-3 rounded-2xl px-2 py-3 text-body text-foreground outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-safe:transition-colors"
                   href={`/sll/aula/${lesson.id}`}
                 >
+                  <span className="grid size-8 shrink-0 place-items-center rounded-full border border-border text-sm text-muted-foreground">
+                    <span className="sr-only">Aula </span>
+                    {index + 1}
+                  </span>
                   <span className="min-w-0 flex-1">
-                    Aula {index + 1} · {lesson.title}
-                    {lesson.durationMinutes ? ` · ${lesson.durationMinutes} min` : ''}
+                    <span className="block font-medium">{lesson.title}</span>
+                    {lesson.durationMinutes ? (
+                      <span className="text-sm text-muted-foreground">
+                        {lesson.durationMinutes} min
+                      </span>
+                    ) : null}
                   </span>
                   {lesson.completedAt ? (
                     <Check aria-label="Concluída" className="size-5 text-progress-text" />

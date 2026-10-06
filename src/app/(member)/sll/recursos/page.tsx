@@ -43,12 +43,15 @@ export default async function SllResourcesPage() {
           const isCalculator = group.key === 'calculadora';
           return (
             <section key={group.key} aria-labelledby={`resource-group-${group.key}`}>
-              <h2
-                id={`resource-group-${group.key}`}
-                className="mb-4 text-body font-semibold text-foreground"
-              >
-                {group.title}
-              </h2>
+              <div className="mb-4 flex items-center gap-3">
+                <Icon aria-hidden="true" className="size-6 shrink-0 text-link" />
+                <h2
+                  id={`resource-group-${group.key}`}
+                  className="text-title font-semibold text-foreground"
+                >
+                  {group.title}
+                </h2>
+              </div>
               <ul
                 className={
                   isCalculator ? 'flex flex-col gap-4' : 'grid items-start gap-4 md:grid-cols-2'
@@ -61,7 +64,9 @@ export default async function SllResourcesPage() {
                       key={resource.id}
                       className={`${panelCard} ${isCalculator ? 'gap-4 sm:flex-row sm:items-center' : 'gap-3'}`}
                     >
-                      <Icon aria-hidden="true" className="size-6 shrink-0 text-link" />
+                      <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary-soft text-link">
+                        <Icon aria-hidden="true" className="size-6" />
+                      </span>
                       <div className="min-w-0 flex-1">
                         {/* A calculadora também tem título: sem ele, o cartão não tinha nome
                             pro leitor de tela, só a descrição e o "Em breve". */}
