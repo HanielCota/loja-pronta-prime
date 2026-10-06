@@ -5,18 +5,14 @@ import { cn } from '@/lib/utils';
 import { panelCard, sectionTitleClass } from '@/features/member/components/area-shell';
 
 const PATH = [
-  { title: 'Trilha de boas-vindas', detail: 'Como o curso funciona.', locked: false },
-  {
-    title: 'Método em 3 Etapas',
-    detail: 'Cada etapa abre quando você conclui a anterior.',
-    locked: true,
-  },
-  { title: 'Minicursos', detail: 'Temas extras depois do método.', locked: true },
+  { title: 'Trilha de boas-vindas', detail: 'Como o curso funciona.' },
+  { title: 'Método em 3 Etapas', detail: 'Cada etapa abre quando você conclui a anterior.' },
+  { title: 'Minicursos', detail: 'Temas extras depois do método.' },
 ] as const;
 
 /**
- * Caminho do SLL, na ordem em que o curso abre. As aulas ainda não estão no ar, então nada aqui é
- * clicável nem tem cara de botão.
+ * Caminho do SLL, na ordem em que o curso abre. Só vira link o que já tem aula publicada; o
+ * resto aparece com cadeado, sem cara de botão.
  */
 export function SllCourseCard({
   welcomeHref,
@@ -63,19 +59,14 @@ export function SllCourseCard({
                 <div className="flex gap-3">
                   <span
                     aria-hidden="true"
-                    className={cn(
-                      'grid size-8 shrink-0 place-items-center rounded-full text-sm font-semibold',
-                      !href
-                        ? 'bg-muted text-muted-foreground ring-1 ring-border'
-                        : 'bg-primary-soft text-link',
-                    )}
+                    className="grid size-8 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground ring-1 ring-border"
                   >
-                    {!href ? <LockIcon className="size-4" /> : index + 1}
+                    <LockIcon className="size-4" />
                   </span>
                   <span className="flex min-w-0 flex-col gap-0.5 pt-0.5">
                     <span className="text-body font-semibold text-foreground">
                       {step.title}
-                      {!href ? <span className="sr-only"> (bloqueado por enquanto)</span> : null}
+                      <span className="sr-only"> (bloqueado por enquanto)</span>
                     </span>
                     <span className="text-body text-pretty text-muted-foreground">
                       {step.detail}
@@ -113,7 +104,7 @@ export function SllToolsCard() {
   );
 }
 
-/** Abre a página de lojas conectadas sem sugerir que a integração já funciona. */
+/** A conexão com a Shopee ainda não existe: o cartão diz "em breve", sem botão que finge. */
 export function SllStoresCard() {
   return (
     <section aria-labelledby="minhas-lojas" className={cn(panelCard, 'gap-3')}>
@@ -123,14 +114,9 @@ export function SllStoresCard() {
       <div className="flex items-center gap-3">
         <Store aria-hidden="true" className="size-5 shrink-0 text-link" />
         <p className="flex-1 text-body text-muted-foreground">
-          Veja suas lojas da Shopee conectadas.
+          Em breve, suas lojas da Shopee aparecem aqui.
         </p>
       </div>
-      <Button asChild className="mt-2" variant="soft">
-        <Link href="/sll/minhas-lojas">
-          Acessar minhas lojas <ArrowRight aria-hidden="true" />
-        </Link>
-      </Button>
     </section>
   );
 }

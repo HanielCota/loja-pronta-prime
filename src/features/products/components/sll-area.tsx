@@ -36,18 +36,22 @@ export function SllArea({
   coursesHref,
   banners,
 }: SllAreaProps) {
+  const open = Boolean(welcomeHref || methodHref || coursesHref);
   return (
     <AreaShell
       account={user}
       hasChoice={hasChoice}
       area="sll"
       product="Sistema Loja Lucrativa (SLL)"
-      // As aulas ainda não estão no ar: o título diz isso, sem mandar ela "começar" algo fechado.
-      title="As aulas abrem em breve"
+      // Sem nenhuma trilha publicada, o título diz que as aulas ainda vão abrir, sem mandar
+      // ela "começar" algo fechado.
+      title={open ? 'Seu curso' : 'As aulas abrem em breve'}
       intro={greeting(
         greetingName(user),
         firstVisit,
-        'O curso começa pela trilha de boas-vindas. Você recebe um aviso quando ela abrir.',
+        open
+          ? 'Comece pela trilha de boas-vindas. Depois, siga as etapas do método.'
+          : 'O curso começa pela trilha de boas-vindas. Você recebe um aviso quando ela abrir.',
       )}
     >
       <SllBannerCarousel banners={banners} />

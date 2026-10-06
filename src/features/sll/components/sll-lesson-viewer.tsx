@@ -100,8 +100,7 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
                 <Film aria-hidden="true" className="size-10 text-muted-foreground" />
                 <h2 className="text-body font-semibold text-foreground">Vídeo da aula</h2>
                 <p className="max-w-[48ch] text-body text-muted-foreground">
-                  O player do Panda Video ainda não está conectado. O vídeo será exibido aqui quando
-                  a integração estiver disponível.
+                  O vídeo desta aula chega em breve. Enquanto isso, leia o conteúdo abaixo.
                 </p>
               </section>
             ) : null}

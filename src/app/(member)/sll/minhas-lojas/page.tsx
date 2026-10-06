@@ -15,7 +15,7 @@ export default async function SllStoresPage() {
       hasChoice={products.length > 1}
       area="sll"
       title="Minhas Lojas"
-      intro="Acompanhe as lojas da Shopee conectadas à sua conta."
+      intro="Aqui você vai ver suas lojas da Shopee."
     >
       <section className={panelCard} aria-labelledby="stores-coming-soon">
         <Store aria-hidden="true" className="size-7 text-link" />
@@ -23,7 +23,7 @@ export default async function SllStoresPage() {
           A conexão da Shopee chega em breve
         </h2>
         <p className="mt-2 text-body text-muted-foreground">
-          Quando a integração estiver disponível, suas lojas e seus dados aparecerão aqui.
+          Quando a conexão abrir, suas lojas e as vendas delas aparecem nesta página.
         </p>
       </section>
     </AreaShell>
