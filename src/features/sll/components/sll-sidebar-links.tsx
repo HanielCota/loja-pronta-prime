@@ -18,7 +18,7 @@ type NavItem = { href: string; label: string; icon: typeof Store; exact?: boolea
 
 // Altura mínima, não fixa: nome de etapa comprido quebra a linha em vez de vazar do item.
 const itemClass =
-  'group flex min-h-12 shrink-0 items-center gap-3 rounded-2xl px-3 py-3 text-body outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-safe:transition-colors motion-safe:duration-150';
+  'group flex min-h-11 shrink-0 items-center gap-3 rounded-2xl px-3 py-2 text-sm wrap-anywhere outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-safe:transition-colors motion-safe:duration-150';
 
 export function SllSidebarLinks({
   stages,
@@ -43,7 +43,7 @@ export function SllSidebarLinks({
   ];
   const section = currentSection ?? pathname;
   // Fora do Método, a lista curta deixa os outros destinos à vista, como no site de referência.
-  const showStages = section.startsWith('/sll/metodo') || section === '/sll/recursos';
+  const showStages = section.startsWith('/sll/metodo');
   const currentLabel = (
     [...operation, ...learning, ...stages].find((item) => item.href === section) ??
     learning.find((item) => section.startsWith(`${item.href}/`))
@@ -61,11 +61,9 @@ export function SllSidebarLinks({
   };
 
   const navigation = (
-    <nav aria-label="Seções do SLL" className="flex flex-col gap-6">
+    <nav aria-label="Seções do SLL" className="flex flex-col gap-4">
       <div>
-        <p className="px-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
-          Minha operação
-        </p>
+        <p className="px-3 text-sm font-medium text-muted-foreground">Minha operação</p>
         <ul className="mt-2 flex flex-col gap-1">
           {operation.map((item) => (
             <li key={item.href}>
@@ -89,9 +87,7 @@ export function SllSidebarLinks({
         </ul>
       </div>
       <div>
-        <p className="px-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
-          Aprender
-        </p>
+        <p className="px-3 text-sm font-medium text-muted-foreground">Aprender</p>
         <ul className="mt-2 flex flex-col gap-1">
           {learning.map((item) => (
             <li key={item.href}>
@@ -111,14 +107,13 @@ export function SllSidebarLinks({
                 {item.label}
               </Link>
               {item.href === '/sll/metodo' && showStages && stages.length ? (
-                <ul className="mt-2 ml-5 flex flex-col gap-1 border-l border-border pl-2">
+                <ul className="mt-1 ml-3 flex flex-col gap-1 border-l border-border pl-1">
                   {stages.map((stage) => (
                     <li key={stage.href}>
                       <Link
                         aria-current={currentOf(stage)}
                         className={cn(
                           itemClass,
-                          'min-h-11 text-sm',
                           currentOf(stage)
                             ? 'bg-primary-soft font-semibold text-link hover:bg-primary-soft'
                             : 'text-muted-foreground',
@@ -145,7 +140,7 @@ export function SllSidebarLinks({
         aria-label="Navegação do SLL"
       >
         {/* O cartão vai até o fim do conteúdo; só o menu acompanha a rolagem. */}
-        <div className="lg:sticky lg:top-6 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto">
+        <div className="p-1 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-8rem)] lg:overflow-y-auto">
           {navigation}
         </div>
       </aside>

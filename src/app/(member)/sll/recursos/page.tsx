@@ -47,16 +47,12 @@ export default async function SllResourcesPage() {
                 <Icon aria-hidden="true" className="size-6 shrink-0 text-link" />
                 <h2
                   id={`resource-group-${group.key}`}
-                  className="text-title font-semibold text-foreground"
+                  className="text-xl leading-snug font-semibold text-balance text-foreground"
                 >
                   {group.title}
                 </h2>
               </div>
-              <ul
-                className={
-                  isCalculator ? 'flex flex-col gap-4' : 'grid items-start gap-4 md:grid-cols-2'
-                }
-              >
+              <ul className={isCalculator ? 'flex flex-col gap-4' : 'grid gap-4 md:grid-cols-2'}>
                 {group.items.map((resource) => {
                   const buttonLabel = resource.buttonLabel ?? 'Abrir recurso';
                   return (
@@ -90,6 +86,7 @@ export default async function SllResourcesPage() {
                           ) : (
                             <a href={resource.destination} rel="noreferrer" target="_blank">
                               {buttonLabel} <ArrowUpRight aria-hidden="true" />
+                              <span className="sr-only"> (abre em outra aba)</span>
                             </a>
                           )}
                         </Button>

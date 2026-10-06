@@ -47,6 +47,7 @@ export function SllBannerCarousel({ banners }: { banners: Banner[] }) {
       <a href={banner.destination} rel="noreferrer" target="_blank">
         {banner.buttonLabel}
         <ArrowRight aria-hidden="true" />
+        <span className="sr-only"> (abre em outra aba)</span>
       </a>
     </Button>
   );
@@ -79,6 +80,8 @@ export function SllBannerCarousel({ banners }: { banners: Banner[] }) {
         <img
           alt={banner.imageAlt ?? ''}
           className="aspect-[2/1] w-full rounded-2xl object-cover md:aspect-[4/3]"
+          width={1280}
+          height={720}
           src={`/api/sll/banner/${banner.id}`}
         />
       </div>

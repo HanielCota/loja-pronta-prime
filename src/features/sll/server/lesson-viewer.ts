@@ -97,7 +97,7 @@ export async function getSllLessonViewer(lessonId: string) {
   return {
     user: session.user,
     hasChoice: products.length > 1,
-    track: { id: track.id, title: track.title, kind: track.kind },
+    track: { id: track.id, slug: track.slug, title: track.title, kind: track.kind },
     progress: { completedCount: track.completedCount, totalCount: track.totalCount },
     stage: { id: stage.id, title: stage.title, access: stage.access },
     module: { id: lesson.module.id, title: lesson.module.title },

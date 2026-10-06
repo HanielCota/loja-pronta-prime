@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Check, ChevronDown, Circle, LockKeyhole } from 'lucide-react';
+import { ArrowRight, Check, ChevronDown, Circle, LockKeyhole } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { panelCard } from '@/features/member/components/area-shell';
@@ -16,10 +16,13 @@ export const metadata: Metadata = { title: 'Etapa do Método SLL' };
 /** Mostra os quatro passos da Etapa 1 e liga cada aula ao visualizador comum. */
 export default async function MethodStagePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ stageId: string }>;
+  searchParams: Promise<{ q?: string | string[] }>;
 }) {
-  const { stageId } = await params;
+  const [{ stageId }, { q }] = await Promise.all([params, searchParams]);
+  const libraryQuery = typeof q === 'string' ? q.slice(0, 200) : '';
   const [{ session, products }, track, copy] = await Promise.all([
     requireProduct('sll'),
     getFirstSllPublishedTrack('method'),
@@ -40,13 +43,8 @@ export default async function MethodStagePage({
       hasChoice={products.length > 1}
       title={stage.title}
       intro={stage.description ?? undefined}
+      backLink={{ href: '/sll/metodo', label: 'Voltar ao Método SLL' }}
     >
-      <Button asChild className="w-fit" variant="ghost" size="inline">
-        <Link href="/sll/metodo">
-          <ArrowLeft aria-hidden="true" />
-          Voltar ao Método SLL
-        </Link>
-      </Button>
       {!unlocked ? (
         <section className={panelCard}>
           <LockKeyhole aria-hidden="true" className="size-6 text-muted-foreground" />
@@ -60,7 +58,8 @@ export default async function MethodStagePage({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-body font-semibold text-foreground">{copy.stageProgressTitle}</h2>
               <p className="text-body text-foreground">
-                {stage.access?.completedCount ?? 0} / {stage.access?.totalCount ?? 0} concluídas
+                {stage.access?.completedCount ?? 0} de {stage.access?.totalCount ?? 0} ações
+                concluídas
               </p>
             </div>
             <div className="mt-4">
@@ -73,6 +72,8 @@ export default async function MethodStagePage({
           </div>
           {stage.slug === 'etapa-3' ? (
             <SllKnowledgeLibrary
+              key={libraryQuery}
+              initialQuery={libraryQuery}
               modules={stage.modules.map((module) => ({
                 id: module.id,
                 title: module.title,

@@ -6,28 +6,22 @@ import { ArrowRight, Check, CirclePlay } from 'lucide-react';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { LiveRegion } from '@/components/ui/live-region';
 import { panelCard } from '@/features/member/components/area-shell';
+import { Button } from '@/components/ui/button';
+import { usePathname } from 'next/navigation';
+import { filterLibraryModules, type LibraryModule } from '../library-search';
 
-type LibraryModule = {
-  id: string;
-  title: string;
-  lessons: Array<{ id: string; title: string; description: string | null; completed: boolean }>;
-};
-
-export function SllKnowledgeLibrary({ modules }: { modules: LibraryModule[] }) {
-  const [query, setQuery] = useState('');
+export function SllKnowledgeLibrary({
+  modules,
+  initialQuery = '',
+}: {
+  modules: LibraryModule[];
+  initialQuery?: string;
+}) {
+  const [query, setQuery] = useState(initialQuery);
+  const pathname = usePathname();
   const normalizedQuery = query.trim().toLocaleLowerCase('pt-BR');
   const results = useMemo(
-    () =>
-      modules
-        .map((module) => ({
-          ...module,
-          lessons: module.lessons.filter((lesson) =>
-            `${module.title} ${lesson.title} ${lesson.description ?? ''}`
-              .toLocaleLowerCase('pt-BR')
-              .includes(normalizedQuery),
-          ),
-        }))
-        .filter((module) => module.lessons.length > 0),
+    () => filterLibraryModules(modules, normalizedQuery),
     [modules, normalizedQuery],
   );
   const resultCount = results.reduce((count, module) => count + module.lessons.length, 0);
@@ -35,19 +29,47 @@ export function SllKnowledgeLibrary({ modules }: { modules: LibraryModule[] }) {
   return (
     <section className="flex flex-col gap-8" aria-labelledby="library-title">
       <div className="flex flex-col gap-3">
-        <h2 id="library-title" className="text-body font-semibold text-foreground">
+        <h2 id="library-title" className="scroll-mt-6 text-body font-semibold text-foreground">
           {modules.reduce((count, module) => count + module.lessons.length, 0)} aulas em{' '}
           {modules.length} categorias
         </h2>
-        <FloatingLabelInput
-          autoComplete="off"
-          id="library-search"
-          label="Buscar aula ou tema"
-          onChange={(event) => setQuery(event.target.value)}
-          type="search"
-          value={query}
-        />
-        <p className="text-sm text-muted-foreground">Ex.: cupom, etiqueta ou avaliações.</p>
+        <form
+          action={`${pathname}#library-title`}
+          method="get"
+          className="flex flex-col gap-3 sm:flex-row sm:items-center"
+        >
+          <div className="min-w-0 flex-1">
+            <FloatingLabelInput
+              autoComplete="off"
+              id="library-search"
+              label="Buscar aula ou tema"
+              name="q"
+              maxLength={200}
+              aria-describedby="library-search-help"
+              onChange={(event) => setQuery(event.target.value)}
+              type="search"
+              value={query}
+            />
+          </div>
+          <Button type="submit" variant="soft" className="sm:w-auto">
+            Buscar
+          </Button>
+          {query ? (
+            <Button asChild size="inline" variant="ghost" className="px-3">
+              <Link href={`${pathname}#library-title`} onClick={() => setQuery('')}>
+                Limpar busca
+              </Link>
+            </Button>
+          ) : null}
+        </form>
+        <p id="library-search-help" className="text-sm text-muted-foreground">
+          Ex.: cupom, etiqueta ou avaliações. Você pode buscar sem acentos.
+        </p>
+        {normalizedQuery ? (
+          <p className="text-body text-muted-foreground">
+            {resultCount} {resultCount === 1 ? 'aula encontrada' : 'aulas encontradas'}
+          </p>
+        ) : null}
       </div>
       {/* Sempre no código, pra o leitor de tela anunciar quantas aulas a busca achou. */}
       <LiveRegion>
@@ -59,16 +81,18 @@ export function SllKnowledgeLibrary({ modules }: { modules: LibraryModule[] }) {
         results.map((module) => (
           <section key={module.id} aria-label={module.title}>
             <div className="mb-4 flex flex-wrap items-baseline gap-3">
-              <h3 className="text-title font-semibold text-foreground">{module.title}</h3>
+              <h3 className="text-xl leading-snug font-semibold text-balance text-foreground">
+                {module.title}
+              </h3>
               <span className="text-sm text-muted-foreground">
                 {module.lessons.length} {module.lessons.length === 1 ? 'aula' : 'aulas'}
               </span>
             </div>
-            <ol className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <ol className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] gap-4">
               {module.lessons.map((lesson) => (
                 <li key={lesson.id}>
                   <Link
-                    className={`${panelCard} group h-full gap-4 text-body text-foreground outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-safe:transition-colors`}
+                    className={`${panelCard} group h-full gap-4 text-body wrap-anywhere text-foreground outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-safe:transition-colors sm:p-6`}
                     href={`/sll/aula/${lesson.id}`}
                   >
                     <span className="flex items-center justify-between gap-2">

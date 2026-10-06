@@ -43,9 +43,10 @@ A Loja Pronta, os fluxos de acesso, o perfil, o admin e os tokens globais não f
 
 ## Conferência da implementação
 
-- `bun run typecheck`, `bun run lint` e `bun test src`: aprovados; 214 testes unitários.
-- Revisão com Playwright na base local e com aluna de teste: 12 páginas em computador e celular,
-  nos dois temas, totalizando 48 verificações de acessibilidade WCAG 2.2 AA/boas práticas e
+- `bun run typecheck`, `bun run lint` e `bun test src`: aprovados; 218 testes unitários.
+- Revisão ampliada em [SLL-REVISAO-UI-UX.md](SLL-REVISAO-UI-UX.md), com Playwright na base local
+  e com aluna de teste: 15 páginas em cinco larguras, nos dois temas, totalizando 150
+  verificações de acessibilidade WCAG 2.2 AA/boas práticas e
   ausência de rolagem horizontal.
 - Conclusão e desmarcação persistidas, troca de aula sem carregar o estado anterior e menu móvel
   operado pelo teclado: aprovados.

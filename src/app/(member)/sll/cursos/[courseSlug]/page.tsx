@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
+import { ArrowRight, Check } from 'lucide-react';
 import { notFound } from 'next/navigation';
-import { Button } from '@/components/ui/button';
 import { panelCard } from '@/features/member/components/area-shell';
 import { SllAreaShell } from '@/features/sll/sll-area-shell';
 import { getSllPublishedTracks } from '@/features/sll/server/catalog';
@@ -34,12 +33,8 @@ export default async function ComplementaryCoursePage({
       hasChoice={products.length > 1}
       title={course.title}
       intro={course.description ?? undefined}
+      backLink={{ href: '/sll/cursos', label: 'Voltar aos cursos' }}
     >
-      <Button asChild className="w-fit" size="inline" variant="ghost">
-        <Link href="/sll/cursos">
-          <ArrowLeft aria-hidden="true" /> Voltar aos cursos
-        </Link>
-      </Button>
       {lessons.length ? (
         <section className={`${panelCard} gap-4`} aria-label="Aulas do curso">
           <p className="text-body text-muted-foreground">

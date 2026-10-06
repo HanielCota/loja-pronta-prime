@@ -31,16 +31,16 @@ export default async function MethodPage() {
       {track && track.stages.length ? (
         <div className="flex flex-col gap-6">
           <section aria-labelledby="method-stages-title">
-            <h2 id="method-stages-title" className="mb-4 text-title font-semibold text-foreground">
+            <h2 id="method-stages-title" className="mb-4 text-body font-semibold text-foreground">
               {copy.methodStagesTitle}
             </h2>
-            <div className="grid gap-4 lg:grid-cols-3">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] gap-4">
               {track.stages.map((stage, index) => {
                 const completedCount = stage.access?.completedCount ?? 0;
                 const totalCount = stage.access?.totalCount ?? 0;
                 const unlocked = stage.access?.isUnlocked ?? false;
                 return (
-                  <article className={`${panelCard} gap-4`} key={stage.id}>
+                  <article className={`${panelCard} gap-4 sm:p-6`} key={stage.id}>
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-semibold text-link">ETAPA {index + 1}</p>
                       {stage.access?.isComplete ? (
@@ -51,7 +51,7 @@ export default async function MethodPage() {
                         <LockKeyhole aria-hidden="true" className="size-6 text-muted-foreground" />
                       )}
                     </div>
-                    <h3 className="text-title font-semibold text-balance text-foreground">
+                    <h3 className="text-xl leading-snug font-semibold text-balance text-foreground">
                       {stage.title}
                     </h3>
                     {stage.description ? (

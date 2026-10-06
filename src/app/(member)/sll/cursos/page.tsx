@@ -57,6 +57,8 @@ export default async function ComplementaryCoursesPage() {
                   <img
                     alt={featured.course.coverAlt ?? ''}
                     className="aspect-video w-full rounded-2xl object-cover"
+                    width={1280}
+                    height={720}
                     src={`/api/sll/course-cover/${featured.course.id}`}
                   />
                 ) : (
@@ -100,20 +102,23 @@ export default async function ComplementaryCoursesPage() {
                 {catalog.length} {catalog.length === 1 ? 'curso' : 'cursos'}
               </p>
             </div>
-            <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] gap-4">
               {catalog.map(({ course, lessonCount, minutes }) => (
-                <li className={`${panelCard} gap-4`} key={course.id}>
+                <li className={`${panelCard} gap-4 sm:p-6`} key={course.id}>
                   {course.coverStorageKey ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       alt={course.coverAlt ?? ''}
                       className="aspect-video w-full rounded-2xl object-cover"
+                      width={1280}
+                      height={720}
+                      loading="lazy"
                       src={`/api/sll/course-cover/${course.id}`}
                     />
                   ) : (
                     <CourseCoverPlaceholder />
                   )}
-                  <h3 className="text-title font-semibold text-balance text-foreground">
+                  <h3 className="text-xl leading-snug font-semibold text-balance text-foreground">
                     {course.title}
                   </h3>
                   {course.description ? (
@@ -139,7 +144,12 @@ export default async function ComplementaryCoursesPage() {
                   {lessonCount ? (
                     <Button asChild className="mt-auto" variant="soft">
                       <Link href={`/sll/cursos/${course.slug}`}>
-                        Abrir curso <ArrowRight aria-hidden="true" />
+                        {course.completedCount === lessonCount
+                          ? 'Revisar curso'
+                          : course.completedCount
+                            ? 'Continuar curso'
+                            : 'Abrir curso'}{' '}
+                        <ArrowRight aria-hidden="true" />
                       </Link>
                     </Button>
                   ) : (
