@@ -12,19 +12,10 @@ import {
 const lessons = [
   ['boas-vindas', 'Boas-vindas ao SLL'],
   ['a-tribo-das-soberanas', 'A tribo das soberanas'],
-  [
-    'a-decisao-para-se-tornar-uma-soberana',
-    'A decisão para se tornar uma soberana',
-  ],
-  [
-    'de-clt-a-2-milhoes',
-    'Como eu saí de CLT para faturar mais de 2 milhões',
-  ],
+  ['a-decisao-para-se-tornar-uma-soberana', 'A decisão para se tornar uma soberana'],
+  ['de-clt-a-2-milhoes', 'Como eu saí de CLT para faturar mais de 2 milhões'],
   ['entrevista-lari-e-leo', 'Entrevista Lari e Leo'],
-  [
-    'agir-por-decisao',
-    'Você vai agir por decisão e não por condição',
-  ],
+  ['agir-por-decisao', 'Você vai agir por decisão e não por condição'],
 ] as const;
 
 if (process.env.NODE_ENV === 'production') {
