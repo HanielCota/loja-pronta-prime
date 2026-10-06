@@ -132,8 +132,11 @@ export async function publishSllBanner(form: FormData): Promise<void> {
   if (!banner) return;
   const draft = await getNodeDraft('banner', id.data);
   const data = draft?.data;
-  const imageStorageKey = data?.imageStorageKey ?? banner.imageStorageKey;
-  const imageAlt = data?.imageAlt ?? banner.imageAlt;
+  // Confere exatamente o que vai ser gravado: no rascunho, `null` quer dizer "apagado" e não
+  // pode cair no valor publicado, ou o banner sairia sem imagem ou sem descrição.
+  const imageStorageKey =
+    data?.imageStorageKey !== undefined ? data.imageStorageKey : banner.imageStorageKey;
+  const imageAlt = data?.imageAlt !== undefined ? data.imageAlt : banner.imageAlt;
   const destination = data?.destination ?? banner.destination;
   if (!imageStorageKey || !imageAlt || !destination || !validDestination(destination)) return;
   await db.transaction(async (tx) => {
