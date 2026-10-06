@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Search } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import { FloatingLabelInput } from '@/components/ui/floating-label-input';
+import { LiveRegion } from '@/components/ui/live-region';
 
 type LibraryModule = {
   id: string;
@@ -27,6 +29,7 @@ export function SllKnowledgeLibrary({ modules }: { modules: LibraryModule[] }) {
         .filter((module) => module.lessons.length > 0),
     [modules, normalizedQuery],
   );
+  const resultCount = results.reduce((count, module) => count + module.lessons.length, 0);
 
   return (
     <section className="flex flex-col gap-5" aria-labelledby="library-title">
@@ -34,17 +37,20 @@ export function SllKnowledgeLibrary({ modules }: { modules: LibraryModule[] }) {
         {modules.reduce((count, module) => count + module.lessons.length, 0)} aulas em{' '}
         {modules.length} categorias
       </h2>
-      <label className="flex min-h-12 items-center gap-3 rounded-field border border-input bg-card px-4 text-muted-foreground focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring">
-        <Search aria-hidden="true" className="size-5 shrink-0" />
-        <span className="sr-only">Buscar aulas</span>
-        <input
-          className="min-w-0 flex-1 bg-transparent text-body text-foreground outline-none placeholder:text-muted-foreground"
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Buscar aula ou tema"
-          type="search"
-          value={query}
-        />
-      </label>
+      <FloatingLabelInput
+        autoComplete="off"
+        id="library-search"
+        label="Buscar aula ou tema"
+        onChange={(event) => setQuery(event.target.value)}
+        type="search"
+        value={query}
+      />
+      {/* Sempre no código, pra o leitor de tela anunciar quantas aulas a busca achou. */}
+      <LiveRegion>
+        {normalizedQuery
+          ? `${resultCount} ${resultCount === 1 ? 'aula encontrada' : 'aulas encontradas'}`
+          : null}
+      </LiveRegion>
       {results.length ? (
         results.map((module) => (
           <section key={module.id} aria-label={module.title}>
@@ -72,7 +78,7 @@ export function SllKnowledgeLibrary({ modules }: { modules: LibraryModule[] }) {
           </section>
         ))
       ) : (
-        <p aria-live="polite" className="text-body text-muted-foreground">
+        <p className="text-body text-muted-foreground">
           Nenhuma aula encontrada. Tente outra palavra.
         </p>
       )}
