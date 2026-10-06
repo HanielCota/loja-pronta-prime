@@ -21,6 +21,7 @@ export default async function ProfilePage() {
   const { session } = await requireStudent('/perfil');
   const { user } = session;
   const name = greetingName(user);
+  const profileName = user.preferredName?.trim() || user.name;
 
   return (
     // O voltar sempre aparece: o início leva pra área certa, mesmo de quem tem um produto só.
@@ -32,7 +33,7 @@ export default async function ProfilePage() {
       header={
         <div className="mt-2 flex items-center gap-4 sm:gap-5">
           {/* A mesma foto (ou iniciais) do canto do topo. */}
-          <Avatar name={user.name} image={user.image} className="size-16 text-title sm:size-20" />
+          <Avatar name={profileName} image={user.image} className="size-16 text-title sm:size-20" />
           <div className="flex min-w-0 flex-col gap-1">
             <h1 className="text-title font-semibold text-balance wrap-anywhere sm:text-title-lg">
               {name || 'Seu perfil'}
@@ -43,7 +44,7 @@ export default async function ProfilePage() {
       }
     >
       <ProfileSettings
-        name={name}
+        name={profileName}
         email={user.email}
         image={user.image}
         emailHelp={

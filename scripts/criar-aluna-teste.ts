@@ -13,7 +13,7 @@ import type { ProductId } from '@/config/products';
 import { STORE_PHASES } from '@/config/store-phases';
 import { auth } from '@/server/auth/auth';
 import { db } from '@/server/db';
-import { storeOnboarding, stores, studentProducts } from '@/server/db/schema';
+import { manualProductGrants, storeOnboarding, stores, studentProducts } from '@/server/db/schema';
 
 if (process.env.NODE_ENV === 'production') {
   console.error('Esse script é só pra desenvolvimento.');
@@ -63,6 +63,9 @@ const products: ProductId[] = flags.has('--sem-produto')
 if (products.length) {
   await db
     .insert(studentProducts)
+    .values(products.map((product) => ({ userId: user.id, product })));
+  await db
+    .insert(manualProductGrants)
     .values(products.map((product) => ({ userId: user.id, product })));
 }
 

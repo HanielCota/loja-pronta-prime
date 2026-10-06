@@ -30,6 +30,7 @@ export const lessonEditSchema = z.object({
           kind: z.literal('link'),
           label: z.string().trim().min(1).max(180),
           url: safeWebUrl,
+          note: z.string().trim().max(3000).default(''),
         }),
         z.object({
           id: z.preprocess((value) => (value === '' ? undefined : value), z.uuid().optional()),
@@ -37,11 +38,13 @@ export const lessonEditSchema = z.object({
           provider: z.literal('pandavideo'),
           // Campo vazio mantém o espaço da aula sem inventar uma URL. A publicação valida o ID.
           videoId: z.union([z.literal(''), z.uuid()]),
+          note: z.string().trim().max(3000).default(''),
         }),
         z.object({
           id: z.preprocess((value) => (value === '' ? undefined : value), z.uuid().optional()),
           kind: z.literal('file'),
           fileName: z.string().trim().min(1).max(160),
+          attachedTo: z.union([z.literal(''), z.uuid()]).default(''),
         }),
         z.object({
           id: z.preprocess((value) => (value === '' ? undefined : value), z.uuid().optional()),

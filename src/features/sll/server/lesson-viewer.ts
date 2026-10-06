@@ -2,7 +2,12 @@ import { and, asc, eq, isNull } from 'drizzle-orm';
 import { requireProduct } from '@/features/products/server/access';
 import { contentPreviewData } from '@/features/admin/content-preview';
 import { db } from '@/server/db';
-import { learningContentBlocks, learningLessons } from '@/server/db/schema';
+import {
+  learningContentBlocks,
+  learningLessons,
+  learningResourceLessons,
+  learningResources,
+} from '@/server/db/schema';
 import { isProgressId } from '../progress-rules';
 import { getSllTrackProgress } from './progress';
 
@@ -69,6 +74,23 @@ export async function getSllLessonViewer(lessonId: string) {
   const currentIndex = lesson.module.lessons.findIndex((item) => item.id === lesson.id);
   if (currentIndex < 0) return null;
 
+  const linkedResources = await db
+    .select({
+      id: learningResources.id,
+      title: learningResources.title,
+      buttonLabel: learningResources.buttonLabel,
+      destination: learningResources.destination,
+    })
+    .from(learningResourceLessons)
+    .innerJoin(learningResources, eq(learningResourceLessons.resourceId, learningResources.id))
+    .where(
+      and(
+        eq(learningResourceLessons.lessonId, lesson.id),
+        eq(learningResources.status, 'published'),
+        isNull(learningResources.archivedAt),
+      ),
+    );
+
   return {
     user: session.user,
     hasChoice: products.length > 1,
@@ -105,5 +127,6 @@ export async function getSllLessonViewer(lessonId: string) {
       kind: block.kind,
       data: contentPreviewData(block.kind, block.data),
     })),
+    resources: linkedResources,
   };
 }

@@ -13,6 +13,7 @@ import {
   timestamp,
   uniqueIndex,
   uuid,
+  type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
 import { user } from './auth';
 
@@ -37,10 +38,10 @@ export const learningContentBlockKind = pgEnum('learning_content_block_kind', [
 
 export type LearningContentBlockData =
   | { text: string }
-  | { provider: 'pandavideo'; videoId: string }
+  | { provider: 'pandavideo'; videoId: string; note?: string }
   | { url: string; provider?: string }
-  | { url: string; label: string }
-  | { storageKey: string; fileName: string; contentType: string; size: number }
+  | { url: string; label: string; note?: string }
+  | { storageKey: string; fileName: string; contentType: string; size: number; attachedTo?: string }
   | { storageKey: string; alt: string; contentType?: string; size?: number };
 
 /** Raiz de conteúdo: a trilha de boas-vindas, o método ou um curso complementar. */
@@ -52,6 +53,9 @@ export const learningTracks = pgTable(
     slug: text('slug').notNull(),
     title: text('title').notNull(),
     description: text('description'),
+    coverStorageKey: text('cover_storage_key'),
+    coverAlt: text('cover_alt'),
+    featured: boolean('featured').default(false).notNull(),
     position: integer('position').default(0).notNull(),
     status: learningPublishState('status').default('draft').notNull(),
     archivedAt: timestamp('archived_at'),
@@ -133,6 +137,9 @@ export const learningLessons = pgTable(
     moduleId: uuid('module_id')
       .notNull()
       .references(() => learningModules.id, { onDelete: 'cascade' }),
+    relatedLessonId: uuid('related_lesson_id').references((): AnyPgColumn => learningLessons.id, {
+      onDelete: 'set null',
+    }),
     slug: text('slug').notNull(),
     title: text('title').notNull(),
     description: text('description'),
@@ -180,6 +187,75 @@ export const learningContentBlocks = pgTable(
     index('learning_content_blocks_order_idx').on(table.lessonId, table.position, table.id),
     check('learning_content_blocks_data_check', sql`jsonb_typeof(${table.data}) = 'object'`),
     check('learning_content_blocks_position_check', sql`${table.position} >= 0`),
+  ],
+);
+
+export type LearningDraftBlock = {
+  id: string;
+  kind: 'text' | 'video' | 'link' | 'file' | 'image';
+  data: LearningContentBlockData;
+  position: number;
+};
+
+export type LearningNodeDraftData = {
+  title?: string;
+  description?: string | null;
+  durationMinutes?: number | null;
+  countsTowardProgress?: boolean;
+  relatedLessonId?: string | null;
+  blocks?: LearningDraftBlock[];
+  groupTitle?: string;
+  buttonLabel?: string | null;
+  destination?: string | null;
+  label?: string | null;
+  imageAlt?: string | null;
+  imageStorageKey?: string | null;
+  coverStorageKey?: string | null;
+  coverAlt?: string | null;
+  relatedLessonIds?: string[];
+};
+
+/** Alterações de conteúdo publicado ficam fora das linhas visíveis à aluna até a publicação. */
+export const learningNodeDrafts = pgTable(
+  'learning_node_drafts',
+  {
+    kind: text('kind').notNull(),
+    nodeId: uuid('node_id').notNull(),
+    data: jsonb('data').$type<LearningNodeDraftData>().notNull(),
+    updatedAt: timestamp('updated_at')
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.kind, table.nodeId] }),
+    check(
+      'learning_node_drafts_kind_check',
+      sql`${table.kind} in ('track', 'stage', 'module', 'lesson', 'resource', 'banner')`,
+    ),
+    check('learning_node_drafts_data_check', sql`jsonb_typeof(${table.data}) = 'object'`),
+  ],
+);
+
+/** Uma cópia da versão anterior permite desfazer a última publicação. */
+export const learningNodeHistory = pgTable(
+  'learning_node_history',
+  {
+    kind: text('kind').notNull(),
+    nodeId: uuid('node_id').notNull(),
+    data: jsonb('data').$type<LearningNodeDraftData>().notNull(),
+    updatedAt: timestamp('updated_at')
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.kind, table.nodeId] }),
+    check(
+      'learning_node_history_kind_check',
+      sql`${table.kind} in ('track', 'stage', 'module', 'lesson', 'resource', 'banner')`,
+    ),
+    check('learning_node_history_data_check', sql`jsonb_typeof(${table.data}) = 'object'`),
   ],
 );
 

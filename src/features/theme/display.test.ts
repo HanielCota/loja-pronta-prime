@@ -31,7 +31,12 @@ describe('ajustes de leitura', () => {
   });
 
   test('guardar e ler de volta dá o mesmo ajuste', () => {
-    for (const settings of [DEFAULT_DISPLAY, ALL_ON, { ...DEFAULT_DISPLAY, text: 'grande' }]) {
+    for (const settings of [
+      DEFAULT_DISPLAY,
+      ALL_ON,
+      { ...DEFAULT_DISPLAY, text: 'grande' },
+      { ...DEFAULT_DISPLAY, text: 'pequeno' },
+    ]) {
       const stored = displayStorage(settings as DisplaySettings);
       expect(parseDisplay((key) => stored[key] ?? null)).toEqual(settings as DisplaySettings);
     }

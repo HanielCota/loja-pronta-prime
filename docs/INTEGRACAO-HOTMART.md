@@ -1,7 +1,11 @@
 # Integração com a Hotmart
 
-> **Status:** ainda não implementada. Este documento é a referência para as próximas etapas.
-> Nada aqui deve ser codificado antes de o painel administrativo existir (ver [Ordem de trabalho](#6-ordem-sugerida-de-trabalho)).
+> **Status (T25):** recebimento de eventos v2, verificação do Hottok, mapeamento dos dois produtos, criação de conta, liberação e retirada de acessos e histórico básico implementados. Configure em `/admin/hotmart`.
+> **Ainda não está pronta para compras reais:** falta configurar os códigos e o token da conta Hotmart, contratar/configurar o envio de email e concluir o convite de primeiro acesso. O formulário atual não testa a conexão externa; não confundir salvar com validar a Hotmart.
+
+O webhook é `/api/hotmart/webhook`. Cadastre na Hotmart o endereço HTTPS público mostrado no painel. São tratados `PURCHASE_APPROVED`/`PURCHASE_COMPLETE` como liberação e `PURCHASE_REFUNDED`/`PURCHASE_CHARGEBACK` como retirada imediata da transação. Cancelamento de assinatura continua sem política definida e não remove acesso. Reembolsar uma transação não remove outra compra ativa do mesmo produto nem um acesso concedido manualmente. Um aviso de produto sem mapeamento aparece no histórico e responde com erro temporário para permitir nova entrega após corrigir o código. O histórico não armazena o corpo completo do evento.
+
+O token é criptografado no banco com chave derivada de `BETTER_AUTH_SECRET`; trocar esse segredo exige migrar a configuração antes, ou cadastrar o token de novo. O painel não devolve o token ao navegador.
 
 ---
 

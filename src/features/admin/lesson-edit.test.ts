@@ -54,6 +54,28 @@ describe('edição de aula', () => {
     expect(result.success).toBe(true);
   });
 
+  it('aceita anotações em links e vídeos e um arquivo ligado a um deles', () => {
+    const linkId = '1928c79d-8bd5-4241-8ddf-0c06803dd91c';
+    const result = parseLessonEdit({
+      ...valid,
+      blocks: [
+        { ...valid.blocks[0], note: 'Leia antes de abrir.' },
+        { kind: 'video', provider: 'pandavideo', videoId: '', note: 'Veja esta explicação.' },
+        {
+          id: '0b21e70b-3dc5-4877-89c6-132f56b234cd',
+          kind: 'file',
+          fileName: 'Guia.pdf',
+          attachedTo: linkId,
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.blocks[0]).toMatchObject({ note: 'Leia antes de abrir.' });
+      expect(result.data.blocks[2]).toMatchObject({ attachedTo: linkId });
+    }
+  });
+
   it.each(['javascript:alert(1)', 'data:text/html,oi', 'https://user:pass@example.com'])(
     'recusa link inseguro: %s',
     (url) => {

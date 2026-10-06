@@ -9,9 +9,9 @@ export function contentPreviewData(
 
   const fields = {
     text: ['text'],
-    video: ['provider', 'videoId'],
-    link: ['url', 'label'],
-    file: ['fileName', 'contentType'],
+    video: ['provider', 'videoId', 'note'],
+    link: ['url', 'label', 'note'],
+    file: ['fileName', 'contentType', 'attachedTo'],
     image: ['alt'],
   } satisfies Record<ContentPreviewKind, string[]>;
 

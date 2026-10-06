@@ -1,16 +1,16 @@
 'use server';
 
 import {
-  completeSllLessonForm as completeLesson,
+  setSllLessonCompletionForm as setLessonCompletion,
   recordSllLessonView as recordLessonView,
 } from './progress-actions';
 import type { SllProgressActionResult } from './progress-actions';
 
-export async function completeSllLessonForm(
+export async function setSllLessonCompletionForm(
   previous: SllProgressActionResult,
   formData: FormData,
 ): Promise<SllProgressActionResult> {
-  return completeLesson(previous, formData);
+  return setLessonCompletion(previous, formData);
 }
 
 export async function recordSllLessonView(

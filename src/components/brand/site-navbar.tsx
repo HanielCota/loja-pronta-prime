@@ -2,16 +2,37 @@ import Image from 'next/image';
 import { mascotStill } from './mascot/art';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { cn } from '@/lib/utils';
+import {
+  MEMBER_AREA_COLUMN_GAP,
+  MEMBER_AREA_GUTTERS,
+  MEMBER_AREA_MAX_WIDTH,
+  MEMBER_AREA_SIDEBAR_COLUMNS,
+} from '@/lib/member-layout';
 
 /**
  * Barra do topo de todas as telas, com uma linha embaixo de ponta a ponta: a marca à esquerda
  * (leva ao menu das áreas; quem não entrou cai no login) e, à direita, o que a tela tiver (a
  * conta, nas telas de dentro). O voltar fica no conteúdo, na trilha acima do título.
  */
-export function SiteNavbar({ children }: { children?: ReactNode }) {
+export function SiteNavbar({
+  children,
+  hasSidebar = false,
+}: {
+  children?: ReactNode;
+  hasSidebar?: boolean;
+}) {
   return (
     <header className="border-b-2 border-border bg-background">
-      <div className="mx-auto flex min-h-16 w-full max-w-[1040px] items-center justify-between gap-4 px-4 sm:px-6">
+      <div
+        className={cn(
+          'mx-auto grid min-h-16 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4',
+          MEMBER_AREA_GUTTERS,
+          hasSidebar
+            ? [MEMBER_AREA_MAX_WIDTH, MEMBER_AREA_SIDEBAR_COLUMNS, MEMBER_AREA_COLUMN_GAP]
+            : 'max-w-[1040px]',
+        )}
+      >
         <Link
           href="/menu"
           prefetch={false}
@@ -20,7 +41,9 @@ export function SiteNavbar({ children }: { children?: ReactNode }) {
           <Image src={mascotStill} alt="" width={32} height={32} className="size-8" />
           Loja Pronta Prime
         </Link>
-        {children}
+        {children ? (
+          <div className={cn('justify-self-end', hasSidebar && 'lg:col-start-2')}>{children}</div>
+        ) : null}
       </div>
     </header>
   );

@@ -1,7 +1,8 @@
-/** Cria a estrutura dos três minicursos Shopee observados, sem criar vídeos ou capas ausentes. */
+/** Cria os três minicursos conferidos, com espaços vazios para os vídeos ainda não hospedados. */
 import { and, eq } from 'drizzle-orm';
 import { db } from '@/server/db';
 import {
+  learningContentBlocks,
   learningLessons,
   learningModules,
   learningStages,
@@ -75,6 +76,7 @@ await db.transaction(async (tx) => {
         slug: course.slug,
         title: course.title,
         description: course.description,
+        featured: course.slug === 'shopee-ads-completo',
         position: coursePosition,
       })
       .onConflictDoNothing();
@@ -119,11 +121,31 @@ await db.transaction(async (tx) => {
           position,
         })
         .onConflictDoNothing();
+      const [lesson] = await tx
+        .select({ id: learningLessons.id })
+        .from(learningLessons)
+        .where(and(eq(learningLessons.moduleId, module.id), eq(learningLessons.slug, slug)))
+        .limit(1);
+      if (!lesson) throw new Error(`Não foi possível carregar a aula ${title}.`);
+      const video = await tx.query.learningContentBlocks.findFirst({
+        columns: { id: true },
+        where: and(
+          eq(learningContentBlocks.lessonId, lesson.id),
+          eq(learningContentBlocks.kind, 'video'),
+        ),
+      });
+      if (!video)
+        await tx.insert(learningContentBlocks).values({
+          lessonId: lesson.id,
+          kind: 'video',
+          data: { provider: 'pandavideo', videoId: '' },
+          position: 0,
+        });
     }
   }
 });
 
 console.info(
-  'Os três cursos e as 31 aulas foram importados como rascunho; vídeos e capas não foram inventados.',
+  'Os três cursos e as 31 aulas têm espaços vazios para os vídeos. As capas ainda não foram fornecidas.',
 );
 process.exit(0);

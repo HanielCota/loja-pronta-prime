@@ -48,6 +48,8 @@ o tema escuro e o alto contraste.
 - Tamanhos do tema: `text-body` (17px, o texto normal), `text-sm` (16px, o **menor** permitido:
   dicas, erros, rótulos), `text-title` / `text-title-lg` / `text-title-xl` (títulos, com tracking
   negativo). Nada abaixo de 16px na tela (exceção: etiquetas `text-xs` em maiúsculas, decorativas).
+- A opção **Pequeno** é escolha explícita da aluna em Perfil: reduz a base do `rem` a 93,75% neste
+  aparelho. **Normal** continua o padrão; não reduza o texto de nenhuma tela por conta própria.
 - Títulos com `text-balance`; parágrafos com `text-pretty`.
 
 ## Forma
@@ -104,7 +106,7 @@ o tema escuro e o alto contraste.
   por lá.
 - O tema padrão é o **claro**, com o "Automático" desligado, mesmo com o aparelho no escuro. O
   escuro e o automático só valem quando ela escolhe (no perfil ou no botão do cabeçalho).
-- Perfil, Aparência, depois do tema: **Tamanho do texto** (Normal, Grande, Maior, num controle
+- Perfil, Aparência, depois do tema: **Tamanho do texto** (Pequeno, Normal, Grande, Maior, num controle
   segmentado de rádios), **Reduzir animações** e **Mais contraste** (chaves). Valem na hora, só no
   aparelho, e viram atributos no `<html>` (`data-text`, `data-motion`, `data-contrast`) que um
   script do head põe antes da página aparecer. O tamanho muda a base do `rem`, então use `rem`
@@ -128,6 +130,27 @@ o tema escuro e o alto contraste.
   resposta; a pessoa confirma no botão principal, também pelo teclado.
 - Larguras: acesso 480 a 640px; passo a passo 560 a 680px (mais largo no estúdio do logo); áreas
   1040px.
+
+### Área SLL
+
+- O SLL segue a navegação do site anterior: no computador, seções à esquerda e conteúdo à direita;
+  no celular, a mesma lista abre pelo controle “Seções do SLL”. O conteúdo usa os tokens, a fonte,
+  os cartões e os botões deste projeto. A moldura da Loja Pronta não muda.
+- O menu mostra Painel, Minhas Lojas, Comece aqui, Método, etapas publicadas, Recursos e Cursos
+  complementares. A seção atual fica identificada; etapas em rascunho não viram links para alunas.
+- Em Recursos, a calculadora sem fórmula validada aparece como aviso compacto “Em breve”. As
+  ferramentas externas dizem o que fazem e mostram uma ação específica, com cartões de altura
+  determinada pelo conteúdo.
+- No painel admin, cada nível de conteúdo abre o próximo, com “Voltar” para retornar. As ações
+  frequentes ficam visíveis; publicação e arquivo ficam em “Mais opções”. Listas de conteúdo,
+  materiais, banners e recursos podem ser ordenadas por arraste ou pelo teclado. O marcador tem
+  rótulo, e os controles de subir/descer continuam disponíveis quando houver lista longa.
+- Textos fixos da área Aprender ficam em grupos recolhíveis no admin. Títulos e descrições de
+  aulas, etapas e cursos continuam nos próprios itens. Capas de cursos e imagens dos banners são
+  enviadas pelo admin e ficam vazias até receber o arquivo original.
+- Movimento breve apenas para orientar: mudança do banner, progresso e realce dos itens do menu.
+  Use `motion-safe:` para respeitar o aparelho e o ajuste da aluna; nenhum conteúdo depende da
+  animação para ser entendido.
 
 ### Já foram testados e recusados (não proponha de novo)
 

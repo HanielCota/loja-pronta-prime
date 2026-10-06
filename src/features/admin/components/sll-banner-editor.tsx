@@ -1,14 +1,20 @@
 'use client';
 
-import { useActionState, useEffect, useState } from 'react';
+import { useActionState, useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowDown, ArrowUp, ImagePlus, Save, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Save, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { LiveRegion } from '@/components/ui/live-region';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
 import { panelCard } from '@/features/member/components/area-shell';
-import { archiveSllBannerForm, moveSllBannerForm, saveSllBannerForm } from '../server/actions';
+import {
+  archiveSllBannerForm,
+  discardSllBannerDraftForm,
+  moveSllBannerForm,
+  publishSllBannerForm,
+  restoreSllBannerVersionForm,
+  saveSllBannerForm,
+} from '../server/actions';
 import type { BannerActionState } from '../structure-types';
 
 type Banner = {
@@ -22,6 +28,16 @@ type Banner = {
   position: number;
   status: 'draft' | 'published';
   hasImage: boolean;
+  draft?: {
+    label?: string | null;
+    title?: string;
+    description?: string | null;
+    buttonLabel?: string | null;
+    destination?: string | null;
+    imageAlt?: string | null;
+    imageStorageKey?: string | null;
+  } | null;
+  hasHistory?: boolean;
 };
 
 const initialState: BannerActionState = { message: '', saved: false };
@@ -40,80 +56,110 @@ export function SllBannerEditor({
   // O cartão de banner novo não adota o banner que acabou de criar: depois do refresh ele
   // aparece na lista acima (onde recebe a imagem) e este cartão volta a criar outro.
   const bannerId = banner?.id ?? '';
-  const savedMessage =
-    state.saved && !banner ? 'Banner criado. Envie a imagem dele na lista de banners.' : '';
+  const [createdId, setCreatedId] = useState('');
+  const currentBannerId = createdId || state.bannerId || bannerId;
   const [hasImage, setHasImage] = useState(banner?.hasImage ?? false);
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState('');
+  const initial = {
+    label: banner?.draft?.label ?? banner?.label ?? '',
+    title: banner?.draft?.title ?? banner?.title ?? '',
+    description: banner?.draft?.description ?? banner?.description ?? '',
+    buttonLabel: banner?.draft?.buttonLabel ?? banner?.buttonLabel ?? '',
+    destination: banner?.draft?.destination ?? banner?.destination ?? '',
+    imageAlt: banner?.draft?.imageAlt ?? banner?.imageAlt ?? '',
+  };
+  const [preview, setPreview] = useState(initial);
+  const [dirty, setDirty] = useState(false);
+  function updatePreview(event: FormEvent<HTMLFormElement>) {
+    const values = new FormData(event.currentTarget);
+    setPreview({
+      label: String(values.get('label') ?? ''),
+      title: String(values.get('title') ?? ''),
+      description: String(values.get('description') ?? ''),
+      buttonLabel: String(values.get('buttonLabel') ?? ''),
+      destination: String(values.get('destination') ?? ''),
+      imageAlt: String(values.get('imageAlt') ?? ''),
+    });
+    setDirty(true);
+  }
 
   useEffect(() => {
     if (!state.saved) return;
     router.refresh();
   }, [router, state.saved]);
 
-  async function uploadImage() {
-    if (!bannerId) {
-      setUploadMessage('Salve o banner antes de enviar a imagem.');
-      return;
-    }
-    if (!file) {
-      setUploadMessage('Escolha uma imagem primeiro.');
-      return;
-    }
-    const form = new FormData();
-    form.set('file', file);
-    form.set(
-      'alt',
-      (document.getElementById(`banner-alt-${bannerId}`) as HTMLInputElement | null)?.value ?? '',
-    );
+  async function saveWithImage(event: React.FormEvent<HTMLFormElement>) {
+    if (!file) return;
+    event.preventDefault();
+    const values = new FormData(event.currentTarget);
     setUploading(true);
     setUploadMessage('');
     try {
-      const response = await fetch(`/api/admin/sll-banners/${bannerId}/media`, {
+      const saved = await saveSllBannerForm(initialState, values);
+      if (!saved.saved || !saved.bannerId) {
+        setUploadMessage(saved.message);
+        return;
+      }
+      setCreatedId(saved.bannerId);
+      const image = new FormData();
+      image.set('file', file);
+      image.set('alt', String(values.get('imageAlt') ?? ''));
+      const response = await fetch(`/api/admin/sll-banners/${saved.bannerId}/media`, {
         method: 'POST',
-        body: form,
+        body: image,
       });
       const result = (await response.json().catch(() => null)) as { message?: string } | null;
-      setUploadMessage(result?.message ?? 'Não consegui guardar a imagem.');
-      if (response.ok) {
-        setHasImage(true);
-        setFile(null);
-        router.refresh();
+      if (!response.ok) {
+        setUploadMessage(
+          result?.message ?? 'As informações foram salvas, mas a imagem não foi enviada.',
+        );
+        return;
       }
+      setHasImage(true);
+      setFile(null);
+      setUploadMessage('Banner e imagem salvos.');
+      router.refresh();
     } catch {
-      setUploadMessage('Confira a internet e tente enviar a imagem de novo.');
+      setUploadMessage('Confira a internet e tente salvar de novo.');
     } finally {
       setUploading(false);
     }
   }
 
-  return (
-    <article className={`${panelCard} gap-4`}>
-      {bannerId && hasImage ? (
+  const editor = (
+    <>
+      {currentBannerId && hasImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          alt={banner?.imageAlt ?? ''}
+          alt={preview.imageAlt}
           className="aspect-[2/1] w-full rounded-2xl object-cover"
-          src={`/api/admin/sll-banners/${bannerId}/media`}
+          src={`/api/admin/sll-banners/${currentBannerId}/media`}
         />
-      ) : (
+      ) : banner ? (
         <div className="flex aspect-[2/1] items-center justify-center rounded-2xl bg-muted text-body text-muted-foreground">
           Imagem do banner ainda não enviada
         </div>
-      )}
+      ) : null}
 
-      <form action={formAction} className="flex flex-col gap-4">
-        {bannerId ? <input name="id" type="hidden" value={bannerId} /> : null}
+      <form
+        action={formAction}
+        className="flex flex-col gap-4"
+        onChange={updatePreview}
+        onInput={updatePreview}
+        onSubmit={saveWithImage}
+      >
+        {currentBannerId ? <input name="id" type="hidden" value={currentBannerId} /> : null}
         <FloatingLabelInput
-          defaultValue={banner?.label ?? ''}
+          defaultValue={initial.label}
           id={`banner-label-${bannerId || 'new'}`}
           label="Etiqueta (opcional)"
           maxLength={80}
           name="label"
         />
         <FloatingLabelInput
-          defaultValue={banner?.title ?? ''}
+          defaultValue={initial.title}
           id={`banner-title-${bannerId || 'new'}`}
           label="Título do banner"
           maxLength={160}
@@ -124,7 +170,7 @@ export function SllBannerEditor({
           <Label htmlFor={`banner-description-${bannerId || 'new'}`}>Texto do banner</Label>
           <textarea
             className="min-h-24 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-            defaultValue={banner?.description ?? ''}
+            defaultValue={initial.description}
             id={`banner-description-${bannerId || 'new'}`}
             maxLength={600}
             name="description"
@@ -132,7 +178,7 @@ export function SllBannerEditor({
           />
         </div>
         <FloatingLabelInput
-          defaultValue={banner?.buttonLabel ?? ''}
+          defaultValue={initial.buttonLabel}
           id={`banner-button-${bannerId || 'new'}`}
           label="Texto do botão"
           maxLength={80}
@@ -140,81 +186,78 @@ export function SllBannerEditor({
           required
         />
         <FloatingLabelInput
-          defaultValue={banner?.destination ?? ''}
+          defaultValue={initial.destination}
           id={`banner-destination-${bannerId || 'new'}`}
           label="Destino (rota ou link https://)"
           maxLength={500}
           name="destination"
           required
         />
+        <input name="position" type="hidden" value={banner?.position ?? 999} />
         <FloatingLabelInput
-          defaultValue={banner?.position ?? 0}
-          id={`banner-position-${bannerId || 'new'}`}
-          label="Ordem (começa em 0)"
-          max={999}
-          min={0}
-          name="position"
-          type="number"
-          required
-        />
-        <FloatingLabelInput
-          defaultValue={banner?.imageAlt ?? ''}
+          defaultValue={initial.imageAlt}
           id={`banner-alt-${bannerId || 'new'}`}
           label="Descrição da imagem"
           maxLength={300}
           name="imageAlt"
         />
-        <label className="flex min-h-11 items-center gap-3 text-body text-foreground">
+        <div className="flex flex-col gap-2 border-t border-border pt-4">
+          <Label htmlFor={`banner-file-${bannerId || 'new'}`}>Imagem do banner</Label>
           <input
-            defaultChecked={banner?.status === 'published'}
-            name="published"
-            type="checkbox"
-            value="true"
+            accept="image/png,image/jpeg,image/webp"
+            className="min-h-11 w-full text-body text-foreground file:mr-3 file:min-h-11 file:rounded-full file:border-0 file:bg-primary-soft file:px-4 file:text-body file:font-medium file:text-link"
+            id={`banner-file-${bannerId || 'new'}`}
+            onChange={(event) => setFile(event.currentTarget.files?.[0] ?? null)}
+            type="file"
           />
-          Exibir para as alunas
-        </label>
+          <p className="text-body text-muted-foreground">PNG, JPG ou WebP. Até 20 MB.</p>
+        </div>
         {state.message ? (
           <p
             className={state.saved ? 'text-body text-foreground' : 'text-body text-destructive'}
             role={state.saved ? undefined : 'alert'}
           >
-            {savedMessage || state.message}
+            {state.message}
           </p>
         ) : null}
-        <LiveRegion>{state.saved ? savedMessage || state.message : null}</LiveRegion>
-        <Button loading={pending} loadingText="Salvando…" type="submit">
+        {uploadMessage ? (
+          <output aria-live="polite" className="text-body text-muted-foreground">
+            {uploadMessage}
+          </output>
+        ) : null}
+        <Button loading={pending || uploading} loadingText="Salvando…" type="submit">
           <Save aria-hidden="true" />
-          Salvar informações
+          {file ? 'Salvar rascunho e imagem' : 'Salvar rascunho'}
         </Button>
       </form>
 
-      <div className="flex flex-col gap-3 border-t border-border pt-4">
-        <Label htmlFor={`banner-file-${bannerId || 'new'}`}>Imagem do banner</Label>
-        <input
-          accept="image/png,image/jpeg,image/webp"
-          className="min-h-11 w-full text-body text-foreground file:mr-3 file:min-h-11 file:rounded-full file:border-0 file:bg-primary-soft file:px-4 file:text-body file:font-medium file:text-link"
-          disabled={!bannerId}
-          id={`banner-file-${bannerId || 'new'}`}
-          onChange={(event) => setFile(event.currentTarget.files?.[0] ?? null)}
-          type="file"
-        />
-        <Button
-          disabled={!bannerId || !file}
-          loading={uploading}
-          loadingText="Enviando…"
-          onClick={uploadImage}
-          type="button"
-          variant="soft"
-        >
-          <ImagePlus aria-hidden="true" />
-          Enviar imagem
-        </Button>
-        {uploadMessage ? <p className="text-body text-muted-foreground">{uploadMessage}</p> : null}
-        <LiveRegion>{uploadMessage}</LiveRegion>
-      </div>
-
       {banner ? (
         <div className="flex flex-wrap gap-2 border-t border-border pt-4">
+          <form action={publishSllBannerForm}>
+            <input name="id" type="hidden" value={banner.id} />
+            <Button
+              disabled={!hasImage || (banner.status === 'published' && !banner.draft)}
+              type="submit"
+            >
+              Publicar para alunas
+            </Button>
+          </form>
+          {banner.draft ? (
+            <form action={discardSllBannerDraftForm}>
+              <input name="id" type="hidden" value={banner.id} />
+              <Button type="submit" variant="soft">
+                Descartar rascunho
+              </Button>
+            </form>
+          ) : null}
+          {banner.hasHistory && !banner.draft ? (
+            <form action={restoreSllBannerVersionForm}>
+              <input name="id" type="hidden" value={banner.id} />
+              <Button type="submit" variant="soft">
+                Voltar à versão anterior
+              </Button>
+            </form>
+          ) : null}
           <form action={moveSllBannerForm}>
             <input name="id" type="hidden" value={banner.id} />
             <input name="direction" type="hidden" value="up" />
@@ -250,6 +293,58 @@ export function SllBannerEditor({
           </form>
         </div>
       ) : null}
+    </>
+  );
+  return (
+    <article className={`${panelCard} gap-5`}>
+      <div>
+        <h3 className="text-title font-semibold text-foreground">
+          {banner ? `Editar ${banner.title}` : 'Novo banner'}
+        </h3>
+        <p className="text-body text-muted-foreground">
+          {banner?.status === 'published'
+            ? 'O banner atual continua visível até você publicar as mudanças.'
+            : 'Salve o banner e envie a imagem antes de publicar.'}
+        </p>
+      </div>
+      <div className="grid gap-6 xl:grid-cols-2">
+        <div className="flex flex-col gap-4">{editor}</div>
+        <section
+          aria-label="Prévia para alunas"
+          className="rounded-2xl border border-border bg-background p-5"
+        >
+          <p className="text-body font-semibold text-foreground">
+            Prévia para alunas{' '}
+            {dirty ? '· alterações não salvas' : banner?.draft ? '· rascunho salvo' : ''}
+          </p>
+          <div className="mt-4 overflow-hidden rounded-2xl bg-card shadow-card forced-colors:border forced-colors:border-[CanvasText]">
+            {hasImage && currentBannerId ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                alt={preview.imageAlt}
+                className="aspect-[2/1] w-full object-cover"
+                src={`/api/admin/sll-banners/${currentBannerId}/media`}
+              />
+            ) : (
+              <div className="flex aspect-[2/1] items-center justify-center bg-muted p-5 text-center text-body text-muted-foreground">
+                Imagem do banner ainda não enviada
+              </div>
+            )}
+            <div className="p-5">
+              <p className="text-sm text-muted-foreground">{preview.label}</p>
+              <h4 className="mt-2 text-title font-semibold text-foreground">
+                {preview.title || 'Título do banner'}
+              </h4>
+              <p className="mt-2 text-body text-muted-foreground">
+                {preview.description || 'O aviso aparece aqui.'}
+              </p>
+              <p className="mt-4 text-body font-semibold text-link">
+                {preview.buttonLabel || 'Botão do banner'}
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
     </article>
   );
 }

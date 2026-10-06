@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { AreaShell, panelCard } from '@/features/member/components/area-shell';
+import { panelCard } from '@/features/member/components/area-shell';
+import { SllAreaShell } from '@/features/sll/sll-area-shell';
 import { getSllPublishedTracks } from '@/features/sll/server/catalog';
 import { requireProduct } from '@/features/products/server/access';
 
@@ -27,10 +28,9 @@ export default async function ComplementaryCoursePage({
   const completedCount = lessons.filter((lesson) => lesson.completedAt !== null).length;
 
   return (
-    <AreaShell
+    <SllAreaShell
       account={session.user}
       hasChoice={products.length > 1}
-      area="sll"
       title={course.title}
       intro={course.description ?? undefined}
     >
@@ -72,6 +72,6 @@ export default async function ComplementaryCoursePage({
           </p>
         </section>
       )}
-    </AreaShell>
+    </SllAreaShell>
   );
 }

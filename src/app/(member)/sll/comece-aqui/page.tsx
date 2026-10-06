@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { AreaShell, panelCard } from '@/features/member/components/area-shell';
+import { panelCard } from '@/features/member/components/area-shell';
+import { SllAreaShell } from '@/features/sll/sll-area-shell';
 import { SllLessonViewer } from '@/features/sll/components/sll-lesson-viewer';
 import { getFirstSllPublishedTrack } from '@/features/sll/server/catalog';
 import { getSllLessonViewer } from '@/features/sll/server/lesson-viewer';
@@ -25,10 +26,9 @@ export default async function WelcomePage() {
   const lesson = firstLessonId ? await getSllLessonViewer(firstLessonId) : null;
 
   return (
-    <AreaShell
+    <SllAreaShell
       account={session.user}
       hasChoice={products.length > 1}
-      area="sll"
       title={welcome?.title ?? 'Comece aqui'}
       intro={welcome?.description ?? WELCOME_MESSAGE}
     >
@@ -45,6 +45,6 @@ export default async function WelcomePage() {
           </p>
         </section>
       )}
-    </AreaShell>
+    </SllAreaShell>
   );
 }

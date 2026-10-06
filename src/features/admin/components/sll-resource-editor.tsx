@@ -1,8 +1,8 @@
 'use client';
 
-import { useActionState, useEffect } from 'react';
+import { useActionState, useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowDown, ArrowUp, Save, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, ExternalLink, Plus, Save, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LiveRegion } from '@/components/ui/live-region';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
@@ -10,10 +10,20 @@ import { Label } from '@/components/ui/label';
 import { panelCard } from '@/features/member/components/area-shell';
 import {
   archiveSllResourceForm,
+  discardSllResourceDraftForm,
   moveSllResourceForm,
+  publishSllResourceForm,
+  restoreSllResourceVersionForm,
   saveSllResourceForm,
 } from '../server/actions';
 import type { ResourceActionState } from '../structure-types';
+type ResourceDraft = {
+  groupTitle?: string;
+  title?: string;
+  description?: string | null;
+  buttonLabel?: string | null;
+  destination?: string | null;
+};
 
 type Resource = {
   id: string;
@@ -25,6 +35,9 @@ type Resource = {
   destination: string | null;
   position: number;
   status: 'draft' | 'published';
+  draft?: ResourceDraft | null;
+  hasHistory?: boolean;
+  relatedLessonIds?: string[];
 };
 
 const initialState: ResourceActionState = { message: '', saved: false };
@@ -33,39 +46,65 @@ export function SllResourceEditor({
   resource,
   isFirst = false,
   isLast = false,
+  lessonOptions = [],
 }: {
   resource?: Resource;
   isFirst?: boolean;
   isLast?: boolean;
+  lessonOptions?: Array<{ id: string; trackId: string; trackTitle: string; title: string }>;
 }) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState(saveSllResourceForm, initialState);
+  const initial = {
+    groupTitle: resource?.draft?.groupTitle ?? resource?.groupTitle ?? '',
+    title: resource?.draft?.title ?? resource?.title ?? '',
+    description: resource?.draft?.description ?? resource?.description ?? '',
+    buttonLabel: resource?.draft?.buttonLabel ?? resource?.buttonLabel ?? '',
+    destination: resource?.draft?.destination ?? resource?.destination ?? '',
+  };
+  const [preview, setPreview] = useState(initial);
+  const [dirty, setDirty] = useState(false);
+  const [lessonIds, setLessonIds] = useState(resource?.relatedLessonIds ?? []);
+  const [lessonChoice, setLessonChoice] = useState('');
+  const [trackChoice, setTrackChoice] = useState('');
+  const trackOptions = Array.from(
+    new Map(lessonOptions.map((item) => [item.trackId, item.trackTitle])).entries(),
+  );
+  function updatePreview(event: FormEvent<HTMLFormElement>) {
+    const values = new FormData(event.currentTarget);
+    setPreview({
+      groupTitle: String(values.get('groupTitle') ?? ''),
+      title: String(values.get('title') ?? ''),
+      description: String(values.get('description') ?? ''),
+      buttonLabel: String(values.get('buttonLabel') ?? ''),
+      destination: String(values.get('destination') ?? ''),
+    });
+    setDirty(true);
+  }
   useEffect(() => {
     if (state.saved) router.refresh();
   }, [router, state.saved]);
 
-  return (
-    <article className={`${panelCard} gap-4`}>
-      <form action={formAction} className="flex flex-col gap-4">
+  const editor = (
+    <>
+      <form
+        action={formAction}
+        className="flex flex-col gap-4"
+        onChange={updatePreview}
+        onInput={updatePreview}
+      >
         {resource ? <input name="id" type="hidden" value={resource.id} /> : null}
         <FloatingLabelInput
-          defaultValue={resource?.groupTitle ?? ''}
+          defaultValue={initial.groupTitle}
           id={`resource-group-title-${resource?.id ?? 'new'}`}
           label="Nome do grupo"
           maxLength={100}
           name="groupTitle"
           required
         />
+        {resource ? <input name="groupKey" type="hidden" value={resource.groupKey} /> : null}
         <FloatingLabelInput
-          defaultValue={resource?.groupKey ?? ''}
-          id={`resource-group-key-${resource?.id ?? 'new'}`}
-          label="Chave do grupo (letras e hífen)"
-          maxLength={60}
-          name="groupKey"
-          required
-        />
-        <FloatingLabelInput
-          defaultValue={resource?.title ?? ''}
+          defaultValue={initial.title}
           id={`resource-title-${resource?.id ?? 'new'}`}
           label="Nome do recurso"
           maxLength={160}
@@ -76,7 +115,7 @@ export function SllResourceEditor({
           <Label htmlFor={`resource-description-${resource?.id ?? 'new'}`}>Descrição</Label>
           <textarea
             className="min-h-24 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-            defaultValue={resource?.description ?? ''}
+            defaultValue={initial.description}
             id={`resource-description-${resource?.id ?? 'new'}`}
             maxLength={600}
             name="description"
@@ -84,38 +123,98 @@ export function SllResourceEditor({
           />
         </div>
         <FloatingLabelInput
-          defaultValue={resource?.buttonLabel ?? ''}
+          defaultValue={initial.buttonLabel}
           id={`resource-button-${resource?.id ?? 'new'}`}
           label="Texto do botão (opcional)"
           maxLength={80}
           name="buttonLabel"
         />
         <FloatingLabelInput
-          defaultValue={resource?.destination ?? ''}
+          defaultValue={initial.destination}
           id={`resource-destination-${resource?.id ?? 'new'}`}
           label="Destino (vazio = Em breve)"
           maxLength={500}
           name="destination"
         />
-        <FloatingLabelInput
-          defaultValue={resource?.position ?? 0}
-          id={`resource-position-${resource?.id ?? 'new'}`}
-          label="Ordem no grupo"
-          max={999}
-          min={0}
-          name="position"
-          type="number"
-          required
-        />
-        <label className="flex min-h-11 items-center gap-3 text-body text-foreground">
-          <input
-            defaultChecked={resource?.status === 'published'}
-            name="published"
-            type="checkbox"
-            value="true"
-          />{' '}
-          Exibir para as alunas
-        </label>
+        <input name="position" type="hidden" value={resource?.position ?? 999} />
+        {lessonIds.map((id) => (
+          <input key={id} name="relatedLessonId" type="hidden" value={id} />
+        ))}
+        <div className="flex flex-col gap-3 rounded-2xl border border-border p-4">
+          <p className="text-body font-semibold text-foreground">Mostrar também em aulas</p>
+          <p className="text-body text-muted-foreground">
+            Opcional. Escolha as aulas que devem mostrar este recurso.
+          </p>
+          {lessonIds.length ? (
+            <ul className="flex flex-col gap-2">
+              {lessonIds.map((id) => (
+                <li
+                  className="flex min-h-11 items-center justify-between gap-3 rounded-xl bg-muted px-3 text-body text-foreground"
+                  key={id}
+                >
+                  <span className="min-w-0">
+                    {lessonOptions.find((item) => item.id === id)?.trackTitle} ·{' '}
+                    {lessonOptions.find((item) => item.id === id)?.title ?? 'Aula indisponível'}
+                  </span>
+                  <button
+                    aria-label={`Remover aula ${lessonOptions.find((item) => item.id === id)?.title ?? ''}`}
+                    className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full outline-none focus-visible:outline-2 focus-visible:outline-ring"
+                    onClick={() => setLessonIds((current) => current.filter((item) => item !== id))}
+                    type="button"
+                  >
+                    <X aria-hidden="true" className="size-5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <Label htmlFor={`resource-track-${resource?.id ?? 'new'}`}>Escolher curso</Label>
+          <select
+            className="min-h-12 w-full rounded-field border border-input bg-background px-4 text-body text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+            id={`resource-track-${resource?.id ?? 'new'}`}
+            onChange={(event) => {
+              setTrackChoice(event.currentTarget.value);
+              setLessonChoice('');
+            }}
+            value={trackChoice}
+          >
+            <option value="">Selecione um curso</option>
+            {trackOptions.map(([id, title]) => (
+              <option key={id} value={id}>
+                {title}
+              </option>
+            ))}
+          </select>
+          <Label htmlFor={`resource-lesson-${resource?.id ?? 'new'}`}>Escolher aula</Label>
+          <select
+            className="min-h-12 w-full rounded-field border border-input bg-background px-4 text-body text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+            disabled={!trackChoice}
+            id={`resource-lesson-${resource?.id ?? 'new'}`}
+            onChange={(event) => setLessonChoice(event.currentTarget.value)}
+            value={lessonChoice}
+          >
+            <option value="">Selecione uma aula</option>
+            {lessonOptions
+              .filter((item) => item.trackId === trackChoice && !lessonIds.includes(item.id))
+              .map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.title}
+                </option>
+              ))}
+          </select>
+          <Button
+            disabled={!lessonChoice}
+            onClick={() => {
+              setLessonIds((current) => [...current, lessonChoice]);
+              setLessonChoice('');
+            }}
+            type="button"
+            variant="soft"
+          >
+            <Plus aria-hidden="true" />
+            Adicionar aula
+          </Button>
+        </div>
         {state.message ? (
           <p
             className={state.saved ? 'text-body text-foreground' : 'text-body text-destructive'}
@@ -127,11 +226,33 @@ export function SllResourceEditor({
         <LiveRegion>{state.saved ? state.message : null}</LiveRegion>
         <Button loading={pending} loadingText="Salvando…" type="submit">
           <Save aria-hidden="true" />
-          Salvar recurso
+          Salvar rascunho
         </Button>
       </form>
       {resource ? (
         <div className="flex flex-wrap gap-3 border-t border-border pt-4">
+          <form action={publishSllResourceForm}>
+            <input name="id" type="hidden" value={resource.id} />
+            <Button disabled={resource.status === 'published' && !resource.draft} type="submit">
+              Publicar para alunas
+            </Button>
+          </form>
+          {resource.draft ? (
+            <form action={discardSllResourceDraftForm}>
+              <input name="id" type="hidden" value={resource.id} />
+              <Button type="submit" variant="soft">
+                Descartar rascunho
+              </Button>
+            </form>
+          ) : null}
+          {resource.hasHistory && !resource.draft ? (
+            <form action={restoreSllResourceVersionForm}>
+              <input name="id" type="hidden" value={resource.id} />
+              <Button type="submit" variant="soft">
+                Voltar à versão anterior
+              </Button>
+            </form>
+          ) : null}
           <form action={moveSllResourceForm}>
             <input name="id" type="hidden" value={resource.id} />
             <input name="direction" type="hidden" value="up" />
@@ -167,6 +288,64 @@ export function SllResourceEditor({
           </form>
         </div>
       ) : null}
+    </>
+  );
+  return (
+    <article className={`${panelCard} gap-5`}>
+      <div>
+        <h3 className="text-title font-semibold text-foreground">
+          {resource ? `Editar ${resource.title}` : 'Novo recurso'}
+        </h3>
+        <p className="text-body text-muted-foreground">
+          {resource?.status === 'published'
+            ? 'As alunas continuam vendo a versão publicada até você publicar as mudanças.'
+            : 'Salve e confira antes de publicar.'}
+        </p>
+      </div>
+      <div className="grid gap-6 xl:grid-cols-2">
+        <div className="flex flex-col gap-4">{editor}</div>
+        <section
+          aria-label="Prévia para alunas"
+          className="rounded-2xl border border-border bg-background p-5"
+        >
+          <p className="text-body font-semibold text-foreground">
+            Prévia para alunas{' '}
+            {dirty ? '· alterações não salvas' : resource?.draft ? '· rascunho salvo' : ''}
+          </p>
+          <div className="mt-5 rounded-2xl bg-card p-5 shadow-card forced-colors:border forced-colors:border-[CanvasText]">
+            <p className="text-sm text-muted-foreground">{preview.groupTitle}</p>
+            <h4 className="mt-2 text-title font-semibold text-foreground">
+              {preview.title || 'Nome do recurso'}
+            </h4>
+            <p className="mt-2 text-body text-muted-foreground">
+              {preview.description || 'A descrição aparece aqui.'}
+            </p>
+            <p className="mt-4 text-body font-semibold text-link">
+              {preview.destination ? (
+                <>
+                  <ExternalLink aria-hidden="true" className="mr-2 inline size-5" />
+                  {preview.buttonLabel || 'Abrir recurso'}
+                </>
+              ) : (
+                'Em breve'
+              )}
+            </p>
+          </div>
+          {lessonIds.length ? (
+            <div className="mt-5">
+              <p className="text-body font-semibold text-foreground">Aparece também nestas aulas</p>
+              <ul className="mt-2 list-inside list-disc text-body text-muted-foreground">
+                {lessonIds.map((id) => (
+                  <li key={id}>
+                    {lessonOptions.find((item) => item.id === id)?.trackTitle} ·{' '}
+                    {lessonOptions.find((item) => item.id === id)?.title ?? 'Aula indisponível'}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </section>
+      </div>
     </article>
   );
 }

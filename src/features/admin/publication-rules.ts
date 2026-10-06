@@ -19,7 +19,8 @@ export function lessonPublicationIssue(
     if (block.kind === 'text' && !nonEmpty(data.text))
       return `Preencha o texto ${number} antes de publicar.`;
     if (block.kind === 'video') {
-      if (data.provider !== 'pandavideo' || !isUuid(data.videoId))
+      // O vídeo vazio é um espaço reservado explícito até a hospedagem ser escolhida.
+      if (data.videoId !== '' && (data.provider !== 'pandavideo' || !isUuid(data.videoId)))
         return `Confira o vídeo ${number} antes de publicar.`;
     }
     if (block.kind === 'link') {

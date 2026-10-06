@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { AreaShell, panelCard } from '@/features/member/components/area-shell';
+import { AdminSidebar } from '@/features/admin/components/admin-sidebar';
 import { ProductAccessManager } from '@/features/admin/components/product-access-manager';
 import { getRecentProductAccessEvents } from '@/features/admin/server/actions';
 import { requireAdmin } from '@/features/admin/server/access';
@@ -13,14 +12,16 @@ export default async function AdminProductAccessPage() {
   const events = await getRecentProductAccessEvents();
 
   return (
-    <AreaShell account={session.user} hasChoice={false} title="Acessos das alunas">
+    <AreaShell
+      account={session.user}
+      hasChoice={false}
+      sidebar={<AdminSidebar current="access" />}
+      title="Acessos das alunas"
+    >
       <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
         <p className="text-body text-muted-foreground">
           Cada produto é controlado separadamente. Remover um não altera o outro.
         </p>
-        <Button asChild variant="soft">
-          <Link href="/admin">Voltar ao conteúdo do SLL</Link>
-        </Button>
       </div>
       <section aria-labelledby="change-access" className={`${panelCard} gap-5`}>
         <div>

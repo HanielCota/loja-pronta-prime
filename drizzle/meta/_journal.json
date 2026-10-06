@@ -169,6 +169,97 @@
       "when": 1791245242477,
       "tag": "0023_product_access_actor_set_null",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791247272443,
+      "tag": "0024_hotmart_purchase_access",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1791249523999,
+      "tag": "0025_graceful_harrier",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1791259823046,
+      "tag": "0026_curious_ravenous",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1791272638948,
+      "tag": "0027_featured-course",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1791272860044,
+      "tag": "0028_related-lessons",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1791273023164,
+      "tag": "0029_content-drafts",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1791273720771,
+      "tag": "0030_content-history",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1791274120771,
+      "tag": "0031_resource-drafts",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1791274420771,
+      "tag": "0032_banner-drafts",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1791274720771,
+      "tag": "0033_text-drafts",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1791275020771,
+      "tag": "0034_text-history",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1791290176260,
+      "tag": "0035_sync-sll-editor",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1791290247151,
+      "tag": "0036_resource-lessons",
+      "breakpoints": true
     }
   ]
 }

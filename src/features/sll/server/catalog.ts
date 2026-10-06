@@ -52,6 +52,7 @@ export async function getSllPublishedResources() {
   return db.query.learningResources.findMany({
     columns: {
       id: true,
+      slug: true,
       groupKey: true,
       groupTitle: true,
       title: true,

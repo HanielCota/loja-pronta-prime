@@ -8,7 +8,7 @@ import { learningLessonProgress, learningLessons, learningTrackProgress } from '
 import { parseProgressLocation, parseProgressPosition } from '../progress-rules';
 import { getStageLockMessage } from './stage-lock';
 
-export type SllProgressActionResult = { saved: boolean; message: string };
+export type SllProgressActionResult = { saved: boolean; message: string; completed?: boolean };
 
 /** Confere a trilha publicada inteira antes de gravar qualquer progresso. */
 async function lessonIsAvailable(trackId: string, lessonId: string) {
@@ -128,10 +128,11 @@ export async function saveSllLessonPosition(
   return { saved: true, message: '' };
 }
 
-/** Marca uma aula como concluída uma única vez e atualiza o ponto mais recente da trilha. */
-export async function completeSllLesson(
+/** Atualiza a conclusão da aula sem apagar o restante do progresso salvo. */
+export async function setSllLessonCompletion(
   trackId: string,
   lessonId: string,
+  completed: boolean,
 ): Promise<SllProgressActionResult> {
   const { userId } = await requireProductAction('sll');
   const location = parseProgressLocation(trackId, lessonId);
@@ -141,6 +142,20 @@ export async function completeSllLesson(
   if (lockMessage) return { saved: false, message: lockMessage };
 
   const now = new Date();
+  if (!completed) {
+    await db
+      .update(learningLessonProgress)
+      .set({ completedAt: null, updatedAt: now })
+      .where(
+        and(
+          eq(learningLessonProgress.userId, userId),
+          eq(learningLessonProgress.lessonId, location.lessonId),
+        ),
+      );
+    revalidatePath('/sll');
+    return { saved: true, message: 'A conclusão da aula foi desfeita.', completed: false };
+  }
+
   await db.transaction(async (tx) => {
     await tx
       .insert(learningLessonProgress)
@@ -174,18 +189,23 @@ export async function completeSllLesson(
       });
   });
   revalidatePath('/sll');
-  return { saved: true, message: 'A aula foi marcada como concluída.' };
+  return { saved: true, message: 'A aula foi marcada como concluída.', completed: true };
 }
 
-/** Adapta a conclusão ao formulário e permite mostrar o retorno da ação para a aluna. */
-export async function completeSllLessonForm(
+/** Define se a aula está concluída e informa o resultado à aluna. */
+export async function setSllLessonCompletionForm(
   _previous: SllProgressActionResult,
   formData: FormData,
 ): Promise<SllProgressActionResult> {
   const trackId = formData.get('trackId');
   const lessonId = formData.get('lessonId');
-  if (typeof trackId !== 'string' || typeof lessonId !== 'string') {
+  const completedValue = formData.get('completed');
+  if (
+    typeof trackId !== 'string' ||
+    typeof lessonId !== 'string' ||
+    (completedValue !== 'true' && completedValue !== 'false')
+  ) {
     return { saved: false, message: 'Não foi possível identificar esta aula.' };
   }
-  return completeSllLesson(trackId, lessonId);
+  return setSllLessonCompletion(trackId, lessonId, completedValue === 'true');
 }

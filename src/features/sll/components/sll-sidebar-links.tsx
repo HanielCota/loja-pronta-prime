@@ -1,0 +1,129 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { BookOpen, CirclePlay, GraduationCap, LayoutDashboard, Store, Wrench } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type { SllCopy } from '../copy';
+
+type NavItem = { href: string; label: string; icon: typeof Store; exact?: boolean };
+
+const itemClass =
+  'group flex h-16 min-h-16 shrink-0 items-center gap-3 rounded-2xl px-3 py-2 text-body outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-safe:transition-colors motion-safe:duration-200';
+
+export function SllSidebarLinks({
+  stages,
+  copy,
+}: {
+  stages: Array<{ href: string; label: string }>;
+  copy: SllCopy;
+}) {
+  const pathname = usePathname();
+  const operation: NavItem[] = [
+    { href: '/sll', label: copy.sidebarPanel, icon: LayoutDashboard, exact: true },
+    { href: '/sll/minhas-lojas', label: copy.sidebarStores, icon: Store },
+  ];
+  const learning: NavItem[] = [
+    { href: '/sll/comece-aqui', label: copy.sidebarWelcome, icon: CirclePlay },
+    { href: '/sll/metodo', label: copy.sidebarMethod, icon: BookOpen },
+    { href: '/sll/recursos', label: copy.sidebarResources, icon: Wrench },
+    { href: '/sll/cursos', label: copy.sidebarCourses, icon: GraduationCap },
+  ];
+  const isActive = (item: NavItem) =>
+    item.exact
+      ? pathname === item.href
+      : pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+  const navigation = (
+    <nav aria-label="Seções do SLL" className="flex flex-col gap-5">
+      <div>
+        <p className="px-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+          Minha operação
+        </p>
+        <ul className="mt-2 flex flex-col gap-1">
+          {operation.map((item) => (
+            <li key={item.href}>
+              <Link
+                aria-current={pathname === item.href ? 'page' : undefined}
+                className={cn(
+                  itemClass,
+                  isActive(item) && 'bg-primary-soft font-semibold text-link',
+                )}
+                href={item.href}
+              >
+                <item.icon
+                  aria-hidden="true"
+                  className="size-5 shrink-0 motion-safe:transition-transform motion-safe:duration-200 group-hover:motion-safe:scale-110"
+                />
+                {item.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <p className="px-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+          Aprender
+        </p>
+        <ul className="mt-2 flex flex-col gap-1">
+          {learning.map((item) => (
+            <li key={item.href}>
+              <Link
+                aria-current={pathname === item.href ? 'page' : undefined}
+                className={cn(
+                  itemClass,
+                  isActive(item) && 'bg-primary-soft font-semibold text-link',
+                )}
+                href={item.href}
+              >
+                <item.icon
+                  aria-hidden="true"
+                  className="size-5 shrink-0 motion-safe:transition-transform motion-safe:duration-200 group-hover:motion-safe:scale-110"
+                />
+                {item.label}
+              </Link>
+              {item.href === '/sll/metodo' && stages.length ? (
+                <ul className="mt-1 ml-8 flex flex-col gap-1 border-l border-border pl-2">
+                  {stages.map((stage) => (
+                    <li key={stage.href}>
+                      <Link
+                        aria-current={pathname === stage.href ? 'page' : undefined}
+                        className={cn(
+                          itemClass,
+                          'text-sm',
+                          pathname === stage.href
+                            ? 'bg-primary-soft font-semibold text-link'
+                            : 'text-muted-foreground',
+                        )}
+                        href={stage.href}
+                      >
+                        {stage.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </nav>
+  );
+
+  return (
+    <>
+      <aside
+        className="hidden self-start lg:sticky lg:top-6 lg:block"
+        aria-label="Navegação do SLL"
+      >
+        {navigation}
+      </aside>
+      <details className="rounded-card bg-card p-4 shadow-card lg:hidden forced-colors:border forced-colors:border-[CanvasText]">
+        <summary className="min-h-11 cursor-pointer text-body font-semibold text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+          Seções do SLL
+        </summary>
+        <div className="pt-3">{navigation}</div>
+      </details>
+    </>
+  );
+}

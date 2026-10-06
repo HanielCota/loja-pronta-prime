@@ -8,4 +8,6 @@ export * from './videos';
 export * from './learning-content';
 export * from './learning-banners';
 export * from './learning-resources';
+export * from './learning-texts';
 export * from './product-access-events';
+export * from './hotmart';

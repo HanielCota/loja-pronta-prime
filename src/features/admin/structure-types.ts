@@ -10,7 +10,13 @@ export type EditableLearningNode = {
   description: string | null;
   durationMinutes?: number | null;
   countsTowardProgress?: boolean;
+  relatedLessonId?: string | null;
   trackKind?: LearningTrackKind;
+  coverStorageKey?: string | null;
+  coverAlt?: string | null;
+  featured?: boolean;
+  hasDraft?: boolean;
+  hasHistory?: boolean;
   status?: 'draft' | 'published';
 };
 

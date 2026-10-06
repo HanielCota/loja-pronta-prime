@@ -139,7 +139,7 @@ await db.transaction(async (tx) => {
       slug: 'etapa-3',
       title: 'Biblioteca de Conhecimento',
       description:
-        'Sua biblioteca de referência — 27 aulas cobrindo tudo dentro da Central do Vendedor. Aqui não tem ordem: use a busca ou navegue por categoria.',
+        'Sua biblioteca de referência — 19 aulas cobrindo tudo dentro da Central do Vendedor. Aqui não tem ordem: use a busca ou navegue por categoria.',
       position: 2,
     })
     .onConflictDoNothing();
@@ -149,6 +149,19 @@ await db.transaction(async (tx) => {
     .where(and(eq(learningStages.trackId, track.id), eq(learningStages.slug, 'etapa-3')))
     .limit(1);
   if (!stage) throw new Error('Não foi possível carregar a Etapa 3.');
+  // O texto antigo dizia 27, mas o inventário confirmou somente 19 aulas disponíveis.
+  if (
+    stage.description ===
+    'Sua biblioteca de referência — 27 aulas cobrindo tudo dentro da Central do Vendedor. Aqui não tem ordem: use a busca ou navegue por categoria.'
+  ) {
+    await tx
+      .update(learningStages)
+      .set({
+        description:
+          'Sua biblioteca de referência — 19 aulas cobrindo tudo dentro da Central do Vendedor. Aqui não tem ordem: use a busca ou navegue por categoria.',
+      })
+      .where(eq(learningStages.id, stage.id));
+  }
 
   for (const [categoryPosition, category] of categories.entries()) {
     await tx
