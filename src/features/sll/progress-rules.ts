@@ -13,7 +13,11 @@ export type StageProgressRecord = {
   lessons: { completed: boolean }[];
 };
 
-/** A próxima etapa só abre quando a anterior tem conteúdo e todas as aulas foram concluídas. */
+/**
+ * A próxima etapa só abre quando a anterior tem todas as aulas concluídas. Etapa sem aula
+ * que conta não é marcada como concluída, mas também não trava as seguintes: senão a aluna
+ * ficaria presa numa etapa sem nada pra fazer (por exemplo, quando a última aula é arquivada).
+ */
 export function resolveSequentialStageAccess(stages: StageProgressRecord[]) {
   let previousComplete = true;
   let previousTitle = '';
@@ -31,8 +35,10 @@ export function resolveSequentialStageAccess(stages: StageProgressRecord[]) {
       lockMessage: isUnlocked ? null : `Conclua ${previousTitle} para abrir ${stage.title}.`,
     };
 
-    previousComplete = isComplete;
-    previousTitle = stage.title;
+    if (totalCount > 0) {
+      previousComplete = isComplete;
+      previousTitle = stage.title;
+    }
     return { stageId: stage.id, ...access };
   });
 }

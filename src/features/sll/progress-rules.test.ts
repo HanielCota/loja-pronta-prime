@@ -111,7 +111,7 @@ describe('desbloqueio das etapas do método', () => {
     ]);
   });
 
-  it('não considera uma etapa vazia como concluída', () => {
+  it('não marca uma etapa vazia como concluída, mas ela não trava as seguintes', () => {
     expect(
       resolveSequentialStageAccess([
         { id: 'etapa-1', title: 'Etapa 1', lessons: [] },
@@ -119,7 +119,21 @@ describe('desbloqueio das etapas do método', () => {
       ]),
     ).toMatchObject([
       { isUnlocked: true, isComplete: false, totalCount: 0 },
+      { isUnlocked: true, lockMessage: null },
+    ]);
+  });
+
+  it('pula a etapa vazia ao decidir o bloqueio', () => {
+    expect(
+      resolveSequentialStageAccess([
+        { id: 'etapa-1', title: 'Etapa 1', lessons: [{ completed: false }] },
+        { id: 'etapa-2', title: 'Etapa 2', lessons: [] },
+        { id: 'etapa-3', title: 'Etapa 3', lessons: [{ completed: false }] },
+      ]),
+    ).toMatchObject([
+      { isUnlocked: true },
       { isUnlocked: false, lockMessage: 'Conclua Etapa 1 para abrir Etapa 2.' },
+      { isUnlocked: false, lockMessage: 'Conclua Etapa 1 para abrir Etapa 3.' },
     ]);
   });
 });
