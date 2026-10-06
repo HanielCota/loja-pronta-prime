@@ -9,9 +9,9 @@ export const productAccessEvents = pgTable(
     targetUserId: text('target_user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
-    actorUserId: text('actor_user_id')
-      .notNull()
-      .references(() => user.id, { onDelete: 'restrict' }),
+    // Sem notNull: apagar a conta de uma administradora não pode falhar por causa do
+    // histórico. O registro fica, só perde quem fez a mudança.
+    actorUserId: text('actor_user_id').references(() => user.id, { onDelete: 'set null' }),
     product: text('product', { enum: ['sll', 'loja-pronta'] }).notNull(),
     action: text('action', { enum: ['granted', 'revoked'] }).notNull(),
     reason: text('reason').notNull(),
