@@ -101,9 +101,8 @@ export function summarizeTrackProgress(
       lastViewedAt: saved?.lastViewedAt ?? null,
     };
   });
-  const counted = items.filter(
-    (item) => lessons.find((lesson) => lesson.id === item.lessonId)?.countsTowardProgress !== false,
-  );
+  // A ordem é a mesma de `lessons`: não precisa procurar a aula de novo para cada item.
+  const counted = items.filter((_item, index) => lessons[index]!.countsTowardProgress !== false);
   const completedCount = counted.filter((item) => item.completedAt !== null).length;
   const firstIncomplete = counted.find((item) => item.completedAt === null);
   const current = items.find((item) => item.lessonId === currentLessonId);
