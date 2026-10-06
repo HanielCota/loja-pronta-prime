@@ -11,12 +11,6 @@ import { requireProduct } from '@/features/products/server/access';
 export const metadata: Metadata = { title: 'Recursos · SLL' };
 
 const ICONS = { calculadora: Calculator, assistentes: Lightbulb, parceiros: Store } as const;
-const LEGACY_ACTIONS: Record<string, string> = {
-  'mentora-pri': 'Conversar com a Pri',
-  'artista-de-loja': 'Criar logo e descrição',
-  'fotografo-profissional': 'Criar fotos do produto',
-  'anuncio-lucrativo': 'Montar meu anúncio',
-};
 
 export default async function SllResourcesPage() {
   const [{ session, products }, resources, copy] = await Promise.all([
@@ -47,15 +41,13 @@ export default async function SllResourcesPage() {
         {groups.map((group) => {
           const Icon = ICONS[group.key as keyof typeof ICONS] ?? Lightbulb;
           const isCalculator = group.key === 'calculadora';
-          const groupTitle =
-            group.title === 'GPTs personalizados SLL' ? 'Ajuda para sua loja' : group.title;
           return (
             <section key={group.key} aria-labelledby={`resource-group-${group.key}`}>
               <h2
                 id={`resource-group-${group.key}`}
                 className="mb-4 text-body font-semibold text-foreground"
               >
-                {groupTitle}
+                {group.title}
               </h2>
               <ul
                 className={
@@ -65,20 +57,7 @@ export default async function SllResourcesPage() {
                 }
               >
                 {group.items.map((resource) => {
-                  const title =
-                    resource.title === 'Mentora Pri (Atendimento 24 horas)'
-                      ? 'Mentora Pri'
-                      : resource.title;
-                  const description =
-                    resource.slug === 'envio-velox' &&
-                    resource.description ===
-                      'Fornecedores curados para dropshipping Shopee. O endereço visto no site antigo não abriu.'
-                      ? 'Fornecedores para sua loja na Shopee.'
-                      : resource.description;
-                  const buttonLabel =
-                    resource.buttonLabel === 'Abrir GPT'
-                      ? (LEGACY_ACTIONS[resource.slug] ?? 'Abrir ferramenta')
-                      : (resource.buttonLabel ?? 'Abrir recurso');
+                  const buttonLabel = resource.buttonLabel ?? 'Abrir recurso';
                   return (
                     <li
                       key={resource.id}
@@ -88,11 +67,11 @@ export default async function SllResourcesPage() {
                       <div className="min-w-0 flex-1">
                         {!isCalculator ? (
                           <h3 className="text-body font-semibold text-balance text-foreground">
-                            {title}
+                            {resource.title}
                           </h3>
                         ) : null}
                         <p className="mt-1 text-body text-pretty text-muted-foreground">
-                          {description}
+                          {resource.description}
                         </p>
                       </div>
                       {resource.destination ? (
