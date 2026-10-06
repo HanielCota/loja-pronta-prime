@@ -141,10 +141,13 @@ export function SllSidebarLinks({
   return (
     <>
       <aside
-        className="hidden self-start rounded-card bg-card p-3 shadow-card lg:sticky lg:top-6 lg:block lg:max-h-[calc(100dvh-3rem)] lg:overflow-y-auto forced-colors:border forced-colors:border-[CanvasText]"
+        className="hidden rounded-card bg-card p-3 shadow-card lg:block lg:min-h-[calc(100dvh-9rem)] lg:self-stretch forced-colors:border forced-colors:border-[CanvasText]"
         aria-label="Navegação do SLL"
       >
-        {navigation}
+        {/* O cartão vai até o fim do conteúdo; só o menu acompanha a rolagem. */}
+        <div className="lg:sticky lg:top-6 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto">
+          {navigation}
+        </div>
       </aside>
       <details
         key={pathname}

@@ -143,9 +143,11 @@ o tema escuro e o alto contraste.
   os cartões e os botões deste projeto. A moldura da Loja Pronta não muda.
 - O menu mostra Painel, Minhas Lojas, Comece aqui, Método, etapas publicadas, Recursos e Cursos
   complementares. A seção atual fica identificada; etapas em rascunho não viram links para alunas.
-- A navegação lateral usa um cartão compacto. As etapas aparecem quando a aluna está no Método
-  ou em Recursos; listas longas rolam dentro do menu no computador. No celular, o controle mostra
-  a seção atual e volta fechado ao navegar, para deixar o conteúdo à vista.
+- No computador, o cartão da navegação lateral se estende até o final do conteúdo, preenchendo
+  pelo menos a altura disponível da página. O menu acompanha a rolagem dentro desse cartão.
+  As etapas aparecem quando a aluna está no Método ou em Recursos; listas longas rolam dentro
+  do menu. No celular, o controle mostra a seção atual e volta fechado ao navegar, para deixar
+  o conteúdo à vista.
 - A aula usa vídeo em proporção 16:9 à esquerda e sequência à direita, com a aula atual numerada
   em azul. A sequência acompanha a rolagem no computador. Anterior/próxima ficam acima do botão
   de conclusão, que ocupa a largura do cartão. Sem vídeo disponível, o espaço diz “Vídeo em breve”.
