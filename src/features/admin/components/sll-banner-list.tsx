@@ -177,8 +177,14 @@ export function SllBannerList({ banners }: { banners: NonNullable<Banner>[] }) {
             Adicionar banner
           </summary>
           <div className="mt-4">
-            {/* Novo a cada banner criado: o cartão limpa e volta a criar outro. */}
-            <SllBannerEditor key={serverOrder} />
+            {/* Novo a cada banner criado (não a cada troca de ordem): o cartão limpa e volta a
+                criar outro. */}
+            <SllBannerEditor
+              key={banners
+                .map((banner) => banner.id)
+                .toSorted()
+                .join(':')}
+            />
           </div>
         </details>
       </section>
