@@ -2,12 +2,13 @@ import { createHash } from 'node:crypto';
 import { sql } from 'drizzle-orm';
 import { RATE_LIMITS_LONG, RATE_LIMITS_PER_MINUTE } from '@/config/auth';
 import { db } from '@/server/db';
+import { countMemoryAttempt, type MemoryAttempt } from '@/lib/rate-limit-memory';
 
 const MINUTE_SECONDS = 60;
 /** Contadores vencidos são apagados de vez em quando (não a cada tentativa). */
 const CLEANUP_CHANCE = 0.01;
-/** Acima disso, o contador em memória descarta os vencidos antes de crescer mais. */
-const MEMORY_PRUNE_SIZE = 10_000;
+/** Teto por processo, inclusive quando o banco cai e chegam muitas identidades diferentes. */
+const MEMORY_MAX_ENTRIES = 10_000;
 
 type RateLimitScope = keyof typeof RATE_LIMITS_PER_MINUTE | keyof typeof RATE_LIMITS_LONG;
 
@@ -47,22 +48,12 @@ async function countInDatabase(key: string, windowSeconds: number): Promise<numb
 // Reserva em memória, por processo: se o banco cair, continua limitando em vez de liberar tudo.
 // Reaproveitada entre recargas do dev.
 const globalForLimits = globalThis as unknown as {
-  authRateLimitMemory?: Map<string, { points: number; expire: number }>;
+  authRateLimitMemory?: Map<string, MemoryAttempt>;
 };
 
 function countInMemory(key: string, windowSeconds: number): number {
   const memory = (globalForLimits.authRateLimitMemory ??= new Map());
-  const now = Date.now();
-  if (memory.size > MEMORY_PRUNE_SIZE) {
-    for (const [entryKey, entry] of memory) if (entry.expire <= now) memory.delete(entryKey);
-  }
-  let entry = memory.get(key);
-  if (!entry || entry.expire <= now) {
-    entry = { points: 0, expire: now + windowSeconds * 1000 };
-    memory.set(key, entry);
-  }
-  entry.points += 1;
-  return entry.points;
+  return countMemoryAttempt(memory, key, windowSeconds, MEMORY_MAX_ENTRIES, Date.now());
 }
 
 /**
