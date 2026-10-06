@@ -213,6 +213,9 @@ export function LearningContentTree({
   if (current.level === 'tracks') {
     return (
       <CollectionScreen
+        // A chave por nível e pai desmonta o formulário aberto ao navegar: sem ela o
+        // formulário de um nível seguia aberto no outro, com o id do item anterior.
+        key="track"
         heading="Escolha uma trilha"
         headingRef={headingRef}
         hint="Escolha uma trilha para ver as etapas."
@@ -244,6 +247,7 @@ export function LearningContentTree({
         back={back}
         context={track.title}
         heading="Etapas"
+        key={`stage:${track.id}`}
         headingRef={headingRef}
         rows={track.stages.map((item) => ({
           id: item.id,
@@ -272,6 +276,7 @@ export function LearningContentTree({
         back={back}
         context={`${track.title} · ${stage.title}`}
         heading="Módulos"
+        key={`module:${stage.id}`}
         headingRef={headingRef}
         rows={stage.modules.map((item) => ({
           id: item.id,
@@ -301,6 +306,7 @@ export function LearningContentTree({
         back={back}
         context={`${track.title} · ${stage.title} · ${selectedModule.title}`}
         heading="Aulas"
+        key={`lesson:${selectedModule.id}`}
         headingRef={headingRef}
         rows={selectedModule.lessons.map((item, index) => ({
           id: item.id,
@@ -425,6 +431,9 @@ function CollectionScreen({
       </Button>
       {formTarget ? (
         <ContentNodeForm
+          // Remonta ao trocar de item: os campos usam defaultValue e guardariam o texto
+          // do item anterior junto com o id do novo.
+          key={formTarget === 'new' ? 'new' : formTarget.id}
           {...(formTarget !== 'new' ? { initial: formTarget } : {})}
           kind={management.kind}
           onCancel={formCancel}
