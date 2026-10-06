@@ -17,8 +17,15 @@ export default async function SllStoresPage() {
       title="Minhas Lojas"
       intro="Aqui você vai ver suas lojas da Shopee."
     >
-      <section className={panelCard} aria-labelledby="stores-coming-soon">
-        <Store aria-hidden="true" className="size-7 text-link" />
+      <section className={`${panelCard} gap-4`} aria-labelledby="stores-coming-soon">
+        <div className="flex items-center justify-between gap-3">
+          <span className="grid size-12 place-items-center rounded-2xl bg-primary-soft text-link">
+            <Store aria-hidden="true" className="size-6" />
+          </span>
+          <span className="rounded-full border border-border px-3 py-1 text-sm font-medium text-muted-foreground">
+            Shopee · Em breve
+          </span>
+        </div>
         <h2 id="stores-coming-soon" className="mt-3 text-title font-semibold text-foreground">
           A conexão da Shopee chega em breve
         </h2>

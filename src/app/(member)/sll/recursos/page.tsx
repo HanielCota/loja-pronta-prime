@@ -7,6 +7,7 @@ import { SllAreaShell } from '@/features/sll/sll-area-shell';
 import { getSllPublishedResources } from '@/features/sll/server/catalog';
 import { getSllCopy } from '@/features/sll/server/copy';
 import { requireProduct } from '@/features/products/server/access';
+import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Recursos · SLL' };
 
@@ -37,18 +38,21 @@ export default async function SllResourcesPage() {
       title={copy.resourcesTitle}
       intro={copy.resourcesIntro}
     >
-      <div className="flex flex-col gap-9">
+      <div className="flex flex-col gap-6">
         {groups.map((group) => {
           const Icon = ICONS[group.key as keyof typeof ICONS] ?? Lightbulb;
           const isCalculator = group.key === 'calculadora';
           return (
             <section key={group.key} aria-labelledby={`resource-group-${group.key}`}>
-              <h2
-                id={`resource-group-${group.key}`}
-                className="mb-4 text-body font-semibold text-foreground"
-              >
-                {group.title}
-              </h2>
+              <div className="mb-4 flex items-center gap-3">
+                <Icon aria-hidden="true" className="size-6 shrink-0 text-link" />
+                <h2
+                  id={`resource-group-${group.key}`}
+                  className="text-xl leading-snug font-semibold text-balance text-foreground"
+                >
+                  {group.title}
+                </h2>
+              </div>
               <ul
                 className={
                   isCalculator ? 'flex flex-col gap-4' : 'grid items-start gap-4 md:grid-cols-2'
@@ -59,9 +63,15 @@ export default async function SllResourcesPage() {
                   return (
                     <li
                       key={resource.id}
-                      className={`${panelCard} ${isCalculator ? 'gap-4 sm:flex-row sm:items-center' : 'gap-3'}`}
+                      className={cn(
+                        panelCard,
+                        'p-5 sm:p-5',
+                        isCalculator ? 'gap-4 sm:flex-row sm:items-center' : 'gap-3',
+                      )}
                     >
-                      <Icon aria-hidden="true" className="size-6 shrink-0 text-link" />
+                      <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary-soft text-link">
+                        <Icon aria-hidden="true" className="size-6" />
+                      </span>
                       <div className="min-w-0 flex-1">
                         {/* A calculadora também tem título: sem ele, o cartão não tinha nome
                             pro leitor de tela, só a descrição e o "Em breve". */}
@@ -75,7 +85,7 @@ export default async function SllResourcesPage() {
                       {resource.destination ? (
                         <Button
                           asChild
-                          className={isCalculator ? 'sm:w-auto' : 'mt-auto'}
+                          className={isCalculator ? 'sm:w-auto' : undefined}
                           variant="soft"
                         >
                           {resource.destination.startsWith('/') ? (
@@ -85,11 +95,12 @@ export default async function SllResourcesPage() {
                           ) : (
                             <a href={resource.destination} rel="noreferrer" target="_blank">
                               {buttonLabel} <ArrowUpRight aria-hidden="true" />
+                              <span className="sr-only"> (abre em outra aba)</span>
                             </a>
                           )}
                         </Button>
                       ) : (
-                        <span className="mt-auto w-fit rounded-full border border-border bg-muted px-4 py-2 text-sm font-semibold text-muted-foreground">
+                        <span className="w-fit rounded-full border border-border bg-muted px-4 py-2 text-sm font-semibold text-muted-foreground">
                           Em breve
                         </span>
                       )}

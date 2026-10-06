@@ -52,6 +52,8 @@ type AreaShellProps = {
   narrow?: boolean;
   /** Navegação lateral de uma área, fornecida pela página no servidor. */
   sidebar?: ReactNode;
+  /** Destino do atalho de teclado da área com navegação lateral. */
+  contentId?: string | undefined;
   children: ReactNode;
 };
 
@@ -73,6 +75,7 @@ export function AreaShell({
   beforeHeader,
   narrow,
   sidebar,
+  contentId,
   children,
 }: AreaShellProps) {
   const navigation =
@@ -121,7 +124,13 @@ export function AreaShell({
         {sidebar ? (
           <div className={cn('grid gap-6', MEMBER_AREA_SIDEBAR_COLUMNS, MEMBER_AREA_COLUMN_GAP)}>
             {sidebar}
-            <div className="flex min-w-0 flex-col gap-8">{content}</div>
+            <div
+              id={contentId}
+              tabIndex={contentId ? -1 : undefined}
+              className="flex min-w-0 flex-col gap-8 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+            >
+              {content}
+            </div>
           </div>
         ) : (
           <div className="flex flex-col gap-8">{content}</div>

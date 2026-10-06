@@ -37,21 +37,25 @@ export function SllCourseCard({
             <li key={step.title} className="py-3.5">
               {href ? (
                 <Link
-                  className="flex min-h-14 items-center gap-3 rounded-2xl outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid"
+                  className="group flex min-h-14 items-center gap-3 rounded-2xl px-2 py-2 outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid motion-safe:transition-colors"
                   href={href}
                 >
                   <span
                     aria-hidden="true"
-                    className="grid size-8 shrink-0 place-items-center rounded-full bg-primary-soft text-link"
+                    className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary-soft text-link"
                   >
                     <CirclePlay className="size-5" />
                   </span>
-                  <span className="flex min-w-0 flex-col gap-0.5">
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <span className="text-body font-semibold text-foreground">{step.title}</span>
                     <span className="text-body text-pretty text-muted-foreground">
                       {step.detail}
                     </span>
                   </span>
+                  <ArrowRight
+                    aria-hidden="true"
+                    className="size-5 shrink-0 text-link motion-safe:transition-transform group-hover:motion-safe:translate-x-1"
+                  />
                 </Link>
               ) : (
                 <div className="flex gap-3">
@@ -103,15 +107,22 @@ export function SllToolsCard({ copy }: { copy: SllCopy }) {
 /** Reserva o lugar dos avisos individuais enquanto a Shopee ainda não envia status reais. */
 export function SllStoresCard({ copy }: { copy: SllCopy }) {
   return (
-    <section aria-labelledby="avisos-da-conta" className={cn(panelCard, 'gap-3')}>
-      <h2 id="avisos-da-conta" className={sectionTitleClass}>
-        {copy.dashboardStoresTitle}
-      </h2>
-      <div className="flex items-center gap-3">
-        <Store aria-hidden="true" className="size-5 shrink-0 text-link" />
-        <p className="flex-1 text-body text-muted-foreground">{copy.dashboardStoresDetail}</p>
+    <section
+      aria-labelledby="avisos-da-conta"
+      className={cn(panelCard, 'gap-4 sm:flex-row sm:items-center')}
+    >
+      <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary-soft text-link">
+        <Store aria-hidden="true" className="size-6" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <h2 id="avisos-da-conta" className={sectionTitleClass}>
+          {copy.dashboardStoresTitle}
+        </h2>
+        <p className="mt-1 text-body text-pretty text-muted-foreground">
+          {copy.dashboardStoresDetail}
+        </p>
       </div>
-      <Button asChild className="mt-2" variant="soft">
+      <Button asChild className="sm:w-auto sm:max-w-52" variant="soft">
         <Link href="/sll/minhas-lojas">
           {copy.dashboardStoresButton} <ArrowRight aria-hidden="true" />
         </Link>

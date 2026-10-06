@@ -37,7 +37,7 @@ export const SLL_COPY = {
   sidebarPanel: 'Painel',
   sidebarStores: 'Minhas Lojas',
   sidebarWelcome: 'Comece aqui',
-  sidebarMethod: 'SLL — Sistema Loja Lucrativa',
+  sidebarMethod: 'Método SLL',
   sidebarResources: 'Recursos',
   sidebarCourses: 'Cursos complementares',
 } as const;

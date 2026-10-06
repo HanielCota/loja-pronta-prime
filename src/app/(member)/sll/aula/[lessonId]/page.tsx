@@ -26,8 +26,15 @@ export default async function SllLessonPage({ params }: { params: Promise<{ less
       hasChoice={data.hasChoice}
       title={data.track.title}
       intro="Assista à aula e acompanhe seu progresso."
+      backLink={
+        data.track.kind === 'method'
+          ? { href: `/sll/metodo/etapa/${data.stage.id}`, label: 'Voltar às aulas da etapa' }
+          : data.track.kind === 'welcome'
+            ? { href: '/sll/comece-aqui', label: 'Voltar ao Comece aqui' }
+            : { href: `/sll/cursos/${data.track.slug}`, label: 'Voltar às aulas do curso' }
+      }
     >
-      <SllLessonViewer data={data} />
+      <SllLessonViewer key={data.lesson.id} data={data} />
     </SllAreaShell>
   );
 }

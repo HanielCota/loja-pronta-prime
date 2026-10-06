@@ -70,6 +70,7 @@ const STUDENTS: Student[] = [
   { kind: 'bloqueadadepois', emailVerified: true, banned: false },
   // Produtos: só um (entra direto na área) e nenhum (aviso de acesso não liberado).
   { kind: 'sosll', emailVerified: true, banned: false, products: ['sll'] },
+  { kind: 'sllprogress', emailVerified: true, banned: false, products: ['sll'] },
   { kind: 'semproduto', emailVerified: true, banned: false, products: [] },
   { kind: 'doisprodutos', emailVerified: true, banned: false },
   { kind: 'voltaarea', emailVerified: true, banned: false },

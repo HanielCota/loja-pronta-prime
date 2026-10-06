@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { panelCard } from '@/features/member/components/area-shell';
 import { SllAreaShell } from '@/features/sll/sll-area-shell';
 import { SllLessonViewer } from '@/features/sll/components/sll-lesson-viewer';
@@ -12,17 +13,30 @@ const WELCOME_MESSAGE =
   'Antes de começar as aulas, assista a esta mensagem da Pri. Ela vai te mostrar como aproveitar o SLL com clareza, no seu ritmo e com um caminho simples para começar.';
 
 /** Trilha de boas-vindas: seis aulas, progresso individual e entrada para a Etapa 1. */
-export default async function WelcomePage() {
+export default async function WelcomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ aula?: string | string[] }>;
+}) {
+  const { aula } = await searchParams;
   const [{ session, products }, welcome, method] = await Promise.all([
     requireProduct('sll'),
     getFirstSllPublishedTrack('welcome'),
     getFirstSllPublishedTrack('method'),
   ]);
-  const firstLessonId =
-    welcome?.resumeLessonId ??
+  const lessonIds =
     welcome?.stages.flatMap((stage) =>
       stage.modules.flatMap((module) => module.lessons.map((lesson) => lesson.id)),
-    )[0];
+    ) ?? [];
+  const firstLessonId =
+    typeof aula === 'string' && lessonIds.includes(aula)
+      ? aula
+      : (welcome?.resumeLessonId ?? lessonIds[0]);
+  // Guarda a aula no endereço: salvar a conclusão atualiza o progresso, sem trocar o vídeo
+  // sozinha quando o servidor recalcula qual é a próxima aula para retomar.
+  if (firstLessonId && aula !== firstLessonId) {
+    redirect(`/sll/comece-aqui?aula=${firstLessonId}`);
+  }
   const lesson = firstLessonId ? await getSllLessonViewer(firstLessonId) : null;
 
   return (
@@ -34,6 +48,7 @@ export default async function WelcomePage() {
     >
       {lesson && welcome ? (
         <SllLessonViewer
+          key={lesson.lesson.id}
           data={lesson}
           progress={{ completedCount: welcome.completedCount, totalCount: welcome.totalCount }}
           completedHref={method?.totalCount ? '/sll/metodo' : null}
