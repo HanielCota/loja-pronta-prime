@@ -80,7 +80,9 @@ o tema escuro e o alto contraste.
 - Molduras de tela:
   - `PageShell` + `BrandCard`: telas de acesso (entrar, senha), cartão centralizado com o mascote
     no topo.
-  - `AreaShell`: as áreas (Loja Pronta, SLL, perfil), largura 1040px.
+  - `AreaShell`: as áreas (Loja Pronta, SLL, perfil). Largura 1040px (perfil, 688px); com menu
+    lateral (`sidebar`, como no SLL), 1440px, com o menu de 240px à esquerda
+    (`src/lib/member-layout.ts`).
   - `CenteredMemberPage`: telas de dentro com o conteúdo no meio (fim da conversa, marca pronta,
     Shopee).
   - `ConversationLayout`: os passo a passo (conversa, marca), com "Voltar", "Terminar depois" e a
@@ -129,7 +131,7 @@ o tema escuro e o alto contraste.
 - Toque: resposta no instante (`active:scale-[0.97]`, 100 a 150ms). Escolher uma opção só marca a
   resposta; a pessoa confirma no botão principal, também pelo teclado.
 - Larguras: acesso 480 a 640px; passo a passo 560 a 680px (mais largo no estúdio do logo); áreas
-  1040px.
+  1040px; área SLL (com o menu lateral) 1440px.
 
 ### Área SLL
 
