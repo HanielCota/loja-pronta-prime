@@ -90,6 +90,7 @@ type LearningTracks = Array<{
         hasDraft: boolean;
         hasHistory: boolean;
         durationMinutes: number | null;
+        countsTowardProgress: boolean;
         slug: string;
         blocks: Array<{ id: string; kind: ContentKind; data: Record<string, string> }>;
         relatedLessonId: string | null;
@@ -380,6 +381,7 @@ export function LearningContentTree({
             title: item.title,
             description: item.description,
             durationMinutes: item.durationMinutes,
+            countsTowardProgress: item.countsTowardProgress,
             relatedLessonId: item.relatedLessonId,
             status: item.status,
             hasDraft: item.hasDraft,
