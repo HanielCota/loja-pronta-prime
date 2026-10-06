@@ -5,3 +5,7 @@ export * from './stores';
 export * from './onboarding';
 export * from './brand';
 export * from './videos';
+export * from './learning-content';
+export * from './learning-banners';
+export * from './learning-resources';
+export * from './product-access-events';
