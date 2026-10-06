@@ -743,7 +743,9 @@ function LessonScreen({
           Voltar para a aula
         </Button>
         <LessonEditor
-          key={JSON.stringify(lesson)}
+          // Pela aula, não pelo conteúdo: enviar, remover ou reordenar atualiza a aula e não pode
+          // apagar o que a admin ainda não salvou.
+          key={lesson.id}
           lesson={lesson}
           siblingLessons={siblingLessons}
           onCancel={() => setEditing(false)}

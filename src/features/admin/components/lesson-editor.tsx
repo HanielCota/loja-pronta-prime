@@ -127,11 +127,13 @@ export function LessonEditor({
 }) {
   const router = useRouter();
   const [newBlocks, setNewBlocks] = useState<Array<{ key: string; kind: NewBlockKind }>>([]);
+  const [previewChanged, setPreviewChanged] = useState(false);
   const [state, formAction, pending] = useActionState(
     async (previous: LessonEditState, formData: FormData) => {
       const next = await saveLearningLesson(previous, formData);
       if (next.saved) {
         setNewBlocks([]);
+        setPreviewChanged(false);
         router.refresh();
       }
       return next;
@@ -139,12 +141,11 @@ export function LessonEditor({
     initialLessonEditState,
   );
   const [showPreview, setShowPreview] = useState(false);
-  const [previewChanged, setPreviewChanged] = useState(false);
-  const [draft, setDraft] = useState({
-    title: lesson.title,
-    description: lesson.description ?? '',
-    blocks: lesson.blocks as DraftPreviewBlock[],
-  });
+  const [draft, setDraft] = useState<{
+    title: string;
+    description: string;
+    blocks: DraftPreviewBlock[];
+  }>({ title: '', description: '', blocks: [] });
   const [uploadNotice, setUploadNotice] = useState('');
   const [blockPending, startBlockTransition] = useTransition();
   const [blockMessage, setBlockMessage] = useState('');
@@ -168,6 +169,15 @@ export function LessonEditor({
   const orderedBlocks = completeOrder
     .map((id) => blocksById.get(id))
     .filter((block): block is EditableBlock => Boolean(block));
+  // A prévia segue a aula salva até a admin mexer no formulário. Depois disso, cada material
+  // salvo mostra o que foi digitado, e os enviados, removidos ou reordenados aparecem na hora.
+  const typedBlocks = new Map(draft.blocks.map((block) => [block.id, block]));
+  const previewBlocks: DraftPreviewBlock[] = previewChanged
+    ? [
+        ...orderedBlocks.map((block) => typedBlocks.get(block.id) ?? block),
+        ...draft.blocks.filter((block) => newBlocks.some((item) => item.key === block.id)),
+      ]
+    : orderedBlocks;
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -651,10 +661,10 @@ export function LessonEditor({
         <LessonDraftPreview
           currentLessonId={lesson.id}
           siblingLessons={siblingLessons}
-          title={draft.title}
-          description={draft.description}
+          title={previewChanged ? draft.title : lesson.title}
+          description={previewChanged ? draft.description : (lesson.description ?? '')}
           changed={previewChanged}
-          blocks={draft.blocks}
+          blocks={previewBlocks}
         />
       </div>
     </div>
