@@ -1,57 +1,57 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { asc, isNull } from 'drizzle-orm';
+import { asc, eq, isNull } from 'drizzle-orm';
 import { AreaShell } from '@/features/member/components/area-shell';
-import { SllBannerEditor } from '@/features/admin/components/sll-banner-editor';
+import { AdminSidebar } from '@/features/admin/components/admin-sidebar';
+import { SllBannerList } from '@/features/admin/components/sll-banner-list';
 import { requireAdmin } from '@/features/admin/server/access';
 import { db } from '@/server/db';
-import { learningBanners } from '@/server/db/schema';
+import { learningBanners, learningNodeDrafts, learningNodeHistory } from '@/server/db/schema';
 
 export const metadata: Metadata = { title: 'Banners do SLL · Administração' };
 
 export default async function AdminBannersPage() {
   const session = await requireAdmin();
-  const banners = await db.query.learningBanners.findMany({
-    columns: {
-      id: true,
-      label: true,
-      title: true,
-      description: true,
-      buttonLabel: true,
-      destination: true,
-      imageAlt: true,
-      imageStorageKey: true,
-      position: true,
-      status: true,
-    },
-    where: isNull(learningBanners.archivedAt),
-    orderBy: [asc(learningBanners.position), asc(learningBanners.id)],
-  });
+  const [banners, drafts, history] = await Promise.all([
+    db.query.learningBanners.findMany({
+      columns: {
+        id: true,
+        label: true,
+        title: true,
+        description: true,
+        buttonLabel: true,
+        destination: true,
+        imageAlt: true,
+        imageStorageKey: true,
+        position: true,
+        status: true,
+      },
+      where: isNull(learningBanners.archivedAt),
+      orderBy: [asc(learningBanners.position), asc(learningBanners.id)],
+    }),
+    db.query.learningNodeDrafts.findMany({ where: eq(learningNodeDrafts.kind, 'banner') }),
+    db.query.learningNodeHistory.findMany({ where: eq(learningNodeHistory.kind, 'banner') }),
+  ]);
+  const draftsById = new Map(drafts.map((draft) => [draft.nodeId, draft.data]));
+  const historyIds = new Set(history.map((item) => item.nodeId));
 
   return (
-    <AreaShell account={session.user} hasChoice={false} title="Banners do painel">
-      <div className="mb-5 flex flex-wrap items-center gap-4">
-        <p className="flex-1 text-body text-muted-foreground">
-          Edite os slides que aparecem no início do SLL. Um banner só aparece depois que tiver
-          imagem e estiver marcado para exibição.
-        </p>
-        <Link
-          className="inline-flex min-h-11 items-center text-body text-link underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
-          href="/admin"
-        >
-          Voltar ao conteúdo do SLL
-        </Link>
-      </div>
-      <section className="grid items-start gap-6 lg:grid-cols-2" aria-label="Banners em ordem">
-        {banners.map((banner, index) => (
-          <SllBannerEditor
-            key={banner.id}
-            banner={{ ...banner, hasImage: Boolean(banner.imageStorageKey) }}
-            isFirst={index === 0}
-            isLast={index === banners.length - 1}
-          />
-        ))}
-        <SllBannerEditor />
+    <AreaShell
+      account={session.user}
+      hasChoice={false}
+      sidebar={<AdminSidebar current="banners" />}
+      title="Banners do painel"
+      intro="Edite os avisos grandes que aparecem no início do SLL. Um banner precisa de imagem e publicação para aparecer às alunas."
+    >
+      <section aria-label="Banners em ordem">
+        <SllBannerList
+          key={banners.map((banner) => banner.id).join(':')}
+          banners={banners.map((banner) => ({
+            ...banner,
+            draft: draftsById.get(banner.id) ?? null,
+            hasHistory: historyIds.has(banner.id),
+            hasImage: Boolean(draftsById.get(banner.id)?.imageStorageKey ?? banner.imageStorageKey),
+          }))}
+        />
       </section>
     </AreaShell>
   );

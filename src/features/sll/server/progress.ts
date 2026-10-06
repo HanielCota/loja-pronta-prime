@@ -20,7 +20,16 @@ export async function getSllTrackProgress(trackId: string) {
   const { session } = await requireProduct('sll');
   if (!isProgressId(trackId)) return null;
   const track = await db.query.learningTracks.findFirst({
-    columns: { id: true, kind: true, slug: true, title: true, description: true },
+    columns: {
+      id: true,
+      kind: true,
+      slug: true,
+      title: true,
+      description: true,
+      coverStorageKey: true,
+      coverAlt: true,
+      featured: true,
+    },
     where: and(
       eq(learningTracks.id, trackId),
       eq(learningTracks.status, 'published'),
@@ -28,7 +37,7 @@ export async function getSllTrackProgress(trackId: string) {
     ),
     with: {
       stages: {
-        columns: { id: true, slug: true, title: true, position: true },
+        columns: { id: true, slug: true, title: true, description: true, position: true },
         where: and(eq(learningStages.status, 'published'), isNull(learningStages.archivedAt)),
         orderBy: [asc(learningStages.position), asc(learningStages.id)],
         with: {
@@ -42,6 +51,7 @@ export async function getSllTrackProgress(trackId: string) {
                   id: true,
                   slug: true,
                   title: true,
+                  relatedLessonId: true,
                   description: true,
                   position: true,
                   durationMinutes: true,

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Check } from 'lucide-react';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { LiveRegion } from '@/components/ui/live-region';
 
@@ -70,7 +70,15 @@ export function SllKnowledgeLibrary({ modules }: { modules: LibraryModule[] }) {
                         </span>
                       ) : null}
                     </span>
-                    <ArrowRight aria-hidden="true" className="size-5 shrink-0 text-link" />
+                    {lesson.completed ? (
+                      <span className="inline-flex items-center gap-1 text-sm font-medium text-progress-text">
+                        <Check aria-hidden="true" className="size-5 shrink-0" />
+                        <span className="hidden sm:inline">Concluída</span>
+                        <span className="sr-only sm:hidden">Concluída</span>
+                      </span>
+                    ) : (
+                      <ArrowRight aria-hidden="true" className="size-5 shrink-0 text-link" />
+                    )}
                   </Link>
                 </li>
               ))}

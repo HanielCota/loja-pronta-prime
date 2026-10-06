@@ -1,61 +1,154 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { asc, isNull } from 'drizzle-orm';
-import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
+import { asc, eq, isNull } from 'drizzle-orm';
 import { AreaShell } from '@/features/member/components/area-shell';
+import { AdminSidebar } from '@/features/admin/components/admin-sidebar';
 import { SllResourceEditor } from '@/features/admin/components/sll-resource-editor';
+import { SllResourceList } from '@/features/admin/components/sll-resource-list';
 import { requireAdmin } from '@/features/admin/server/access';
 import { db } from '@/server/db';
-import { learningResources } from '@/server/db/schema';
+import {
+  learningLessons,
+  learningNodeDrafts,
+  learningNodeHistory,
+  learningResources,
+} from '@/server/db/schema';
 
 export const metadata: Metadata = { title: 'Recursos do SLL · Administração' };
 
+function trackRank(kind: string) {
+  return kind === 'welcome' ? 0 : kind === 'method' ? 1 : 2;
+}
+
 export default async function AdminResourcesPage() {
   const session = await requireAdmin();
-  const resources = await db.query.learningResources.findMany({
-    columns: {
-      id: true,
-      groupKey: true,
-      groupTitle: true,
-      title: true,
-      description: true,
-      buttonLabel: true,
-      destination: true,
-      position: true,
-      status: true,
-    },
-    where: isNull(learningResources.archivedAt),
-    orderBy: [
-      asc(learningResources.groupKey),
-      asc(learningResources.position),
-      asc(learningResources.id),
-    ],
-  });
+  const [resources, drafts, history, links, lessons] = await Promise.all([
+    db.query.learningResources.findMany({
+      columns: {
+        id: true,
+        groupKey: true,
+        groupTitle: true,
+        title: true,
+        description: true,
+        buttonLabel: true,
+        destination: true,
+        position: true,
+        status: true,
+      },
+      where: isNull(learningResources.archivedAt),
+      orderBy: [
+        asc(learningResources.groupKey),
+        asc(learningResources.position),
+        asc(learningResources.id),
+      ],
+    }),
+    db.query.learningNodeDrafts.findMany({
+      where: eq(learningNodeDrafts.kind, 'resource'),
+    }),
+    db.query.learningNodeHistory.findMany({ where: eq(learningNodeHistory.kind, 'resource') }),
+    db.query.learningResourceLessons.findMany(),
+    db.query.learningLessons.findMany({
+      columns: { id: true, title: true, position: true },
+      where: isNull(learningLessons.archivedAt),
+      with: {
+        module: {
+          columns: { title: true, position: true, archivedAt: true },
+          with: {
+            stage: {
+              columns: { title: true, position: true, archivedAt: true },
+              with: {
+                track: {
+                  columns: { id: true, kind: true, title: true, position: true, archivedAt: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    }),
+  ]);
+  const byId = new Map(drafts.map((draft) => [draft.nodeId, draft.data]));
+  const historyIds = new Set(history.map((item) => item.nodeId));
+  const lessonOptions = lessons
+    .filter(
+      (lesson) =>
+        !lesson.module.archivedAt &&
+        !lesson.module.stage.archivedAt &&
+        !lesson.module.stage.track.archivedAt,
+    )
+    .toSorted((a, b) => {
+      const left = a.module.stage.track;
+      const right = b.module.stage.track;
+      return (
+        trackRank(left.kind) - trackRank(right.kind) ||
+        left.position - right.position ||
+        a.module.stage.position - b.module.stage.position ||
+        a.module.position - b.module.position ||
+        a.position - b.position
+      );
+    })
+    .map((lesson) => ({
+      id: lesson.id,
+      trackId: lesson.module.stage.track.id,
+      trackTitle: lesson.module.stage.track.title,
+      title: `${lesson.module.stage.title} · ${lesson.title}`,
+    }));
+  const editableResources = resources.map((resource) => ({
+    ...resource,
+    draft: byId.get(resource.id) ?? null,
+    hasHistory: historyIds.has(resource.id),
+    relatedLessonIds:
+      byId.get(resource.id)?.relatedLessonIds ??
+      links.filter((link) => link.resourceId === resource.id).map((link) => link.lessonId),
+  }));
+  const groups = editableResources.reduce<
+    Array<{ key: string; title: string; items: typeof editableResources }>
+  >((result, resource) => {
+    const group = result.find((item) => item.key === resource.groupKey);
+    if (group) group.items.push(resource);
+    else result.push({ key: resource.groupKey, title: resource.groupTitle, items: [resource] });
+    return result;
+  }, []);
 
   return (
-    <AreaShell account={session.user} hasChoice={false} title="Recursos do SLL">
+    <AreaShell
+      account={session.user}
+      hasChoice={false}
+      sidebar={<AdminSidebar current="resources" />}
+      title="Recursos do SLL"
+    >
       <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
         <p className="text-body text-muted-foreground">
           Edite ferramentas, parceiros e links. Sem destino, a aluna verá “Em breve”.
         </p>
-        <Button asChild variant="soft">
-          <Link href="/admin">Voltar ao conteúdo do SLL</Link>
-        </Button>
       </div>
-      <section
-        aria-label="Recursos que aparecem no SLL"
-        className="grid items-start gap-6 lg:grid-cols-2"
-      >
-        {resources.map((resource, index) => (
-          <SllResourceEditor
-            isFirst={resources[index - 1]?.groupKey !== resource.groupKey}
-            isLast={resources[index + 1]?.groupKey !== resource.groupKey}
-            key={resource.id}
-            resource={resource}
+      <div className="flex flex-col gap-8">
+        {groups.map((group) => (
+          <SllResourceList
+            groupKey={group.key}
+            groupTitle={
+              group.title === 'GPTs personalizados SLL' ? 'Ajuda para sua loja' : group.title
+            }
+            key={group.key}
+            resources={group.items}
+            lessonOptions={lessonOptions}
           />
         ))}
-        <SllResourceEditor />
-      </section>
+        <section aria-label="Adicionar recurso" className="max-w-2xl">
+          <details>
+            <summary className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full px-4 text-body font-semibold text-link outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+              <Plus aria-hidden="true" className="size-5" />
+              Adicionar recurso
+            </summary>
+            <div className="mt-4">
+              <SllResourceEditor
+                key={resources.map((resource) => resource.id).join(':')}
+                lessonOptions={lessonOptions}
+              />
+            </div>
+          </details>
+        </section>
+      </div>
     </AreaShell>
   );
 }

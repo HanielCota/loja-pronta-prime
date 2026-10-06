@@ -250,8 +250,8 @@ function AppearanceRows() {
 }
 
 /**
- * Tamanho do texto: três opções lado a lado, como um controle segmentado do iPhone. São rádios de
- * verdade (as setas trocam a opção, o leitor de tela ouve "1 de 3"). Vale na hora, sem salvar.
+ * Tamanho do texto: quatro opções lado a lado, como um controle segmentado do iPhone. São rádios
+ * de verdade (as setas trocam a opção, o leitor de tela ouve "1 de 4"). Vale na hora, sem salvar.
  */
 function TextSizeRow({ value, onChange }: { value: TextSize; onChange: (size: TextSize) => void }) {
   return (
@@ -269,7 +269,7 @@ function TextSizeRow({ value, onChange }: { value: TextSize; onChange: (size: Te
               id="tamanho-texto-descricao"
               className="text-sm text-pretty text-muted-foreground"
             >
-              Letras maiores no app inteiro.
+              Escolha o tamanho das letras no app inteiro.
             </span>
           </span>
         </div>
@@ -277,12 +277,15 @@ function TextSizeRow({ value, onChange }: { value: TextSize; onChange: (size: Te
           role="radiogroup"
           aria-labelledby="tamanho-texto-rotulo"
           aria-describedby="tamanho-texto-descricao"
-          className="grid grid-cols-3 gap-1 rounded-full bg-segment p-1 forced-colors:border forced-colors:border-[CanvasText]"
+          className={cn(
+            'grid grid-cols-4 gap-1 rounded-3xl bg-segment p-1 max-[22rem]:grid-cols-2 forced-colors:border forced-colors:border-[CanvasText]',
+            (value === 'grande' || value === 'maior') && 'max-sm:grid-cols-2',
+          )}
         >
           {(Object.keys(TEXT_SIZES) as TextSize[]).map((size) => (
             <label
               key={size}
-              className="relative flex min-h-11 cursor-pointer items-center justify-center rounded-full px-2 text-body font-semibold text-muted-foreground outline-ring hover:text-foreground has-checked:bg-segment-thumb has-checked:text-foreground has-checked:shadow-sm has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-solid motion-safe:transition-colors motion-safe:duration-150 forced-colors:has-checked:border-2 forced-colors:has-checked:border-[Highlight]"
+              className="relative flex min-h-11 cursor-pointer items-center justify-center rounded-full px-1 text-body font-semibold text-muted-foreground outline-ring hover:text-foreground has-checked:bg-segment-thumb has-checked:text-foreground has-checked:shadow-sm has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-solid motion-safe:transition-colors motion-safe:duration-150 forced-colors:has-checked:border-2 forced-colors:has-checked:border-[Highlight]"
             >
               <input
                 type="radio"
@@ -754,7 +757,7 @@ export function ProfileNameForm({ name, onCancel, onSaved }: FormProps & { name:
         <FloatingLabelInput
           key={key}
           {...inputProps}
-          defaultValue={inputProps.defaultValue ?? name}
+          defaultValue={fields.name.value ?? name}
           id={fields.name.id}
           label="Seu nome"
           autoComplete="nickname"

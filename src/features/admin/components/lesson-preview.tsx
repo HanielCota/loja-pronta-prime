@@ -51,7 +51,7 @@ export function LessonPreview({
               <Film aria-hidden="true" className="size-8 text-muted-foreground" />
               <p className="text-body font-semibold text-foreground">Prévia do vídeo</p>
               <p className="max-w-[55ch] text-base text-muted-foreground">
-                O player do Panda Video será exibido na página de aula. Ele ainda não está ligado.
+                O vídeo desta aula ainda não está disponível.
               </p>
             </div>
           ) : null}
@@ -77,7 +77,30 @@ export function LessonPreview({
 
           <div className="mt-5 flex flex-col gap-4 border-t border-border pt-5">
             {lesson.blocks.map((block) => {
-              if (block.kind === 'video') return null;
+              if (block.kind === 'video') {
+                const files = lesson.blocks.filter(
+                  (item) => item.kind === 'file' && item.data.attachedTo === block.id,
+                );
+                return block.data.note || files.length ? (
+                  <div className="flex flex-col gap-2" key={block.id}>
+                    {block.data.note ? (
+                      <p className="text-body whitespace-pre-wrap text-foreground">
+                        {block.data.note}
+                      </p>
+                    ) : null}
+                    {files.map((file) => (
+                      <a
+                        className="inline-flex min-h-11 items-center gap-2 text-body font-medium text-link underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                        href={`/api/admin/learning-content/draft-media/${file.id}`}
+                        key={file.id}
+                      >
+                        <Download aria-hidden="true" className="size-5" />
+                        Baixar {file.data.fileName}
+                      </a>
+                    ))}
+                  </div>
+                ) : null;
+              }
               if (block.kind === 'text') {
                 return (
                   <p className="text-body whitespace-pre-wrap text-foreground" key={block.id}>
@@ -87,7 +110,7 @@ export function LessonPreview({
               }
               if (block.kind === 'link' && block.data.url) {
                 return (
-                  <p key={block.id}>
+                  <div className="flex flex-col gap-2" key={block.id}>
                     <a
                       className="inline-flex min-h-11 items-center gap-2 text-body font-medium text-link underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                       href={block.data.url}
@@ -97,15 +120,37 @@ export function LessonPreview({
                       <ExternalLink aria-hidden="true" className="size-5" />
                       {block.data.label || block.data.url}
                     </a>
-                  </p>
+                    {block.data.note ? (
+                      <p className="text-body whitespace-pre-wrap text-foreground">
+                        {block.data.note}
+                      </p>
+                    ) : null}
+                    {lesson.blocks
+                      .filter((item) => item.kind === 'file' && item.data.attachedTo === block.id)
+                      .map((file) => (
+                        <a
+                          className="inline-flex min-h-11 items-center gap-2 text-body font-medium text-link underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                          href={`/api/admin/learning-content/draft-media/${file.id}`}
+                          key={file.id}
+                        >
+                          <Download aria-hidden="true" className="size-5" />
+                          Baixar {file.data.fileName}
+                        </a>
+                      ))}
+                  </div>
                 );
               }
               if (block.kind === 'file' && block.data.fileName) {
+                if (
+                  block.data.attachedTo &&
+                  lesson.blocks.some((item) => item.id === block.data.attachedTo)
+                )
+                  return null;
                 return (
                   <p key={block.id}>
                     <a
                       className="inline-flex min-h-11 items-center gap-2 text-body font-medium text-link underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                      href={`/api/sll/material/${block.id}`}
+                      href={`/api/admin/learning-content/draft-media/${block.id}`}
                     >
                       <Download aria-hidden="true" className="size-5" />
                       Baixar {block.data.fileName}
@@ -121,7 +166,7 @@ export function LessonPreview({
                     className="max-h-[32rem] max-w-full self-start rounded-2xl border border-border object-contain forced-colors:border forced-colors:border-[CanvasText]"
                     height={720}
                     key={block.id}
-                    src={`/api/sll/material/${block.id}`}
+                    src={`/api/admin/learning-content/draft-media/${block.id}`}
                     width={1280}
                   />
                 );
@@ -143,12 +188,13 @@ export function LessonPreview({
           <ol className="mt-4 flex flex-col gap-2">
             {lesson.module.lessons.map((item) => (
               <li key={item.id}>
-                <div
-                  aria-current={item.current ? 'step' : undefined}
+                <Link
+                  aria-current={item.current ? 'page' : undefined}
                   className={cn(
-                    'flex min-h-12 items-center gap-3 rounded-2xl px-3 py-2 text-base',
+                    'flex min-h-12 items-center gap-3 rounded-2xl px-3 py-2 text-base outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
                     item.current ? 'bg-primary-soft text-link' : 'text-foreground',
                   )}
+                  href={`/admin/preview/${item.id}`}
                 >
                   <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-border">
                     {item.number}
@@ -157,7 +203,7 @@ export function LessonPreview({
                   {item.status === 'draft' ? (
                     <span className="shrink-0 text-muted-foreground">Prévia</span>
                   ) : null}
-                </div>
+                </Link>
               </li>
             ))}
           </ol>

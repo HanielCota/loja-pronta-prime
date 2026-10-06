@@ -6,8 +6,13 @@ import { getSessionState, needsFirstPassword } from '@/features/auth/server/sess
 import { hasAdminRole } from '@/features/admin/access';
 import { validateDownloadFile } from '@/features/admin/media-validation';
 import { db } from '@/server/db';
-import { learningContentBlocks, learningLessons } from '@/server/db/schema';
+import {
+  learningContentBlocks,
+  learningLessons,
+  type LearningDraftBlock,
+} from '@/server/db/schema';
 import { storage } from '@/server/storage';
+import { getEditableLessonBlocks, saveNodeDraft } from '@/features/admin/server/node-drafts';
 
 const lessonIdSchema = z.uuid();
 const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
@@ -62,6 +67,7 @@ export async function POST(request: Request) {
   const kind = form.get('kind');
   const alt = z.string().trim().min(1).max(300).safeParse(form.get('alt'));
   const replaceId = form.get('replaceBlockId');
+  const attachToBlockId = form.get('attachToBlockId');
   const file = form.get('file');
   if (!lessonId.success || (kind !== 'image' && kind !== 'file') || !(file instanceof File)) {
     return jsonError('Confira o tipo de material e tente de novo.', 400);
@@ -74,22 +80,45 @@ export async function POST(request: Request) {
     return jsonError('O arquivo é grande demais. O limite é 20 MB.', 413);
 
   const lesson = await db.query.learningLessons.findFirst({
-    columns: { id: true },
+    columns: { id: true, status: true },
     where: and(eq(learningLessons.id, lessonId.data), isNull(learningLessons.archivedAt)),
   });
   if (!lesson) return jsonError('Esta aula não está disponível.', 404);
+  const draftBlocks =
+    lesson.status === 'published' ? await getEditableLessonBlocks(lesson.id) : null;
+
+  let attachedTo: string | undefined;
+  if (kind === 'file' && typeof attachToBlockId === 'string' && attachToBlockId) {
+    const targetId = lessonIdSchema.safeParse(attachToBlockId);
+    if (!targetId.success) return jsonError('Escolha um vídeo ou link desta aula.', 400);
+    const target =
+      draftBlocks?.find((item) => item.id === targetId.data) ??
+      (await db.query.learningContentBlocks.findFirst({
+        columns: { id: true, kind: true },
+        where: and(
+          eq(learningContentBlocks.id, targetId.data),
+          eq(learningContentBlocks.lessonId, lesson.id),
+        ),
+      }));
+    if (!target || (target.kind !== 'link' && target.kind !== 'video')) {
+      return jsonError('Escolha um vídeo ou link desta aula.', 400);
+    }
+    attachedTo = target.id;
+  }
 
   let replacing: { id: string; data: Record<string, unknown>; position: number } | undefined;
   if (typeof replaceId === 'string' && replaceId) {
     const replaceUuid = lessonIdSchema.safeParse(replaceId);
     if (!replaceUuid.success) return jsonError('Este material não está disponível.', 404);
-    const block = await db.query.learningContentBlocks.findFirst({
-      columns: { id: true, kind: true, data: true, position: true },
-      where: and(
-        eq(learningContentBlocks.id, replaceUuid.data),
-        eq(learningContentBlocks.lessonId, lesson.id),
-      ),
-    });
+    const block =
+      draftBlocks?.find((item) => item.id === replaceUuid.data) ??
+      (await db.query.learningContentBlocks.findFirst({
+        columns: { id: true, kind: true, data: true, position: true },
+        where: and(
+          eq(learningContentBlocks.id, replaceUuid.data),
+          eq(learningContentBlocks.lessonId, lesson.id),
+        ),
+      }));
     if (!block || block.kind !== kind) return jsonError('Este material não está disponível.', 404);
     replacing = {
       id: block.id,
@@ -138,6 +167,35 @@ export async function POST(request: Request) {
   try {
     await storage().put(key, bytes, contentType);
     saved = true;
+
+    if (draftBlocks) {
+      const data =
+        kind === 'image'
+          ? { storageKey: key, contentType, size: bytes.length, alt: altText! }
+          : {
+              storageKey: key,
+              contentType,
+              size: bytes.length,
+              fileName,
+              ...(replacing && typeof replacing.data.attachedTo === 'string'
+                ? { attachedTo: replacing.data.attachedTo }
+                : attachedTo
+                  ? { attachedTo }
+                  : {}),
+            };
+      const blockId = replacing?.id ?? crypto.randomUUID();
+      const blocks: LearningDraftBlock[] = replacing
+        ? draftBlocks.map((block) => (block.id === replacing.id ? { ...block, data } : block))
+        : [
+            ...draftBlocks,
+            { id: blockId, kind: kind as 'image' | 'file', data, position: draftBlocks.length },
+          ];
+      await saveNodeDraft('lesson', lesson.id, { blocks });
+      return NextResponse.json(
+        { id: blockId, fileName, alt: kind === 'image' ? altText : undefined },
+        { headers: { 'Cache-Control': 'no-store' } },
+      );
+    }
 
     if (replacing) {
       const data =
@@ -191,7 +249,13 @@ export async function POST(request: Request) {
             .values({
               lessonId: lesson.id,
               kind: 'file',
-              data: { storageKey: key, contentType, size: bytes.length, fileName },
+              data: {
+                storageKey: key,
+                contentType,
+                size: bytes.length,
+                fileName,
+                ...(attachedTo ? { attachedTo } : {}),
+              },
               position,
             })
             .returning({ id: learningContentBlocks.id });

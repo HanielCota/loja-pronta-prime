@@ -3,27 +3,14 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowRight, Check, Circle, LockKeyhole } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { AreaShell, panelCard } from '@/features/member/components/area-shell';
+import { panelCard } from '@/features/member/components/area-shell';
+import { SllAreaShell } from '@/features/sll/sll-area-shell';
 import { SllKnowledgeLibrary } from '@/features/sll/components/sll-knowledge-library';
 import { getFirstSllPublishedTrack } from '@/features/sll/server/catalog';
 import { requireProduct } from '@/features/products/server/access';
+import { getSllCopy } from '@/features/sll/server/copy';
 
 export const metadata: Metadata = { title: 'Etapa do Método SLL' };
-
-const RELATED_LESSON_SLUG: Record<string, string> = {
-  'dia-2-titulos-e-descricoes': 'titulos-descricao-precificacao',
-  'dia-3-fotos-de-capa': 'anuncios-automaticos-fotos',
-  'dia-4-oferta': 'desconto',
-  'dia-5-atendimento-e-pedidos': 'como-gerar-etiqueta',
-  'dia-6-revisao-da-semana': 'informacoes-gerenciais',
-  'cupom-de-novo-seguidor': 'cupons',
-  'videos-curtos-shopee-videos': 'videos-shopee-videos',
-  'oferta-relampago': 'oferta-relampago-da-loja',
-  'duplicar-anuncios': 'duplicando-anuncios-do-jeito-certo',
-  'gerar-etiqueta-antes-do-primeiro-pedido': 'como-gerar-etiqueta',
-  'responder-chat-em-12-horas': 'chat-de-ouro-avaliacoes-reputacao',
-  'primeiras-avaliacoes': 'primeiras-avaliacoes',
-};
 
 /** Mostra os quatro passos da Etapa 1 e liga cada aula ao visualizador comum. */
 export default async function MethodStagePage({
@@ -32,25 +19,26 @@ export default async function MethodStagePage({
   params: Promise<{ stageId: string }>;
 }) {
   const { stageId } = await params;
-  const [{ session, products }, track] = await Promise.all([
+  const [{ session, products }, track, copy] = await Promise.all([
     requireProduct('sll'),
     getFirstSllPublishedTrack('method'),
+    getSllCopy(),
   ]);
   const stage = track?.stages.find((item) => item.id === stageId);
   if (!track || !stage) notFound();
   const unlocked = stage.access?.isUnlocked ?? false;
-  const lessonsBySlug = new Map(
+  const lessonsById = new Map(
     track.stages
       .flatMap((item) => item.modules.flatMap((module) => module.lessons))
-      .map((lesson) => [lesson.slug, lesson]),
+      .map((lesson) => [lesson.id, lesson]),
   );
 
   return (
-    <AreaShell
+    <SllAreaShell
       account={session.user}
       hasChoice={products.length > 1}
-      area="sll"
       title={stage.title}
+      intro={stage.description ?? undefined}
     >
       <Button asChild className="w-fit" variant="ghost" size="inline">
         <Link href="/sll/metodo">
@@ -69,14 +57,14 @@ export default async function MethodStagePage({
         <section aria-label="Passos da etapa" className="flex flex-col gap-4">
           <div className={panelCard}>
             <div className="flex items-center justify-between gap-4">
-              <h2 className="text-body font-semibold text-foreground">Progresso da etapa</h2>
+              <h2 className="text-body font-semibold text-foreground">{copy.stageProgressTitle}</h2>
               <p className="text-body text-foreground">
                 {stage.access?.completedCount ?? 0} / {stage.access?.totalCount ?? 0} concluídas
               </p>
             </div>
             <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted" aria-hidden="true">
               <div
-                className="h-full rounded-full bg-progress"
+                className="h-full rounded-full bg-progress motion-safe:transition-[width] motion-safe:duration-500"
                 style={{
                   width: `${stage.access?.totalCount ? (stage.access.completedCount / stage.access.totalCount) * 100 : 0}%`,
                 }}
@@ -100,11 +88,9 @@ export default async function MethodStagePage({
             <>
               <section aria-labelledby="priorities-heading" className="flex flex-col gap-3">
                 <h2 id="priorities-heading" className="text-title font-semibold text-foreground">
-                  Seis prioridades
+                  {copy.stage2PrioritiesTitle}
                 </h2>
-                <p className="text-body text-muted-foreground">
-                  Uma prioridade por dia. Todos os dias estão disponíveis; avance no seu ritmo.
-                </p>
+                <p className="text-body text-muted-foreground">{copy.stage2PrioritiesIntro}</p>
                 {stage.modules
                   .filter((module) => module.slug !== 'acoes-complementares')
                   .map((module) => {
@@ -130,17 +116,13 @@ export default async function MethodStagePage({
                                 {lesson.description}
                               </p>
                             ) : null}
-                            {RELATED_LESSON_SLUG[module.slug ?? ''] &&
-                            lessonsBySlug.get(RELATED_LESSON_SLUG[module.slug ?? ''] ?? '') ? (
+                            {lesson.relatedLessonId && lessonsById.get(lesson.relatedLessonId) ? (
                               <Link
                                 className="mt-3 inline-flex min-h-11 items-center text-body font-medium text-link underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                                href={`/sll/aula/${lessonsBySlug.get(RELATED_LESSON_SLUG[module.slug ?? ''] ?? '')!.id}`}
+                                href={`/sll/aula/${lesson.relatedLessonId}`}
                               >
                                 Abrir aula completa:{' '}
-                                {
-                                  lessonsBySlug.get(RELATED_LESSON_SLUG[module.slug ?? ''] ?? '')!
-                                    .title
-                                }
+                                {lessonsById.get(lesson.relatedLessonId)!.title}
                               </Link>
                             ) : null}
                             <Button asChild className="mt-4" variant="soft">
@@ -161,11 +143,10 @@ export default async function MethodStagePage({
                 .map((module) => (
                   <section className={panelCard} key={module.id} aria-labelledby="optional-heading">
                     <h2 id="optional-heading" className="text-title font-semibold text-foreground">
-                      Ações complementares
+                      {copy.stage2OptionalTitle}
                     </h2>
                     <p className="mt-2 text-body text-muted-foreground">
-                      Aprofunde o que fizer sentido para sua loja. Estas ações não entram na
-                      contagem das 6 prioridades.
+                      {copy.stage2OptionalIntro}
                     </p>
                     <ol className="mt-4 flex flex-col divide-y divide-border border-t border-border">
                       {module.lessons.map((lesson) => (
@@ -178,17 +159,13 @@ export default async function MethodStagePage({
                               <span className="min-w-0 flex-1">{lesson.title}</span>
                               <ArrowRight aria-hidden="true" className="size-5 text-link" />
                             </Link>
-                            {RELATED_LESSON_SLUG[lesson.slug ?? ''] &&
-                            lessonsBySlug.get(RELATED_LESSON_SLUG[lesson.slug ?? ''] ?? '') ? (
+                            {lesson.relatedLessonId && lessonsById.get(lesson.relatedLessonId) ? (
                               <Link
                                 className="inline-flex min-h-11 items-center text-body text-link underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                                href={`/sll/aula/${lessonsBySlug.get(RELATED_LESSON_SLUG[lesson.slug ?? ''] ?? '')!.id}`}
+                                href={`/sll/aula/${lesson.relatedLessonId}`}
                               >
                                 Abrir aula completa:{' '}
-                                {
-                                  lessonsBySlug.get(RELATED_LESSON_SLUG[lesson.slug ?? ''] ?? '')!
-                                    .title
-                                }
+                                {lessonsById.get(lesson.relatedLessonId)!.title}
                               </Link>
                             ) : null}
                           </div>
@@ -224,7 +201,7 @@ export default async function MethodStagePage({
                           className="flex min-h-14 items-center gap-3 rounded-xl px-2 py-2 text-body text-foreground outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid"
                           href={`/sll/aula/${lesson.id}`}
                         >
-                          <span className="w-10 shrink-0 text-sm text-muted-foreground">
+                          <span className="flex w-16 shrink-0 items-center px-1 py-1.5 text-sm whitespace-nowrap text-muted-foreground">
                             AULA {index + 1}
                           </span>
                           <span className="min-w-0 flex-1">{lesson.title}</span>
@@ -252,6 +229,6 @@ export default async function MethodStagePage({
           )}
         </section>
       )}
-    </AreaShell>
+    </SllAreaShell>
   );
 }

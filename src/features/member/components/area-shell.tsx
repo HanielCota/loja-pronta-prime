@@ -4,6 +4,12 @@ import { Breadcrumb, type Crumb } from './breadcrumb';
 import type { ProductId } from '@/config/products';
 import { AreaSwitcher } from './area-switcher';
 import { MemberNavbar, type NavbarAccount } from './member-navbar';
+import {
+  MEMBER_AREA_COLUMN_GAP,
+  MEMBER_AREA_GUTTERS,
+  MEMBER_AREA_MAX_WIDTH,
+  MEMBER_AREA_SIDEBAR_COLUMNS,
+} from '@/lib/member-layout';
 
 /** Cartão branco das áreas; no alto contraste, a borda desenha o que a sombra desenhava. */
 export const panelCard =
@@ -40,8 +46,12 @@ type AreaShellProps = {
   intro?: string | undefined;
   /** Cabeçalho próprio no lugar do título (o perfil mostra quem ela é); o título fica na trilha. */
   header?: ReactNode;
+  /** Destaque mostrado antes do cabeçalho, usado pelo painel do SLL. */
+  beforeHeader?: ReactNode;
   /** Uma coluna estreita, de lista de ajustes (o perfil), em vez da largura das áreas. */
   narrow?: boolean;
+  /** Navegação lateral de uma área, fornecida pela página no servidor. */
+  sidebar?: ReactNode;
   children: ReactNode;
 };
 
@@ -60,37 +70,62 @@ export function AreaShell({
   title,
   intro,
   header,
+  beforeHeader,
   narrow,
+  sidebar,
   children,
 }: AreaShellProps) {
+  const navigation =
+    hasChoice && area ? (
+      <AreaSwitcher current={area} />
+    ) : hasChoice ? (
+      <Breadcrumb trail={[START]} current={crumb ?? product ?? title} />
+    ) : product ? (
+      <p className="text-body font-medium text-muted-foreground">{product}</p>
+    ) : null;
+  const pageHeading = header ?? (
+    <>
+      <h1 className="text-title font-semibold text-balance sm:text-title-lg">{title}</h1>
+      {intro ? (
+        <p className="max-w-[60ch] text-body text-pretty text-muted-foreground">{intro}</p>
+      ) : null}
+    </>
+  );
+  const content = (
+    <>
+      {beforeHeader ? (
+        <>
+          {navigation}
+          {beforeHeader}
+          <div className="flex flex-col gap-2">{pageHeading}</div>
+        </>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {navigation}
+          {pageHeading}
+        </div>
+      )}
+      {children}
+    </>
+  );
   return (
     <div className="flex min-h-dvh flex-col">
-      <MemberNavbar account={account} />
+      <MemberNavbar account={account} hasSidebar={Boolean(sidebar)} />
       <main
         className={cn(
-          'mx-auto flex w-full flex-col gap-8 px-4 pt-6 pb-12 sm:px-6 sm:pt-8',
-          narrow ? 'max-w-[688px]' : 'max-w-[1040px]',
+          'mx-auto w-full pt-6 pb-12 sm:pt-8',
+          MEMBER_AREA_GUTTERS,
+          sidebar ? MEMBER_AREA_MAX_WIDTH : narrow ? 'max-w-[688px]' : 'max-w-[1040px]',
         )}
       >
-        <div className="flex flex-col gap-2">
-          {/* Com os dois produtos, o seletor (ou a trilha) já diz onde ela está: o nome não se repete. */}
-          {hasChoice && area ? (
-            <AreaSwitcher current={area} />
-          ) : hasChoice ? (
-            <Breadcrumb trail={[START]} current={crumb ?? product ?? title} />
-          ) : product ? (
-            <p className="text-body font-medium text-muted-foreground">{product}</p>
-          ) : null}
-          {header ?? (
-            <>
-              <h1 className="text-title font-semibold text-balance sm:text-title-lg">{title}</h1>
-              {intro ? (
-                <p className="max-w-[60ch] text-body text-pretty text-muted-foreground">{intro}</p>
-              ) : null}
-            </>
-          )}
-        </div>
-        {children}
+        {sidebar ? (
+          <div className={cn('grid gap-6', MEMBER_AREA_SIDEBAR_COLUMNS, MEMBER_AREA_COLUMN_GAP)}>
+            {sidebar}
+            <div className="flex min-w-0 flex-col gap-8">{content}</div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-8">{content}</div>
+        )}
       </main>
     </div>
   );

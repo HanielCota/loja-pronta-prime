@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Megaphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { panelCard } from '@/features/member/components/area-shell';
 
@@ -18,7 +18,17 @@ type Banner = {
 
 export function SllBannerCarousel({ banners }: { banners: Banner[] }) {
   const [active, setActive] = useState(0);
-  if (!banners.length) return null;
+  if (!banners.length)
+    return (
+      <section
+        aria-label="Destaques do SLL"
+        className={`${panelCard} min-h-56 items-start justify-center gap-3 md:min-h-72`}
+      >
+        <Megaphone aria-hidden="true" className="size-8 text-link" />
+        <h2 className="text-title font-semibold text-foreground">Avisos da plataforma</h2>
+        <p className="text-body text-muted-foreground">Nenhum aviso em destaque por enquanto.</p>
+      </section>
+    );
   const banner = banners[active] ?? banners[0]!;
   const next = (active + 1) % banners.length;
   const previous = (active - 1 + banners.length) % banners.length;
@@ -45,8 +55,8 @@ export function SllBannerCarousel({ banners }: { banners: Banner[] }) {
       className={`${panelCard} gap-5`}
     >
       <div
-        aria-live="polite"
-        className="grid items-center gap-5 md:grid-cols-[minmax(0,3fr)_minmax(16rem,2fr)]"
+        className="grid items-center gap-5 motion-safe:animate-in motion-safe:duration-300 motion-safe:fade-in md:grid-cols-[minmax(0,3fr)_minmax(16rem,2fr)]"
+        key={banner.id}
       >
         <div className="flex flex-col items-start gap-3">
           {banner.label ? (
@@ -54,7 +64,9 @@ export function SllBannerCarousel({ banners }: { banners: Banner[] }) {
               {banner.label}
             </p>
           ) : null}
-          <h2 className="text-title font-semibold text-balance text-foreground">{banner.title}</h2>
+          <h2 aria-live="polite" className="text-title font-semibold text-balance text-foreground">
+            {banner.title}
+          </h2>
           <p className="text-body text-pretty text-muted-foreground">{banner.description}</p>
           {button}
         </div>

@@ -1,10 +1,8 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { AreaShell } from '@/features/member/components/area-shell';
 import { requireAdmin } from '@/features/admin/server/access';
 import { LearningContentTree } from '@/features/admin/components/learning-content-tree';
+import { AdminSidebar, type AdminSection } from '@/features/admin/components/admin-sidebar';
 import {
   getAdminLearningContent,
   getArchivedLearningContent,
@@ -15,35 +13,41 @@ export const metadata: Metadata = {
 };
 
 /** Mostra a estrutura do conteúdo e o estado de publicação para administradoras. */
-export default async function AdminPage() {
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ area?: string }>;
+}) {
   const session = await requireAdmin();
+  const { area } = await searchParams;
+  const section: AdminSection = area === 'method' || area === 'courses' ? area : 'welcome';
   const [tracks, archived] = await Promise.all([
     getAdminLearningContent(),
     getArchivedLearningContent(),
   ]);
 
+  const kind =
+    section === 'welcome' ? 'welcome' : section === 'method' ? 'method' : 'complementary_course';
+  const title =
+    section === 'welcome'
+      ? 'Comece aqui'
+      : section === 'method'
+        ? 'Método SLL'
+        : 'Cursos complementares';
   return (
-    <AreaShell account={session.user} hasChoice={false} title="Conteúdo do SLL">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
-        <p className="text-body text-muted-foreground">Edite trilhas, etapas, cursos e aulas.</p>
-        <Button asChild variant="soft">
-          <Link href="/admin/banners">
-            Editar banners do painel <ArrowRight aria-hidden="true" />
-          </Link>
-        </Button>
-        <Button asChild variant="soft">
-          <Link href="/admin/recursos">
-            Editar Recursos e Ferramentas <ArrowRight aria-hidden="true" />
-          </Link>
-        </Button>
-        <Button asChild variant="soft">
-          <Link href="/admin/acessos">
-            Gerenciar acessos <ArrowRight aria-hidden="true" />
-          </Link>
-        </Button>
-      </div>
+    <AreaShell
+      account={session.user}
+      hasChoice={false}
+      sidebar={<AdminSidebar current={section} />}
+      title={title}
+      intro="Abra um item para organizar as aulas. Edite ou arraste para mudar a ordem."
+    >
       <section aria-label="Trilhas, etapas, módulos e aulas">
-        <LearningContentTree archived={archived} tracks={tracks} />
+        <LearningContentTree
+          archived={archived}
+          selectedKind={kind}
+          tracks={tracks.filter((track) => track.kind === kind)}
+        />
       </section>
     </AreaShell>
   );

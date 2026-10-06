@@ -1,15 +1,44 @@
 'use client';
 
-import { useActionState, useId, useRef, useState } from 'react';
+import { useActionState, useId, useRef, useState, useTransition, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { FilePlus2, Film, ImagePlus, Link2, Plus, Save, Trash2, Type, Upload } from 'lucide-react';
+import {
+  FilePlus2,
+  Film,
+  GripVertical,
+  ImagePlus,
+  Link2,
+  Plus,
+  Save,
+  Trash2,
+  Type,
+  Upload,
+} from 'lucide-react';
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
 import { LiveRegion } from '@/components/ui/live-region';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { panelCard } from '@/features/member/components/area-shell';
-import { saveLearningLesson } from '../server/actions';
+import { LessonDraftPreview, type DraftPreviewBlock } from './lesson-draft-preview';
+import { removeLessonBlock, reorderLessonBlocks, saveLearningLesson } from '../server/actions';
 import type { LessonEditState } from '../server/actions';
 
 const initialLessonEditState: LessonEditState = { message: '', saved: false };
@@ -37,8 +66,54 @@ const removeBlockLabel: Record<NewBlockKind, string> = {
   file: 'Remover arquivo',
 };
 
+function SortableLessonBlock({
+  id,
+  title,
+  children,
+  onRemove,
+}: {
+  id: string;
+  title: string;
+  children: ReactNode;
+  onRemove: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, isDragging } =
+    useSortable({ id });
+  return (
+    <div
+      className={cn('relative', isDragging && 'z-10')}
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform) }}
+    >
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <button
+          {...attributes}
+          {...listeners}
+          aria-label={`Arrastar ${title} para mudar a ordem`}
+          className="inline-flex min-h-11 touch-none items-center gap-2 rounded-full px-3 text-body text-muted-foreground outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          ref={setActivatorNodeRef}
+          type="button"
+        >
+          <GripVertical aria-hidden="true" className="size-5" /> Arrastar
+        </button>
+        <Button
+          aria-label={`Remover ${title}`}
+          className="!w-fit !px-3"
+          onClick={onRemove}
+          type="button"
+          variant="ghost"
+        >
+          <Trash2 aria-hidden="true" /> Remover
+        </Button>
+      </div>
+      {children}
+    </div>
+  );
+}
+
 export function LessonEditor({
   lesson,
+  siblingLessons,
   onCancel,
 }: {
   lesson: {
@@ -47,12 +122,11 @@ export function LessonEditor({
     description: string | null;
     blocks: Array<{ id: string; kind: string; data: Record<string, string> }>;
   };
+  siblingLessons: Array<{ id: string; title: string }>;
   onCancel: () => void;
 }) {
   const router = useRouter();
   const [newBlocks, setNewBlocks] = useState<Array<{ key: string; kind: NewBlockKind }>>([]);
-  // Limpa os blocos novos a cada salvamento: depois do refresh eles já aparecem como
-  // blocos existentes e, se ficassem no formulário, o próximo salvamento os gravaria de novo.
   const [state, formAction, pending] = useActionState(
     async (previous: LessonEditState, formData: FormData) => {
       const next = await saveLearningLesson(previous, formData);
@@ -64,7 +138,16 @@ export function LessonEditor({
     },
     initialLessonEditState,
   );
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewChanged, setPreviewChanged] = useState(false);
+  const [draft, setDraft] = useState({
+    title: lesson.title,
+    description: lesson.description ?? '',
+    blocks: lesson.blocks as DraftPreviewBlock[],
+  });
   const [uploadNotice, setUploadNotice] = useState('');
+  const [blockPending, startBlockTransition] = useTransition();
+  const [blockMessage, setBlockMessage] = useState('');
   const editableBlocks = lesson.blocks.filter(
     (block): block is EditableBlock =>
       block.kind === 'text' ||
@@ -73,214 +156,371 @@ export function LessonEditor({
       block.kind === 'file' ||
       block.kind === 'image',
   );
+  const attachmentTargets = editableBlocks.filter(
+    (block) => block.kind === 'video' || block.kind === 'link',
+  );
+  const [blockOrder, setBlockOrder] = useState(() => editableBlocks.map((block) => block.id));
+  const blocksById = new Map(editableBlocks.map((block) => [block.id, block]));
+  const completeOrder = [
+    ...blockOrder.filter((id) => blocksById.has(id)),
+    ...editableBlocks.filter((block) => !blockOrder.includes(block.id)).map((block) => block.id),
+  ];
+  const orderedBlocks = completeOrder
+    .map((id) => blocksById.get(id))
+    .filter((block): block is EditableBlock => Boolean(block));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  function onDragEnd({ active, over }: DragEndEvent) {
+    if (!over || active.id === over.id || blockPending) return;
+    const from = completeOrder.indexOf(String(active.id));
+    const to = completeOrder.indexOf(String(over.id));
+    if (from < 0 || to < 0) return;
+    const previous = completeOrder;
+    const next = arrayMove(completeOrder, from, to);
+    setBlockOrder(next);
+    const data = new FormData();
+    data.set('lessonId', lesson.id);
+    next.forEach((id) => data.append('id', id));
+    startBlockTransition(async () => {
+      const result = await reorderLessonBlocks(data);
+      setBlockMessage(result.message);
+      if (result.saved) router.refresh();
+      else setBlockOrder(previous);
+    });
+  }
+  function removeBlock(block: EditableBlock) {
+    if (
+      !window.confirm(
+        `Remover ${block.kind === 'file' ? 'este arquivo' : 'este material'} da aula?`,
+      )
+    )
+      return;
+    const data = new FormData();
+    data.set('lessonId', lesson.id);
+    data.set('blockId', block.id);
+    startBlockTransition(async () => {
+      const result = await removeLessonBlock(data);
+      setBlockMessage(result.message);
+      if (result.saved) router.refresh();
+    });
+  }
+  const newContentIndex = (index: number) =>
+    newBlocks.slice(0, index).filter((block) => block.kind !== 'image' && block.kind !== 'file')
+      .length;
+
+  function updatePreview(form: HTMLFormElement) {
+    const fields = new FormData(form);
+    const value = (name: string, fallback = '') => String(fields.get(name) ?? fallback);
+    const blocks: DraftPreviewBlock[] = orderedBlocks.map((block) => ({
+      ...block,
+      data: {
+        ...block.data,
+        ...(block.kind === 'text' ? { text: value(`block:${block.id}:text`) } : {}),
+        ...(block.kind === 'link'
+          ? {
+              label: value(`block:${block.id}:label`),
+              url: value(`block:${block.id}:url`),
+              note: value(`block:${block.id}:note`),
+            }
+          : {}),
+        ...(block.kind === 'video'
+          ? { videoId: value(`block:${block.id}:videoId`), note: value(`block:${block.id}:note`) }
+          : {}),
+        ...(block.kind === 'file' ? { fileName: value(`block:${block.id}:fileName`) } : {}),
+        ...(block.kind === 'image' ? { alt: value(`block:${block.id}:alt`) } : {}),
+      },
+    }));
+    newBlocks.forEach((block, index) => {
+      if (block.kind === 'file' || block.kind === 'image') return;
+      const prefix = `newBlock:${newContentIndex(index)}`;
+      blocks.push({
+        id: block.key,
+        kind: block.kind,
+        data:
+          block.kind === 'text'
+            ? { text: value(`${prefix}:text`) }
+            : block.kind === 'link'
+              ? {
+                  label: value(`${prefix}:label`),
+                  url: value(`${prefix}:url`),
+                  note: value(`${prefix}:note`),
+                }
+              : { note: value(`${prefix}:note`) },
+      });
+    });
+    setDraft({ title: value('title'), description: value('description'), blocks });
+    setPreviewChanged(true);
+  }
 
   // Imagem e arquivo novos vão pelo envio próprio, não pelo "Salvar alterações": só texto,
   // link e vídeo entram no formulário, numerados na ordem em que o servidor vai ler.
-  const formIndexByKey = new Map(
-    newBlocks
-      .filter((block) => block.kind === 'text' || block.kind === 'link' || block.kind === 'video')
-      .map((block, index) => [block.key, index]),
-  );
-
   return (
-    <form action={formAction} className={cn(panelCard, '!p-4 sm:!p-6')}>
-      <input name="lessonId" type="hidden" value={lesson.id} />
-      <h3 className="text-title font-semibold text-foreground">Editar aula</h3>
-      <p className="mt-2 text-body text-muted-foreground">
-        Altere o título, a descrição, os textos e os links desta aula.
-      </p>
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]">
+      <fieldset className="grid grid-cols-2 gap-2 xl:hidden">
+        <legend className="sr-only">Editar ou ver prévia</legend>
+        <Button
+          aria-pressed={!showPreview}
+          onClick={() => setShowPreview(false)}
+          type="button"
+          variant={!showPreview ? 'default' : 'soft'}
+        >
+          Editar
+        </Button>
+        <Button
+          aria-pressed={showPreview}
+          onClick={() => setShowPreview(true)}
+          type="button"
+          variant={showPreview ? 'default' : 'soft'}
+        >
+          Prévia
+        </Button>
+      </fieldset>
+      <form
+        action={formAction}
+        onInput={(event) => updatePreview(event.currentTarget)}
+        onChange={(event) => updatePreview(event.currentTarget)}
+        className={cn(panelCard, '!p-4 sm:!p-6', showPreview && 'hidden xl:flex')}
+      >
+        <input name="lessonId" type="hidden" value={lesson.id} />
+        <h3 className="text-title font-semibold text-foreground">Editar aula</h3>
+        <p className="mt-2 text-body text-muted-foreground">
+          Altere o título e os materiais. Confira a prévia antes de salvar.
+        </p>
 
-      <div className="mt-5 flex flex-col gap-4">
-        <FloatingLabelInput
-          defaultValue={lesson.title}
-          id="lesson-title"
-          label="Título da aula"
-          name="title"
-          required
-        />
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="lesson-description">Descrição da aula</Label>
-          <textarea
-            className="min-h-28 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-            defaultValue={lesson.description ?? ''}
-            id="lesson-description"
-            maxLength={1200}
-            name="description"
+        <div className="mt-5 flex flex-col gap-4">
+          <FloatingLabelInput
+            defaultValue={lesson.title}
+            id="lesson-title"
+            label="Título da aula"
+            name="title"
+            required
           />
-        </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="lesson-description">Descrição da aula</Label>
+            <textarea
+              className="min-h-28 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              defaultValue={lesson.description ?? ''}
+              id="lesson-description"
+              maxLength={1200}
+              name="description"
+            />
+          </div>
 
-        {editableBlocks.map((block, index) => (
-          <fieldset
-            className="flex flex-col gap-3 rounded-2xl border border-border p-4 forced-colors:border forced-colors:border-[CanvasText]"
-            key={block.id}
+          {blockMessage ? (
+            <output aria-live="polite" className="text-body text-muted-foreground">
+              {blockMessage}
+            </output>
+          ) : null}
+          <DndContext
+            id={`lesson-blocks-${lesson.id}`}
+            collisionDetection={closestCenter}
+            onDragEnd={onDragEnd}
+            sensors={sensors}
           >
-            <legend className="px-1 text-body font-semibold text-foreground">
-              {`${
-                block.kind === 'text'
-                  ? 'Texto'
-                  : block.kind === 'link'
-                    ? 'Link'
-                    : block.kind === 'video'
-                      ? 'Vídeo'
-                      : block.kind === 'image'
-                        ? 'Imagem'
-                        : 'Arquivo'
-              } ${index + 1}`}
-            </legend>
-            <input name="blockId" type="hidden" value={block.id} />
-            <input name={`block:${block.id}:kind`} type="hidden" value={block.kind} />
-            {block.kind === 'text' ? (
-              <div className="flex flex-col gap-2">
-                <Label htmlFor={`block-${block.id}-text`}>Texto da aula</Label>
-                <textarea
-                  className="min-h-36 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                  defaultValue={block.data.text ?? ''}
-                  id={`block-${block.id}-text`}
-                  maxLength={12000}
-                  name={`block:${block.id}:text`}
-                  required
-                />
-              </div>
-            ) : block.kind === 'link' ? (
-              <>
-                <FloatingLabelInput
-                  defaultValue={block.data.label ?? ''}
-                  id={`block-${block.id}-label`}
-                  label="Nome do link"
-                  name={`block:${block.id}:label`}
-                  required
-                />
-                <FloatingLabelInput
-                  autoCapitalize="none"
-                  defaultValue={block.data.url ?? ''}
-                  id={`block-${block.id}-url`}
-                  label="Endereço do link"
-                  name={`block:${block.id}:url`}
-                  required
-                  type="url"
-                />
-              </>
-            ) : block.kind === 'video' ? (
-              <>
-                <FloatingLabelInput
-                  defaultValue={block.data.videoId ?? ''}
-                  id={`block-${block.id}-video-id`}
-                  label="ID do vídeo Panda"
-                  name={`block:${block.id}:videoId`}
-                  required
-                />
-                <p className="text-body text-muted-foreground">
-                  Use o ID do vídeo que aparece na referência Panda do conteúdo.
-                </p>
-              </>
-            ) : block.kind === 'file' ? (
-              <>
-                <FloatingLabelInput
-                  defaultValue={block.data.fileName ?? ''}
-                  id={`block-${block.id}-file-name`}
-                  label="Nome do arquivo"
-                  name={`block:${block.id}:fileName`}
-                  required
-                />
-                <a
-                  className="inline-flex min-h-11 items-center text-body font-medium text-link underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                  href={`/api/sll/material/${block.id}`}
+            <SortableContext items={completeOrder} strategy={verticalListSortingStrategy}>
+              {orderedBlocks.map((block, index) => (
+                <SortableLessonBlock
+                  id={block.id}
+                  key={block.id}
+                  onRemove={() => removeBlock(block)}
+                  title={`${block.kind === 'file' ? 'arquivo' : 'material'} ${index + 1}`}
                 >
-                  Baixar arquivo atual
-                </a>
-                <MediaUpload
-                  blockId={block.id}
-                  kind="file"
-                  lessonId={lesson.id}
-                  onUploaded={() => router.refresh()}
-                />
-              </>
-            ) : (
-              <>
-                <MediaUpload
-                  blockId={block.id}
-                  initialAlt={block.data.alt ?? ''}
-                  kind="image"
-                  lessonId={lesson.id}
-                  altFieldName={`block:${block.id}:alt`}
-                  onUploaded={() => router.refresh()}
-                />
-              </>
-            )}
-          </fieldset>
-        ))}
-        {editableBlocks.length === 0 ? (
-          <p className="text-body text-muted-foreground">
-            Esta aula ainda não tem texto ou link para editar.
-          </p>
-        ) : null}
+                  <fieldset className="flex flex-col gap-3 rounded-2xl border border-border p-4 forced-colors:border forced-colors:border-[CanvasText]">
+                    <legend className="px-1 text-body font-semibold text-foreground">
+                      {`${
+                        block.kind === 'text'
+                          ? 'Texto'
+                          : block.kind === 'link'
+                            ? 'Link'
+                            : block.kind === 'video'
+                              ? 'Vídeo'
+                              : block.kind === 'image'
+                                ? 'Imagem'
+                                : 'Arquivo'
+                      } ${index + 1}`}
+                    </legend>
+                    <input name="blockId" type="hidden" value={block.id} />
+                    <input name={`block:${block.id}:kind`} type="hidden" value={block.kind} />
+                    {block.kind === 'text' ? (
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor={`block-${block.id}-text`}>Texto da aula</Label>
+                        <textarea
+                          className="min-h-36 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                          defaultValue={block.data.text ?? ''}
+                          id={`block-${block.id}-text`}
+                          maxLength={12000}
+                          name={`block:${block.id}:text`}
+                          required
+                        />
+                      </div>
+                    ) : block.kind === 'link' ? (
+                      <>
+                        <FloatingLabelInput
+                          defaultValue={block.data.label ?? ''}
+                          id={`block-${block.id}-label`}
+                          label="Nome do link"
+                          name={`block:${block.id}:label`}
+                          required
+                        />
+                        <FloatingLabelInput
+                          autoCapitalize="none"
+                          defaultValue={block.data.url ?? ''}
+                          id={`block-${block.id}-url`}
+                          label="Endereço do link"
+                          name={`block:${block.id}:url`}
+                          required
+                          type="url"
+                        />
+                        <div className="flex flex-col gap-2">
+                          <Label htmlFor={`block-${block.id}-note`}>Anotação para este link</Label>
+                          <textarea
+                            className="min-h-24 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                            defaultValue={block.data.note ?? ''}
+                            id={`block-${block.id}-note`}
+                            maxLength={3000}
+                            name={`block:${block.id}:note`}
+                          />
+                        </div>
+                      </>
+                    ) : block.kind === 'video' ? (
+                      <>
+                        <input
+                          defaultValue={block.data.videoId ?? ''}
+                          name={`block:${block.id}:videoId`}
+                          type="hidden"
+                        />
+                        <p className="text-body text-muted-foreground">
+                          O espaço do vídeo já aparece para a aluna. O envio será definido depois.
+                        </p>
+                        <div className="flex flex-col gap-2">
+                          <Label htmlFor={`block-${block.id}-note`}>Anotação para este vídeo</Label>
+                          <textarea
+                            className="min-h-24 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                            defaultValue={block.data.note ?? ''}
+                            id={`block-${block.id}-note`}
+                            maxLength={3000}
+                            name={`block:${block.id}:note`}
+                          />
+                        </div>
+                      </>
+                    ) : block.kind === 'file' ? (
+                      <>
+                        <FloatingLabelInput
+                          defaultValue={block.data.fileName ?? ''}
+                          id={`block-${block.id}-file-name`}
+                          label="Nome do arquivo"
+                          name={`block:${block.id}:fileName`}
+                          required
+                        />
+                        <AttachmentSelect
+                          defaultValue={block.data.attachedTo ?? ''}
+                          id={`block-${block.id}-attached-to`}
+                          name={`block:${block.id}:attachedTo`}
+                          targets={attachmentTargets}
+                        />
+                        <a
+                          className="inline-flex min-h-11 items-center text-body font-medium text-link underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                          href={`/api/admin/learning-content/draft-media/${block.id}`}
+                        >
+                          Baixar arquivo atual
+                        </a>
+                        <MediaUpload
+                          blockId={block.id}
+                          kind="file"
+                          lessonId={lesson.id}
+                          attachmentTargets={attachmentTargets}
+                          onUploaded={() => router.refresh()}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <MediaUpload
+                          blockId={block.id}
+                          initialAlt={block.data.alt ?? ''}
+                          kind="image"
+                          lessonId={lesson.id}
+                          altFieldName={`block:${block.id}:alt`}
+                          onUploaded={() => router.refresh()}
+                        />
+                      </>
+                    )}
+                  </fieldset>
+                </SortableLessonBlock>
+              ))}
+            </SortableContext>
+          </DndContext>
+          {editableBlocks.length === 0 ? (
+            <p className="text-body text-muted-foreground">
+              Esta aula ainda não tem texto ou link para editar.
+            </p>
+          ) : null}
 
-        <div className="grid grid-cols-1 gap-3 border-t border-border pt-4 sm:grid-cols-2 xl:grid-cols-3">
-          <Button
-            className="!w-full"
-            onClick={() =>
-              setNewBlocks((blocks) => [...blocks, { key: crypto.randomUUID(), kind: 'text' }])
-            }
-            type="button"
-            variant="soft"
-          >
-            <Plus aria-hidden="true" />
-            <Type aria-hidden="true" />
-            Adicionar texto
-          </Button>
-          <Button
-            className="!w-full"
-            onClick={() =>
-              setNewBlocks((blocks) => [...blocks, { key: crypto.randomUUID(), kind: 'link' }])
-            }
-            type="button"
-            variant="soft"
-          >
-            <Plus aria-hidden="true" />
-            <Link2 aria-hidden="true" />
-            Adicionar link
-          </Button>
-          <Button
-            className="!w-full"
-            onClick={() =>
-              setNewBlocks((blocks) => [...blocks, { key: crypto.randomUUID(), kind: 'video' }])
-            }
-            type="button"
-            variant="soft"
-          >
-            <Plus aria-hidden="true" />
-            <Film aria-hidden="true" />
-            Adicionar vídeo
-          </Button>
-          <Button
-            className="!w-full"
-            onClick={() =>
-              setNewBlocks((blocks) => [...blocks, { key: crypto.randomUUID(), kind: 'image' }])
-            }
-            type="button"
-            variant="soft"
-          >
-            <Plus aria-hidden="true" />
-            <ImagePlus aria-hidden="true" />
-            Adicionar imagem
-          </Button>
-          <Button
-            className="!w-full"
-            onClick={() =>
-              setNewBlocks((blocks) => [...blocks, { key: crypto.randomUUID(), kind: 'file' }])
-            }
-            type="button"
-            variant="soft"
-          >
-            <Plus aria-hidden="true" />
-            <FilePlus2 aria-hidden="true" />
-            Adicionar arquivo
-          </Button>
-        </div>
+          <div className="grid grid-cols-1 gap-3 border-t border-border pt-4 sm:grid-cols-2 xl:grid-cols-3">
+            <Button
+              className="!w-full"
+              onClick={() =>
+                setNewBlocks((blocks) => [...blocks, { key: crypto.randomUUID(), kind: 'text' }])
+              }
+              type="button"
+              variant="soft"
+            >
+              <Plus aria-hidden="true" />
+              <Type aria-hidden="true" />
+              Adicionar texto
+            </Button>
+            <Button
+              className="!w-full"
+              onClick={() =>
+                setNewBlocks((blocks) => [...blocks, { key: crypto.randomUUID(), kind: 'link' }])
+              }
+              type="button"
+              variant="soft"
+            >
+              <Plus aria-hidden="true" />
+              <Link2 aria-hidden="true" />
+              Adicionar link
+            </Button>
+            <Button
+              className="!w-full"
+              onClick={() =>
+                setNewBlocks((blocks) => [...blocks, { key: crypto.randomUUID(), kind: 'video' }])
+              }
+              type="button"
+              variant="soft"
+            >
+              <Plus aria-hidden="true" />
+              <Film aria-hidden="true" />
+              Adicionar vídeo
+            </Button>
+            <Button
+              className="!w-full"
+              onClick={() =>
+                setNewBlocks((blocks) => [...blocks, { key: crypto.randomUUID(), kind: 'image' }])
+              }
+              type="button"
+              variant="soft"
+            >
+              <Plus aria-hidden="true" />
+              <ImagePlus aria-hidden="true" />
+              Adicionar imagem
+            </Button>
+            <Button
+              className="!w-full"
+              onClick={() =>
+                setNewBlocks((blocks) => [...blocks, { key: crypto.randomUUID(), kind: 'file' }])
+              }
+              type="button"
+              variant="soft"
+            >
+              <Plus aria-hidden="true" />
+              <FilePlus2 aria-hidden="true" />
+              Adicionar arquivo
+            </Button>
+          </div>
 
-        {newBlocks.map((block) => {
-          const index = formIndexByKey.get(block.key);
-          return (
+          {newBlocks.map((block, index) => (
             <fieldset
               className="flex flex-col gap-3 rounded-2xl border border-border p-4 forced-colors:border forced-colors:border-[CanvasText]"
               key={block.key}
@@ -288,7 +528,7 @@ export function LessonEditor({
               <legend className="px-1 text-body font-semibold text-foreground">
                 {newBlockTitle[block.kind]}
               </legend>
-              {index !== undefined ? (
+              {block.kind === 'text' || block.kind === 'link' || block.kind === 'video' ? (
                 <input name="newBlockKind" type="hidden" value={block.kind} />
               ) : null}
               {block.kind === 'text' ? (
@@ -298,7 +538,7 @@ export function LessonEditor({
                     className="min-h-36 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                     id={`new-block-${block.key}-text`}
                     maxLength={12000}
-                    name={`newBlock:${index}:text`}
+                    name={`newBlock:${newContentIndex(index)}:text`}
                     required
                   />
                 </div>
@@ -307,34 +547,52 @@ export function LessonEditor({
                   <FloatingLabelInput
                     id={`new-block-${block.key}-label`}
                     label="Nome do link"
-                    name={`newBlock:${index}:label`}
+                    name={`newBlock:${newContentIndex(index)}:label`}
                     required
                   />
                   <FloatingLabelInput
                     autoCapitalize="none"
                     id={`new-block-${block.key}-url`}
                     label="Endereço do link"
-                    name={`newBlock:${index}:url`}
+                    name={`newBlock:${newContentIndex(index)}:url`}
                     required
                     type="url"
                   />
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor={`new-block-${block.key}-note`}>Anotação para este link</Label>
+                    <textarea
+                      className="min-h-24 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                      id={`new-block-${block.key}-note`}
+                      maxLength={3000}
+                      name={`newBlock:${newContentIndex(index)}:note`}
+                    />
+                  </div>
                 </>
               ) : block.kind === 'video' ? (
                 <>
-                  <FloatingLabelInput
-                    id={`new-block-${block.key}-video-id`}
-                    label="ID do vídeo Panda"
-                    name={`newBlock:${index}:videoId`}
-                    required
+                  <input
+                    name={`newBlock:${newContentIndex(index)}:videoId`}
+                    type="hidden"
+                    value=""
                   />
                   <p className="text-body text-muted-foreground">
-                    Use o ID do vídeo que aparece na referência Panda do conteúdo.
+                    Este espaço fica reservado para o vídeo. O envio será definido depois.
                   </p>
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor={`new-block-${block.key}-note`}>Anotação para este vídeo</Label>
+                    <textarea
+                      className="min-h-24 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                      id={`new-block-${block.key}-note`}
+                      maxLength={3000}
+                      name={`newBlock:${newContentIndex(index)}:note`}
+                    />
+                  </div>
                 </>
               ) : (
                 <MediaUpload
                   kind={block.kind}
                   lessonId={lesson.id}
+                  attachmentTargets={attachmentTargets}
                   onUploaded={() => {
                     setNewBlocks((blocks) => blocks.filter((item) => item.key !== block.key));
                     setUploadNotice(
@@ -359,33 +617,83 @@ export function LessonEditor({
                 Remover
               </Button>
             </fieldset>
-          );
-        })}
+          ))}
 
-        {uploadNotice ? <p className="text-body text-foreground">{uploadNotice}</p> : null}
+          {uploadNotice ? (
+            <output aria-live="polite" className="text-body text-foreground">
+              {uploadNotice}
+            </output>
+          ) : null}
 
-        {state.message ? (
-          state.saved ? (
-            <p className="text-body text-foreground">{state.message}</p>
-          ) : (
-            <p className="text-body text-destructive" role="alert">
-              {state.message}
-            </p>
-          )
-        ) : null}
-        {/* Sempre no código: avisos criados junto com o texto costumam não ser anunciados. */}
-        <LiveRegion>{state.saved ? state.message : uploadNotice}</LiveRegion>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Button loading={pending} loadingText="Salvando…" type="submit">
-            <Save aria-hidden="true" />
-            Salvar alterações
-          </Button>
-          <Button onClick={onCancel} type="button" variant="soft">
-            Cancelar
-          </Button>
+          {state.message ? (
+            state.saved ? (
+              <output aria-live="polite" className="text-body text-foreground">
+                {state.message}
+              </output>
+            ) : (
+              <p className="text-body text-destructive" role="alert">
+                {state.message}
+              </p>
+            )
+          ) : null}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Button loading={pending} loadingText="Salvando…" type="submit">
+              <Save aria-hidden="true" />
+              Salvar alterações
+            </Button>
+            <Button onClick={onCancel} type="button" variant="soft">
+              Cancelar
+            </Button>
+          </div>
         </div>
+      </form>
+      <div className={cn('self-start xl:sticky xl:top-6', !showPreview && 'hidden xl:block')}>
+        <LessonDraftPreview
+          currentLessonId={lesson.id}
+          siblingLessons={siblingLessons}
+          title={draft.title}
+          description={draft.description}
+          changed={previewChanged}
+          blocks={draft.blocks}
+        />
       </div>
-    </form>
+    </div>
+  );
+}
+
+function AttachmentSelect({
+  defaultValue,
+  id,
+  name,
+  targets,
+  onChange,
+}: {
+  defaultValue?: string;
+  id: string;
+  name?: string;
+  targets: EditableBlock[];
+  onChange?: (value: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <Label htmlFor={id}>Este arquivo acompanha</Label>
+      <select
+        className="min-h-12 w-full rounded-field border border-input bg-background px-4 text-body text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        defaultValue={defaultValue}
+        id={id}
+        name={name}
+        onChange={onChange ? (event) => onChange(event.currentTarget.value) : undefined}
+      >
+        <option value="">A aula inteira</option>
+        {targets.map((target, index) => (
+          <option key={target.id} value={target.id}>
+            {target.kind === 'link'
+              ? target.data.label || `Link ${index + 1}`
+              : `Vídeo ${index + 1}`}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }
 
@@ -395,6 +703,7 @@ function MediaUpload({
   initialAlt,
   kind,
   lessonId,
+  attachmentTargets = [],
   onUploaded,
 }: {
   blockId?: string;
@@ -402,6 +711,7 @@ function MediaUpload({
   initialAlt?: string;
   kind: 'image' | 'file';
   lessonId: string;
+  attachmentTargets?: EditableBlock[];
   onUploaded: () => void;
 }) {
   const inputId = useId();
@@ -410,6 +720,7 @@ function MediaUpload({
   const [alt, setAlt] = useState(initialAlt ?? '');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [attachToBlockId, setAttachToBlockId] = useState('');
 
   async function upload() {
     if (!file) {
@@ -429,6 +740,8 @@ function MediaUpload({
     form.set('file', file);
     if (blockId) form.set('replaceBlockId', blockId);
     if (kind === 'image') form.set('alt', alt);
+    if (kind === 'file' && !blockId && attachToBlockId)
+      form.set('attachToBlockId', attachToBlockId);
 
     try {
       const response = await fetch('/api/admin/learning-content/media', {
@@ -464,6 +777,13 @@ function MediaUpload({
           // obrigatório travaria o formulário da aula inteira; o envio confere sozinho.
           required={Boolean(altFieldName)}
           value={alt}
+        />
+      ) : null}
+      {kind === 'file' && !blockId ? (
+        <AttachmentSelect
+          id={`${inputId}-attached-to`}
+          targets={attachmentTargets}
+          onChange={setAttachToBlockId}
         />
       ) : null}
       <div className="flex flex-col gap-2">

@@ -7,6 +7,7 @@ import { hasAdminRole } from '@/features/admin/access';
 import { db } from '@/server/db';
 import { learningBanners } from '@/server/db/schema';
 import { storage } from '@/server/storage';
+import { getNodeDraft, saveNodeDraft } from '@/features/admin/server/node-drafts';
 
 const MAX_BYTES = 20 * 1024 * 1024;
 
@@ -35,8 +36,10 @@ export async function GET(
     columns: { imageStorageKey: true },
     where: and(eq(learningBanners.id, id.data), isNull(learningBanners.archivedAt)),
   });
-  if (!banner?.imageStorageKey) return error('Este banner ainda não tem imagem.', 404);
-  const bytes = await storage().get(banner.imageStorageKey);
+  const draft = await getNodeDraft('banner', id.data);
+  const imageStorageKey = draft?.data.imageStorageKey ?? banner?.imageStorageKey;
+  if (!imageStorageKey) return error('Este banner ainda não tem imagem.', 404);
+  const bytes = await storage().get(imageStorageKey);
   if (!bytes) return error('A imagem não está disponível.', 404);
   return new Response(Buffer.from(bytes), {
     headers: { 'Content-Type': 'image/webp', 'Cache-Control': 'private, no-store' },
@@ -69,7 +72,7 @@ export async function POST(
   if (file.size === 0) return error('O arquivo está vazio.', 400);
   if (file.size > MAX_BYTES) return error('O arquivo é grande demais. O limite é 20 MB.', 413);
   const banner = await db.query.learningBanners.findFirst({
-    columns: { id: true, imageStorageKey: true },
+    columns: { id: true, imageStorageKey: true, status: true },
     where: and(eq(learningBanners.id, id.data), isNull(learningBanners.archivedAt)),
   });
   if (!banner) return error('Este banner não está disponível.', 404);
@@ -92,13 +95,19 @@ export async function POST(
   const key = `sll/banners/${banner.id}/${crypto.randomUUID()}.webp`;
   try {
     await storage().put(key, bytes, 'image/webp');
-    await db
-      .update(learningBanners)
-      .set({ imageStorageKey: key, imageAlt: alt.data })
-      .where(eq(learningBanners.id, banner.id));
-    if (banner.imageStorageKey && banner.imageStorageKey !== key)
+    const previousDraft = await getNodeDraft('banner', banner.id);
+    if (banner.status === 'published')
+      await saveNodeDraft('banner', banner.id, { imageStorageKey: key, imageAlt: alt.data });
+    else
+      await db
+        .update(learningBanners)
+        .set({ imageStorageKey: key, imageAlt: alt.data })
+        .where(eq(learningBanners.id, banner.id));
+    const oldDraftKey = previousDraft?.data.imageStorageKey;
+    const oldKey = banner.status === 'published' ? oldDraftKey : banner.imageStorageKey;
+    if (oldKey && oldKey !== key && oldKey !== banner.imageStorageKey)
       await storage()
-        .remove(banner.imageStorageKey)
+        .remove(oldKey)
         .catch(() => {});
     return NextResponse.json(
       { message: 'Imagem do banner salva.' },

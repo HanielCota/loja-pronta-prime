@@ -1,0 +1,2 @@
+ALTER TABLE "learning_lessons" ADD COLUMN "related_lesson_id" uuid;--> statement-breakpoint
+ALTER TABLE "learning_lessons" ADD CONSTRAINT "learning_lessons_related_lesson_id_learning_lessons_id_fk" FOREIGN KEY ("related_lesson_id") REFERENCES "public"."learning_lessons"("id") ON DELETE set null ON UPDATE no action;

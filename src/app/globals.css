@@ -270,6 +270,9 @@
   }
   /* Tamanho do texto (perfil, Aparência): muda a base do rem, então texto, botões e espaços
      crescem juntos. Os valores são os de TEXT_SIZES (features/theme/display.ts). */
+  html[data-text='pequeno'] {
+    font-size: 93.75%;
+  }
   html[data-text='grande'] {
     font-size: 112.5%;
   }

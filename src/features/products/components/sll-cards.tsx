@@ -3,12 +3,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { panelCard, sectionTitleClass } from '@/features/member/components/area-shell';
-
-const PATH = [
-  { title: 'Trilha de boas-vindas', detail: 'Como o curso funciona.' },
-  { title: 'Método em 3 Etapas', detail: 'Cada etapa abre quando você conclui a anterior.' },
-  { title: 'Minicursos', detail: 'Temas extras depois do método.' },
-] as const;
+import type { SllCopy } from '@/features/sll/copy';
 
 /**
  * Caminho do SLL, na ordem em que o curso abre. Só vira link o que já tem aula publicada; o
@@ -18,18 +13,25 @@ export function SllCourseCard({
   welcomeHref,
   methodHref,
   coursesHref,
+  copy,
 }: {
   welcomeHref: string | null;
   methodHref: string | null;
   coursesHref: string | null;
+  copy: SllCopy;
 }) {
+  const steps = [
+    { title: copy.dashboardWelcomeTitle, detail: copy.dashboardWelcomeDetail },
+    { title: copy.dashboardMethodTitle, detail: copy.dashboardMethodDetail },
+    { title: copy.dashboardCoursesTitle, detail: copy.dashboardCoursesDetail },
+  ];
   return (
     <section aria-labelledby="seu-caminho" className={cn(panelCard, 'gap-3')}>
       <h2 id="seu-caminho" className={sectionTitleClass}>
-        Seu caminho no curso
+        {copy.dashboardPathTitle}
       </h2>
       <ol className="flex flex-col divide-y divide-border">
-        {PATH.map((step, index) => {
+        {steps.map((step, index) => {
           const href = index === 0 ? welcomeHref : index === 1 ? methodHref : coursesHref;
           return (
             <li key={step.title} className="py-3.5">
@@ -47,11 +49,7 @@ export function SllCourseCard({
                   <span className="flex min-w-0 flex-col gap-0.5">
                     <span className="text-body font-semibold text-foreground">{step.title}</span>
                     <span className="text-body text-pretty text-muted-foreground">
-                      {index === 0
-                        ? 'Assista à mensagem de boas-vindas.'
-                        : index === 1
-                          ? 'Veja as etapas do método.'
-                          : 'Acesse os cursos complementares.'}
+                      {step.detail}
                     </span>
                   </span>
                 </Link>
@@ -83,40 +81,41 @@ export function SllCourseCard({
 }
 
 /** Leva às ferramentas conferidas do curso. */
-export function SllToolsCard() {
+export function SllToolsCard({ copy }: { copy: SllCopy }) {
   return (
     <section aria-labelledby="ferramentas" className={cn(panelCard, 'gap-3')}>
       <h2 id="ferramentas" className={sectionTitleClass}>
-        Ferramentas
+        {copy.dashboardToolsTitle}
       </h2>
       <div className="flex items-center gap-3">
         <BookOpen aria-hidden="true" className="size-5 shrink-0 text-link" />
-        <p className="flex-1 text-body text-muted-foreground">
-          Calculadora, assistentes e parceiros recomendados.
-        </p>
+        <p className="flex-1 text-body text-muted-foreground">{copy.dashboardToolsDetail}</p>
       </div>
       <Button asChild className="mt-2" variant="soft">
         <Link href="/sll/recursos">
-          Acessar Recursos <ArrowRight aria-hidden="true" />
+          {copy.dashboardToolsButton} <ArrowRight aria-hidden="true" />
         </Link>
       </Button>
     </section>
   );
 }
 
-/** A conexão com a Shopee ainda não existe: o cartão diz "em breve", sem botão que finge. */
-export function SllStoresCard() {
+/** Reserva o lugar dos avisos individuais enquanto a Shopee ainda não envia status reais. */
+export function SllStoresCard({ copy }: { copy: SllCopy }) {
   return (
-    <section aria-labelledby="minhas-lojas" className={cn(panelCard, 'gap-3')}>
-      <h2 id="minhas-lojas" className={sectionTitleClass}>
-        Minhas Lojas
+    <section aria-labelledby="avisos-da-conta" className={cn(panelCard, 'gap-3')}>
+      <h2 id="avisos-da-conta" className={sectionTitleClass}>
+        {copy.dashboardStoresTitle}
       </h2>
       <div className="flex items-center gap-3">
         <Store aria-hidden="true" className="size-5 shrink-0 text-link" />
-        <p className="flex-1 text-body text-muted-foreground">
-          Em breve, suas lojas da Shopee aparecem aqui.
-        </p>
+        <p className="flex-1 text-body text-muted-foreground">{copy.dashboardStoresDetail}</p>
       </div>
+      <Button asChild className="mt-2" variant="soft">
+        <Link href="/sll/minhas-lojas">
+          {copy.dashboardStoresButton} <ArrowRight aria-hidden="true" />
+        </Link>
+      </Button>
     </section>
   );
 }

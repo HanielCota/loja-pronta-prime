@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Store } from 'lucide-react';
-import { AreaShell, panelCard } from '@/features/member/components/area-shell';
+import { panelCard } from '@/features/member/components/area-shell';
+import { SllAreaShell } from '@/features/sll/sll-area-shell';
 import { requireProduct } from '@/features/products/server/access';
 
 export const metadata: Metadata = { title: 'Minhas Lojas · SLL' };
@@ -10,10 +11,9 @@ export default async function SllStoresPage() {
   const { session, products } = await requireProduct('sll');
 
   return (
-    <AreaShell
+    <SllAreaShell
       account={session.user}
       hasChoice={products.length > 1}
-      area="sll"
       title="Minhas Lojas"
       intro="Aqui você vai ver suas lojas da Shopee."
     >
@@ -26,6 +26,6 @@ export default async function SllStoresPage() {
           Quando a conexão abrir, suas lojas e as vendas delas aparecem nesta página.
         </p>
       </section>
-    </AreaShell>
+    </SllAreaShell>
   );
 }

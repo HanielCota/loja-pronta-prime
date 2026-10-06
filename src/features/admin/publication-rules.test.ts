@@ -32,6 +32,11 @@ describe('publicação de aulas', () => {
   it('permite publicar descrição ou materiais válidos', () => {
     expect(lessonPublicationIssue('Aula', 'Introdução', [])).toBeNull();
     expect(lessonPublicationIssue('Aula', null, goodBlocks)).toBeNull();
+    expect(
+      lessonPublicationIssue('Aula', null, [
+        { kind: 'video', data: { provider: 'pandavideo', videoId: '' } },
+      ]),
+    ).toBeNull();
   });
 
   it('pede título e algum conteúdo', () => {
@@ -42,7 +47,6 @@ describe('publicação de aulas', () => {
   it.each([
     { kind: 'text', data: { text: ' ' } },
     { kind: 'video', data: { provider: 'outro', videoId: 'x' } },
-    { kind: 'video', data: { provider: 'pandavideo', videoId: '' } },
     { kind: 'link', data: { label: 'Acessar', url: 'javascript:alert(1)' } },
     { kind: 'file', data: { fileName: 'guia.pdf' } },
     { kind: 'image', data: { alt: 'Exemplo' } },

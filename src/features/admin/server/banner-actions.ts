@@ -4,9 +4,10 @@ import { and, asc, eq, isNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/server/db';
-import { learningBanners } from '@/server/db/schema';
+import { learningBanners, learningNodeDrafts, learningNodeHistory } from '@/server/db/schema';
 import { learningSlugFromTitle, swapWithNeighbor } from '../structure-rules';
 import { requireAdmin } from './access';
+import { getNodeDraft, saveNodeDraft } from './node-drafts';
 
 import type { BannerActionState } from '../structure-types';
 
@@ -19,7 +20,6 @@ const schema = z.object({
   destination: z.string().trim().min(1).max(500),
   imageAlt: z.string().trim().max(300),
   position: z.number().int().min(0).max(999),
-  published: z.boolean(),
 });
 
 function textField(formData: FormData, key: string) {
@@ -53,7 +53,6 @@ export async function saveSllBanner(
     destination: textField(formData, 'destination'),
     imageAlt: textField(formData, 'imageAlt'),
     position: Number(positionText),
-    published: formData.get('published') === 'true',
   });
   if (!parsed.success)
     return { message: 'Confira o título, texto, destino e posição.', saved: false };
@@ -72,13 +71,6 @@ export async function saveSllBanner(
     : null;
   if (parsed.data.id && !existing)
     return { message: 'Este banner não está disponível.', saved: false };
-  if (parsed.data.published && (!existing?.imageStorageKey || !parsed.data.imageAlt)) {
-    return {
-      message: 'Adicione a imagem e a descrição dela antes de exibir o banner.',
-      saved: false,
-    };
-  }
-
   const values = {
     label: parsed.data.label || null,
     title: parsed.data.title,
@@ -87,11 +79,23 @@ export async function saveSllBanner(
     destination: parsed.data.destination,
     imageAlt: parsed.data.imageAlt || null,
     position: parsed.data.position,
-    status: parsed.data.published ? ('published' as const) : ('draft' as const),
   };
   try {
     let bannerId = existing?.id;
     if (existing) {
+      const current = await db.query.learningBanners.findFirst({
+        columns: { status: true },
+        where: eq(learningBanners.id, existing.id),
+      });
+      if (current?.status === 'published') {
+        await saveNodeDraft('banner', existing.id, values);
+        revalidatePath('/admin/banners');
+        return {
+          message: 'Rascunho salvo. Publique quando estiver pronto.',
+          saved: true,
+          bannerId: existing.id,
+        };
+      }
       await db.update(learningBanners).set(values).where(eq(learningBanners.id, existing.id));
     } else {
       let slug = learningSlugFromTitle(parsed.data.title);
@@ -104,7 +108,7 @@ export async function saveSllBanner(
       }
       const [created] = await db
         .insert(learningBanners)
-        .values({ ...values, slug })
+        .values({ ...values, slug, status: 'draft' })
         .returning({ id: learningBanners.id });
       bannerId = created?.id;
     }
@@ -112,10 +116,90 @@ export async function saveSllBanner(
     revalidatePath('/admin/banners');
     revalidatePath('/sll');
     revalidatePath('/');
-    return { message: 'Banner salvo.', saved: true, bannerId };
+    return { message: 'Rascunho salvo. Publique quando estiver pronto.', saved: true, bannerId };
   } catch {
     return { message: 'Não consegui guardar. Atualize a página e tente de novo.', saved: false };
   }
+}
+
+export async function publishSllBanner(form: FormData): Promise<void> {
+  await requireAdmin();
+  const id = z.string().uuid().safeParse(form.get('id'));
+  if (!id.success) return;
+  const banner = await db.query.learningBanners.findFirst({
+    where: and(eq(learningBanners.id, id.data), isNull(learningBanners.archivedAt)),
+  });
+  if (!banner) return;
+  const draft = await getNodeDraft('banner', id.data);
+  const data = draft?.data;
+  const imageStorageKey = data?.imageStorageKey ?? banner.imageStorageKey;
+  const imageAlt = data?.imageAlt ?? banner.imageAlt;
+  const destination = data?.destination ?? banner.destination;
+  if (!imageStorageKey || !imageAlt || !destination || !validDestination(destination)) return;
+  await db.transaction(async (tx) => {
+    const previous = {
+      label: banner.label,
+      title: banner.title,
+      description: banner.description,
+      buttonLabel: banner.buttonLabel,
+      destination: banner.destination,
+      imageAlt: banner.imageAlt,
+      imageStorageKey: banner.imageStorageKey,
+    };
+    await tx
+      .insert(learningNodeHistory)
+      .values({ kind: 'banner', nodeId: id.data, data: previous })
+      .onConflictDoUpdate({
+        target: [learningNodeHistory.kind, learningNodeHistory.nodeId],
+        set: { data: previous },
+      });
+    await tx
+      .update(learningBanners)
+      .set({
+        ...(data?.label !== undefined ? { label: data.label } : {}),
+        ...(data?.title !== undefined ? { title: data.title } : {}),
+        ...(data?.description !== undefined
+          ? { description: data.description ?? banner.description }
+          : {}),
+        ...(data?.buttonLabel !== undefined
+          ? { buttonLabel: data.buttonLabel ?? banner.buttonLabel }
+          : {}),
+        ...(data?.destination !== undefined
+          ? { destination: data.destination ?? banner.destination }
+          : {}),
+        ...(data?.imageAlt !== undefined ? { imageAlt: data.imageAlt } : {}),
+        ...(data?.imageStorageKey !== undefined ? { imageStorageKey: data.imageStorageKey } : {}),
+        status: 'published',
+      })
+      .where(eq(learningBanners.id, id.data));
+    await tx
+      .delete(learningNodeDrafts)
+      .where(and(eq(learningNodeDrafts.kind, 'banner'), eq(learningNodeDrafts.nodeId, id.data)));
+  });
+  revalidatePath('/admin/banners');
+  revalidatePath('/sll');
+}
+
+export async function discardSllBannerDraft(form: FormData): Promise<void> {
+  await requireAdmin();
+  const id = z.string().uuid().safeParse(form.get('id'));
+  if (!id.success) return;
+  await db
+    .delete(learningNodeDrafts)
+    .where(and(eq(learningNodeDrafts.kind, 'banner'), eq(learningNodeDrafts.nodeId, id.data)));
+  revalidatePath('/admin/banners');
+}
+
+export async function restoreSllBannerVersion(form: FormData): Promise<void> {
+  await requireAdmin();
+  const id = z.string().uuid().safeParse(form.get('id'));
+  if (!id.success || (await getNodeDraft('banner', id.data))) return;
+  const previous = await db.query.learningNodeHistory.findFirst({
+    where: and(eq(learningNodeHistory.kind, 'banner'), eq(learningNodeHistory.nodeId, id.data)),
+  });
+  if (!previous) return;
+  await saveNodeDraft('banner', id.data, previous.data);
+  await publishSllBanner(form);
 }
 
 export async function archiveSllBanner(formData: FormData): Promise<void> {
@@ -130,6 +214,18 @@ export async function archiveSllBanner(formData: FormData): Promise<void> {
   if (!archived) return;
   revalidatePath('/admin/banners');
   revalidatePath('/sll');
+}
+
+export async function restoreSllBanner(form: FormData): Promise<void> {
+  await requireAdmin();
+  const id = z.string().uuid().safeParse(form.get('id'));
+  if (!id.success) return;
+  await db
+    .update(learningBanners)
+    .set({ archivedAt: null, status: 'draft' })
+    .where(eq(learningBanners.id, id.data));
+  revalidatePath('/admin/arquivados');
+  revalidatePath('/admin/banners');
 }
 
 export async function moveSllBanner(formData: FormData): Promise<void> {
@@ -160,4 +256,39 @@ export async function moveSllBanner(formData: FormData): Promise<void> {
   });
   revalidatePath('/admin/banners');
   revalidatePath('/sll');
+}
+
+/** Salva a ordem completa para impedir que um arrasto misture banners de outra lista. */
+export async function reorderSllBanners(
+  formData: FormData,
+): Promise<{ saved: boolean; message: string }> {
+  await requireAdmin();
+  const ids = formData.getAll('id');
+  if (ids.some((id) => typeof id !== 'string' || !z.uuid().safeParse(id).success)) {
+    return { saved: false, message: 'Atualize a página e tente de novo.' };
+  }
+  const banners = await db.query.learningBanners.findMany({
+    columns: { id: true },
+    where: isNull(learningBanners.archivedAt),
+    orderBy: [asc(learningBanners.position), asc(learningBanners.id)],
+  });
+  const expected = banners.map((banner) => banner.id);
+  if (
+    ids.length !== expected.length ||
+    new Set(ids).size !== ids.length ||
+    ids.some((id) => !expected.includes(id as string))
+  ) {
+    return { saved: false, message: 'Os banners mudaram. Atualize a página e tente de novo.' };
+  }
+  await db.transaction(async (tx) => {
+    for (const [index, id] of ids.entries()) {
+      await tx
+        .update(learningBanners)
+        .set({ position: index })
+        .where(eq(learningBanners.id, id as string));
+    }
+  });
+  revalidatePath('/admin/banners');
+  revalidatePath('/sll');
+  return { saved: true, message: 'Nova ordem salva.' };
 }
