@@ -4,6 +4,7 @@ import { useActionState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowDown, ArrowUp, Save, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { LiveRegion } from '@/components/ui/live-region';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
 import { panelCard } from '@/features/member/components/area-shell';
@@ -117,13 +118,13 @@ export function SllResourceEditor({
         </label>
         {state.message ? (
           <p
-            aria-live="polite"
             className={state.saved ? 'text-body text-foreground' : 'text-body text-destructive'}
-            role={state.saved ? 'status' : 'alert'}
+            role={state.saved ? undefined : 'alert'}
           >
             {state.message}
           </p>
         ) : null}
+        <LiveRegion>{state.saved ? state.message : null}</LiveRegion>
         <Button loading={pending} loadingText="Salvando…" type="submit">
           <Save aria-hidden="true" />
           Salvar recurso
@@ -135,7 +136,7 @@ export function SllResourceEditor({
             <input name="id" type="hidden" value={resource.id} />
             <input name="direction" type="hidden" value="up" />
             <Button
-              aria-label={`Mover ${resource.title} para cima`}
+              aria-label={`Mover para cima: ${resource.title}`}
               disabled={isFirst}
               type="submit"
               variant="soft"
@@ -148,7 +149,7 @@ export function SllResourceEditor({
             <input name="id" type="hidden" value={resource.id} />
             <input name="direction" type="hidden" value="down" />
             <Button
-              aria-label={`Mover ${resource.title} para baixo`}
+              aria-label={`Mover para baixo: ${resource.title}`}
               disabled={isLast}
               type="submit"
               variant="soft"

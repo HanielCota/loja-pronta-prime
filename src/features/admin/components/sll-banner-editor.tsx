@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowDown, ArrowUp, ImagePlus, Save, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { LiveRegion } from '@/components/ui/live-region';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
 import { panelCard } from '@/features/member/components/area-shell';
@@ -174,13 +175,13 @@ export function SllBannerEditor({
         </label>
         {state.message ? (
           <p
-            aria-live="polite"
             className={state.saved ? 'text-body text-foreground' : 'text-body text-destructive'}
-            role={state.saved ? 'status' : 'alert'}
+            role={state.saved ? undefined : 'alert'}
           >
             {savedMessage || state.message}
           </p>
         ) : null}
+        <LiveRegion>{state.saved ? savedMessage || state.message : null}</LiveRegion>
         <Button loading={pending} loadingText="Salvando…" type="submit">
           <Save aria-hidden="true" />
           Salvar informações
@@ -208,11 +209,8 @@ export function SllBannerEditor({
           <ImagePlus aria-hidden="true" />
           Enviar imagem
         </Button>
-        {uploadMessage ? (
-          <p aria-live="polite" className="text-body text-muted-foreground">
-            {uploadMessage}
-          </p>
-        ) : null}
+        {uploadMessage ? <p className="text-body text-muted-foreground">{uploadMessage}</p> : null}
+        <LiveRegion>{uploadMessage}</LiveRegion>
       </div>
 
       {banner ? (

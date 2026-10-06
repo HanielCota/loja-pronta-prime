@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowDown, ArrowUp, Archive, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { LiveRegion } from '@/components/ui/live-region';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
 import {
@@ -117,7 +118,7 @@ export function ContentNodeForm({
         </>
       ) : null}
       {state.message ? (
-        <p aria-live="polite" className="text-body text-destructive" role="alert">
+        <p className="text-body text-destructive" role="alert">
           {state.message}
         </p>
       ) : null}
@@ -190,7 +191,7 @@ export function LearningNodeControls({
     <div className="mt-2 flex flex-col gap-2 pl-2 sm:flex-row sm:items-center">
       <div className="grid grid-cols-2 gap-2 sm:flex">
         <Button
-          aria-label={`Mover ${node.title} para cima`}
+          aria-label={`Subir ${node.title}`}
           className="!w-full !px-3 sm:!w-fit"
           disabled={first || pending}
           onClick={() =>
@@ -208,7 +209,7 @@ export function LearningNodeControls({
           Subir
         </Button>
         <Button
-          aria-label={`Mover ${node.title} para baixo`}
+          aria-label={`Descer ${node.title}`}
           className="!w-full !px-3 sm:!w-fit"
           disabled={last || pending}
           onClick={() =>
@@ -236,7 +237,7 @@ export function LearningNodeControls({
         Editar
       </Button>
       <Button
-        aria-label={published ? `Despublicar ${node.title}` : `Publicar ${node.title}`}
+        aria-label={published ? `Voltar para rascunho: ${node.title}` : `Publicar ${node.title}`}
         className="!w-full !px-3 sm:!w-fit"
         disabled={pending}
         onClick={changePublication}
@@ -256,11 +257,8 @@ export function LearningNodeControls({
         <Archive aria-hidden="true" />
         Arquivar
       </Button>
-      {message ? (
-        <span aria-live="polite" className="text-body text-muted-foreground">
-          {message}
-        </span>
-      ) : null}
+      {message ? <span className="text-body text-muted-foreground">{message}</span> : null}
+      <LiveRegion>{message}</LiveRegion>
     </div>
   );
 }
@@ -322,11 +320,8 @@ export function ArchivedLearningContent({ items }: { items: ArchivedLearningNode
           <p className="mt-3 text-body text-muted-foreground">Nenhum item arquivado.</p>
         )
       ) : null}
-      {message ? (
-        <p aria-live="polite" className="mt-2 text-body text-muted-foreground">
-          {message}
-        </p>
-      ) : null}
+      {message ? <p className="mt-2 text-body text-muted-foreground">{message}</p> : null}
+      <LiveRegion>{message}</LiveRegion>
     </section>
   );
 }

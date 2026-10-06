@@ -4,6 +4,7 @@ import { useActionState, useId, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FilePlus2, Film, ImagePlus, Link2, Plus, Save, Trash2, Type, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { LiveRegion } from '@/components/ui/live-region';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -361,23 +362,19 @@ export function LessonEditor({
           );
         })}
 
-        {uploadNotice ? (
-          <output aria-live="polite" className="text-body text-foreground">
-            {uploadNotice}
-          </output>
-        ) : null}
+        {uploadNotice ? <p className="text-body text-foreground">{uploadNotice}</p> : null}
 
         {state.message ? (
           state.saved ? (
-            <output aria-live="polite" className="text-body text-foreground">
-              {state.message}
-            </output>
+            <p className="text-body text-foreground">{state.message}</p>
           ) : (
             <p className="text-body text-destructive" role="alert">
               {state.message}
             </p>
           )
         ) : null}
+        {/* Sempre no código: avisos criados junto com o texto costumam não ser anunciados. */}
+        <LiveRegion>{state.saved ? state.message : uploadNotice}</LiveRegion>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Button loading={pending} loadingText="Salvando…" type="submit">
             <Save aria-hidden="true" />
@@ -493,11 +490,8 @@ function MediaUpload({
         </p>
       </div>
       {file ? <p className="text-body text-foreground">Escolhido: {file.name}</p> : null}
-      {message ? (
-        <output aria-live="polite" className="text-body text-foreground">
-          {message}
-        </output>
-      ) : null}
+      {message ? <p className="text-body text-foreground">{message}</p> : null}
+      <LiveRegion>{message}</LiveRegion>
       <Button
         className="w-fit"
         loading={busy}
