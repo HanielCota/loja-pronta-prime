@@ -85,9 +85,9 @@ export default async function ComplementaryCoursesPage() {
                 {catalog.length} {catalog.length === 1 ? 'curso' : 'cursos'}
               </p>
             </div>
-            <ul className="grid auto-rows-fr items-stretch gap-4 md:grid-cols-2">
+            <ul className="grid items-start gap-4 md:grid-cols-2">
               {catalog.map(({ course, lessonCount, minutes }) => (
-                <li className={`${panelCard} h-full gap-3`} key={course.id}>
+                <li className={`${panelCard} gap-3`} key={course.id}>
                   {course.coverStorageKey ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img

@@ -51,9 +51,7 @@ export default async function SllResourcesPage() {
               </h2>
               <ul
                 className={
-                  isCalculator
-                    ? 'flex flex-col gap-4'
-                    : 'grid auto-rows-fr items-stretch gap-4 md:grid-cols-2'
+                  isCalculator ? 'flex flex-col gap-4' : 'grid items-start gap-4 md:grid-cols-2'
                 }
               >
                 {group.items.map((resource) => {
@@ -61,7 +59,7 @@ export default async function SllResourcesPage() {
                   return (
                     <li
                       key={resource.id}
-                      className={`${panelCard} h-full ${isCalculator ? 'gap-4 sm:flex-row sm:items-center' : 'gap-3'}`}
+                      className={`${panelCard} ${isCalculator ? 'gap-4 sm:flex-row sm:items-center' : 'gap-3'}`}
                     >
                       <Icon aria-hidden="true" className="size-6 shrink-0 text-link" />
                       <div className="min-w-0 flex-1">
