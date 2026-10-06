@@ -611,8 +611,12 @@ function CollectionScreen({
     module: 'módulo',
     lesson: 'aula',
   };
+  // Trilhas não têm pai: sem conferir o tipo, as arquivadas de todas as áreas apareceriam aqui.
   const archivedHere = archived.filter(
-    (item) => item.kind === management.kind && item.parentId === management.parentId,
+    (item) =>
+      item.kind === management.kind &&
+      item.parentId === management.parentId &&
+      (item.kind !== 'track' || !management.trackKind || item.trackKind === management.trackKind),
   );
 
   if (formTarget) {

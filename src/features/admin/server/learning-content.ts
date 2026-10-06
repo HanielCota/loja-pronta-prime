@@ -213,7 +213,7 @@ export async function getAdminLessonPreview(id: string) {
 export async function getArchivedLearningContent() {
   const [tracks, stages, modules, lessons] = await Promise.all([
     db.query.learningTracks.findMany({
-      columns: { id: true, title: true, archivedAt: true },
+      columns: { id: true, title: true, kind: true, archivedAt: true },
       where: isNotNull(learningTracks.archivedAt),
       orderBy: [asc(learningTracks.title)],
     }),
@@ -240,6 +240,7 @@ export async function getArchivedLearningContent() {
       title: item.title,
       kind: 'track' as const,
       parentId: null,
+      trackKind: item.kind,
       archivedAt: item.archivedAt!,
     })),
     ...stages.map((item) => ({

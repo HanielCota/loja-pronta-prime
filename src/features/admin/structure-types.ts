@@ -25,5 +25,7 @@ export type ArchivedLearningNode = {
   title: string;
   kind: LearningNodeKind;
   parentId: string | null;
+  /** Só nas trilhas: elas não têm pai, então a área (tipo) diz onde elas aparecem. */
+  trackKind?: LearningTrackKind;
   archivedAt: Date;
 };
