@@ -80,9 +80,9 @@ o tema escuro e o alto contraste.
 - Molduras de tela:
   - `PageShell` + `BrandCard`: telas de acesso (entrar, senha), cartão centralizado com o mascote
     no topo.
-  - `AreaShell`: as áreas (Loja Pronta, SLL, perfil). Largura 1040px (perfil, 688px); com menu
-    lateral (`sidebar`, como no SLL), 1440px, com o menu de 240px à esquerda
-    (`src/lib/member-layout.ts`).
+  - `AreaShell`: moldura das áreas que a usam, largura 1040px (perfil, 688px). O SLL usa
+    `SllShell`, com barra de membro em largura total, navegação lateral de 16rem no computador e
+    conteúdo de até 1040px; no celular, a navegação abre em um menu pela esquerda.
   - `CenteredMemberPage`: telas de dentro com o conteúdo no meio (fim da conversa, marca pronta,
     Shopee).
   - `ConversationLayout`: os passo a passo (conversa, marca), com "Voltar", "Terminar depois" e a
@@ -124,6 +124,9 @@ o tema escuro e o alto contraste.
   lado do campo; fica desativado enquanto estiver vazio.
 - No estúdio do logo, os botões “Voltar” das etapas de escolha e do resumo usam formato de pílula,
   contorno `border-border` e texto `text-link`.
+- No resultado do logo, os ajustes rápidos usam o botão azul padrão, com texto branco, em formato de
+  pílula. A prévia mostra uma cena do kit de envio (caixa, adesivo solto e sacola), mantendo a
+  proporção da imagem e os objetos inteiros dentro do quadro, inclusive em telas estreitas.
 - O botão principal fica embaixo, largura toda no celular (`StickyAction` nos passo a passo).
 - Lista longa (a revisão das respostas): uma seta redonda (`ScrollHint`) embaixo, no centro, avisa
   que tem mais. Pula 3 vezes e para; some perto do fim; tocar rola um pedaço. Fica fora do Tab e do
@@ -131,7 +134,7 @@ o tema escuro e o alto contraste.
 - Toque: resposta no instante (`active:scale-[0.97]`, 100 a 150ms). Escolher uma opção só marca a
   resposta; a pessoa confirma no botão principal, também pelo teclado.
 - Larguras: acesso 480 a 640px; passo a passo 560 a 680px (mais largo no estúdio do logo); áreas
-  1040px; área SLL (com o menu lateral) 1440px.
+  1040px; no SLL, conteúdo de até 1040px ao lado da navegação lateral de 16rem.
 
 ### Área SLL
 
@@ -143,6 +146,9 @@ o tema escuro e o alto contraste.
   os cartões e os botões deste projeto. A moldura da Loja Pronta não muda.
 - O menu mostra Painel, Minhas Lojas, Comece aqui, Método, etapas publicadas, Recursos e Cursos
   complementares. A seção atual fica identificada; etapas em rascunho não viram links para alunas.
+- A seção selecionada usa `bg-primary-soft` e `text-link`; pressionar outra opção aplica os mesmos
+  tokens azuis imediatamente e o hover permanece neutro. Os ícones Lucide são distintos por área,
+  alinhados em uma caixa de 20px com traço 1.8. Grupos de links usam listas sem marcadores visíveis.
 - No computador, o cartão da navegação lateral se estende até o final do conteúdo, sem impor
   uma altura mínima que alongue páginas curtas. O menu acompanha a rolagem dentro desse cartão.
   As etapas aparecem quando a aluna está no Método; listas longas rolam dentro
@@ -167,8 +173,10 @@ o tema escuro e o alto contraste.
   “Voltar às aulas”. O teclado tem o atalho “Pular para o conteúdo”, exclusivo do SLL.
 - A busca da Biblioteca ignora acentos e maiúsculas, oferece contagem e limpeza e mantém a
   busca confirmada no endereço. O formulário GET também funciona sem JavaScript.
-- No painel, o caminho de aprendizagem aparece antes do aviso de lojas. Em Recursos, os cartões
-  usam sua altura natural; links externos anunciam a abertura em outra aba.
+- No painel, banners publicados aparecem antes da saudação. Depois vêm a situação real da Shopee,
+  o acesso à Loja Pronta (somente para quem tem os dois produtos) e o caminho de aprendizagem.
+  Sem banner publicado, nenhum espaço vazio ocupa o topo. Em Recursos, os cartões usam sua altura
+  natural; links externos anunciam a abertura em outra aba.
 - Cursos complementares têm destaque amplo e biblioteca em cartões com contagem e progresso
   individuais. Sem o arquivo da capa, aparece um aviso neutro compacto “Capa em breve”, sem imagem
   inventada nem coluna reservada. Capas reais mantêm proporção 16:9. A lista do curso mantém
