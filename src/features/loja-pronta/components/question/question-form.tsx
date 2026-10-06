@@ -155,6 +155,7 @@ export function QuestionForm({ question, saved, editing, titleId, helpId }: Ques
           loadingText="Salvando…"
           className={cn(
             !button.ready &&
+              !editing &&
               'bg-foreground/[0.07] text-foreground hover:bg-foreground/10 forced-colors:border-[GrayText]',
           )}
         >

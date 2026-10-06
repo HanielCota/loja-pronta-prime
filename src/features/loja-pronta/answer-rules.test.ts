@@ -66,6 +66,10 @@ describe('questionHelp, fieldNote e submitButton', () => {
       label: 'Continuar',
     });
     expect(submitButton(question('toque'), EMPTY, false)).toEqual({ ready: false, label: 'Pular' });
+    expect(submitButton(question('toque'), EMPTY, true)).toEqual({
+      ready: true,
+      label: 'Salvar e voltar',
+    });
     expect(submitButton(question('toque'), { ...EMPTY, text: 'flor' }, false).ready).toBe(true);
     expect(submitButton(question('vendas'), { ...EMPTY, selected: ['Nunca vendi'] }, true)).toEqual(
       { ready: true, label: 'Salvar e voltar' },

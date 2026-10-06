@@ -67,7 +67,8 @@ export function submitButton(
 ): { ready: boolean; label: string } {
   const empty = question.kind === 'longtext' && !draft.text.trim();
   return {
-    ready: question.kind === 'longtext' ? !empty : !missingAnswer(question, draft),
+    // Na edição do campo opcional, salvar sem texto ainda é a ação principal.
+    ready: question.kind === 'longtext' ? editing || !empty : !missingAnswer(question, draft),
     label: editing ? 'Salvar e voltar' : empty ? 'Pular' : 'Continuar',
   };
 }
