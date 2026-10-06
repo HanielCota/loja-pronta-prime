@@ -126,9 +126,7 @@ export default async function AdminResourcesPage() {
         {groups.map((group) => (
           <SllResourceList
             groupKey={group.key}
-            groupTitle={
-              group.title === 'GPTs personalizados SLL' ? 'Ajuda para sua loja' : group.title
-            }
+            groupTitle={group.title}
             key={group.key}
             resources={group.items}
             lessonOptions={lessonOptions}
