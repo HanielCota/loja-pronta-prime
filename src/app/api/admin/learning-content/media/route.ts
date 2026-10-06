@@ -12,7 +12,15 @@ import {
   type LearningDraftBlock,
 } from '@/server/db/schema';
 import { storage } from '@/server/storage';
-import { getEditableLessonBlocks, saveNodeDraft } from '@/features/admin/server/node-drafts';
+import {
+  getEditableLessonBlocks,
+  saveNodeDraft,
+  withNodeDraftLock,
+} from '@/features/admin/server/node-drafts';
+import { removeStorageKeyIfUnused } from '@/features/admin/server/storage-references';
+
+/** O material trocado sumiu (ou mudou de tipo) enquanto o arquivo subia. */
+class MaterialChangedError extends Error {}
 
 const lessonIdSchema = z.uuid();
 const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
@@ -169,28 +177,45 @@ export async function POST(request: Request) {
     saved = true;
 
     if (draftBlocks) {
-      const data =
-        kind === 'image'
-          ? { storageKey: key, contentType, size: bytes.length, alt: altText! }
-          : {
-              storageKey: key,
-              contentType,
-              size: bytes.length,
-              fileName,
-              ...(replacing && typeof replacing.data.attachedTo === 'string'
-                ? { attachedTo: replacing.data.attachedTo }
-                : attachedTo
-                  ? { attachedTo }
-                  : {}),
-            };
       const blockId = replacing?.id ?? crypto.randomUUID();
-      const blocks: LearningDraftBlock[] = replacing
-        ? draftBlocks.map((block) => (block.id === replacing.id ? { ...block, data } : block))
-        : [
-            ...draftBlocks,
-            { id: blockId, kind: kind as 'image' | 'file', data, position: draftBlocks.length },
-          ];
-      await saveNodeDraft('lesson', lesson.id, { blocks });
+      // O envio ao bucket demora: outra aba pode ter mexido nos materiais nesse meio-tempo.
+      // Relê o rascunho travado e só troca o material enviado, sem desfazer o resto.
+      const previousKey = await withNodeDraftLock('lesson', lesson.id, async (tx) => {
+        const current = await getEditableLessonBlocks(lesson.id, tx);
+        const existing = replacing ? current.find((block) => block.id === replacing.id) : undefined;
+        if (replacing && existing?.kind !== kind) throw new MaterialChangedError();
+        const existingData = (existing?.data ?? {}) as Record<string, unknown>;
+        const keepAttachedTo =
+          typeof existingData.attachedTo === 'string' ? existingData.attachedTo : attachedTo;
+        if (
+          keepAttachedTo &&
+          !current.some(
+            (block) =>
+              block.id === keepAttachedTo && (block.kind === 'link' || block.kind === 'video'),
+          )
+        )
+          throw new MaterialChangedError();
+        const data =
+          kind === 'image'
+            ? { storageKey: key, contentType, size: bytes.length, alt: altText! }
+            : {
+                storageKey: key,
+                contentType,
+                size: bytes.length,
+                fileName,
+                ...(keepAttachedTo ? { attachedTo: keepAttachedTo } : {}),
+              };
+        const blocks: LearningDraftBlock[] = existing
+          ? current.map((block) => (block.id === existing.id ? { ...block, data } : block))
+          : [
+              ...current,
+              { id: blockId, kind: kind as 'image' | 'file', data, position: current.length },
+            ];
+        await saveNodeDraft('lesson', lesson.id, { blocks }, tx);
+        return typeof existingData.storageKey === 'string' ? existingData.storageKey : undefined;
+      });
+      // O arquivo trocado pode estar na versão publicada ou na anterior: só sai se ninguém usa.
+      if (previousKey !== key) await removeStorageKeyIfUnused(previousKey, 'learning-media');
       return NextResponse.json(
         { id: blockId, fileName, alt: kind === 'image' ? altText : undefined },
         { headers: { 'Cache-Control': 'no-store' } },
@@ -212,15 +237,9 @@ export async function POST(request: Request) {
           ),
         );
       const previousKey = replacing.data.storageKey;
-      if (typeof previousKey === 'string' && previousKey !== key) {
-        await storage()
-          .remove(previousKey)
-          .catch((error: unknown) => {
-            console.error(
-              `[learning-media] arquivo anterior não removido: ${error instanceof Error ? error.name : 'erro'}`,
-            );
-          });
-      }
+      // A versão anterior guardada pode ainda usar o arquivo trocado: só sai se ninguém usa.
+      if (typeof previousKey === 'string' && previousKey !== key)
+        await removeStorageKeyIfUnused(previousKey, 'learning-media');
       return NextResponse.json(
         { id: replacing.id, fileName, alt: kind === 'image' ? altText : undefined },
         { headers: { 'Cache-Control': 'no-store' } },
@@ -268,6 +287,8 @@ export async function POST(request: Request) {
       await storage()
         .remove(key)
         .catch(() => {});
+    if (error instanceof MaterialChangedError)
+      return jsonError('Os materiais mudaram. Atualize a aula e tente de novo.', 409);
     console.error(`[learning-media] envio falhou: ${error instanceof Error ? error.name : 'erro'}`);
     return jsonError('Não consegui guardar o material agora. Tente de novo.', 500);
   }
