@@ -36,3 +36,18 @@ export function shouldApplyEvent(
   const difference = next.createdAt.getTime() - current.lastEventAt.getTime();
   return difference > 0 || (difference === 0 && current.active && !next.active);
 }
+
+/**
+ * Compara um aviso com a compra já registrada na mesma transação. A compradora pode trocar o
+ * email na Hotmart, então email diferente não impede o reembolso: a compra continua ligada à
+ * conta de antes. Produto diferente é estranho demais para mexer em acesso.
+ */
+export function transactionMismatch(
+  current: { buyerEmail: string; productUcode: string } | undefined,
+  next: { buyerEmail: string; productUcode: string },
+): 'product' | 'email' | null {
+  if (!current) return null;
+  if (current.productUcode !== next.productUcode) return 'product';
+  if (current.buyerEmail !== next.buyerEmail) return 'email';
+  return null;
+}

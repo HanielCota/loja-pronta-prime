@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { parseHotmartEvent, purchaseEffect, shouldApplyEvent } from './event';
+import { parseHotmartEvent, purchaseEffect, shouldApplyEvent, transactionMismatch } from './event';
 
 describe('avisos da Hotmart', () => {
   test('somente pagamento confirmado libera e reembolso retira', () => {
@@ -25,5 +25,18 @@ describe('avisos da Hotmart', () => {
     expect(
       shouldApplyEvent(refunded, { createdAt: new Date('2026-10-06T12:00:00Z'), active: true }),
     ).toBe(false);
+  });
+
+  test('aponta quando a mesma transação chega com outro email ou produto', () => {
+    const purchase = { buyerEmail: 'ana@exemplo.com', productUcode: 'curso' };
+    expect(transactionMismatch(undefined, purchase)).toBeNull();
+    expect(transactionMismatch(purchase, { ...purchase })).toBeNull();
+    expect(transactionMismatch(purchase, { ...purchase, buyerEmail: 'ana@novo.com' })).toBe(
+      'email',
+    );
+    expect(transactionMismatch(purchase, { ...purchase, productUcode: 'outro' })).toBe('product');
+    expect(
+      transactionMismatch(purchase, { buyerEmail: 'ana@novo.com', productUcode: 'outro' }),
+    ).toBe('product');
   });
 });
