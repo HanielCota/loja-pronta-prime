@@ -14,6 +14,7 @@ import {
   withNodeDraftLock,
 } from '@/features/admin/server/node-drafts';
 import { removeStorageKeyIfUnused } from '@/features/admin/server/storage-references';
+import { readLimitedFormData, RequestBodyTooLargeError } from '@/lib/request-body';
 
 const MAX_BYTES = 20 * 1024 * 1024;
 
@@ -59,16 +60,15 @@ export async function POST(
   if (!(await isAdmin())) return error('Entre com uma conta administradora.', 401);
   const origin = request.headers.get('origin');
   if (!origin || origin !== new URL(request.url).origin) return error('Pedido inválido.', 403);
-  const contentLength = Number(request.headers.get('content-length') ?? 0);
-  if (contentLength > MAX_BYTES + 64 * 1024)
-    return error('O arquivo é grande demais. O limite é 20 MB.', 413);
   const { bannerId } = await params;
   const id = z.uuid().safeParse(bannerId);
   if (!id.success) return error('Este banner não está disponível.', 404);
   let form: FormData;
   try {
-    form = await request.formData();
-  } catch {
+    form = await readLimitedFormData(request, MAX_BYTES + 64 * 1024);
+  } catch (cause) {
+    if (cause instanceof RequestBodyTooLargeError)
+      return error('O arquivo é grande demais. O limite é 20 MB.', 413);
     return error('Não consegui ler o arquivo. Tente escolher de novo.', 400);
   }
   const file = form.get('file');

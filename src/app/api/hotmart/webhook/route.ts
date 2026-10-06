@@ -5,6 +5,7 @@ import { hotmartSettings } from '@/server/db/schema';
 import { parseHotmartEvent } from '@/features/hotmart/event';
 import { decryptHottok, verifyHottok } from '@/features/hotmart/server/secret';
 import { processHotmartEvent } from '@/features/hotmart/server/process-event';
+import { readLimitedBody, RequestBodyTooLargeError } from '@/lib/request-body';
 
 export async function POST(request: Request) {
   const setting = await db.query.hotmartSettings.findFirst({
@@ -25,13 +26,13 @@ export async function POST(request: Request) {
   if (!verifyHottok(request.headers.get('x-hotmart-hottok'), expected)) {
     return NextResponse.json({ error: 'Aviso não autorizado.' }, { status: 401 });
   }
-  const raw = await request.text();
-  if (raw.length > 64_000)
-    return NextResponse.json({ error: 'Aviso muito grande.' }, { status: 413 });
   let data: unknown;
   try {
-    data = JSON.parse(raw);
-  } catch {
+    const bytes = await readLimitedBody(request, 64_000);
+    data = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError)
+      return NextResponse.json({ error: 'Aviso muito grande.' }, { status: 413 });
     return NextResponse.json({ error: 'Aviso inválido.' }, { status: 400 });
   }
   const parsed = parseHotmartEvent(data);

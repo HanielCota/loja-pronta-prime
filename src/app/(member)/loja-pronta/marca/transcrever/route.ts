@@ -3,6 +3,7 @@ import { env } from '@/config/env';
 import { requireBrandAction } from '@/features/brand/server/brand';
 import { transcribeSpeech } from '@/features/brand/logo-studio/server/transcribe';
 import { consumeAttempts } from '@/server/auth/rate-limit';
+import { readLimitedFormData, RequestBodyTooLargeError } from '@/lib/request-body';
 
 /** Uma fala curta cabe aqui mesmo nos formatos menos compactos do celular. */
 const MAX_AUDIO_BYTES = 3 * 1024 * 1024;
@@ -32,32 +33,10 @@ export async function POST(request: NextRequest) {
 
   let audio: FormDataEntryValue | null;
   try {
-    // Não confia só no Content-Length: pedidos sem esse cabeçalho também param no limite.
-    const reader = request.body?.getReader();
-    const contentType = request.headers.get('content-type');
-    if (!reader || !contentType?.startsWith('multipart/form-data')) {
-      return failure('Não consegui receber a gravação. Tente de novo.', 400);
-    }
-    const chunks: Uint8Array[] = [];
-    let received = 0;
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      received += value.byteLength;
-      if (received > MAX_REQUEST_BYTES) {
-        void reader.cancel().catch(() => {});
-        return failure('A gravação ficou longa demais.', 413);
-      }
-      chunks.push(value);
-    }
-    const body = new Blob([new Uint8Array(Buffer.concat(chunks))]);
-    const bounded = new Request(request.url, {
-      method: 'POST',
-      headers: { 'content-type': contentType },
-      body,
-    });
-    audio = (await bounded.formData()).get('audio');
-  } catch {
+    audio = (await readLimitedFormData(request, MAX_REQUEST_BYTES)).get('audio');
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError)
+      return failure('A gravação ficou longa demais.', 413);
     return failure('Não consegui receber a gravação. Tente de novo.', 400);
   }
   if (!(audio instanceof File) || !audio.size || audio.size > MAX_AUDIO_BYTES) {

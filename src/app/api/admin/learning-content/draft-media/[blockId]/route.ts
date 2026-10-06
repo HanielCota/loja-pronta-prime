@@ -35,8 +35,8 @@ export async function GET(_request: Request, context: RouteContext) {
     return new Response(null, { status: 404 });
   const data = block.data as Record<string, unknown>;
   if (typeof data.storageKey !== 'string') return new Response(null, { status: 404 });
-  const bytes = await storage().get(data.storageKey);
-  if (!bytes) return new Response(null, { status: 404 });
+  const stored = await storage().stream(data.storageKey);
+  if (!stored) return new Response(null, { status: 404 });
   const contentType =
     block.kind === 'image'
       ? 'image/webp'
@@ -44,10 +44,10 @@ export async function GET(_request: Request, context: RouteContext) {
         ? data.contentType
         : 'application/octet-stream';
   const fileName = typeof data.fileName === 'string' ? data.fileName : 'material';
-  return new Response(bytes.buffer as ArrayBuffer, {
+  return new Response(stored.body, {
     headers: {
       'Content-Type': contentType,
-      'Content-Length': String(bytes.byteLength),
+      'Content-Length': String(stored.length),
       'Cache-Control': 'private, no-store',
       'X-Content-Type-Options': 'nosniff',
       'Content-Disposition':
