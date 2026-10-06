@@ -5,7 +5,7 @@
 
 O webhook é `/api/hotmart/webhook`. Cadastre na Hotmart o endereço HTTPS público mostrado no painel. São tratados `PURCHASE_APPROVED`/`PURCHASE_COMPLETE` como liberação e `PURCHASE_REFUNDED`/`PURCHASE_CHARGEBACK` como retirada imediata da transação. Cancelamento de assinatura continua sem política definida e não remove acesso. Reembolsar uma transação não remove outra compra ativa do mesmo produto nem um acesso concedido manualmente. A transação é a chave da compra: se a compradora trocar o email na Hotmart, os avisos seguintes (inclusive o reembolso) continuam valendo para a conta ligada à compra, e o histórico registra a troca. Um aviso da mesma transação com outro produto fica no histórico sem mudar acesso. Um aviso de produto sem mapeamento aparece no histórico e responde com erro temporário para permitir nova entrega após corrigir o código. O histórico não armazena o corpo completo do evento.
 
-O token é criptografado no banco com chave derivada de `BETTER_AUTH_SECRET`; trocar esse segredo exige migrar a configuração antes, ou cadastrar o token de novo. O painel não devolve o token ao navegador.
+O token é criptografado no banco com chave derivada de `BETTER_AUTH_SECRET`; trocar esse segredo exige migrar a configuração antes, ou cadastrar o token de novo. Até isso, o webhook responde erro temporário (503) e registra no log do servidor que o token precisa ser salvo de novo, para a Hotmart reenviar os avisos depois. O painel não devolve o token ao navegador.
 
 ---
 
