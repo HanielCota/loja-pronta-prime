@@ -198,7 +198,11 @@ export async function saveLearningNode(
       }),
     ]);
     if (!sourceGroup || !target || sourceGroup.stage.trackId !== target.module.stage.trackId)
-      return { message: 'Escolha uma aula do mesmo curso.', saved: false };
+      return {
+        message: 'Escolha uma aula do mesmo curso.',
+        saved: false,
+        field: 'relatedLessonId',
+      };
   }
 
   if (editing) {

@@ -68,9 +68,10 @@ export function ContentNodeForm({
   useEffect(() => {
     headingRef.current?.focus();
   }, []);
-  // O erro fica ligado ao campo que o causou; sem campo definido, ao nome (o primeiro campo).
+  // O erro fica ligado ao campo que o causou. Erros sem campo (item indisponível, local
+  // inválido) só aparecem no aviso: marcar o nome como errado confundiria o leitor de tela.
   const errorId = 'learning-node-error';
-  const errorField = state.message && !state.saved ? (state.field ?? 'title') : null;
+  const errorField = state.message && !state.saved ? (state.field ?? null) : null;
   const describedBy = (field: NonNullable<typeof errorField>) =>
     errorField === field ? { 'aria-describedby': errorId, 'aria-invalid': true } : {};
 
