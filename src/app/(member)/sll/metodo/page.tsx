@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, BookOpen, CircleCheck, LockKeyhole } from 'lucide-react';
+import { ArrowRight, BookOpen, CircleCheck, CirclePlay, LockKeyhole } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AreaShell, panelCard } from '@/features/member/components/area-shell';
 import { getFirstSllPublishedTrack } from '@/features/sll/server/catalog';
@@ -41,6 +41,8 @@ export default async function MethodPage() {
                     <div className="flex items-center gap-3">
                       {stage.access?.isComplete ? (
                         <CircleCheck aria-hidden="true" className="size-6 text-progress-text" />
+                      ) : unlocked ? (
+                        <CirclePlay aria-hidden="true" className="size-6 text-link" />
                       ) : (
                         <LockKeyhole aria-hidden="true" className="size-6 text-muted-foreground" />
                       )}
