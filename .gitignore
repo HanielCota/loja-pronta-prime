@@ -35,4 +35,5 @@ Thumbs.db
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+/.playwright-cli/
 /.data
