@@ -65,11 +65,11 @@ export default async function SllResourcesPage() {
                     >
                       <Icon aria-hidden="true" className="size-6 shrink-0 text-link" />
                       <div className="min-w-0 flex-1">
-                        {!isCalculator ? (
-                          <h3 className="text-body font-semibold text-balance text-foreground">
-                            {resource.title}
-                          </h3>
-                        ) : null}
+                        {/* A calculadora também tem título: sem ele, o cartão não tinha nome
+                            pro leitor de tela, só a descrição e o "Em breve". */}
+                        <h3 className="text-body font-semibold text-balance text-foreground">
+                          {resource.title}
+                        </h3>
                         <p className="mt-1 text-body text-pretty text-muted-foreground">
                           {resource.description}
                         </p>
