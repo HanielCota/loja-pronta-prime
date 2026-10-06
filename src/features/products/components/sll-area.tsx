@@ -48,7 +48,8 @@ export function SllArea({
       product="Sistema Loja Lucrativa (SLL)"
       title={`${firstVisit ? 'Boas-vindas' : 'Olá'}${name ? `, ${name}` : ''}!`}
       intro={hasLessons ? copy.dashboardIntro : copy.dashboardEmptyIntro}
-      beforeHeader={<SllBannerCarousel banners={banners} />}
+      // Sem banner, nada antes do título: o topo fica igual ao das outras áreas.
+      beforeHeader={banners.length ? <SllBannerCarousel banners={banners} /> : undefined}
     >
       <SllStoresCard copy={copy} />
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
