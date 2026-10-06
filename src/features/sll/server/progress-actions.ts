@@ -5,8 +5,12 @@ import { revalidatePath } from 'next/cache';
 import { requireProductAction } from '@/features/products/server/access';
 import { db } from '@/server/db';
 import { learningLessonProgress, learningLessons, learningTrackProgress } from '@/server/db/schema';
-import { parseProgressLocation, parseProgressPosition } from '../progress-rules';
-import { getStageLockMessage } from './stage-lock';
+import {
+  parseProgressLocation,
+  parseProgressPosition,
+  undoCompletionMessage,
+} from '../progress-rules';
+import { getStageLockMessage, getTrackStageAccess } from './stage-lock';
 
 export type SllProgressActionResult = { saved: boolean; message: string; completed?: boolean };
 
@@ -143,6 +147,9 @@ export async function setSllLessonCompletion(
 
   const now = new Date();
   if (!completed) {
+    // Só o Método tranca etapas: nas outras trilhas, desfazer nunca fecha nada.
+    const before =
+      lesson.trackKind === 'method' ? await getTrackStageAccess(userId, location.trackId) : null;
     await db
       .update(learningLessonProgress)
       .set({ completedAt: null, updatedAt: now })
@@ -152,8 +159,13 @@ export async function setSllLessonCompletion(
           eq(learningLessonProgress.lessonId, location.lessonId),
         ),
       );
+    const after = before ? await getTrackStageAccess(userId, location.trackId) : null;
     revalidatePath('/sll');
-    return { saved: true, message: 'A conclusão da aula foi desfeita.', completed: false };
+    return {
+      saved: true,
+      message: undoCompletionMessage(before?.stages ?? [], after?.stages ?? []),
+      completed: false,
+    };
   }
 
   await db.transaction(async (tx) => {

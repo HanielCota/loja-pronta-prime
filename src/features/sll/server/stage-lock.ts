@@ -11,8 +11,11 @@ import { resolveSequentialStageAccess } from '../progress-rules';
 
 // Fica fora do arquivo 'use server': exportada de lá, viraria uma ação que qualquer
 // navegador pode chamar. Aqui ela serve às ações de progresso e à rota de materiais.
-/** Reconfere a etapa no servidor para que um link direto não contorne o bloqueio. */
-export async function getStageLockMessage(userId: string, trackId: string, stageId: string) {
+/**
+ * Quais etapas da trilha publicada estão abertas pra aluna, pelo progresso gravado. Só o Método
+ * tranca etapas; nas outras trilhas, tudo fica aberto. `null`: trilha fora do ar.
+ */
+export async function getTrackStageAccess(userId: string, trackId: string) {
   const track = await db.query.learningTracks.findFirst({
     columns: { id: true, kind: true },
     where: and(
@@ -43,7 +46,7 @@ export async function getStageLockMessage(userId: string, trackId: string, stage
       },
     },
   });
-  if (!track) return 'Esta aula não está disponível.';
+  if (!track) return null;
   const lessonIds = track.stages.flatMap((stage) =>
     stage.modules.flatMap((module) => module.lessons.map((lesson) => lesson.id)),
   );
@@ -58,7 +61,7 @@ export async function getStageLockMessage(userId: string, trackId: string, stage
       })
     : [];
   const completedIds = new Set(completed.map((item) => item.lessonId));
-  const access = resolveSequentialStageAccess(
+  const stages = resolveSequentialStageAccess(
     track.stages.map((stage) => ({
       id: stage.id,
       title: stage.title,
@@ -68,8 +71,19 @@ export async function getStageLockMessage(userId: string, trackId: string, stage
           .map((lesson) => ({ completed: completedIds.has(lesson.id) })),
       ),
     })),
-  ).find((stage) => stage.stageId === stageId);
+  ).map((access, index) => ({
+    ...access,
+    title: track.stages[index]!.title,
+    ...(track.kind === 'method' ? {} : { isUnlocked: true, lockMessage: null }),
+  }));
+  return { kind: track.kind, stages };
+}
 
+/** Reconfere a etapa no servidor para que um link direto não contorne o bloqueio. */
+export async function getStageLockMessage(userId: string, trackId: string, stageId: string) {
+  const track = await getTrackStageAccess(userId, trackId);
+  if (!track) return 'Esta aula não está disponível.';
+  const access = track.stages.find((stage) => stage.stageId === stageId);
   if (track.kind !== 'method' || access?.isUnlocked) return null;
   return access?.lockMessage ?? 'Conclua a etapa anterior para abrir esta aula.';
 }
