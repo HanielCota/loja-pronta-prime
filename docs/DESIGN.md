@@ -48,8 +48,8 @@ o tema escuro e o alto contraste.
 - Tamanhos do tema: `text-body` (17px, o texto normal), `text-sm` (16px, o **menor** permitido:
   dicas, erros, rótulos), `text-title` / `text-title-lg` / `text-title-xl` (títulos, com tracking
   negativo). Nada abaixo de 16px na tela (exceção: etiquetas `text-xs` em maiúsculas, decorativas).
-- A opção **Pequeno** é escolha explícita da aluna em Perfil: reduz a base do `rem` a 93,75% neste
-  aparelho. **Normal** continua o padrão; não reduza o texto de nenhuma tela por conta própria.
+- **Normal** é o padrão e o menor tamanho do texto: Perfil só oferece aumentar (Grande, Maior), e
+  nenhuma tela reduz o texto por conta própria.
 - Títulos com `text-balance`; parágrafos com `text-pretty`.
 
 ## Forma
@@ -106,7 +106,7 @@ o tema escuro e o alto contraste.
   por lá.
 - O tema padrão é o **claro**, com o "Automático" desligado, mesmo com o aparelho no escuro. O
   escuro e o automático só valem quando ela escolhe (no perfil ou no botão do cabeçalho).
-- Perfil, Aparência, depois do tema: **Tamanho do texto** (Pequeno, Normal, Grande, Maior, num controle
+- Perfil, Aparência, depois do tema: **Tamanho do texto** (Normal, Grande, Maior, num controle
   segmentado de rádios), **Reduzir animações** e **Mais contraste** (chaves). Valem na hora, só no
   aparelho, e viram atributos no `<html>` (`data-text`, `data-motion`, `data-contrast`) que um
   script do head põe antes da página aparecer. O tamanho muda a base do `rem`, então use `rem`

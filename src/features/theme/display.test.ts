@@ -31,12 +31,7 @@ describe('ajustes de leitura', () => {
   });
 
   test('guardar e ler de volta dá o mesmo ajuste', () => {
-    for (const settings of [
-      DEFAULT_DISPLAY,
-      ALL_ON,
-      { ...DEFAULT_DISPLAY, text: 'grande' },
-      { ...DEFAULT_DISPLAY, text: 'pequeno' },
-    ]) {
+    for (const settings of [DEFAULT_DISPLAY, ALL_ON, { ...DEFAULT_DISPLAY, text: 'grande' }]) {
       const stored = displayStorage(settings as DisplaySettings);
       expect(parseDisplay((key) => stored[key] ?? null)).toEqual(settings as DisplaySettings);
     }
@@ -57,6 +52,12 @@ describe('ajustes de leitura', () => {
     expect(
       runScript({ 'display-text': 'enorme', 'display-motion': 'x', 'display-contrast': '1' }),
     ).toEqual({});
+  });
+
+  test('quem guardou o antigo "Pequeno" volta ao Normal', () => {
+    const stored: Record<string, string> = { 'display-text': 'pequeno' };
+    expect(parseDisplay((key) => stored[key] ?? null)).toEqual(DEFAULT_DISPLAY);
+    expect(runScript(stored)).toEqual({});
   });
 
   test('sem armazenamento no navegador, o script não quebra a página', () => {
