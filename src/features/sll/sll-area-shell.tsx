@@ -1,15 +1,11 @@
 import type { ComponentProps } from 'react';
-import { AreaShell } from '@/features/member/components/area-shell';
-import { SllSidebar } from './sll-sidebar';
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import type { AreaShell } from '@/features/member/components/area-shell';
+import { SllShell } from '@/features/products/components/sll-shell';
+import { sllStageLinks } from '@/features/products/sll-navigation';
+import { getSllSidebarStages } from './server/catalog';
 
-/**
- * Acrescenta a navegação do SLL sem alterar a moldura dos outros produtos. `currentSection`: o
- * link do menu que representa esta página quando o endereço dela não está no menu (a aula).
- */
-export function SllAreaShell({
+/** Mantém uma moldura única em todas as páginas do SLL e liga o menu às etapas publicadas. */
+export async function SllAreaShell({
   currentSection,
   backLink,
   ...props
@@ -17,47 +13,23 @@ export function SllAreaShell({
   currentSection?: string | undefined;
   backLink?: { href: string; label: string } | undefined;
 }) {
+  const stages = await getSllSidebarStages();
+  const stageLinks = sllStageLinks(stages);
+
   return (
-    <>
-      <a
-        href="#sll-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-4 focus:z-50 focus:rounded-full focus:bg-card focus:px-6 focus:py-3 focus:text-body focus:text-link focus:shadow-card focus:outline-2 focus:outline-ring"
-      >
-        Pular para o conteúdo
-      </a>
-      <AreaShell
-        {...props}
-        area="sll"
-        contentId="sll-content"
-        header={
-          backLink ? (
-            <>
-              <Button
-                asChild
-                className="-ml-2 w-fit px-2 text-sm whitespace-normal"
-                size="inline"
-                variant="ghost"
-              >
-                <Link href={backLink.href}>
-                  <ArrowLeft aria-hidden="true" />
-                  {backLink.label}
-                </Link>
-              </Button>
-              <h1 className="text-title font-semibold text-balance sm:text-title-lg">
-                {props.title}
-              </h1>
-              {props.intro ? (
-                <p className="max-w-[60ch] text-body text-pretty text-muted-foreground">
-                  {props.intro}
-                </p>
-              ) : null}
-            </>
-          ) : (
-            props.header
-          )
-        }
-        sidebar={<SllSidebar currentSection={currentSection} />}
-      />
-    </>
+    <SllShell
+      account={props.account}
+      hasChoice={props.hasChoice}
+      title={props.title}
+      description={props.intro}
+      productName={props.product ?? 'Sistema Loja Lucrativa (SLL)'}
+      beforeHeader={props.beforeHeader}
+      header={props.header}
+      backLink={backLink}
+      stageLinks={stageLinks}
+      currentSection={currentSection}
+    >
+      {props.children}
+    </SllShell>
   );
 }

@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { expectNoA11yViolations, signIn } from './support/auth';
 import { PASSWORD, studentEmail } from './support/students';
 
-const SLL = /As aulas abrem em breve/;
+const SLL = /^(?:Boas-vindas|Olá)(?:, Ana)?!$/;
 
 test('depois de criar a senha no primeiro acesso, escolhe entre a Loja Pronta e o SLL', async ({
   page,

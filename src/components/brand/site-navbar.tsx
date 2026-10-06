@@ -18,20 +18,26 @@ import {
 export function SiteNavbar({
   children,
   hasSidebar = false,
+  wide = false,
 }: {
   children?: ReactNode;
   hasSidebar?: boolean;
+  wide?: boolean;
 }) {
   return (
     <header className="border-b-2 border-border bg-background">
       <div
-        className={cn(
-          'mx-auto grid min-h-16 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4',
-          MEMBER_AREA_GUTTERS,
-          hasSidebar
-            ? [MEMBER_AREA_MAX_WIDTH, MEMBER_AREA_SIDEBAR_COLUMNS, MEMBER_AREA_COLUMN_GAP]
-            : 'max-w-[1040px]',
-        )}
+        className={
+          wide
+            ? 'flex min-h-16 w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-8'
+            : cn(
+                'mx-auto grid min-h-16 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4',
+                MEMBER_AREA_GUTTERS,
+                hasSidebar
+                  ? [MEMBER_AREA_MAX_WIDTH, MEMBER_AREA_SIDEBAR_COLUMNS, MEMBER_AREA_COLUMN_GAP]
+                  : 'max-w-[1040px]',
+              )
+        }
       >
         <Link
           href="/menu"
@@ -42,7 +48,14 @@ export function SiteNavbar({
           Loja Pronta Prime
         </Link>
         {children ? (
-          <div className={cn('justify-self-end', hasSidebar && 'lg:col-start-2')}>{children}</div>
+          <div
+            className={cn(
+              wide ? 'ml-auto flex items-center' : 'justify-self-end',
+              hasSidebar && !wide && 'lg:col-start-2',
+            )}
+          >
+            {children}
+          </div>
         ) : null}
       </div>
     </header>
