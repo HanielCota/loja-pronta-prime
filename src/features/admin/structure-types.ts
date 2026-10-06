@@ -2,7 +2,12 @@ import type { EditorIntent } from './editor-intent';
 
 export type LearningNodeKind = 'track' | 'stage' | 'module' | 'lesson';
 export type LearningTrackKind = 'welcome' | 'method' | 'complementary_course';
-export type StructureActionState = { message: string; saved: boolean };
+/** `field` diz qual campo causou o erro, para ligar a mensagem a ele (aria-describedby). */
+export type StructureActionState = {
+  message: string;
+  saved: boolean;
+  field?: 'title' | 'description' | 'durationMinutes' | 'relatedLessonId';
+};
 export type BannerActionState = { message: string; saved: boolean; bannerId?: string };
 export type ResourceActionState = { message: string; saved: boolean; resourceId?: string };
 /** Resultado dos botões abaixo dos editores do SLL; `intent` diz qual botão foi usado. */

@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect, useState, useTransition, type FormEvent } from 'react';
+import { useActionState, useEffect, useRef, useState, useTransition, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowDown, ArrowUp, Archive, ImagePlus, RotateCcw, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -63,6 +63,16 @@ export function ContentNodeForm({
     duration: initial?.durationMinutes ? String(initial.durationMinutes) : '',
   });
   const [dirty, setDirty] = useState(false);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  // O formulário substitui a lista: sem isto, o foco cairia no início da página.
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, []);
+  // O erro fica ligado ao campo que o causou; sem campo definido, ao nome (o primeiro campo).
+  const errorId = 'learning-node-error';
+  const errorField = state.message && !state.saved ? (state.field ?? 'title') : null;
+  const describedBy = (field: NonNullable<typeof errorField>) =>
+    errorField === field ? { 'aria-describedby': errorId, 'aria-invalid': true } : {};
 
   function updatePreview(event: FormEvent<HTMLFormElement>) {
     const values = new FormData(event.currentTarget);
@@ -89,7 +99,11 @@ export function ContentNodeForm({
         onChange={updatePreview}
         onInput={updatePreview}
       >
-        <h3 className="text-title font-semibold text-foreground">
+        <h3
+          className="rounded-xl text-title font-semibold text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          ref={headingRef}
+          tabIndex={-1}
+        >
           {initial
             ? `Editar ${formKindLabel}`
             : kind === 'track' && defaultTrackKind === 'complementary_course'
@@ -123,6 +137,7 @@ export function ContentNodeForm({
           maxLength={160}
           name="title"
           required
+          {...describedBy('title')}
         />
         <div className="flex flex-col gap-2">
           <Label htmlFor="learning-node-description">Descrição (opcional)</Label>
@@ -132,6 +147,7 @@ export function ContentNodeForm({
             id="learning-node-description"
             maxLength={1200}
             name="description"
+            {...describedBy('description')}
           />
         </div>
         {kind === 'track' && initial?.trackKind === 'complementary_course' ? (
@@ -147,6 +163,7 @@ export function ContentNodeForm({
                   defaultValue={initial?.relatedLessonId ?? ''}
                   id="related-lesson"
                   name="relatedLessonId"
+                  {...describedBy('relatedLessonId')}
                 >
                   <option value="">Nenhuma aula relacionada</option>
                   {lessonChoices.map((choice) => (
@@ -168,6 +185,7 @@ export function ContentNodeForm({
               min={1}
               name="durationMinutes"
               type="number"
+              {...describedBy('durationMinutes')}
             />
             <label className="flex min-h-11 items-center gap-3 text-body text-foreground">
               <input
@@ -181,7 +199,7 @@ export function ContentNodeForm({
           </>
         ) : null}
         {state.message ? (
-          <p className="text-body text-destructive" role="alert">
+          <p className="text-body text-destructive" id={errorId} role="alert">
             {state.message}
           </p>
         ) : null}
@@ -325,11 +343,9 @@ function CourseCoverUpload({ course }: { course: EditableLearningNode }) {
           </Button>
         ) : null}
       </div>
-      {message ? (
-        <output aria-live="polite" className="text-body text-muted-foreground">
-          {message}
-        </output>
-      ) : null}
+      {message ? <p className="text-body text-muted-foreground">{message}</p> : null}
+      {/* Sempre presente: regiões criadas junto com o texto costumam não ser anunciadas. */}
+      <LiveRegion>{message}</LiveRegion>
     </div>
   );
 }
@@ -351,6 +367,7 @@ export function LearningNodeControls({
   last: boolean;
   onEdit: (node: EditableLearningNode) => void;
 }) {
+  // A lista devolve o foco a este botão ao fechar o formulário (Salvar, Cancelar, Voltar).
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState('');
@@ -437,6 +454,7 @@ export function LearningNodeControls({
       <Button
         aria-label={`Editar ${node.title}`}
         className="!w-fit !px-4"
+        data-edit-node={node.id}
         onClick={() => onEdit(node)}
         type="button"
         variant="soft"
@@ -558,11 +576,9 @@ export function LearningNodeControls({
           ) : null}
         </div>
       </details>
-      {message ? (
-        <span aria-live="polite" className="text-body text-muted-foreground">
-          {message}
-        </span>
-      ) : null}
+      {message ? <span className="text-body text-muted-foreground">{message}</span> : null}
+      {/* Sempre presente: regiões criadas junto com o texto costumam não ser anunciadas. */}
+      <LiveRegion>{message}</LiveRegion>
     </div>
   );
 }
@@ -586,10 +602,16 @@ export function ArchivedLearningContent({
     data.set('kind', item.kind);
     data.set('nodeId', item.id);
     setPendingId(item.id);
-    const result = await restoreLearningNode(data);
-    setMessage(result.message);
-    setPendingId(null);
-    if (result.saved) router.refresh();
+    // Sem conexão (ou com erro no servidor), o botão volta a funcionar e a pessoa sabe o motivo.
+    try {
+      const result = await restoreLearningNode(data);
+      setMessage(result.message);
+      if (result.saved) router.refresh();
+    } catch {
+      setMessage('Não consegui restaurar. Confira a internet e tente de novo.');
+    } finally {
+      setPendingId(null);
+    }
   }
 
   return (

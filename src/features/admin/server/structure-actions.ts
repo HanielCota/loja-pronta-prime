@@ -140,11 +140,16 @@ export async function saveLearningNode(
     return { message: 'A localização deste conteúdo não é válida.', saved: false };
   }
   if (!title.success)
-    return { message: title.error.issues[0]?.message ?? 'Confira o nome.', saved: false };
+    return {
+      message: title.error.issues[0]?.message ?? 'Confira o nome.',
+      saved: false,
+      field: 'title',
+    };
   if (!description.success) {
     return {
       message: description.error.issues[0]?.message ?? 'Confira a descrição.',
       saved: false,
+      field: 'description',
     };
   }
   if (
@@ -158,11 +163,15 @@ export async function saveLearningNode(
     duration !== null &&
     (!Number.isInteger(duration) || duration < 1 || duration > 999)
   ) {
-    return { message: 'A duração deve ser um número entre 1 e 999 minutos.', saved: false };
+    return {
+      message: 'A duração deve ser um número entre 1 e 999 minutos.',
+      saved: false,
+      field: 'durationMinutes',
+    };
   }
   if (nodeKind === 'lesson' && relatedLessonId) {
     if (!uuidSchema.safeParse(relatedLessonId).success || relatedLessonId === rawId)
-      return { message: 'Escolha outra aula relacionada.', saved: false };
+      return { message: 'Escolha outra aula relacionada.', saved: false, field: 'relatedLessonId' };
     const source = editing
       ? await db.query.learningLessons.findFirst({
           columns: { moduleId: true },

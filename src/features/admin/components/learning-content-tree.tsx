@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { LiveRegion } from '@/components/ui/live-region';
 import { LessonEditor } from './lesson-editor';
 import { cn } from '@/lib/utils';
 import { panelCard } from '@/features/member/components/area-shell';
@@ -572,7 +573,9 @@ function SortableContentList({
           </ul>
         </SortableContext>
       </DndContext>
-      {message ? <output className="mt-3 text-body text-muted-foreground">{message}</output> : null}
+      {message ? <p className="mt-3 text-body text-muted-foreground">{message}</p> : null}
+      {/* Sempre presente: regiões criadas junto com o texto costumam não ser anunciadas. */}
+      <LiveRegion>{message}</LiveRegion>
     </>
   );
 }
@@ -604,7 +607,26 @@ function CollectionScreen({
   lessonChoices?: Array<{ id: string; title: string }>;
 }) {
   const [formTarget, setFormTarget] = useState<EditableLearningNode | 'new' | null>(null);
-  const formCancel = useCallback(() => setFormTarget(null), []);
+  // Ao fechar o formulário, o foco volta ao botão que o abriu (Editar ou Adicionar), em vez de
+  // cair no início da página.
+  const returnFocusTo = useRef<string | null>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const addButtonRef = useRef<HTMLButtonElement>(null);
+  const formCancel = useCallback(() => {
+    returnFocusTo.current = formTarget === 'new' ? 'new' : (formTarget?.id ?? null);
+    setFormTarget(null);
+  }, [formTarget]);
+  useEffect(() => {
+    if (formTarget || !returnFocusTo.current) return;
+    const target =
+      returnFocusTo.current === 'new'
+        ? addButtonRef.current
+        : sectionRef.current?.querySelector<HTMLElement>(
+            `[data-edit-node="${returnFocusTo.current}"]`,
+          );
+    target?.focus();
+    returnFocusTo.current = null;
+  }, [formTarget]);
   const kindName: Record<LearningNodeKind, string> = {
     track: management.trackKind === 'complementary_course' ? 'curso' : 'conteúdo',
     stage: 'etapa',
@@ -644,7 +666,11 @@ function CollectionScreen({
   }
 
   return (
-    <section className={cn(panelCard, '!p-4 sm:!p-6')} aria-labelledby="content-level-heading">
+    <section
+      className={cn(panelCard, '!p-4 sm:!p-6')}
+      aria-labelledby="content-level-heading"
+      ref={sectionRef}
+    >
       {back ? (
         <Button
           className="mb-4 w-fit !rounded-full !px-4 text-foreground"
@@ -673,6 +699,7 @@ function CollectionScreen({
         <Button
           className="mt-4 w-fit"
           onClick={() => setFormTarget('new')}
+          ref={addButtonRef}
           type="button"
           variant="soft"
         >
@@ -708,6 +735,18 @@ function LessonScreen({
   siblingLessons: Array<{ id: string; title: string }>;
 }) {
   const [editing, setEditing] = useState(false);
+  // Ao sair do editor (Voltar ou Cancelar), o foco volta para "Editar aula".
+  const returnFocus = useRef(false);
+  const editButtonRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (editing || !returnFocus.current) return;
+    editButtonRef.current?.focus();
+    returnFocus.current = false;
+  }, [editing]);
+  function stopEditing() {
+    returnFocus.current = true;
+    setEditing(false);
+  }
   const [draftMessage, setDraftMessage] = useState('');
   const [draftPending, startDraftTransition] = useTransition();
   const router = useRouter();
@@ -739,7 +778,7 @@ function LessonScreen({
       <div className="flex flex-col gap-4">
         <Button
           className="w-fit !rounded-full !px-4 text-foreground"
-          onClick={() => setEditing(false)}
+          onClick={stopEditing}
           type="button"
           variant="ghost"
         >
@@ -752,7 +791,7 @@ function LessonScreen({
           key={lesson.id}
           lesson={lesson}
           siblingLessons={siblingLessons}
-          onCancel={() => setEditing(false)}
+          onCancel={stopEditing}
         />
       </div>
     );
@@ -815,12 +854,16 @@ function LessonScreen({
           Voltar à versão anterior
         </Button>
       ) : null}
-      {draftMessage ? (
-        <p aria-live="polite" className="mt-2 text-body text-muted-foreground">
-          {draftMessage}
-        </p>
-      ) : null}
-      <Button className="mt-4 w-fit" onClick={() => setEditing(true)} type="button" variant="soft">
+      {draftMessage ? <p className="mt-2 text-body text-muted-foreground">{draftMessage}</p> : null}
+      {/* Sempre presente: regiões criadas junto com o texto costumam não ser anunciadas. */}
+      <LiveRegion>{draftMessage}</LiveRegion>
+      <Button
+        className="mt-4 w-fit"
+        onClick={() => setEditing(true)}
+        ref={editButtonRef}
+        type="button"
+        variant="soft"
+      >
         Editar aula
       </Button>
       <Button asChild className="mt-2 w-fit" variant="ghost">
