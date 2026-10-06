@@ -43,7 +43,10 @@ export default async function AdminPage({
       intro="Abra um item para organizar as aulas. Edite ou arraste para mudar a ordem."
     >
       <section aria-label="Trilhas, etapas, módulos e aulas">
+        {/* Uma árvore por área: sem a chave, o histórico de navegação da área anterior ficaria
+            aberto e apontaria para itens que não existem nesta. */}
         <LearningContentTree
+          key={kind}
           archived={archived}
           selectedKind={kind}
           tracks={tracks.filter((track) => track.kind === kind)}

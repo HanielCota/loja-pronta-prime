@@ -8,7 +8,6 @@ import { REDUCED_MOTION_ATTRIBUTE } from '@/lib/reduced-motion';
 
 /** Tamanhos do texto: a base do rem. Tudo cresce junto (texto, botões, espaços). */
 export const TEXT_SIZES = {
-  pequeno: { label: 'Pequeno', scale: '93.75%' },
   normal: { label: 'Normal', scale: '100%' },
   grande: { label: 'Grande', scale: '112.5%' },
   maior: { label: 'Maior', scale: '125%' },

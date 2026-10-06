@@ -74,22 +74,25 @@ export async function getSllLessonViewer(lessonId: string) {
   const currentIndex = lesson.module.lessons.findIndex((item) => item.id === lesson.id);
   if (currentIndex < 0) return null;
 
-  const linkedResources = await db
-    .select({
-      id: learningResources.id,
-      title: learningResources.title,
-      buttonLabel: learningResources.buttonLabel,
-      destination: learningResources.destination,
-    })
-    .from(learningResourceLessons)
-    .innerJoin(learningResources, eq(learningResourceLessons.resourceId, learningResources.id))
-    .where(
-      and(
-        eq(learningResourceLessons.lessonId, lesson.id),
-        eq(learningResources.status, 'published'),
-        isNull(learningResources.archivedAt),
-      ),
-    );
+  // Etapa fechada: nem procura as ferramentas da aula (a tela só mostra o aviso de bloqueio).
+  const linkedResources = !stage.access.isUnlocked
+    ? []
+    : await db
+        .select({
+          id: learningResources.id,
+          title: learningResources.title,
+          buttonLabel: learningResources.buttonLabel,
+          destination: learningResources.destination,
+        })
+        .from(learningResourceLessons)
+        .innerJoin(learningResources, eq(learningResourceLessons.resourceId, learningResources.id))
+        .where(
+          and(
+            eq(learningResourceLessons.lessonId, lesson.id),
+            eq(learningResources.status, 'published'),
+            isNull(learningResources.archivedAt),
+          ),
+        );
 
   return {
     user: session.user,

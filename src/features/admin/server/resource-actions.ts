@@ -1,7 +1,8 @@
 'use server';
 
-import { and, asc, eq, isNull } from 'drizzle-orm';
+import { and, asc, eq, isNotNull, isNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { unstable_rethrow } from 'next/navigation';
 import { z } from 'zod';
 import { db } from '@/server/db';
 import {
@@ -12,11 +13,21 @@ import {
   learningResources,
   type LearningNodeDraftData,
 } from '@/server/db/schema';
+import { parseEditorIntent } from '../editor-intent';
 import { learningSlugFromTitle, swapWithNeighbor } from '../structure-rules';
 import { requireAdmin } from './access';
-import { getNodeDraft, saveNodeDraft } from './node-drafts';
+import {
+  getNodeDraftForUpdate,
+  saveNodeDraft,
+  withNodeDraftLock,
+  type DbTransaction,
+} from './node-drafts';
 
-import type { ResourceActionState } from '../structure-types';
+import type {
+  EditorActionState,
+  ResourceActionState,
+  StructureActionState,
+} from '../structure-types';
 
 function field(form: FormData, key: string) {
   const value = form.get(key);
@@ -95,14 +106,14 @@ export async function saveSllResource(
       isNull(learningResources.archivedAt),
     ),
   });
+  // O grupo (chave) e a posição mudam só pela lista, que grava direto no recurso. Eles entram
+  // apenas na criação; no rascunho, seriam valores velhos que a publicação ignoraria.
   const values = {
-    groupKey: rawId ? parsed.data.groupKey : (sameGroup?.groupKey ?? parsed.data.groupKey),
     groupTitle: parsed.data.groupTitle,
     title: parsed.data.title,
     description: parsed.data.description,
     buttonLabel: parsed.data.buttonLabel || null,
     destination: parsed.data.destination || null,
-    position: parsed.data.position,
   };
   try {
     let resourceId = parsed.data.id;
@@ -139,7 +150,13 @@ export async function saveSllResource(
       }
       const [created] = await db
         .insert(learningResources)
-        .values({ ...values, slug, status: 'draft' })
+        .values({
+          ...values,
+          groupKey: sameGroup?.groupKey ?? parsed.data.groupKey,
+          position: parsed.data.position,
+          slug,
+          status: 'draft',
+        })
         .returning({ id: learningResources.id });
       resourceId = created?.id;
     }
@@ -153,11 +170,9 @@ export async function saveSllResource(
   }
 }
 
-type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
 /** Passa o rascunho do recurso para a versão principal (textos e aulas ligadas) e o apaga. */
 async function applyResourceDraft(
-  tx: Transaction,
+  tx: DbTransaction,
   resource: typeof learningResources.$inferSelect,
   data: LearningNodeDraftData | undefined,
   extra: { status: 'draft' | 'published'; archivedAt?: Date },
@@ -204,123 +219,156 @@ async function applyResourceDraft(
     );
 }
 
-/** Publicação explícita mantém os textos atuais visíveis até a troca completa. */
-export async function publishSllResource(form: FormData): Promise<void> {
-  await requireAdmin();
+const unavailable = {
+  saved: false,
+  message: 'Este recurso não está disponível. Atualize a página.',
+};
+
+function formResourceId(form: FormData) {
   const id = z.string().uuid().safeParse(form.get('id'));
-  if (!id.success) return;
-  const resource = await db.query.learningResources.findFirst({
-    where: and(eq(learningResources.id, id.data), isNull(learningResources.archivedAt)),
-  });
-  if (!resource) return;
-  const draft = await getNodeDraft('resource', id.data);
-  const data = draft?.data;
-  const currentLinks = await db.query.learningResourceLessons.findMany({
-    columns: { lessonId: true },
-    where: eq(learningResourceLessons.resourceId, id.data),
-  });
-  const destination = data?.destination === undefined ? resource.destination : data.destination;
-  if (destination && !safeDestination(destination)) return;
-  await db.transaction(async (tx) => {
+  return id.success ? id.data : null;
+}
+
+/**
+ * Publica o rascunho (ou, em `replacement`, a versão anterior) numa transação com o rascunho
+ * travado e relido lá dentro. A versão atual continua visível até a troca completa, e se a
+ * conferência falhar nada é gravado, nem um rascunho com a versão anterior.
+ */
+async function publishResource(
+  id: string,
+  replacement?: LearningNodeDraftData,
+): Promise<StructureActionState> {
+  return withNodeDraftLock('resource', id, async (tx) => {
+    const resource = await tx.query.learningResources.findFirst({
+      where: and(eq(learningResources.id, id), isNull(learningResources.archivedAt)),
+    });
+    if (!resource) return unavailable;
+    const draft = await getNodeDraftForUpdate(tx, 'resource', id);
+    if (replacement && draft)
+      return {
+        saved: false,
+        message: 'Descarte ou publique o rascunho antes de voltar à versão anterior.',
+      };
+    const data = replacement ?? draft?.data;
+    const destination = data?.destination === undefined ? resource.destination : data.destination;
+    if (destination && !safeDestination(destination))
+      return { saved: false, message: 'Confira o destino do recurso e salve antes de publicar.' };
+    const currentLinks = await tx.query.learningResourceLessons.findMany({
+      columns: { lessonId: true },
+      where: eq(learningResourceLessons.resourceId, id),
+    });
+    const previous = {
+      groupTitle: resource.groupTitle,
+      title: resource.title,
+      description: resource.description,
+      buttonLabel: resource.buttonLabel,
+      destination: resource.destination,
+      relatedLessonIds: currentLinks.map((link) => link.lessonId),
+    };
     await tx
       .insert(learningNodeHistory)
-      .values({
-        kind: 'resource',
-        nodeId: id.data,
-        data: {
-          groupTitle: resource.groupTitle,
-          title: resource.title,
-          description: resource.description,
-          buttonLabel: resource.buttonLabel,
-          destination: resource.destination,
-          relatedLessonIds: currentLinks.map((link) => link.lessonId),
-        },
-      })
+      .values({ kind: 'resource', nodeId: id, data: previous })
       .onConflictDoUpdate({
         target: [learningNodeHistory.kind, learningNodeHistory.nodeId],
-        set: {
-          data: {
-            groupTitle: resource.groupTitle,
-            title: resource.title,
-            description: resource.description,
-            buttonLabel: resource.buttonLabel,
-            destination: resource.destination,
-            relatedLessonIds: currentLinks.map((link) => link.lessonId),
-          },
-        },
+        set: { data: previous },
       });
     await applyResourceDraft(tx, resource, data, { status: 'published' });
+    return { saved: true, message: '' };
   });
-  revalidatePath('/admin/recursos');
-  revalidatePath('/sll/recursos');
 }
 
-export async function discardSllResourceDraft(form: FormData): Promise<void> {
+export async function publishSllResource(form: FormData): Promise<StructureActionState> {
   await requireAdmin();
-  const id = z.string().uuid().safeParse(form.get('id'));
-  if (!id.success) return;
-  await db
+  const id = formResourceId(form);
+  if (!id) return unavailable;
+  const result = await publishResource(id);
+  if (!result.saved) return result;
+  revalidatePath('/admin/recursos');
+  revalidatePath('/sll/recursos');
+  return { saved: true, message: 'Recurso publicado. As alunas já veem esta versão.' };
+}
+
+export async function discardSllResourceDraft(form: FormData): Promise<StructureActionState> {
+  await requireAdmin();
+  const id = formResourceId(form);
+  if (!id) return unavailable;
+  const removed = await db
     .delete(learningNodeDrafts)
-    .where(and(eq(learningNodeDrafts.kind, 'resource'), eq(learningNodeDrafts.nodeId, id.data)));
+    .where(and(eq(learningNodeDrafts.kind, 'resource'), eq(learningNodeDrafts.nodeId, id)))
+    .returning({ nodeId: learningNodeDrafts.nodeId });
+  if (!removed.length) return { saved: false, message: 'Não há rascunho para descartar.' };
   revalidatePath('/admin/recursos');
+  return { saved: true, message: 'Rascunho descartado. A versão publicada continua igual.' };
 }
 
-export async function restoreSllResourceVersion(form: FormData): Promise<void> {
+export async function restoreSllResourceVersion(form: FormData): Promise<StructureActionState> {
   await requireAdmin();
-  const id = z.string().uuid().safeParse(form.get('id'));
-  if (!id.success || (await getNodeDraft('resource', id.data))) return;
+  const id = formResourceId(form);
+  if (!id) return unavailable;
   const previous = await db.query.learningNodeHistory.findFirst({
-    where: and(eq(learningNodeHistory.kind, 'resource'), eq(learningNodeHistory.nodeId, id.data)),
+    where: and(eq(learningNodeHistory.kind, 'resource'), eq(learningNodeHistory.nodeId, id)),
   });
-  if (!previous) return;
-  await saveNodeDraft('resource', id.data, previous.data);
-  await publishSllResource(form);
-}
-
-export async function archiveSllResource(form: FormData): Promise<void> {
-  await requireAdmin();
-  const id = z.string().uuid().safeParse(form.get('id'));
-  if (!id.success) return;
-  const resource = await db.query.learningResources.findFirst({
-    where: and(eq(learningResources.id, id.data), isNull(learningResources.archivedAt)),
-  });
-  if (!resource) return;
-  // O recurso volta como rascunho: as edições pendentes passam para ele, senão um rascunho
-  // antigo continuaria na tela e voltaria a valer na próxima publicação.
-  const draft = await getNodeDraft('resource', id.data);
-  await db.transaction((tx) =>
-    applyResourceDraft(tx, resource, draft?.data, { status: 'draft', archivedAt: new Date() }),
-  );
+  if (!previous) return { saved: false, message: 'Não há versão anterior deste recurso.' };
+  const result = await publishResource(id, previous.data);
+  if (!result.saved) return result;
   revalidatePath('/admin/recursos');
   revalidatePath('/sll/recursos');
+  return { saved: true, message: 'A versão anterior do recurso voltou para as alunas.' };
 }
 
-export async function restoreSllResource(form: FormData): Promise<void> {
+export async function archiveSllResource(form: FormData): Promise<StructureActionState> {
   await requireAdmin();
-  const id = z.string().uuid().safeParse(form.get('id'));
-  if (!id.success) return;
-  await db
+  const id = formResourceId(form);
+  if (!id) return unavailable;
+  const archived = await withNodeDraftLock('resource', id, async (tx) => {
+    const resource = await tx.query.learningResources.findFirst({
+      where: and(eq(learningResources.id, id), isNull(learningResources.archivedAt)),
+    });
+    if (!resource) return false;
+    // O recurso volta como rascunho: as edições pendentes passam para ele, senão um rascunho
+    // antigo continuaria na tela e voltaria a valer na próxima publicação.
+    const draft = await getNodeDraftForUpdate(tx, 'resource', id);
+    await applyResourceDraft(tx, resource, draft?.data, {
+      status: 'draft',
+      archivedAt: new Date(),
+    });
+    return true;
+  });
+  if (!archived) return unavailable;
+  revalidatePath('/admin/recursos');
+  revalidatePath('/admin/arquivados');
+  revalidatePath('/sll/recursos');
+  return { saved: true, message: 'Recurso arquivado. Ele fica em Itens arquivados.' };
+}
+
+/** Só um recurso arquivado volta: em um ativo, isto o tiraria das alunas sem aviso. */
+export async function restoreSllResource(form: FormData): Promise<StructureActionState> {
+  await requireAdmin();
+  const id = formResourceId(form);
+  if (!id) return unavailable;
+  const restored = await db
     .update(learningResources)
     .set({ archivedAt: null, status: 'draft' })
-    .where(eq(learningResources.id, id.data));
+    .where(and(eq(learningResources.id, id), isNotNull(learningResources.archivedAt)))
+    .returning({ id: learningResources.id });
+  if (!restored.length) return { saved: false, message: 'Este recurso não está arquivado.' };
   revalidatePath('/admin/arquivados');
   revalidatePath('/admin/recursos');
+  return { saved: true, message: 'Recurso restaurado como rascunho.' };
 }
 
-export async function moveSllResource(form: FormData): Promise<void> {
+export async function moveSllResource(
+  form: FormData,
+  direction: 'up' | 'down',
+): Promise<StructureActionState> {
   await requireAdmin();
-  const parsed = z
-    .object({
-      id: z.string().uuid(),
-      direction: z.enum(['up', 'down']),
-    })
-    .safeParse({ id: form.get('id'), direction: form.get('direction') });
-  if (!parsed.success) return;
+  const id = formResourceId(form);
+  if (!id) return unavailable;
   const resource = await db.query.learningResources.findFirst({
     columns: { id: true, groupKey: true },
-    where: and(eq(learningResources.id, parsed.data.id), isNull(learningResources.archivedAt)),
+    where: and(eq(learningResources.id, id), isNull(learningResources.archivedAt)),
   });
-  if (!resource) return;
+  if (!resource) return unavailable;
   const ordered = await db.query.learningResources.findMany({
     columns: { id: true, position: true },
     where: and(
@@ -331,10 +379,17 @@ export async function moveSllResource(form: FormData): Promise<void> {
   });
   const reordered = swapWithNeighbor(
     ordered.map((item) => item.id),
-    parsed.data.id,
-    parsed.data.direction,
+    id,
+    direction,
   );
-  if (!reordered) return;
+  if (!reordered)
+    return {
+      saved: false,
+      message:
+        direction === 'up'
+          ? 'Este recurso já é o primeiro do grupo.'
+          : 'Este recurso já é o último do grupo.',
+    };
   await db.transaction(async (tx) => {
     for (const item of reordered) {
       await tx
@@ -345,6 +400,40 @@ export async function moveSllResource(form: FormData): Promise<void> {
   });
   revalidatePath('/admin/recursos');
   revalidatePath('/sll/recursos');
+  return {
+    saved: true,
+    message: direction === 'up' ? 'Recurso movido para cima.' : 'Recurso movido para baixo.',
+  };
+}
+
+/**
+ * Os botões abaixo do editor mandam a ação em `intent`. Um só formulário com estado deixa a
+ * resposta (deu certo ou o que falta) aparecer na tela e no leitor de tela, também sem
+ * JavaScript.
+ */
+export async function runSllResourceAction(
+  _previous: EditorActionState,
+  form: FormData,
+): Promise<EditorActionState> {
+  const intent = parseEditorIntent(form.get('intent'));
+  if (!intent) return { saved: false, message: 'Atualize a página e tente de novo.' };
+  try {
+    const result =
+      intent === 'publish'
+        ? await publishSllResource(form)
+        : intent === 'discard'
+          ? await discardSllResourceDraft(form)
+          : intent === 'restore'
+            ? await restoreSllResourceVersion(form)
+            : intent === 'archive'
+              ? await archiveSllResource(form)
+              : await moveSllResource(form, intent);
+    return { ...result, intent };
+  } catch (error) {
+    // Sessão vencida: o requireAdmin redireciona para a entrada, e isso não é uma falha.
+    unstable_rethrow(error);
+    return { saved: false, message: 'Não consegui concluir. Atualize a página e tente de novo.' };
+  }
 }
 
 export async function reorderSllResources(

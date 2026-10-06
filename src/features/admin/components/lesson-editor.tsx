@@ -1,6 +1,14 @@
 'use client';
 
-import { useActionState, useId, useRef, useState, useTransition, type ReactNode } from 'react';
+import {
+  useActionState,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useTransition,
+  type ReactNode,
+} from 'react';
 import { useRouter } from 'next/navigation';
 import {
   FilePlus2,
@@ -126,6 +134,11 @@ export function LessonEditor({
   onCancel: () => void;
 }) {
   const router = useRouter();
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  // O editor substitui a tela da aula: sem isto, o foco cairia no início da página.
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, []);
   const [newBlocks, setNewBlocks] = useState<Array<{ key: string; kind: NewBlockKind }>>([]);
   const [previewChanged, setPreviewChanged] = useState(false);
   const [state, formAction, pending] = useActionState(
@@ -294,7 +307,13 @@ export function LessonEditor({
         className={cn(panelCard, '!p-4 sm:!p-6', showPreview && 'hidden xl:flex')}
       >
         <input name="lessonId" type="hidden" value={lesson.id} />
-        <h3 className="text-title font-semibold text-foreground">Editar aula</h3>
+        <h3
+          className="rounded-xl text-title font-semibold text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          ref={headingRef}
+          tabIndex={-1}
+        >
+          Editar aula
+        </h3>
         <p className="mt-2 text-body text-muted-foreground">
           Altere o título e os materiais. Confira a prévia antes de salvar.
         </p>
@@ -318,11 +337,8 @@ export function LessonEditor({
             />
           </div>
 
-          {blockMessage ? (
-            <output aria-live="polite" className="text-body text-muted-foreground">
-              {blockMessage}
-            </output>
-          ) : null}
+          {blockMessage ? <p className="text-body text-muted-foreground">{blockMessage}</p> : null}
+          <LiveRegion>{blockMessage}</LiveRegion>
           <DndContext
             id={`lesson-blocks-${lesson.id}`}
             collisionDetection={closestCenter}
@@ -629,17 +645,14 @@ export function LessonEditor({
             </fieldset>
           ))}
 
-          {uploadNotice ? (
-            <output aria-live="polite" className="text-body text-foreground">
-              {uploadNotice}
-            </output>
-          ) : null}
+          {uploadNotice ? <p className="text-body text-foreground">{uploadNotice}</p> : null}
+          <LiveRegion>{uploadNotice}</LiveRegion>
 
+          {/* Sempre presente: regiões criadas junto com o texto costumam não ser anunciadas. */}
+          <LiveRegion>{state.saved ? state.message : null}</LiveRegion>
           {state.message ? (
             state.saved ? (
-              <output aria-live="polite" className="text-body text-foreground">
-                {state.message}
-              </output>
+              <p className="text-body text-foreground">{state.message}</p>
             ) : (
               <p className="text-body text-destructive" role="alert">
                 {state.message}

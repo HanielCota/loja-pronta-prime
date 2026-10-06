@@ -12,12 +12,17 @@ import {
   learningNodeHistory,
   learningStages,
   learningTracks,
+  type LearningNodeDraftData,
 } from '@/server/db/schema';
 import { requireAdmin } from './access';
 import { learningSlugFromTitle } from '../structure-rules';
 import { lessonPublicationIssue } from '../publication-rules';
-import { saveNodeDraft } from './node-drafts';
-import { getNodeDraft } from './node-drafts';
+import {
+  getNodeDraft,
+  getNodeDraftForUpdate,
+  saveNodeDraft,
+  withNodeDraftLock,
+} from './node-drafts';
 
 import type { LearningNodeKind, LearningTrackKind, StructureActionState } from '../structure-types';
 
@@ -135,11 +140,16 @@ export async function saveLearningNode(
     return { message: 'A localização deste conteúdo não é válida.', saved: false };
   }
   if (!title.success)
-    return { message: title.error.issues[0]?.message ?? 'Confira o nome.', saved: false };
+    return {
+      message: title.error.issues[0]?.message ?? 'Confira o nome.',
+      saved: false,
+      field: 'title',
+    };
   if (!description.success) {
     return {
       message: description.error.issues[0]?.message ?? 'Confira a descrição.',
       saved: false,
+      field: 'description',
     };
   }
   if (
@@ -153,11 +163,15 @@ export async function saveLearningNode(
     duration !== null &&
     (!Number.isInteger(duration) || duration < 1 || duration > 999)
   ) {
-    return { message: 'A duração deve ser um número entre 1 e 999 minutos.', saved: false };
+    return {
+      message: 'A duração deve ser um número entre 1 e 999 minutos.',
+      saved: false,
+      field: 'durationMinutes',
+    };
   }
   if (nodeKind === 'lesson' && relatedLessonId) {
     if (!uuidSchema.safeParse(relatedLessonId).success || relatedLessonId === rawId)
-      return { message: 'Escolha outra aula relacionada.', saved: false };
+      return { message: 'Escolha outra aula relacionada.', saved: false, field: 'relatedLessonId' };
     const source = editing
       ? await db.query.learningLessons.findFirst({
           columns: { moduleId: true },
@@ -184,7 +198,11 @@ export async function saveLearningNode(
       }),
     ]);
     if (!sourceGroup || !target || sourceGroup.stage.trackId !== target.module.stage.trackId)
-      return { message: 'Escolha uma aula do mesmo curso.', saved: false };
+      return {
+        message: 'Escolha uma aula do mesmo curso.',
+        saved: false,
+        field: 'relatedLessonId',
+      };
   }
 
   if (editing) {
@@ -802,35 +820,46 @@ export async function publishNodeDraft(data: FormData): Promise<StructureActionS
 /**
  * Passa o rascunho para a versão principal e apaga o rascunho. Ao publicar, confere as regras
  * da aula; ao despublicar, só junta as edições, já que as alunas deixam de ver o item.
+ *
+ * Tudo acontece numa transação com o rascunho travado e relido lá dentro: um salvamento que
+ * chegue no meio espera, em vez de ser apagado junto com o rascunho publicado. Com `replacement`
+ * (voltar à versão anterior), os dados vêm dela e nenhum rascunho é criado: se a conferência
+ * falhar, nada fica para trás.
  */
 async function applyNodeDraft(
   nodeKind: LearningNodeKind,
   id: string,
-  { validate }: { validate: boolean },
+  { validate, replacement }: { validate: boolean; replacement?: LearningNodeDraftData },
 ): Promise<StructureActionState> {
-  const draft = await getNodeDraft(nodeKind, id);
-  if (!draft) return { saved: false, message: 'Não há alterações para publicar.' };
-  if (nodeKind === 'lesson') {
-    const lesson = await db.query.learningLessons.findFirst({
-      columns: {
-        title: true,
-        description: true,
-        durationMinutes: true,
-        countsTowardProgress: true,
-        relatedLessonId: true,
-      },
-      where: and(eq(learningLessons.id, id), isNull(learningLessons.archivedAt)),
-      with: { blocks: { orderBy: [asc(learningContentBlocks.position)] } },
-    });
-    if (!lesson) return { saved: false, message: 'Aula não encontrada.' };
-    const blocks = draft.data.blocks ?? lesson.blocks;
-    const issue = lessonPublicationIssue(
-      draft.data.title ?? lesson.title,
-      draft.data.description === undefined ? lesson.description : draft.data.description,
-      blocks.map((block) => ({ kind: block.kind, data: block.data as Record<string, unknown> })),
-    );
-    if (validate && issue) return { saved: false, message: issue };
-    await db.transaction(async (tx) => {
+  return withNodeDraftLock(nodeKind, id, async (tx) => {
+    const draft = await getNodeDraftForUpdate(tx, nodeKind, id);
+    if (replacement && draft)
+      return {
+        saved: false,
+        message: 'Descarte ou publique o rascunho antes de voltar à versão anterior.',
+      };
+    const data = replacement ?? draft?.data;
+    if (!data) return { saved: false, message: 'Não há alterações para publicar.' };
+    if (nodeKind === 'lesson') {
+      const lesson = await tx.query.learningLessons.findFirst({
+        columns: {
+          title: true,
+          description: true,
+          durationMinutes: true,
+          countsTowardProgress: true,
+          relatedLessonId: true,
+        },
+        where: and(eq(learningLessons.id, id), isNull(learningLessons.archivedAt)),
+        with: { blocks: { orderBy: [asc(learningContentBlocks.position)] } },
+      });
+      if (!lesson) return { saved: false, message: 'Aula não encontrada.' };
+      const blocks = data.blocks ?? lesson.blocks;
+      const issue = lessonPublicationIssue(
+        data.title ?? lesson.title,
+        data.description === undefined ? lesson.description : data.description,
+        blocks.map((block) => ({ kind: block.kind, data: block.data as Record<string, unknown> })),
+      );
+      if (validate && issue) return { saved: false, message: issue };
       const previous = {
         title: lesson.title,
         description: lesson.description,
@@ -854,24 +883,19 @@ async function applyNodeDraft(
       await tx
         .update(learningLessons)
         .set({
-          title: draft.data.title ?? lesson.title,
-          description:
-            draft.data.description === undefined ? lesson.description : draft.data.description,
-          ...(draft.data.durationMinutes !== undefined
-            ? { durationMinutes: draft.data.durationMinutes }
+          title: data.title ?? lesson.title,
+          description: data.description === undefined ? lesson.description : data.description,
+          ...(data.durationMinutes !== undefined ? { durationMinutes: data.durationMinutes } : {}),
+          ...(data.countsTowardProgress !== undefined
+            ? { countsTowardProgress: data.countsTowardProgress }
             : {}),
-          ...(draft.data.countsTowardProgress !== undefined
-            ? { countsTowardProgress: draft.data.countsTowardProgress }
-            : {}),
-          ...(draft.data.relatedLessonId !== undefined
-            ? { relatedLessonId: draft.data.relatedLessonId }
-            : {}),
+          ...(data.relatedLessonId !== undefined ? { relatedLessonId: data.relatedLessonId } : {}),
         })
         .where(eq(learningLessons.id, id));
-      if (draft.data.blocks) {
+      if (data.blocks) {
         const liveIds = new Set(lesson.blocks.map((block) => block.id));
-        const nextIds = new Set(draft.data.blocks.map((block) => block.id));
-        for (const block of draft.data.blocks) {
+        const nextIds = new Set(data.blocks.map((block) => block.id));
+        for (const block of data.blocks) {
           if (liveIds.has(block.id))
             await tx
               .update(learningContentBlocks)
@@ -893,38 +917,32 @@ async function applyNodeDraft(
             await tx.delete(learningContentBlocks).where(eq(learningContentBlocks.id, block.id));
         }
       }
-      await tx
-        .delete(learningNodeDrafts)
-        .where(and(eq(learningNodeDrafts.kind, nodeKind), eq(learningNodeDrafts.nodeId, id)));
-    });
-  } else {
-    const current =
-      nodeKind === 'track'
-        ? await db.query.learningTracks.findFirst({
-            columns: { title: true, description: true, coverStorageKey: true, coverAlt: true },
-            where: eq(learningTracks.id, id),
-          })
-        : nodeKind === 'stage'
-          ? await db.query.learningStages.findFirst({
-              columns: { title: true, description: true },
-              where: eq(learningStages.id, id),
+    } else {
+      // Item arquivado não recebe publicação: ele voltaria às alunas com outro conteúdo.
+      const current =
+        nodeKind === 'track'
+          ? await tx.query.learningTracks.findFirst({
+              columns: { title: true, description: true, coverStorageKey: true, coverAlt: true },
+              where: and(eq(learningTracks.id, id), isNull(learningTracks.archivedAt)),
             })
-          : await db.query.learningModules.findFirst({
-              columns: { title: true, description: true },
-              where: eq(learningModules.id, id),
-            });
-    if (!current) return { saved: false, message: 'Conteúdo não encontrado.' };
-    const values = {
-      ...(draft.data.title !== undefined ? { title: draft.data.title } : {}),
-      ...(draft.data.description !== undefined ? { description: draft.data.description } : {}),
-      ...(nodeKind === 'track' && draft.data.coverStorageKey !== undefined
-        ? { coverStorageKey: draft.data.coverStorageKey }
-        : {}),
-      ...(nodeKind === 'track' && draft.data.coverAlt !== undefined
-        ? { coverAlt: draft.data.coverAlt }
-        : {}),
-    };
-    await db.transaction(async (tx) => {
+          : nodeKind === 'stage'
+            ? await tx.query.learningStages.findFirst({
+                columns: { title: true, description: true },
+                where: and(eq(learningStages.id, id), isNull(learningStages.archivedAt)),
+              })
+            : await tx.query.learningModules.findFirst({
+                columns: { title: true, description: true },
+                where: and(eq(learningModules.id, id), isNull(learningModules.archivedAt)),
+              });
+      if (!current) return { saved: false, message: 'Conteúdo não encontrado.' };
+      const values = {
+        ...(data.title !== undefined ? { title: data.title } : {}),
+        ...(data.description !== undefined ? { description: data.description } : {}),
+        ...(nodeKind === 'track' && data.coverStorageKey !== undefined
+          ? { coverStorageKey: data.coverStorageKey }
+          : {}),
+        ...(nodeKind === 'track' && data.coverAlt !== undefined ? { coverAlt: data.coverAlt } : {}),
+      };
       await tx
         .insert(learningNodeHistory)
         .values({ kind: nodeKind, nodeId: id, data: current })
@@ -937,12 +955,13 @@ async function applyNodeDraft(
       else if (nodeKind === 'stage')
         await tx.update(learningStages).set(values).where(eq(learningStages.id, id));
       else await tx.update(learningModules).set(values).where(eq(learningModules.id, id));
+    }
+    if (draft)
       await tx
         .delete(learningNodeDrafts)
         .where(and(eq(learningNodeDrafts.kind, nodeKind), eq(learningNodeDrafts.nodeId, id)));
-    });
-  }
-  return { saved: true, message: '' };
+    return { saved: true, message: '' };
+  });
 }
 
 /** Restaura a última versão publicada, guardando a atual como a nova versão anterior. */
@@ -957,18 +976,20 @@ export async function restorePreviousNodeVersion(data: FormData): Promise<Struct
   )
     return { saved: false, message: 'Conteúdo inválido.' };
   const nodeKind = kind as LearningNodeKind;
-  if (await getNodeDraft(nodeKind, id))
-    return {
-      saved: false,
-      message: 'Descarte ou publique o rascunho antes de voltar à versão anterior.',
-    };
   const previous = await db.query.learningNodeHistory.findFirst({
     where: and(eq(learningNodeHistory.kind, nodeKind), eq(learningNodeHistory.nodeId, id)),
   });
   if (!previous) return { saved: false, message: 'Não há versão anterior.' };
-  await saveNodeDraft(nodeKind, id, previous.data);
-  const result = await publishNodeDraft(data);
-  return result.saved ? { saved: true, message: 'Versão anterior restaurada.' } : result;
+  const result = await applyNodeDraft(nodeKind, id, {
+    validate: true,
+    replacement: previous.data,
+  });
+  if (!result.saved) return result;
+  revalidatePath('/admin');
+  revalidatePath('/sll');
+  revalidatePath('/sll/cursos');
+  revalidatePath(`/sll/aula/${id}`);
+  return { saved: true, message: 'Versão anterior restaurada.' };
 }
 
 export async function discardNodeDraft(data: FormData): Promise<StructureActionState> {

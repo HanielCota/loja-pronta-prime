@@ -5,6 +5,7 @@ import {
   parseProgressPosition,
   resolveSequentialStageAccess,
   summarizeTrackProgress,
+  undoCompletionMessage,
   type LessonProgressRecord,
 } from './progress-rules';
 
@@ -135,5 +136,52 @@ describe('desbloqueio das etapas do método', () => {
       { isUnlocked: false, lockMessage: 'Conclua Etapa 1 para abrir Etapa 2.' },
       { isUnlocked: false, lockMessage: 'Conclua Etapa 1 para abrir Etapa 3.' },
     ]);
+  });
+});
+
+describe('desfazer a conclusão de uma aula', () => {
+  const before = [
+    { stageId: 'etapa-1', title: 'Primeiros passos', isUnlocked: true },
+    { stageId: 'etapa-2', title: 'Sua vitrine', isUnlocked: true },
+    { stageId: 'etapa-3', title: 'Vendas', isUnlocked: true },
+  ];
+
+  it('sem etapa fechada, só confirma', () => {
+    expect(undoCompletionMessage(before, before)).toBe('A conclusão da aula foi desfeita.');
+  });
+
+  it('avisa a etapa que fechou de novo', () => {
+    expect(
+      undoCompletionMessage(before, [
+        { stageId: 'etapa-1', isUnlocked: true },
+        { stageId: 'etapa-2', isUnlocked: true },
+        { stageId: 'etapa-3', isUnlocked: false },
+      ]),
+    ).toBe(
+      'A conclusão da aula foi desfeita. A etapa “Vendas” fechou de novo. Marque esta aula como concluída pra abrir outra vez.',
+    );
+  });
+
+  it('conta as etapas quando mais de uma fecha', () => {
+    expect(
+      undoCompletionMessage(before, [
+        { stageId: 'etapa-1', isUnlocked: true },
+        { stageId: 'etapa-2', isUnlocked: false },
+        { stageId: 'etapa-3', isUnlocked: false },
+      ]),
+    ).toContain('2 etapas fecharam de novo.');
+  });
+
+  it('não fala de etapa que já estava fechada', () => {
+    expect(
+      undoCompletionMessage(
+        [...before.slice(0, 2), { stageId: 'etapa-3', title: 'Vendas', isUnlocked: false }],
+        [
+          { stageId: 'etapa-1', isUnlocked: true },
+          { stageId: 'etapa-2', isUnlocked: true },
+          { stageId: 'etapa-3', isUnlocked: false },
+        ],
+      ),
+    ).toBe('A conclusão da aula foi desfeita.');
   });
 });

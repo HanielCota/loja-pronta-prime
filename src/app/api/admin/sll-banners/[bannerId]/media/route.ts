@@ -7,7 +7,13 @@ import { hasAdminRole } from '@/features/admin/access';
 import { db } from '@/server/db';
 import { learningBanners } from '@/server/db/schema';
 import { storage } from '@/server/storage';
-import { getNodeDraft, saveNodeDraft } from '@/features/admin/server/node-drafts';
+import {
+  getNodeDraft,
+  getNodeDraftForUpdate,
+  saveNodeDraft,
+  withNodeDraftLock,
+} from '@/features/admin/server/node-drafts';
+import { removeStorageKeyIfUnused } from '@/features/admin/server/storage-references';
 
 const MAX_BYTES = 20 * 1024 * 1024;
 
@@ -95,20 +101,27 @@ export async function POST(
   const key = `sll/banners/${banner.id}/${crypto.randomUUID()}.webp`;
   try {
     await storage().put(key, bytes, 'image/webp');
-    const previousDraft = await getNodeDraft('banner', banner.id);
-    if (banner.status === 'published')
-      await saveNodeDraft('banner', banner.id, { imageStorageKey: key, imageAlt: alt.data });
-    else
+    const oldKey =
+      banner.status === 'published'
+        ? await withNodeDraftLock('banner', banner.id, async (tx) => {
+            const previousDraft = await getNodeDraftForUpdate(tx, 'banner', banner.id);
+            await saveNodeDraft(
+              'banner',
+              banner.id,
+              { imageStorageKey: key, imageAlt: alt.data },
+              tx,
+            );
+            return previousDraft?.data.imageStorageKey;
+          })
+        : banner.imageStorageKey;
+    if (banner.status !== 'published')
       await db
         .update(learningBanners)
         .set({ imageStorageKey: key, imageAlt: alt.data })
         .where(eq(learningBanners.id, banner.id));
-    const oldDraftKey = previousDraft?.data.imageStorageKey;
-    const oldKey = banner.status === 'published' ? oldDraftKey : banner.imageStorageKey;
-    if (oldKey && oldKey !== key && oldKey !== banner.imageStorageKey)
-      await storage()
-        .remove(oldKey)
-        .catch(() => {});
+    // A imagem trocada sai do bucket só se nenhuma versão (publicada, rascunho ou anterior)
+    // ainda a usa.
+    if (oldKey !== key) await removeStorageKeyIfUnused(oldKey, 'sll-banners');
     return NextResponse.json(
       { message: 'Imagem do banner salva.' },
       { headers: { 'Cache-Control': 'no-store' } },

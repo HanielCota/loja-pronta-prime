@@ -17,10 +17,10 @@ const items = [
   {
     slug: 'mentora-pri',
     groupKey: 'assistentes',
-    groupTitle: 'GPTs personalizados SLL',
-    title: 'Mentora Pri (Atendimento 24 horas)',
+    groupTitle: 'Ajuda para sua loja',
+    title: 'Mentora Pri',
     description: 'Tua mentora 24/7: tira dúvidas, entrega diagnósticos e recomenda aulas.',
-    buttonLabel: 'Abrir GPT',
+    buttonLabel: 'Conversar com a Pri',
     destination:
       'https://chatgpt.com/g/g-6a21eb8f921c819192b57ce24cd11c63-sll-mentora-pri-sua-pri-24-7',
     position: 0,
@@ -29,10 +29,10 @@ const items = [
   {
     slug: 'artista-de-loja',
     groupKey: 'assistentes',
-    groupTitle: 'GPTs personalizados SLL',
+    groupTitle: 'Ajuda para sua loja',
     title: 'Artista de Loja',
     description: 'Logo em 5 minutos: cria logo estratégica e descrição da loja.',
-    buttonLabel: 'Abrir GPT',
+    buttonLabel: 'Criar logo e descrição',
     destination:
       'https://chatgpt.com/g/g-6a21dc4f4d7c819196e2589bbd751976-sll-logo-e-descricao-da-sua-loja-shopee',
     position: 1,
@@ -41,10 +41,10 @@ const items = [
   {
     slug: 'fotografo-profissional',
     groupKey: 'assistentes',
-    groupTitle: 'GPTs personalizados SLL',
+    groupTitle: 'Ajuda para sua loja',
     title: 'Fotógrafo Profissional',
     description: 'Gera fotos profissionais de produto para a vitrine.',
-    buttonLabel: 'Abrir GPT',
+    buttonLabel: 'Criar fotos do produto',
     destination: 'https://chatgpt.com/g/g-6a21e2daeab4819195332cc14028f537-sll-fotos-de-produto',
     position: 2,
     status: 'published' as const,
@@ -52,10 +52,10 @@ const items = [
   {
     slug: 'anuncio-lucrativo',
     groupKey: 'assistentes',
-    groupTitle: 'GPTs personalizados SLL',
+    groupTitle: 'Ajuda para sua loja',
     title: 'Anúncio Lucrativo',
     description: 'Título, descrição e preço para montar o anúncio.',
-    buttonLabel: 'Abrir GPT',
+    buttonLabel: 'Montar meu anúncio',
     destination:
       'https://chatgpt.com/g/g-6a21e670d4bc8191b44e19a496bac040-sll-anuncio-pronto-titulo-descricao-e-preco',
     position: 3,
@@ -66,8 +66,7 @@ const items = [
     groupKey: 'parceiros',
     groupTitle: 'Parceiros recomendados',
     title: 'Envio Velox',
-    description:
-      'Fornecedores curados para dropshipping Shopee. O endereço visto no site antigo não abriu.',
+    description: 'Fornecedores para sua loja na Shopee.',
     buttonLabel: null,
     destination: null,
     position: 0,

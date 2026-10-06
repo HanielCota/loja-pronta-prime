@@ -1,8 +1,9 @@
+import { cache } from 'react';
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import type { learningTrackKind } from '@/server/db/schema';
 import { requireProduct } from '@/features/products/server/access';
 import { db } from '@/server/db';
-import { learningTracks } from '@/server/db/schema';
+import { learningStages, learningTracks } from '@/server/db/schema';
 import { learningBanners, learningResources } from '@/server/db/schema';
 import { getSllTrackProgress } from './progress';
 
@@ -28,6 +29,32 @@ export async function getSllPublishedTracks(kind?: SllTrackKind) {
 export async function getFirstSllPublishedTrack(kind: SllTrackKind) {
   return (await getSllPublishedTracks(kind))[0] ?? null;
 }
+
+/**
+ * As etapas publicadas do primeiro Método, só com o que o menu mostra. O menu aparece em toda página
+ * do SLL: carregar a trilha com aulas e progresso só pra ler os títulos das etapas pesava em cada
+ * visita. `cache` evita repetir a consulta quando a mesma página pede o menu de novo.
+ */
+export const getSllSidebarStages = cache(async () => {
+  await requireProduct('sll');
+  const track = await db.query.learningTracks.findFirst({
+    columns: { id: true },
+    where: and(
+      eq(learningTracks.status, 'published'),
+      isNull(learningTracks.archivedAt),
+      eq(learningTracks.kind, 'method'),
+    ),
+    orderBy: [asc(learningTracks.position), asc(learningTracks.id)],
+    with: {
+      stages: {
+        columns: { id: true, title: true },
+        where: and(eq(learningStages.status, 'published'), isNull(learningStages.archivedAt)),
+        orderBy: [asc(learningStages.position), asc(learningStages.id)],
+      },
+    },
+  });
+  return track?.stages ?? [];
+});
 
 /** Banners só entram no carrossel quando a imagem e o texto já foram publicados. */
 export async function getSllPublishedBanners() {

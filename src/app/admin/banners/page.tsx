@@ -44,7 +44,6 @@ export default async function AdminBannersPage() {
     >
       <section aria-label="Banners em ordem">
         <SllBannerList
-          key={banners.map((banner) => banner.id).join(':')}
           banners={banners.map((banner) => ({
             ...banner,
             draft: draftsById.get(banner.id) ?? null,

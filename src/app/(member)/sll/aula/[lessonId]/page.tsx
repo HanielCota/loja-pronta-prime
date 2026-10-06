@@ -11,10 +11,18 @@ export default async function SllLessonPage({ params }: { params: Promise<{ less
   const { lessonId } = await params;
   const data = await getSllLessonViewer(lessonId);
   if (!data) notFound();
+  // A aula não tem link no menu: marca de onde ela vem (a etapa do Método, Comece aqui ou Cursos).
+  const currentSection =
+    data.track.kind === 'method'
+      ? `/sll/metodo/etapa/${data.stage.id}`
+      : data.track.kind === 'welcome'
+        ? '/sll/comece-aqui'
+        : '/sll/cursos';
 
   return (
     <SllAreaShell
       account={data.user}
+      currentSection={currentSection}
       hasChoice={data.hasChoice}
       title={data.track.title}
       intro="Assista à aula e acompanhe seu progresso."

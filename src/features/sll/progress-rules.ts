@@ -43,6 +43,28 @@ export function resolveSequentialStageAccess(stages: StageProgressRecord[]) {
   });
 }
 
+/**
+ * Mensagem de quando ela desfaz a conclusão de uma aula. Desfazer pode fechar de novo etapas que
+ * já estavam abertas (a etapa da aula deixa de estar completa): a mensagem diz isso, pra ela não
+ * estranhar a etapa trancada depois.
+ */
+export function undoCompletionMessage(
+  before: Array<{ stageId: string; title: string; isUnlocked: boolean }>,
+  after: Array<{ stageId: string; isUnlocked: boolean }>,
+): string {
+  const lockedNow = new Set(
+    after.filter((stage) => !stage.isUnlocked).map((stage) => stage.stageId),
+  );
+  const relocked = before.filter((stage) => stage.isUnlocked && lockedNow.has(stage.stageId));
+  const done = 'A conclusão da aula foi desfeita.';
+  if (!relocked.length) return done;
+  const closed =
+    relocked.length === 1
+      ? `A etapa “${relocked[0]!.title}” fechou de novo.`
+      : `${relocked.length} etapas fecharam de novo.`;
+  return `${done} ${closed} Marque esta aula como concluída pra abrir outra vez.`;
+}
+
 export function isProgressId(value: unknown): value is string {
   return (
     typeof value === 'string' &&

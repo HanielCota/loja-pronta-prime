@@ -9,7 +9,13 @@ import { getStudentProducts } from '@/features/products/server/access';
 import { db } from '@/server/db';
 import { learningTracks } from '@/server/db/schema';
 import { storage } from '@/server/storage';
-import { getNodeDraft, saveNodeDraft } from '@/features/admin/server/node-drafts';
+import {
+  getNodeDraft,
+  getNodeDraftForUpdate,
+  saveNodeDraft,
+  withNodeDraftLock,
+} from '@/features/admin/server/node-drafts';
+import { removeStorageKeyIfUnused } from '@/features/admin/server/storage-references';
 
 const MAX_BYTES = 20 * 1024 * 1024;
 type Context = { params: Promise<{ trackId: string }> };
@@ -38,6 +44,25 @@ async function courseFromParams(context: Context) {
       eq(learningTracks.kind, 'complementary_course'),
       isNull(learningTracks.archivedAt),
     ),
+  });
+}
+
+/**
+ * Grava a capa nova (no rascunho, se o curso já está publicado) e devolve a chave da capa que
+ * ela substituiu, para o arquivo antigo ser apagado se ninguém mais o usa.
+ */
+async function replaceCover(
+  course: { id: string; status: string; coverStorageKey: string | null },
+  values: { coverStorageKey: string | null; coverAlt: string | null },
+) {
+  if (course.status !== 'published') {
+    await db.update(learningTracks).set(values).where(eq(learningTracks.id, course.id));
+    return course.coverStorageKey;
+  }
+  return withNodeDraftLock('track', course.id, async (tx) => {
+    const previousDraft = await getNodeDraftForUpdate(tx, 'track', course.id);
+    await saveNodeDraft('track', course.id, values, tx);
+    return previousDraft?.data.coverStorageKey;
   });
 }
 
@@ -99,20 +124,10 @@ export async function POST(request: Request, context: Context) {
   const key = `sll/course-covers/${course.id}/${crypto.randomUUID()}.webp`;
   try {
     await storage().put(key, bytes, 'image/webp');
-    const previousDraft = await getNodeDraft('track', course.id);
-    if (course.status === 'published')
-      await saveNodeDraft('track', course.id, { coverStorageKey: key, coverAlt: alt.data });
-    else
-      await db
-        .update(learningTracks)
-        .set({ coverStorageKey: key, coverAlt: alt.data })
-        .where(eq(learningTracks.id, course.id));
-    const oldKey =
-      course.status === 'published' ? previousDraft?.data.coverStorageKey : course.coverStorageKey;
-    if (oldKey && oldKey !== course.coverStorageKey)
-      await storage()
-        .remove(oldKey)
-        .catch(() => {});
+    const oldKey = await replaceCover(course, { coverStorageKey: key, coverAlt: alt.data });
+    // A capa trocada sai do bucket só se nenhuma versão (publicada, rascunho ou anterior)
+    // ainda a usa.
+    if (oldKey !== key) await removeStorageKeyIfUnused(oldKey, 'course-cover');
     revalidatePath('/admin');
     revalidatePath('/sll/cursos');
     return NextResponse.json(
@@ -133,13 +148,8 @@ export async function DELETE(request: Request, context: Context) {
     return error('Pedido inválido.', 403);
   const course = await courseFromParams(context);
   if (!course) return error('Este curso não está disponível.', 404);
-  if (course.status === 'published')
-    await saveNodeDraft('track', course.id, { coverStorageKey: null, coverAlt: null });
-  else
-    await db
-      .update(learningTracks)
-      .set({ coverStorageKey: null, coverAlt: null })
-      .where(eq(learningTracks.id, course.id));
+  const oldKey = await replaceCover(course, { coverStorageKey: null, coverAlt: null });
+  await removeStorageKeyIfUnused(oldKey, 'course-cover');
   revalidatePath('/admin');
   revalidatePath('/sll/cursos');
   return NextResponse.json(

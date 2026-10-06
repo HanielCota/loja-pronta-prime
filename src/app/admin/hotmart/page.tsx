@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { env } from '@/config/env';
 import { AreaShell, panelCard } from '@/features/member/components/area-shell';
 import { AdminSidebar } from '@/features/admin/components/admin-sidebar';
 import { requireAdmin } from '@/features/admin/server/access';
@@ -10,10 +11,7 @@ export const metadata: Metadata = { title: 'Compras Hotmart · Administração' 
 export default async function HotmartAdminPage() {
   const session = await requireAdmin('/admin/hotmart');
   const state = await getHotmartAdminState();
-  const url = new URL(
-    '/api/hotmart/webhook',
-    process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
-  ).toString();
+  const url = new URL('/api/hotmart/webhook', env.BETTER_AUTH_URL).toString();
   return (
     <AreaShell
       account={session.user}

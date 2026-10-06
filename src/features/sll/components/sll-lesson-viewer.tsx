@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect, useState } from 'react';
+import { useActionState, useEffect, useState, type MouseEvent } from 'react';
 import Link from 'next/link';
 import {
   Check,
@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { panelCard } from '@/features/member/components/area-shell';
+import { prefersReducedMotion } from '@/lib/reduced-motion';
 import { cn } from '@/lib/utils';
 import { setSllLessonCompletionForm, recordSllLessonView } from '../server/actions';
 
@@ -66,6 +67,19 @@ const INITIAL_ACTION_STATE: { saved: boolean; message: string; completed?: boole
   message: '',
 };
 
+/**
+ * A aula que ela abriu pelos botões ou pela lista: essa aula abre no topo, com o foco no título.
+ * Fica fora do componente porque a tela da aula pode ser montada de novo na troca. Quem chega por
+ * outro caminho (menu, link, recarregar) segue o comportamento normal da página.
+ */
+let arrivingLessonId: string | null = null;
+const openLesson = (lessonId: string) => (event: MouseEvent<HTMLAnchorElement>) => {
+  // Ctrl/Cmd/Shift + clique abre em outra aba ou janela: esta tela não troca de aula.
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+    return;
+  arrivingLessonId = lessonId;
+};
+
 /** Tela comum de aula: vídeo em destaque, aulas do módulo e conclusão acessível. */
 export function SllLessonViewer({ data, progress, completedHref }: SllLessonViewerProps) {
   const [completion, completeAction, isCompleting] = useActionState(
@@ -88,6 +102,17 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
     };
   }, [data.lesson.id, data.track.id, isLocked]);
 
+  useEffect(() => {
+    if (arrivingLessonId !== data.lesson.id) return;
+    arrivingLessonId = null;
+    // Os links não rolam sozinhos (scroll={false}): sem isto, ela ficava no fim da página, longe
+    // da aula nova. O foco no título faz o leitor de tela anunciar a aula que abriu.
+    document
+      .getElementById(isLocked ? 'locked-lesson-title' : 'lesson-title')
+      ?.focus({ preventScroll: true });
+    window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'instant' : 'smooth' });
+  }, [data.lesson.id, isLocked]);
+
   return (
     <div className="flex flex-col gap-6">
       <p className="text-body text-muted-foreground">
@@ -96,7 +121,11 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
       </p>
       {isLocked ? (
         <section className={cn(panelCard, 'gap-4')} aria-labelledby="locked-lesson-title">
-          <h2 id="locked-lesson-title" className="text-title font-semibold text-foreground">
+          <h2
+            id="locked-lesson-title"
+            tabIndex={-1}
+            className="text-title font-semibold text-foreground outline-none"
+          >
             Esta aula ainda está fechada
           </h2>
           <p className="text-body text-muted-foreground">
@@ -129,7 +158,8 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
               </p>
               <h2
                 id="lesson-title"
-                className="text-title font-semibold text-balance text-foreground"
+                tabIndex={-1}
+                className="text-title font-semibold text-balance text-foreground outline-none"
               >
                 {data.lesson.title}
               </h2>
@@ -178,7 +208,11 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
                   <div className="flex flex-col gap-3 sm:flex-row">
                     {data.lesson.previousId ? (
                       <Button asChild variant="soft" size="inline" className="px-4">
-                        <Link href={`/sll/aula/${data.lesson.previousId}`} scroll={false}>
+                        <Link
+                          href={`/sll/aula/${data.lesson.previousId}`}
+                          onClick={openLesson(data.lesson.previousId)}
+                          scroll={false}
+                        >
                           Aula anterior
                         </Link>
                       </Button>
@@ -189,7 +223,11 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
                     )}
                     {data.lesson.nextId ? (
                       <Button asChild variant="soft" size="inline" className="px-4">
-                        <Link href={`/sll/aula/${data.lesson.nextId}`} scroll={false}>
+                        <Link
+                          href={`/sll/aula/${data.lesson.nextId}`}
+                          onClick={openLesson(data.lesson.nextId)}
+                          scroll={false}
+                        >
                           Próxima aula
                         </Link>
                       </Button>
@@ -267,6 +305,7 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
                       aria-label={`Abrir aula ${lesson.number}: ${lesson.title}`}
                       className="flex min-h-14 items-center gap-3 rounded-2xl px-3 py-3 text-body text-foreground outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid forced-colors:border forced-colors:border-[CanvasText]"
                       href={`/sll/aula/${lesson.id}`}
+                      onClick={openLesson(lesson.id)}
                       scroll={false}
                     >
                       <LessonNumber lesson={lesson} />

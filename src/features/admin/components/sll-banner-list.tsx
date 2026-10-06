@@ -20,8 +20,9 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { EditorActionMessage, useEditorActions } from './editor-actions';
 import { SllBannerEditor } from './sll-banner-editor';
-import { reorderSllBannersForm } from '../server/actions';
+import { reorderSllBannersForm, runSllBannerActionForm } from '../server/actions';
 
 type Banner = Parameters<typeof SllBannerEditor>[0]['banner'];
 
@@ -79,7 +80,22 @@ export function SllBannerList({ banners }: { banners: NonNullable<Banner>[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [order, setOrder] = useState(() => banners.map((banner) => banner.id));
-  const [message, setMessage] = useState('');
+  // A ordem salva no servidor manda: depois de "Mover para cima/baixo" ou de um arrasto, a
+  // lista nova chega por aqui. Sem isso, a ordem antiga guardada no estado continuaria na tela.
+  const serverOrder = banners.map((banner) => banner.id).join(':');
+  const [seenServerOrder, setSeenServerOrder] = useState(serverOrder);
+  if (seenServerOrder !== serverOrder) {
+    setSeenServerOrder(serverOrder);
+    setOrder(banners.map((banner) => banner.id));
+  }
+  const {
+    run,
+    pending: actionPending,
+    revision,
+    message,
+    setMessage,
+    messageRef,
+  } = useEditorActions(runSllBannerActionForm);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -107,7 +123,7 @@ export function SllBannerList({ banners }: { banners: NonNullable<Banner>[] }) {
     next.forEach((id) => form.append('id', id));
     startTransition(async () => {
       const result = await reorderSllBannersForm(form);
-      setMessage(result.message);
+      setMessage({ text: result.message, error: !result.saved, focus: false });
       if (result.saved) router.refresh();
       else setOrder(previous);
     });
@@ -142,17 +158,18 @@ export function SllBannerList({ banners }: { banners: NonNullable<Banner>[] }) {
       {selectedBanner ? (
         <div className="mt-5">
           <SllBannerEditor
-            key={JSON.stringify(selectedBanner)}
+            // Recarrega só quando os valores salvos mudam (publicar, descartar, voltar). Salvar ou
+            // mover mantém o formulário e o foco onde estão.
+            key={`${selectedBanner.id}:${revision}`}
+            action={run}
+            actionPending={actionPending}
             banner={selectedBanner}
+            isFirst={sorted[0]?.id === selectedId}
             isLast={sorted.at(-1)?.id === selectedId}
           />
         </div>
       ) : null}
-      {message ? (
-        <output aria-live="polite" className="mt-4 block text-body text-muted-foreground">
-          {message}
-        </output>
-      ) : null}
+      <EditorActionMessage className="mt-4" message={message} messageRef={messageRef} />
       <section aria-label="Adicionar banner" className="mt-8 max-w-2xl">
         <details>
           <summary className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full px-4 text-body font-semibold text-link outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
@@ -160,7 +177,14 @@ export function SllBannerList({ banners }: { banners: NonNullable<Banner>[] }) {
             Adicionar banner
           </summary>
           <div className="mt-4">
-            <SllBannerEditor />
+            {/* Novo a cada banner criado (não a cada troca de ordem): o cartão limpa e volta a
+                criar outro. */}
+            <SllBannerEditor
+              key={banners
+                .map((banner) => banner.id)
+                .toSorted()
+                .join(':')}
+            />
           </div>
         </details>
       </section>

@@ -1,11 +1,12 @@
 import Link from 'next/link';
 import {
+  Archive,
   BookOpen,
   FileText,
   Images,
   KeyRound,
   LibraryBig,
-  Megaphone,
+  PanelLeft,
   ReceiptText,
   Rocket,
   Wrench,
@@ -35,7 +36,8 @@ const contentLinks = [
   { href: '/admin/banners', label: 'Banners do painel', section: 'banners', Icon: Images },
   { href: '/admin/textos', label: 'Textos das páginas', section: 'texts', Icon: FileText },
   { href: '/admin/recursos', label: 'Recursos', section: 'resources', Icon: Wrench },
-  { href: '/admin/arquivados', label: 'Itens arquivados', section: 'archived', Icon: LibraryBig },
+  // Ícone próprio: o de livros já é dos cursos complementares.
+  { href: '/admin/arquivados', label: 'Itens arquivados', section: 'archived', Icon: Archive },
 ] as const;
 
 const accountLinks = [
@@ -96,7 +98,8 @@ export function AdminSidebar({ current }: { current: AdminSection }) {
     <>
       <details className="rounded-card bg-card p-4 shadow-card lg:hidden forced-colors:border forced-colors:border-[CanvasText]">
         <summary className="flex min-h-11 cursor-pointer items-center gap-3 text-body font-semibold text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-          <Megaphone aria-hidden="true" className="size-5 text-link" />
+          {/* Abre a lista de seções (a do lado esquerdo no computador). */}
+          <PanelLeft aria-hidden="true" className="size-5 text-link" />
           Seções do painel
         </summary>
         <div className="mt-4 border-t border-border pt-4">

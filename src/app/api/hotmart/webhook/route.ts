@@ -11,9 +11,18 @@ export async function POST(request: Request) {
     where: eq(hotmartSettings.id, 'main'),
   });
   if (!setting) return NextResponse.json({ error: 'Integração não configurada.' }, { status: 503 });
-  if (
-    !verifyHottok(request.headers.get('x-hotmart-hottok'), decryptHottok(setting.encryptedHottok))
-  ) {
+  let expected: string;
+  try {
+    expected = decryptHottok(setting.encryptedHottok);
+  } catch {
+    // Acontece quando BETTER_AUTH_SECRET muda: o token salvo não abre mais. Responder erro
+    // temporário mantém a Hotmart reenviando até o token ser salvo de novo no painel.
+    console.error(
+      '[hotmart] Não foi possível ler o token salvo. Salve o token de novo em /admin/hotmart.',
+    );
+    return NextResponse.json({ error: 'Integração indisponível.' }, { status: 503 });
+  }
+  if (!verifyHottok(request.headers.get('x-hotmart-hottok'), expected)) {
     return NextResponse.json({ error: 'Aviso não autorizado.' }, { status: 401 });
   }
   const raw = await request.text();

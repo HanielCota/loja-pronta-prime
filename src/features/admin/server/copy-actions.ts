@@ -2,10 +2,14 @@
 
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { unstable_rethrow } from 'next/navigation';
 import { db } from '@/server/db';
 import { learningTextDrafts, learningTextHistory, learningTexts } from '@/server/db/schema';
 import { SLL_COPY, SLL_COPY_GROUPS } from '@/features/sll/copy';
+import { parseEditorIntent } from '../editor-intent';
 import { requireAdmin } from './access';
+
+import type { EditorActionState, StructureActionState } from '../structure-types';
 
 export async function saveSllCopy(
   _previous: { saved: boolean; message: string },
@@ -36,19 +40,48 @@ export async function saveSllCopy(
   return { saved: true, message: 'Rascunho salvo. Publique quando estiver pronto.' };
 }
 
-export async function publishSllCopy(form: FormData): Promise<void> {
-  await requireAdmin();
+type CopyGroup = (typeof SLL_COPY_GROUPS)[number];
+const noGroup = { saved: false, message: 'Atualize a página e tente de novo.' };
+
+function copyGroup(form: FormData): CopyGroup | undefined {
   const groupIndex = Number(form.get('groupIndex'));
-  const group = Number.isInteger(groupIndex) ? SLL_COPY_GROUPS[groupIndex] : undefined;
-  if (!group) return;
-  const drafts = await db.query.learningTextDrafts.findMany();
-  const byKey = new Map(drafts.map((draft) => [draft.key, draft.value]));
-  if (!group.fields.every(({ key }) => byKey.has(key))) return;
-  const live = await db.query.learningTexts.findMany();
-  const liveByKey = new Map(live.map((item) => [item.key, item.value]));
-  await db.transaction(async (tx) => {
+  return Number.isInteger(groupIndex) ? SLL_COPY_GROUPS[groupIndex] : undefined;
+}
+
+/**
+ * Troca os textos publicados do grupo pelos do rascunho (ou, ao voltar, pelos da versão
+ * anterior) numa transação só. Ao voltar, nenhum rascunho é criado: se algo falhar, a tela
+ * não fica com um rascunho que ninguém escreveu.
+ */
+async function publishCopyGroup(
+  group: CopyGroup,
+  source: 'draft' | 'history',
+): Promise<StructureActionState> {
+  return db.transaction(async (tx) => {
+    const [drafts, history, live] = await Promise.all([
+      tx.query.learningTextDrafts.findMany(),
+      tx.query.learningTextHistory.findMany(),
+      tx.query.learningTexts.findMany(),
+    ]);
+    const draftByKey = new Map(drafts.map((draft) => [draft.key, draft.value]));
+    const historyByKey = new Map(history.map((item) => [item.key, item.value]));
+    const liveByKey = new Map(live.map((item) => [item.key, item.value]));
+    if (source === 'history' && group.fields.some(({ key }) => draftByKey.has(key)))
+      return {
+        saved: false,
+        message: 'Descarte ou publique o rascunho antes de voltar à versão anterior.',
+      };
+    const next = source === 'draft' ? draftByKey : historyByKey;
+    if (!group.fields.every(({ key }) => next.has(key)))
+      return {
+        saved: false,
+        message:
+          source === 'draft'
+            ? 'Salve o rascunho antes de publicar.'
+            : 'Não há versão anterior destes textos.',
+      };
     for (const { key } of group.fields) {
-      const value = byKey.get(key)!;
+      const value = next.get(key)!;
       const previous = liveByKey.get(key) ?? SLL_COPY[key];
       await tx
         .insert(learningTextHistory)
@@ -62,43 +95,65 @@ export async function publishSllCopy(form: FormData): Promise<void> {
           .onConflictDoUpdate({ target: learningTexts.key, set: { value } });
       await tx.delete(learningTextDrafts).where(eq(learningTextDrafts.key, key));
     }
+    return { saved: true, message: '' };
   });
+}
+
+function revalidateCopy() {
   for (const path of ['/admin/textos', '/sll', '/sll/cursos', '/sll/recursos', '/sll/metodo'])
     revalidatePath(path);
 }
 
-export async function restoreSllCopyVersion(form: FormData): Promise<void> {
+export async function publishSllCopy(form: FormData): Promise<StructureActionState> {
   await requireAdmin();
-  const groupIndex = Number(form.get('groupIndex'));
-  const group = Number.isInteger(groupIndex) ? SLL_COPY_GROUPS[groupIndex] : undefined;
-  if (!group) return;
-  const [drafts, history] = await Promise.all([
-    db.query.learningTextDrafts.findMany(),
-    db.query.learningTextHistory.findMany(),
-  ]);
-  const draftKeys = new Set(drafts.map((item) => item.key));
-  const previous = new Map(history.map((item) => [item.key, item.value]));
-  if (group.fields.some(({ key }) => draftKeys.has(key) || !previous.has(key))) return;
-  await db.transaction(async (tx) => {
-    for (const { key } of group.fields) {
-      const value = previous.get(key)!;
-      await tx
-        .insert(learningTextDrafts)
-        .values({ key, value })
-        .onConflictDoUpdate({ target: learningTextDrafts.key, set: { value } });
-    }
-  });
-  await publishSllCopy(form);
+  const group = copyGroup(form);
+  if (!group) return noGroup;
+  const result = await publishCopyGroup(group, 'draft');
+  if (!result.saved) return result;
+  revalidateCopy();
+  return { saved: true, message: 'Textos publicados. As alunas já veem esta versão.' };
 }
 
-export async function discardSllCopyDraft(form: FormData): Promise<void> {
+export async function restoreSllCopyVersion(form: FormData): Promise<StructureActionState> {
   await requireAdmin();
-  const groupIndex = Number(form.get('groupIndex'));
-  const group = Number.isInteger(groupIndex) ? SLL_COPY_GROUPS[groupIndex] : undefined;
-  if (!group) return;
+  const group = copyGroup(form);
+  if (!group) return noGroup;
+  const result = await publishCopyGroup(group, 'history');
+  if (!result.saved) return result;
+  revalidateCopy();
+  return { saved: true, message: 'A versão anterior dos textos voltou para as alunas.' };
+}
+
+export async function discardSllCopyDraft(form: FormData): Promise<StructureActionState> {
+  await requireAdmin();
+  const group = copyGroup(form);
+  if (!group) return noGroup;
   await db.transaction(async (tx) => {
     for (const { key } of group.fields)
       await tx.delete(learningTextDrafts).where(eq(learningTextDrafts.key, key));
   });
   revalidatePath('/admin/textos');
+  return { saved: true, message: 'Rascunho descartado. Os textos publicados continuam iguais.' };
+}
+
+/** Os botões abaixo do grupo mandam a ação em `intent`, com a resposta no mesmo estado. */
+export async function runSllCopyAction(
+  _previous: EditorActionState,
+  form: FormData,
+): Promise<EditorActionState> {
+  const intent = parseEditorIntent(form.get('intent'));
+  if (intent !== 'publish' && intent !== 'discard' && intent !== 'restore') return noGroup;
+  try {
+    const result =
+      intent === 'publish'
+        ? await publishSllCopy(form)
+        : intent === 'discard'
+          ? await discardSllCopyDraft(form)
+          : await restoreSllCopyVersion(form);
+    return { ...result, intent };
+  } catch (error) {
+    // Sessão vencida: o requireAdmin redireciona para a entrada, e isso não é uma falha.
+    unstable_rethrow(error);
+    return { saved: false, message: 'Não consegui concluir. Atualize a página e tente de novo.' };
+  }
 }

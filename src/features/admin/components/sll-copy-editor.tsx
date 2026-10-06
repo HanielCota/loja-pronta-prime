@@ -1,19 +1,15 @@
 'use client';
 
-import { useActionState, useEffect, useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useActionState, useState, type FormEvent } from 'react';
 import { ChevronDown, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { LiveRegion } from '@/components/ui/live-region';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
 import { panelCard } from '@/features/member/components/area-shell';
-import { SLL_COPY_GROUPS, type SllCopy } from '@/features/sll/copy';
-import {
-  discardSllCopyDraftForm,
-  publishSllCopyForm,
-  restoreSllCopyVersionForm,
-  saveSllCopyForm,
-} from '../server/actions';
+import { SLL_COPY, SLL_COPY_GROUPS, type SllCopy } from '@/features/sll/copy';
+import { EditorActionMessage, useEditorActions } from './editor-actions';
+import { runSllCopyActionForm, saveSllCopyForm } from '../server/actions';
 
 const initialState = { saved: false, message: '' };
 
@@ -30,14 +26,26 @@ function CopyGroup({
 }) {
   const group = SLL_COPY_GROUPS[index]!;
   const [state, action, pending] = useActionState(saveSllCopyForm, initialState);
-  const router = useRouter();
+  const groupActions = useEditorActions(runSllCopyActionForm);
   const [preview, setPreview] = useState<Record<string, string>>(() =>
     Object.fromEntries(group.fields.map(({ key }) => [key, copy[key]])),
   );
   const [dirty, setDirty] = useState(false);
-  useEffect(() => {
-    if (state.saved) router.refresh();
-  }, [router, state.saved]);
+  // Cada resposta é um objeto novo: assim a segunda gravação seguida também limpa o aviso de
+  // "alterações não salvas" (um efeito em `state.saved` não rodaria de novo).
+  const [seenState, setSeenState] = useState(state);
+  if (seenState !== state) {
+    setSeenState(state);
+    if (state.saved) setDirty(false);
+  }
+  // Publicar, descartar ou voltar troca os textos salvos: o formulário (pela chave) e a prévia
+  // recomeçam com eles.
+  const [seenRevision, setSeenRevision] = useState(groupActions.revision);
+  if (seenRevision !== groupActions.revision) {
+    setSeenRevision(groupActions.revision);
+    setPreview(Object.fromEntries(group.fields.map(({ key }) => [key, copy[key]])));
+    setDirty(false);
+  }
   function updatePreview(event: FormEvent<HTMLFormElement>) {
     const data = new FormData(event.currentTarget);
     setPreview(
@@ -62,12 +70,15 @@ function CopyGroup({
           <form
             action={action}
             className="flex flex-col gap-4"
+            key={groupActions.revision}
             onChange={updatePreview}
             onInput={updatePreview}
           >
             <input name="groupIndex" type="hidden" value={index} />
+            {/* Campo longo ou curto pelo texto original, não pelo salvo: assim o campo não troca
+                de tipo (e não perde o foco) depois de salvar. */}
             {group.fields.map(({ key, label }) =>
-              copy[key].length > 110 ? (
+              SLL_COPY[key].length > 110 ? (
                 <div className="flex flex-col gap-2" key={key}>
                   <Label htmlFor={`copy-${key}`}>{label}</Label>
                   <textarea
@@ -93,40 +104,59 @@ function CopyGroup({
             )}
             {state.message ? (
               <p
-                aria-live="polite"
                 className={state.saved ? 'text-body text-foreground' : 'text-body text-destructive'}
-                role={state.saved ? 'status' : 'alert'}
+                role={state.saved ? undefined : 'alert'}
               >
                 {state.message}
               </p>
             ) : null}
+            {/* Sempre presente: regiões criadas junto com o texto costumam não ser anunciadas. */}
+            <LiveRegion>{state.saved ? state.message : null}</LiveRegion>
             <Button className="sm:!w-fit" loading={pending} loadingText="Salvando…" type="submit">
               <Save aria-hidden="true" />
               Salvar rascunho
             </Button>
           </form>
-          {hasDraft ? (
-            <div className="flex flex-wrap gap-3">
-              <form action={publishSllCopyForm}>
-                <input name="groupIndex" type="hidden" value={index} />
-                <Button type="submit">Publicar para alunas</Button>
-              </form>
-              <form action={discardSllCopyDraftForm}>
-                <input name="groupIndex" type="hidden" value={index} />
-                <Button type="submit" variant="soft">
-                  Descartar rascunho
-                </Button>
-              </form>
-            </div>
-          ) : null}
-          {hasHistory && !hasDraft ? (
-            <form action={restoreSllCopyVersionForm}>
+          {hasDraft || hasHistory ? (
+            // Um formulário só: cada botão manda a ação em `intent`, com a resposta logo abaixo.
+            <form
+              action={groupActions.run}
+              aria-busy={groupActions.pending}
+              className="flex flex-wrap gap-3"
+            >
               <input name="groupIndex" type="hidden" value={index} />
-              <Button type="submit" variant="soft">
-                Voltar à versão anterior
-              </Button>
+              {hasDraft ? (
+                <>
+                  <Button className="sm:!w-fit" name="intent" type="submit" value="publish">
+                    Publicar para alunas
+                  </Button>
+                  <Button
+                    className="sm:!w-fit"
+                    name="intent"
+                    type="submit"
+                    value="discard"
+                    variant="soft"
+                  >
+                    Descartar rascunho
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  className="sm:!w-fit"
+                  name="intent"
+                  type="submit"
+                  value="restore"
+                  variant="soft"
+                >
+                  Voltar à versão anterior
+                </Button>
+              )}
             </form>
           ) : null}
+          <EditorActionMessage
+            message={groupActions.message}
+            messageRef={groupActions.messageRef}
+          />
         </div>
         <section
           aria-label={`Prévia de ${group.title}`}

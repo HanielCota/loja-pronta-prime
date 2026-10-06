@@ -11,7 +11,12 @@ import {
   user,
 } from '@/server/db/schema';
 import type { ProductId } from '@/config/products';
-import { purchaseEffect, shouldApplyEvent, type HotmartPurchaseEvent } from '../event';
+import {
+  purchaseEffect,
+  shouldApplyEvent,
+  transactionMismatch,
+  type HotmartPurchaseEvent,
+} from '../event';
 
 async function findOrCreateBuyer(email: string, name: string) {
   const existing = await db.query.user.findFirst({
@@ -59,8 +64,17 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
     where: eq(hotmartProductMappings.productUcode, productUcode),
   });
 
+  // Leitura prévia, fora do bloqueio, só para não criar conta à toa; a decisão é refeita abaixo.
+  const known = await db.query.hotmartPurchases.findFirst({
+    columns: { buyerEmail: true, productUcode: true, userId: true },
+    where: eq(hotmartPurchases.transaction, transaction),
+  });
+  const knownMismatch = transactionMismatch(known, { buyerEmail: email, productUcode });
+  const keepsKnownAccount =
+    knownMismatch === 'product' || (knownMismatch === 'email' && Boolean(known?.userId));
+
   let buyerId: string | null = null;
-  if (effect === 'grant' && mapping.length) {
+  if (effect === 'grant' && mapping.length && !keepsKnownAccount) {
     buyerId = await findOrCreateBuyer(
       email,
       event.data.buyer.name?.trim() || email.split('@')[0] || 'Aluna',
@@ -82,17 +96,26 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
       const previous = await tx.query.hotmartPurchases.findFirst({
         where: eq(hotmartPurchases.transaction, transaction),
       });
-      if (previous && (previous.productUcode !== productUcode || previous.buyerEmail !== email)) {
-        throw new Error('A transação chegou com outra compradora ou produto.');
-      }
+      // Erro aqui faria a Hotmart reenviar para sempre e o reembolso nunca seria aplicado;
+      // por isso a diferença fica registrada no histórico em vez de virar falha.
+      const mismatch = transactionMismatch(previous, { buyerEmail: email, productUcode });
       const active = effect === 'grant';
-      if (shouldApplyEvent(previous, { createdAt, active })) {
+      if (mismatch === 'product') {
+        result = 'Transação já registrada com outro produto; acesso mantido.';
+      } else if (shouldApplyEvent(previous, { createdAt, active })) {
+        // Com email trocado, a compra segue na conta que ela já usa, sem procurar pelo novo.
         const linkedUserId =
-          buyerId ??
-          previous?.userId ??
-          (await tx.query.user.findFirst({ columns: { id: true }, where: eq(user.email, email) }))
-            ?.id ??
-          null;
+          mismatch === 'email'
+            ? (previous?.userId ?? buyerId)
+            : (buyerId ??
+              previous?.userId ??
+              (
+                await tx.query.user.findFirst({
+                  columns: { id: true },
+                  where: eq(user.email, email),
+                })
+              )?.id ??
+              null);
         await tx
           .insert(hotmartPurchases)
           .values({
@@ -153,6 +176,8 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
           ? 'Compra aprovada; acesso liberado.'
           : 'Reembolso recebido; acesso recalculado.';
       } else result = 'Aviso antigo; acesso mantido.';
+      if (mismatch === 'email')
+        result += ' O email mudou na Hotmart; a compra segue na mesma conta.';
     }
     await tx
       .insert(hotmartEvents)
