@@ -10,6 +10,12 @@ import { requireProduct } from '@/features/products/server/access';
 
 export const metadata: Metadata = { title: 'Cursos complementares · SLL' };
 
+/** "1 aula · 12 min", "8 aulas". Sem aula publicada, nada: o cartão já diz "Aulas em breve". */
+function lessonSummary(lessonCount: number, minutes: number) {
+  if (!lessonCount) return null;
+  return `${lessonCount} ${lessonCount === 1 ? 'aula' : 'aulas'}${minutes ? ` · ${minutes} min` : ''}`;
+}
+
 export default async function ComplementaryCoursesPage() {
   const [{ session, products }, courses, copy] = await Promise.all([
     requireProduct('sll'),
@@ -61,18 +67,23 @@ export default async function ComplementaryCoursesPage() {
                       {featured.course.description}
                     </p>
                   ) : null}
-                  <p className="mt-2 text-body text-muted-foreground">
-                    {featured.lessonCount} aulas
-                    {featured.minutes ? ` · ${featured.minutes} min` : ''}
-                  </p>
+                  {featured.lessonCount ? (
+                    <p className="mt-2 text-body text-muted-foreground">
+                      {lessonSummary(featured.lessonCount, featured.minutes)}
+                    </p>
+                  ) : null}
                 </div>
+                {/* Igual aos cartões da lista: sem aula publicada, diz que vem aí em vez de
+                    sumir com o botão sem explicar. */}
                 {featured.lessonCount ? (
                   <Button asChild className="sm:w-auto" variant="soft">
                     <Link href={`/sll/cursos/${featured.course.slug}`}>
                       Abrir curso <ArrowRight aria-hidden="true" />
                     </Link>
                   </Button>
-                ) : null}
+                ) : (
+                  <p className="text-body text-muted-foreground">Aulas em breve</p>
+                )}
               </article>
             </section>
           ) : null}
@@ -100,9 +111,11 @@ export default async function ComplementaryCoursesPage() {
                   {course.description ? (
                     <p className="text-body text-muted-foreground">{course.description}</p>
                   ) : null}
-                  <p className="text-body text-muted-foreground">
-                    {lessonCount} aulas{minutes ? ` · ${minutes} min` : ''}
-                  </p>
+                  {lessonCount ? (
+                    <p className="text-body text-muted-foreground">
+                      {lessonSummary(lessonCount, minutes)}
+                    </p>
+                  ) : null}
                   {lessonCount ? (
                     <Button asChild className="mt-auto" variant="soft">
                       <Link href={`/sll/cursos/${course.slug}`}>
