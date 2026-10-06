@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect, useId, useRef, useState } from 'react';
+import { useActionState, useId, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FilePlus2, Film, ImagePlus, Link2, Plus, Save, Trash2, Type, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -49,8 +49,20 @@ export function LessonEditor({
   onCancel: () => void;
 }) {
   const router = useRouter();
-  const [state, formAction, pending] = useActionState(saveLearningLesson, initialLessonEditState);
   const [newBlocks, setNewBlocks] = useState<Array<{ key: string; kind: NewBlockKind }>>([]);
+  // Limpa os blocos novos a cada salvamento: depois do refresh eles já aparecem como
+  // blocos existentes e, se ficassem no formulário, o próximo salvamento os gravaria de novo.
+  const [state, formAction, pending] = useActionState(
+    async (previous: LessonEditState, formData: FormData) => {
+      const next = await saveLearningLesson(previous, formData);
+      if (next.saved) {
+        setNewBlocks([]);
+        router.refresh();
+      }
+      return next;
+    },
+    initialLessonEditState,
+  );
   const [uploadNotice, setUploadNotice] = useState('');
   const editableBlocks = lesson.blocks.filter(
     (block): block is EditableBlock =>
@@ -61,9 +73,13 @@ export function LessonEditor({
       block.kind === 'image',
   );
 
-  useEffect(() => {
-    if (state.saved) router.refresh();
-  }, [router, state.saved]);
+  // Imagem e arquivo novos vão pelo envio próprio, não pelo "Salvar alterações": só texto,
+  // link e vídeo entram no formulário, numerados na ordem em que o servidor vai ler.
+  const formIndexByKey = new Map(
+    newBlocks
+      .filter((block) => block.kind === 'text' || block.kind === 'link' || block.kind === 'video')
+      .map((block, index) => [block.key, index]),
+  );
 
   return (
     <form action={formAction} className={cn(panelCard, '!p-4 sm:!p-6')}>
@@ -261,84 +277,89 @@ export function LessonEditor({
           </Button>
         </div>
 
-        {newBlocks.map((block, index) => (
-          <fieldset
-            className="flex flex-col gap-3 rounded-2xl border border-border p-4 forced-colors:border forced-colors:border-[CanvasText]"
-            key={block.key}
-          >
-            <legend className="px-1 text-body font-semibold text-foreground">
-              {newBlockTitle[block.kind]}
-            </legend>
-            <input name="newBlockKind" type="hidden" value={block.kind} />
-            {block.kind === 'text' ? (
-              <div className="flex flex-col gap-2">
-                <Label htmlFor={`new-block-${block.key}-text`}>Texto da aula</Label>
-                <textarea
-                  className="min-h-36 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                  id={`new-block-${block.key}-text`}
-                  maxLength={12000}
-                  name={`newBlock:${index}:text`}
-                  required
-                />
-              </div>
-            ) : block.kind === 'link' ? (
-              <>
-                <FloatingLabelInput
-                  id={`new-block-${block.key}-label`}
-                  label="Nome do link"
-                  name={`newBlock:${index}:label`}
-                  required
-                />
-                <FloatingLabelInput
-                  autoCapitalize="none"
-                  id={`new-block-${block.key}-url`}
-                  label="Endereço do link"
-                  name={`newBlock:${index}:url`}
-                  required
-                  type="url"
-                />
-              </>
-            ) : block.kind === 'video' ? (
-              <>
-                <FloatingLabelInput
-                  id={`new-block-${block.key}-video-id`}
-                  label="ID do vídeo Panda"
-                  name={`newBlock:${index}:videoId`}
-                  required
-                />
-                <p className="text-body text-muted-foreground">
-                  Use o ID do vídeo que aparece na referência Panda do conteúdo.
-                </p>
-              </>
-            ) : (
-              <MediaUpload
-                kind={block.kind}
-                lessonId={lesson.id}
-                onUploaded={() => {
-                  setNewBlocks((blocks) => blocks.filter((item) => item.key !== block.key));
-                  setUploadNotice(
-                    block.kind === 'image'
-                      ? 'A imagem foi adicionada à aula.'
-                      : 'O arquivo foi adicionado à aula.',
-                  );
-                  router.refresh();
-                }}
-              />
-            )}
-            <Button
-              aria-label={removeBlockLabel[block.kind]}
-              className="w-fit"
-              onClick={() =>
-                setNewBlocks((blocks) => blocks.filter((item) => item.key !== block.key))
-              }
-              type="button"
-              variant="ghost"
+        {newBlocks.map((block) => {
+          const index = formIndexByKey.get(block.key);
+          return (
+            <fieldset
+              className="flex flex-col gap-3 rounded-2xl border border-border p-4 forced-colors:border forced-colors:border-[CanvasText]"
+              key={block.key}
             >
-              <Trash2 aria-hidden="true" />
-              Remover
-            </Button>
-          </fieldset>
-        ))}
+              <legend className="px-1 text-body font-semibold text-foreground">
+                {newBlockTitle[block.kind]}
+              </legend>
+              {index !== undefined ? (
+                <input name="newBlockKind" type="hidden" value={block.kind} />
+              ) : null}
+              {block.kind === 'text' ? (
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor={`new-block-${block.key}-text`}>Texto da aula</Label>
+                  <textarea
+                    className="min-h-36 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                    id={`new-block-${block.key}-text`}
+                    maxLength={12000}
+                    name={`newBlock:${index}:text`}
+                    required
+                  />
+                </div>
+              ) : block.kind === 'link' ? (
+                <>
+                  <FloatingLabelInput
+                    id={`new-block-${block.key}-label`}
+                    label="Nome do link"
+                    name={`newBlock:${index}:label`}
+                    required
+                  />
+                  <FloatingLabelInput
+                    autoCapitalize="none"
+                    id={`new-block-${block.key}-url`}
+                    label="Endereço do link"
+                    name={`newBlock:${index}:url`}
+                    required
+                    type="url"
+                  />
+                </>
+              ) : block.kind === 'video' ? (
+                <>
+                  <FloatingLabelInput
+                    id={`new-block-${block.key}-video-id`}
+                    label="ID do vídeo Panda"
+                    name={`newBlock:${index}:videoId`}
+                    required
+                  />
+                  <p className="text-body text-muted-foreground">
+                    Use o ID do vídeo que aparece na referência Panda do conteúdo.
+                  </p>
+                </>
+              ) : (
+                <MediaUpload
+                  kind={block.kind}
+                  lessonId={lesson.id}
+                  onUploaded={() => {
+                    setNewBlocks((blocks) => blocks.filter((item) => item.key !== block.key));
+                    setUploadNotice(
+                      block.kind === 'image'
+                        ? 'A imagem foi adicionada à aula.'
+                        : 'O arquivo foi adicionado à aula.',
+                    );
+                    router.refresh();
+                  }}
+                />
+              )}
+              <Button
+                aria-label={removeBlockLabel[block.kind]}
+                className="w-fit"
+                onClick={() =>
+                  setNewBlocks((blocks) => blocks.filter((item) => item.key !== block.key))
+                }
+                type="button"
+                variant="ghost"
+              >
+                <Trash2 aria-hidden="true" />
+                Remover
+              </Button>
+            </fieldset>
+          );
+        })}
 
         {uploadNotice ? (
           <output aria-live="polite" className="text-body text-foreground">
@@ -442,7 +463,9 @@ function MediaUpload({
           maxLength={300}
           name={altFieldName}
           onChange={(event) => setAlt(event.currentTarget.value)}
-          required
+          // Só a imagem já salva tem a descrição no "Salvar alterações". Na nova, o campo
+          // obrigatório travaria o formulário da aula inteira; o envio confere sozinho.
+          required={Boolean(altFieldName)}
           value={alt}
         />
       ) : null}
