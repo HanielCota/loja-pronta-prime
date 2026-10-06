@@ -49,6 +49,13 @@ passaram, incluindo 150 verificações de acessibilidade e largura na matriz pri
 Capturas e roteiro ficam em
 `.data/sll-review-screens` e `.data/sll-review.spec.ts`, fora do versionamento.
 
+Após a revisão do PR, o catálogo passou a contar as mesmas aulas publicadas que a lista do
+curso, incluindo opcionais. As mensagens da aula usam `LiveRegion` sempre acessível, separado
+do texto visível. O teste versionado `e2e/sll-regressions.spec.ts` passou nos dois temas, em
+celular e computador: conclusão e desfazer de uma aula opcional, cartão e lista concordando,
+ação de revisão, região acessível antes da mensagem e verificações de acessibilidade.
+Typecheck, lint e os 218 testes foram repetidos e passaram após essas correções.
+
 ## Conteúdo que ainda depende de arquivos ou integração
 
 Capas e banners originais precisam ser enviados pelo admin. Os banners locais continuam em

@@ -13,6 +13,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { LiveRegion } from '@/components/ui/live-region';
 import { panelCard } from '@/features/member/components/area-shell';
 import { prefersReducedMotion } from '@/lib/reduced-motion';
 import { cn } from '@/lib/utils';
@@ -95,6 +96,7 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
     INITIAL_ACTION_STATE,
   );
   const [viewMessage, setViewMessage] = useState('');
+  const statusMessage = completion.message || viewMessage;
   const lessonList = useRef<HTMLOListElement>(null);
   const isLocked = !data.stage.access.isUnlocked;
   const hasVideo = data.blocks.some((block) => block.kind === 'video');
@@ -295,10 +297,11 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
                     </Button>
                   </form>
                 </div>
-                <p aria-live="polite" className="text-body text-muted-foreground empty:hidden">
-                  {completion.message || viewMessage}
-                </p>
+                {statusMessage ? (
+                  <p className="text-body text-muted-foreground">{statusMessage}</p>
+                ) : null}
               </div>
+              <LiveRegion>{statusMessage}</LiveRegion>
             </section>
           </div>
 

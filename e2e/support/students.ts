@@ -17,6 +17,7 @@ export type StudentKind =
   | 'primeiroacessoabas'
   | 'bloqueadadepois'
   | 'sosll'
+  | 'sllprogress'
   | 'semproduto'
   | 'lojafase3'
   | 'voltaarea'

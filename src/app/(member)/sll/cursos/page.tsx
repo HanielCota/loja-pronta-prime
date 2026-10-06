@@ -29,7 +29,10 @@ export default async function ComplementaryCoursesPage() {
       stage.modules.flatMap((module) => module.lessons),
     );
     const minutes = lessons.reduce((total, lesson) => total + (lesson.durationMinutes ?? 0), 0);
-    return { course, lessonCount: lessons.length, minutes };
+    // O cartão e a lista contam todas as aulas publicadas, inclusive as opcionais.
+    // O resumo principal da trilha exclui opcionais e não serve para este denominador.
+    const completedCount = lessons.filter((lesson) => lesson.completedAt !== null).length;
+    return { course, lessonCount: lessons.length, completedCount, minutes };
   });
   const featured = catalog.find(({ course }) => course.featured);
 
@@ -109,7 +112,7 @@ export default async function ComplementaryCoursesPage() {
               </p>
             </div>
             <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] items-start gap-4">
-              {catalog.map(({ course, lessonCount, minutes }) => (
+              {catalog.map(({ course, lessonCount, completedCount, minutes }) => (
                 <li className={cn(panelCard, 'gap-3 p-5 sm:p-5')} key={course.id}>
                   {course.coverStorageKey ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -138,11 +141,11 @@ export default async function ComplementaryCoursesPage() {
                   {lessonCount ? (
                     <div className="flex flex-col gap-2">
                       <p className="text-sm text-muted-foreground">
-                        {course.completedCount} de {lessonCount} aulas concluídas
+                        {completedCount} de {lessonCount} aulas concluídas
                       </p>
                       <SllProgress
                         label={`Progresso de ${course.title}`}
-                        completed={course.completedCount}
+                        completed={completedCount}
                         total={lessonCount}
                       />
                     </div>
@@ -150,9 +153,9 @@ export default async function ComplementaryCoursesPage() {
                   {lessonCount ? (
                     <Button asChild variant="soft">
                       <Link href={`/sll/cursos/${course.slug}`}>
-                        {course.completedCount === lessonCount
+                        {completedCount === lessonCount
                           ? 'Revisar curso'
-                          : course.completedCount
+                          : completedCount
                             ? 'Continuar curso'
                             : 'Abrir curso'}{' '}
                         <ArrowRight aria-hidden="true" />

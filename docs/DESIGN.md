@@ -173,6 +173,10 @@ o tema escuro e o alto contraste.
   individuais. Sem o arquivo da capa, aparece um aviso neutro compacto “Capa em breve”, sem imagem
   inventada nem coluna reservada. Capas reais mantêm proporção 16:9. A lista do curso mantém
   numeração, duração e progresso.
+- No catálogo e na lista de um curso, a contagem considera todas as aulas publicadas, inclusive
+  as opcionais. A regra de progresso principal continua controlando o desbloqueio das etapas.
+  Mensagens de conclusão e erro usam `LiveRegion` sempre acessível; o texto visível só aparece
+  quando há mensagem, sem reservar espaço vazio nem esconder o anúncio com `display: none`.
 - O banner tem chamada grande e imagem ao lado no computador; no celular, os elementos se
   empilham. A troca é manual, com setas e marcadores que têm alvos de 44px e nomes acessíveis.
   Banners em rascunho continuam fora do painel da aluna.
