@@ -139,6 +139,9 @@ export async function setSllLessonCompletion(
   completed: boolean,
 ): Promise<SllProgressActionResult> {
   const { userId } = await requireProductAction('sll');
+  // A ação pode ser chamada diretamente: tipos TypeScript não validam o pedido recebido.
+  if (typeof completed !== 'boolean')
+    return { saved: false, message: 'Não foi possível salvar a conclusão da aula.' };
   const location = parseProgressLocation(trackId, lessonId);
   const lesson = location ? await lessonIsAvailable(location.trackId, location.lessonId) : null;
   if (!location || !lesson) return { saved: false, message: 'Esta aula não está disponível.' };

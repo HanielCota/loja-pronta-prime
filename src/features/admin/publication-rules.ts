@@ -1,3 +1,5 @@
+import { toSafeWebUrl } from '@/lib/urls';
+
 export type PublicationBlock = {
   kind: 'text' | 'video' | 'link' | 'file' | 'image';
   data: Record<string, unknown>;
@@ -52,13 +54,7 @@ function isUuid(value: unknown): boolean {
 }
 
 function isSafeWebUrl(value: unknown): boolean {
-  if (!nonEmpty(value)) return false;
-  try {
-    const url = new URL(value);
-    return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password;
-  } catch {
-    return false;
-  }
+  return nonEmpty(value) && toSafeWebUrl(value) !== undefined;
 }
 
 function isStoredMaterial(data: Record<string, unknown>): boolean {

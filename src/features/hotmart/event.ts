@@ -1,14 +1,33 @@
 import { z } from 'zod';
+import { hasControlCharacters } from '@/lib/text';
+
+const identifier = z
+  .string()
+  .min(1)
+  .max(200)
+  .refine((value) => !hasControlCharacters(value));
 
 const purchaseEvent = z.object({
-  id: z.string().min(1),
-  event: z.string().min(1),
-  creation_date: z.number().int().positive(),
-  version: z.string().startsWith('2.'),
+  id: identifier,
+  event: z
+    .string()
+    .min(1)
+    .max(100)
+    .regex(/^[A-Z_]+$/),
+  creation_date: z.number().int().positive().max(253_402_300_799_999),
+  version: z.string().startsWith('2.').max(20),
   data: z.object({
-    product: z.object({ ucode: z.string().min(1) }),
-    buyer: z.object({ email: z.email(), name: z.string().optional() }),
-    purchase: z.object({ transaction: z.string().min(1) }),
+    product: z.object({ ucode: identifier }),
+    buyer: z.object({
+      email: z.email().max(254),
+      name: z
+        .string()
+        .trim()
+        .max(200)
+        .refine((value) => !hasControlCharacters(value))
+        .optional(),
+    }),
+    purchase: z.object({ transaction: identifier }),
   }),
 });
 

@@ -1,3 +1,5 @@
+import { toSafeWebUrl } from '@/lib/urls';
+
 export type ContentPreviewKind = 'text' | 'video' | 'link' | 'file' | 'image';
 
 /** Entrega à tela de leitura só os campos que ela precisa mostrar, sem chaves internas do arquivo. */
@@ -30,15 +32,4 @@ export function contentPreviewData(
   }
 
   return preview;
-}
-
-function toSafeWebUrl(value: string): string | undefined {
-  try {
-    const url = new URL(value);
-    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password)
-      return undefined;
-    return url.toString();
-  } catch {
-    return undefined;
-  }
 }

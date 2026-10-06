@@ -6,6 +6,7 @@ import { db } from '@/server/db';
 import { learningStages, learningTracks } from '@/server/db/schema';
 import { learningBanners, learningResources } from '@/server/db/schema';
 import { getSllTrackProgress } from './progress';
+import { isSafeContentDestination } from '@/lib/urls';
 
 export type SllTrackKind = (typeof learningTrackKind.enumValues)[number];
 
@@ -27,7 +28,18 @@ export async function getSllPublishedTracks(kind?: SllTrackKind) {
 }
 
 export async function getFirstSllPublishedTrack(kind: SllTrackKind) {
-  return (await getSllPublishedTracks(kind))[0] ?? null;
+  await requireProduct('sll');
+  // A tela precisa de uma trilha: não carrega aulas e progresso de todas para descartar as demais.
+  const track = await db.query.learningTracks.findFirst({
+    columns: { id: true },
+    where: and(
+      eq(learningTracks.status, 'published'),
+      isNull(learningTracks.archivedAt),
+      eq(learningTracks.kind, kind),
+    ),
+    orderBy: [asc(learningTracks.position), asc(learningTracks.id)],
+  });
+  return track ? getSllTrackProgress(track.id) : null;
 }
 
 /**
@@ -59,7 +71,7 @@ export const getSllSidebarStages = cache(async () => {
 /** Banners só entram no carrossel quando a imagem e o texto já foram publicados. */
 export async function getSllPublishedBanners() {
   await requireProduct('sll');
-  return db.query.learningBanners.findMany({
+  const banners = await db.query.learningBanners.findMany({
     columns: {
       id: true,
       label: true,
@@ -72,11 +84,13 @@ export async function getSllPublishedBanners() {
     where: and(eq(learningBanners.status, 'published'), isNull(learningBanners.archivedAt)),
     orderBy: [asc(learningBanners.position), asc(learningBanners.id)],
   });
+  // Versões antigas também passam pela regra antes de entregar um link ao navegador.
+  return banners.filter((banner) => isSafeContentDestination(banner.destination));
 }
 
 export async function getSllPublishedResources() {
   await requireProduct('sll');
-  return db.query.learningResources.findMany({
+  const resources = await db.query.learningResources.findMany({
     columns: {
       id: true,
       slug: true,
@@ -94,4 +108,11 @@ export async function getSllPublishedResources() {
       asc(learningResources.id),
     ],
   });
+  return resources.map((resource) => ({
+    ...resource,
+    destination:
+      resource.destination && isSafeContentDestination(resource.destination)
+        ? resource.destination
+        : null,
+  }));
 }
