@@ -1,6 +1,6 @@
 'use server';
 
-import { and, asc, eq, isNull } from 'drizzle-orm';
+import { and, asc, eq, isNotNull, isNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/server/db';
@@ -10,11 +10,16 @@ import {
   learningNodeHistory,
   type LearningNodeDraftData,
 } from '@/server/db/schema';
+import { parseEditorIntent } from '../editor-intent';
 import { learningSlugFromTitle, swapWithNeighbor } from '../structure-rules';
 import { requireAdmin } from './access';
-import { getNodeDraft, saveNodeDraft } from './node-drafts';
+import { getNodeDraftForUpdate, saveNodeDraft, withNodeDraftLock } from './node-drafts';
 
-import type { BannerActionState } from '../structure-types';
+import type {
+  BannerActionState,
+  EditorActionState,
+  StructureActionState,
+} from '../structure-types';
 
 const schema = z.object({
   id: z.string().uuid().optional(),
@@ -76,6 +81,8 @@ export async function saveSllBanner(
     : null;
   if (parsed.data.id && !existing)
     return { message: 'Este banner não está disponível.', saved: false };
+  // A posição muda só pela lista (arrastar, subir, descer), que grava direto no banner. Ela
+  // entra apenas na criação; no rascunho, seria um valor velho que a publicação ignoraria.
   const values = {
     label: parsed.data.label || null,
     title: parsed.data.title,
@@ -83,7 +90,6 @@ export async function saveSllBanner(
     buttonLabel: parsed.data.buttonLabel,
     destination: parsed.data.destination,
     imageAlt: parsed.data.imageAlt || null,
-    position: parsed.data.position,
   };
   try {
     let bannerId = existing?.id;
@@ -113,7 +119,7 @@ export async function saveSllBanner(
       }
       const [created] = await db
         .insert(learningBanners)
-        .values({ ...values, slug, status: 'draft' })
+        .values({ ...values, position: parsed.data.position, slug, status: 'draft' })
         .returning({ id: learningBanners.id });
       bannerId = created?.id;
     }
@@ -149,24 +155,47 @@ function bannerDraftValues(
   };
 }
 
-export async function publishSllBanner(form: FormData): Promise<void> {
-  await requireAdmin();
-  const id = z.string().uuid().safeParse(form.get('id'));
-  if (!id.success) return;
-  const banner = await db.query.learningBanners.findFirst({
-    where: and(eq(learningBanners.id, id.data), isNull(learningBanners.archivedAt)),
-  });
-  if (!banner) return;
-  const draft = await getNodeDraft('banner', id.data);
-  const data = draft?.data;
-  // Confere exatamente o que vai ser gravado: no rascunho, `null` quer dizer "apagado" e não
-  // pode cair no valor publicado, ou o banner sairia sem imagem ou sem descrição.
-  const imageStorageKey =
-    data?.imageStorageKey !== undefined ? data.imageStorageKey : banner.imageStorageKey;
-  const imageAlt = data?.imageAlt !== undefined ? data.imageAlt : banner.imageAlt;
-  const destination = data?.destination ?? banner.destination;
-  if (!imageStorageKey || !imageAlt || !destination || !validDestination(destination)) return;
-  await db.transaction(async (tx) => {
+const unavailable = {
+  saved: false,
+  message: 'Este banner não está disponível. Atualize a página.',
+};
+
+/**
+ * Publica o rascunho (ou, em `replacement`, a versão anterior) numa transação com o rascunho
+ * travado e relido lá dentro: um salvamento que chegue no meio espera em vez de se perder.
+ * Se a conferência falhar, nada é gravado, nem um rascunho com a versão anterior.
+ */
+async function publishBanner(
+  id: string,
+  replacement?: LearningNodeDraftData,
+): Promise<StructureActionState> {
+  return withNodeDraftLock('banner', id, async (tx) => {
+    const banner = await tx.query.learningBanners.findFirst({
+      where: and(eq(learningBanners.id, id), isNull(learningBanners.archivedAt)),
+    });
+    if (!banner) return unavailable;
+    const draft = await getNodeDraftForUpdate(tx, 'banner', id);
+    if (replacement && draft)
+      return {
+        saved: false,
+        message: 'Descarte ou publique o rascunho antes de voltar à versão anterior.',
+      };
+    const data = replacement ?? draft?.data;
+    // Confere exatamente o que vai ser gravado: no rascunho, `null` quer dizer "apagado" e não
+    // pode cair no valor publicado, ou o banner sairia sem imagem ou sem descrição.
+    const imageStorageKey =
+      data?.imageStorageKey !== undefined ? data.imageStorageKey : banner.imageStorageKey;
+    const imageAlt = data?.imageAlt !== undefined ? data.imageAlt : banner.imageAlt;
+    const destination = data?.destination ?? banner.destination;
+    if (!imageStorageKey)
+      return { saved: false, message: 'Envie a imagem do banner antes de publicar.' };
+    if (!imageAlt)
+      return {
+        saved: false,
+        message: 'Escreva a descrição da imagem e salve antes de publicar.',
+      };
+    if (!destination || !validDestination(destination))
+      return { saved: false, message: 'Confira o destino do banner e salve antes de publicar.' };
     const previous = {
       label: banner.label,
       title: banner.title,
@@ -178,7 +207,7 @@ export async function publishSllBanner(form: FormData): Promise<void> {
     };
     await tx
       .insert(learningNodeHistory)
-      .values({ kind: 'banner', nodeId: id.data, data: previous })
+      .values({ kind: 'banner', nodeId: id, data: previous })
       .onConflictDoUpdate({
         target: [learningNodeHistory.kind, learningNodeHistory.nodeId],
         set: { data: previous },
@@ -186,80 +215,110 @@ export async function publishSllBanner(form: FormData): Promise<void> {
     await tx
       .update(learningBanners)
       .set({ ...bannerDraftValues(banner, data), status: 'published' })
-      .where(eq(learningBanners.id, id.data));
-    await tx
-      .delete(learningNodeDrafts)
-      .where(and(eq(learningNodeDrafts.kind, 'banner'), eq(learningNodeDrafts.nodeId, id.data)));
+      .where(eq(learningBanners.id, id));
+    if (draft)
+      await tx
+        .delete(learningNodeDrafts)
+        .where(and(eq(learningNodeDrafts.kind, 'banner'), eq(learningNodeDrafts.nodeId, id)));
+    return { saved: true, message: '' };
   });
+}
+
+function formBannerId(form: FormData) {
+  const id = z.string().uuid().safeParse(form.get('id'));
+  return id.success ? id.data : null;
+}
+
+export async function publishSllBanner(form: FormData): Promise<StructureActionState> {
+  await requireAdmin();
+  const id = formBannerId(form);
+  if (!id) return unavailable;
+  const result = await publishBanner(id);
+  if (!result.saved) return result;
   revalidatePath('/admin/banners');
   revalidatePath('/sll');
+  return { saved: true, message: 'Banner publicado. As alunas já veem esta versão.' };
 }
 
-export async function discardSllBannerDraft(form: FormData): Promise<void> {
+export async function discardSllBannerDraft(form: FormData): Promise<StructureActionState> {
   await requireAdmin();
-  const id = z.string().uuid().safeParse(form.get('id'));
-  if (!id.success) return;
-  await db
+  const id = formBannerId(form);
+  if (!id) return unavailable;
+  const removed = await db
     .delete(learningNodeDrafts)
-    .where(and(eq(learningNodeDrafts.kind, 'banner'), eq(learningNodeDrafts.nodeId, id.data)));
+    .where(and(eq(learningNodeDrafts.kind, 'banner'), eq(learningNodeDrafts.nodeId, id)))
+    .returning({ nodeId: learningNodeDrafts.nodeId });
+  if (!removed.length) return { saved: false, message: 'Não há rascunho para descartar.' };
   revalidatePath('/admin/banners');
+  return { saved: true, message: 'Rascunho descartado. A versão publicada continua igual.' };
 }
 
-export async function restoreSllBannerVersion(form: FormData): Promise<void> {
+export async function restoreSllBannerVersion(form: FormData): Promise<StructureActionState> {
   await requireAdmin();
-  const id = z.string().uuid().safeParse(form.get('id'));
-  if (!id.success || (await getNodeDraft('banner', id.data))) return;
+  const id = formBannerId(form);
+  if (!id) return unavailable;
   const previous = await db.query.learningNodeHistory.findFirst({
-    where: and(eq(learningNodeHistory.kind, 'banner'), eq(learningNodeHistory.nodeId, id.data)),
+    where: and(eq(learningNodeHistory.kind, 'banner'), eq(learningNodeHistory.nodeId, id)),
   });
-  if (!previous) return;
-  await saveNodeDraft('banner', id.data, previous.data);
-  await publishSllBanner(form);
+  if (!previous) return { saved: false, message: 'Não há versão anterior deste banner.' };
+  const result = await publishBanner(id, previous.data);
+  if (!result.saved) return result;
+  revalidatePath('/admin/banners');
+  revalidatePath('/sll');
+  return { saved: true, message: 'A versão anterior do banner voltou para as alunas.' };
 }
 
-export async function archiveSllBanner(formData: FormData): Promise<void> {
+export async function archiveSllBanner(form: FormData): Promise<StructureActionState> {
   await requireAdmin();
-  const id = z.string().uuid().safeParse(formData.get('id'));
-  if (!id.success) return;
-  const banner = await db.query.learningBanners.findFirst({
-    where: and(eq(learningBanners.id, id.data), isNull(learningBanners.archivedAt)),
-  });
-  if (!banner) return;
-  // O banner volta como rascunho: as edições pendentes passam para ele, senão um rascunho
-  // antigo continuaria na tela e voltaria a valer na próxima publicação.
-  const draft = await getNodeDraft('banner', id.data);
-  await db.transaction(async (tx) => {
+  const id = formBannerId(form);
+  if (!id) return unavailable;
+  const archived = await withNodeDraftLock('banner', id, async (tx) => {
+    const banner = await tx.query.learningBanners.findFirst({
+      where: and(eq(learningBanners.id, id), isNull(learningBanners.archivedAt)),
+    });
+    if (!banner) return false;
+    // O banner volta como rascunho: as edições pendentes passam para ele, senão um rascunho
+    // antigo continuaria na tela e voltaria a valer na próxima publicação.
+    const draft = await getNodeDraftForUpdate(tx, 'banner', id);
     await tx
       .update(learningBanners)
       .set({ ...bannerDraftValues(banner, draft?.data), archivedAt: new Date(), status: 'draft' })
-      .where(eq(learningBanners.id, id.data));
+      .where(eq(learningBanners.id, id));
     await tx
       .delete(learningNodeDrafts)
-      .where(and(eq(learningNodeDrafts.kind, 'banner'), eq(learningNodeDrafts.nodeId, id.data)));
+      .where(and(eq(learningNodeDrafts.kind, 'banner'), eq(learningNodeDrafts.nodeId, id)));
+    return true;
   });
+  if (!archived) return unavailable;
   revalidatePath('/admin/banners');
+  revalidatePath('/admin/arquivados');
   revalidatePath('/sll');
+  return { saved: true, message: 'Banner arquivado. Ele fica em Itens arquivados.' };
 }
 
-export async function restoreSllBanner(form: FormData): Promise<void> {
+/** Só um banner arquivado volta: em um ativo, isto o tiraria das alunas sem aviso. */
+export async function restoreSllBanner(form: FormData): Promise<StructureActionState> {
   await requireAdmin();
-  const id = z.string().uuid().safeParse(form.get('id'));
-  if (!id.success) return;
-  await db
+  const id = formBannerId(form);
+  if (!id) return unavailable;
+  const restored = await db
     .update(learningBanners)
     .set({ archivedAt: null, status: 'draft' })
-    .where(eq(learningBanners.id, id.data));
+    .where(and(eq(learningBanners.id, id), isNotNull(learningBanners.archivedAt)))
+    .returning({ id: learningBanners.id });
+  if (!restored.length) return { saved: false, message: 'Este banner não está arquivado.' };
   revalidatePath('/admin/arquivados');
   revalidatePath('/admin/banners');
+  return { saved: true, message: 'Banner restaurado como rascunho.' };
 }
 
-export async function moveSllBanner(formData: FormData): Promise<void> {
+export async function moveSllBanner(
+  formData: FormData,
+  direction: 'up' | 'down',
+): Promise<StructureActionState> {
   await requireAdmin();
-  const parsed = z.object({ id: z.string().uuid(), direction: z.enum(['up', 'down']) }).safeParse({
-    id: formData.get('id'),
-    direction: formData.get('direction'),
-  });
-  if (!parsed.success) return;
+  const parsed = z.object({ id: z.string().uuid() }).safeParse({ id: formData.get('id') });
+  if (!parsed.success) return unavailable;
   const banners = await db.query.learningBanners.findMany({
     columns: { id: true, position: true },
     where: isNull(learningBanners.archivedAt),
@@ -268,9 +327,13 @@ export async function moveSllBanner(formData: FormData): Promise<void> {
   const reordered = swapWithNeighbor(
     banners.map((item) => item.id),
     parsed.data.id,
-    parsed.data.direction,
+    direction,
   );
-  if (!reordered) return;
+  if (!reordered)
+    return {
+      saved: false,
+      message: direction === 'up' ? 'Este banner já é o primeiro.' : 'Este banner já é o último.',
+    };
   await db.transaction(async (tx) => {
     for (const item of reordered) {
       await tx
@@ -281,6 +344,38 @@ export async function moveSllBanner(formData: FormData): Promise<void> {
   });
   revalidatePath('/admin/banners');
   revalidatePath('/sll');
+  return {
+    saved: true,
+    message: direction === 'up' ? 'Banner movido para cima.' : 'Banner movido para baixo.',
+  };
+}
+
+/**
+ * Os botões abaixo do editor mandam a ação em `intent`. Um só formulário com estado deixa a
+ * resposta (deu certo ou o que falta) aparecer na tela e no leitor de tela, também sem
+ * JavaScript.
+ */
+export async function runSllBannerAction(
+  _previous: EditorActionState,
+  form: FormData,
+): Promise<EditorActionState> {
+  const intent = parseEditorIntent(form.get('intent'));
+  if (!intent) return { saved: false, message: 'Atualize a página e tente de novo.' };
+  try {
+    const result =
+      intent === 'publish'
+        ? await publishSllBanner(form)
+        : intent === 'discard'
+          ? await discardSllBannerDraft(form)
+          : intent === 'restore'
+            ? await restoreSllBannerVersion(form)
+            : intent === 'archive'
+              ? await archiveSllBanner(form)
+              : await moveSllBanner(form, intent);
+    return { ...result, intent };
+  } catch {
+    return { saved: false, message: 'Não consegui concluir. Atualize a página e tente de novo.' };
+  }
 }
 
 /** Salva a ordem completa para impedir que um arrasto misture banners de outra lista. */

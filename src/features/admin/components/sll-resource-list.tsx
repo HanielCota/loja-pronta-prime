@@ -20,8 +20,9 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { EditorActionMessage, useEditorActions } from './editor-actions';
 import { SllResourceEditor } from './sll-resource-editor';
-import { reorderSllResourcesForm } from '../server/actions';
+import { reorderSllResourcesForm, runSllResourceActionForm } from '../server/actions';
 
 type Resource = NonNullable<Parameters<typeof SllResourceEditor>[0]['resource']>;
 
@@ -97,7 +98,14 @@ export function SllResourceList({
     setOrder(resources.map((resource) => resource.id));
   }
   const [pending, startTransition] = useTransition();
-  const [message, setMessage] = useState('');
+  const {
+    run,
+    pending: actionPending,
+    revision,
+    message,
+    setMessage,
+    messageRef,
+  } = useEditorActions(runSllResourceActionForm);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -126,7 +134,7 @@ export function SllResourceList({
     next.forEach((id) => data.append('id', id));
     startTransition(async () => {
       const result = await reorderSllResourcesForm(data);
-      setMessage(result.message);
+      setMessage({ text: result.message, error: !result.saved, focus: false });
       if (result.saved) router.refresh();
       else setOrder(previous);
     });
@@ -162,7 +170,11 @@ export function SllResourceList({
       {selectedResource ? (
         <div className="mt-5" id={`resource-editor-${groupKey}`}>
           <SllResourceEditor
-            key={JSON.stringify(selectedResource)}
+            // Recarrega só quando os valores salvos mudam (publicar, descartar, voltar). Salvar ou
+            // mover mantém o formulário e o foco onde estão.
+            key={`${selectedResource.id}:${revision}`}
+            action={run}
+            actionPending={actionPending}
             isFirst={sorted[0]?.id === selectedId}
             isLast={sorted.at(-1)?.id === selectedId}
             lessonOptions={lessonOptions}
@@ -170,11 +182,7 @@ export function SllResourceList({
           />
         </div>
       ) : null}
-      {message ? (
-        <output aria-live="polite" className="mt-3 block text-body text-muted-foreground">
-          {message}
-        </output>
-      ) : null}
+      <EditorActionMessage className="mt-3" message={message} messageRef={messageRef} />
     </section>
   );
 }

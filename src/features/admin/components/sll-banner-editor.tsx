@@ -1,20 +1,14 @@
 'use client';
 
-import { useActionState, useEffect, useState, type FormEvent } from 'react';
+import { useActionState, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowDown, ArrowUp, Save, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { LiveRegion } from '@/components/ui/live-region';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
 import { panelCard } from '@/features/member/components/area-shell';
-import {
-  archiveSllBannerForm,
-  discardSllBannerDraftForm,
-  moveSllBannerForm,
-  publishSllBannerForm,
-  restoreSllBannerVersionForm,
-  saveSllBannerForm,
-} from '../server/actions';
+import { saveSllBannerForm } from '../server/actions';
 import type { BannerActionState } from '../structure-types';
 
 type Banner = {
@@ -46,10 +40,15 @@ export function SllBannerEditor({
   banner,
   isFirst,
   isLast,
+  action,
+  actionPending = false,
 }: {
   banner?: Banner;
   isFirst?: boolean;
   isLast?: boolean;
+  /** Publicar, descartar, voltar, mover e arquivar: o estado fica na lista, que não recarrega. */
+  action?: (form: FormData) => void;
+  actionPending?: boolean;
 }) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState(saveSllBannerForm, initialState);
@@ -72,6 +71,22 @@ export function SllBannerEditor({
   };
   const [preview, setPreview] = useState(initial);
   const [dirty, setDirty] = useState(false);
+  // Cada resposta é um objeto novo: assim a segunda gravação seguida também limpa o aviso de
+  // "alterações não salvas" (um efeito em `state.saved` não rodaria de novo).
+  const [seenState, setSeenState] = useState(state);
+  if (seenState !== state) {
+    setSeenState(state);
+    if (state.saved) setDirty(false);
+  }
+  // A publicação usa a descrição salva, não a digitada: sem ela, o botão fica desligado e diz
+  // o que falta, em vez de não fazer nada.
+  const savedImageAlt =
+    banner?.draft?.imageAlt !== undefined ? banner.draft.imageAlt : banner?.imageAlt;
+  const publishBlocker = !hasImage
+    ? 'Envie a imagem do banner para poder publicar.'
+    : !savedImageAlt
+      ? 'Escreva a descrição da imagem e salve para poder publicar.'
+      : '';
   function updatePreview(event: FormEvent<HTMLFormElement>) {
     const values = new FormData(event.currentTarget);
     setPreview({
@@ -84,11 +99,6 @@ export function SllBannerEditor({
     });
     setDirty(true);
   }
-
-  useEffect(() => {
-    if (!state.saved) return;
-    router.refresh();
-  }, [router, state.saved]);
 
   async function saveWithImage(event: React.FormEvent<HTMLFormElement>) {
     if (!file) return;
@@ -103,6 +113,7 @@ export function SllBannerEditor({
         return;
       }
       setCreatedId(saved.bannerId);
+      setDirty(false);
       const image = new FormData();
       image.set('file', file);
       image.set('alt', String(values.get('imageAlt') ?? ''));
@@ -119,6 +130,7 @@ export function SllBannerEditor({
       }
       setHasImage(true);
       setFile(null);
+      setDirty(false);
       setUploadMessage('Banner e imagem salvos.');
       router.refresh();
     } catch {
@@ -200,12 +212,14 @@ export function SllBannerEditor({
           label="Descrição da imagem"
           maxLength={300}
           name="imageAlt"
+          // Com imagem, a descrição é obrigatória: o banner não pode ser publicado sem ela.
+          required={hasImage || Boolean(file)}
         />
         <div className="flex flex-col gap-2 border-t border-border pt-4">
           <Label htmlFor={`banner-file-${bannerId || 'new'}`}>Imagem do banner</Label>
           <input
             accept="image/png,image/jpeg,image/webp"
-            className="min-h-11 w-full text-body text-foreground file:mr-3 file:min-h-11 file:rounded-full file:border-0 file:bg-primary-soft file:px-4 file:text-body file:font-medium file:text-link"
+            className="min-h-11 w-full rounded-field text-body text-foreground outline-none file:mr-3 file:min-h-11 file:rounded-full file:border-0 file:bg-primary-soft file:px-4 file:text-body file:font-medium file:text-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             id={`banner-file-${bannerId || 'new'}`}
             onChange={(event) => setFile(event.currentTarget.files?.[0] ?? null)}
             type="file"
@@ -220,78 +234,79 @@ export function SllBannerEditor({
             {state.message}
           </p>
         ) : null}
-        {uploadMessage ? (
-          <output aria-live="polite" className="text-body text-muted-foreground">
-            {uploadMessage}
-          </output>
-        ) : null}
+        {/* Sempre presente: regiões criadas junto com o texto costumam não ser anunciadas. */}
+        <LiveRegion>{state.saved ? state.message : null}</LiveRegion>
+        {uploadMessage ? <p className="text-body text-muted-foreground">{uploadMessage}</p> : null}
+        <LiveRegion>{uploadMessage}</LiveRegion>
         <Button loading={pending || uploading} loadingText="Salvando…" type="submit">
           <Save aria-hidden="true" />
           {file ? 'Salvar rascunho e imagem' : 'Salvar rascunho'}
         </Button>
       </form>
 
-      {banner ? (
-        <div className="flex flex-wrap gap-2 border-t border-border pt-4">
-          <form action={publishSllBannerForm}>
-            <input name="id" type="hidden" value={banner.id} />
+      {banner && action ? (
+        // Um formulário só: cada botão manda a ação em `intent`, e a resposta aparece abaixo do
+        // editor. Funciona também sem JavaScript.
+        <form
+          action={action}
+          aria-busy={actionPending}
+          className="flex flex-col gap-3 border-t border-border pt-4"
+        >
+          <input name="id" type="hidden" value={banner.id} />
+          <div className="flex flex-wrap gap-2">
             <Button
-              disabled={!hasImage || (banner.status === 'published' && !banner.draft)}
+              className="!w-fit"
+              aria-describedby={publishBlocker ? `banner-publish-hint-${banner.id}` : undefined}
+              disabled={Boolean(publishBlocker) || (banner.status === 'published' && !banner.draft)}
+              name="intent"
               type="submit"
+              value="publish"
             >
               Publicar para alunas
             </Button>
-          </form>
-          {banner.draft ? (
-            <form action={discardSllBannerDraftForm}>
-              <input name="id" type="hidden" value={banner.id} />
-              <Button type="submit" variant="soft">
+            {banner.draft ? (
+              <Button className="!w-fit" name="intent" type="submit" value="discard" variant="soft">
                 Descartar rascunho
               </Button>
-            </form>
-          ) : null}
-          {banner.hasHistory && !banner.draft ? (
-            <form action={restoreSllBannerVersionForm}>
-              <input name="id" type="hidden" value={banner.id} />
-              <Button type="submit" variant="soft">
+            ) : null}
+            {banner.hasHistory && !banner.draft ? (
+              <Button className="!w-fit" name="intent" type="submit" value="restore" variant="soft">
                 Voltar à versão anterior
               </Button>
-            </form>
-          ) : null}
-          <form action={moveSllBannerForm}>
-            <input name="id" type="hidden" value={banner.id} />
-            <input name="direction" type="hidden" value="up" />
+            ) : null}
             <Button
               aria-label="Mover banner para cima"
               disabled={isFirst}
+              name="intent"
               size="icon"
               type="submit"
+              value="up"
               variant="soft"
             >
               <ArrowUp aria-hidden="true" />
             </Button>
-          </form>
-          <form action={moveSllBannerForm}>
-            <input name="id" type="hidden" value={banner.id} />
-            <input name="direction" type="hidden" value="down" />
             <Button
               aria-label="Mover banner para baixo"
               disabled={isLast}
+              name="intent"
               size="icon"
               type="submit"
+              value="down"
               variant="soft"
             >
               <ArrowDown aria-hidden="true" />
             </Button>
-          </form>
-          <form action={archiveSllBannerForm}>
-            <input name="id" type="hidden" value={banner.id} />
-            <Button type="submit" variant="soft">
+            <Button className="!w-fit" name="intent" type="submit" value="archive" variant="soft">
               <Trash2 aria-hidden="true" />
               Arquivar banner
             </Button>
-          </form>
-        </div>
+          </div>
+          {publishBlocker ? (
+            <p className="text-body text-muted-foreground" id={`banner-publish-hint-${banner.id}`}>
+              {publishBlocker}
+            </p>
+          ) : null}
+        </form>
       ) : null}
     </>
   );

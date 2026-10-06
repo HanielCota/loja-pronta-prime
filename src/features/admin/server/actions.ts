@@ -34,32 +34,19 @@ import {
   restorePreviousNodeVersion as restorePreviousNodeVersionAction,
 } from './structure-actions';
 import {
-  archiveSllBanner,
-  discardSllBannerDraft,
-  moveSllBanner,
-  publishSllBanner,
-  restoreSllBannerVersion,
-  restoreSllBanner,
   reorderSllBanners,
+  restoreSllBanner,
+  runSllBannerAction,
   saveSllBanner,
 } from './banner-actions';
 import {
-  archiveSllResource,
-  discardSllResourceDraft,
-  moveSllResource,
-  publishSllResource,
-  restoreSllResourceVersion,
-  restoreSllResource,
   reorderSllResources,
+  restoreSllResource,
+  runSllResourceAction,
   saveSllResource,
 } from './resource-actions';
-import {
-  discardSllCopyDraft,
-  publishSllCopy,
-  restoreSllCopyVersion,
-  saveSllCopy,
-} from './copy-actions';
-import type { BannerActionState, ResourceActionState } from '../structure-types';
+import { runSllCopyAction, saveSllCopy } from './copy-actions';
+import type { BannerActionState, EditorActionState, ResourceActionState } from '../structure-types';
 
 export type LessonEditState = { message: string; saved: boolean };
 
@@ -711,28 +698,15 @@ export async function saveSllBannerForm(
   return saveSllBanner(previous, data);
 }
 
-export async function archiveSllBannerForm(data: FormData): Promise<void> {
-  await archiveSllBanner(data);
-}
-
-export async function publishSllBannerForm(data: FormData): Promise<void> {
-  await publishSllBanner(data);
-}
-
-export async function discardSllBannerDraftForm(data: FormData): Promise<void> {
-  await discardSllBannerDraft(data);
-}
-
-export async function restoreSllBannerVersionForm(data: FormData): Promise<void> {
-  await restoreSllBannerVersion(data);
+export async function runSllBannerActionForm(
+  previous: EditorActionState,
+  data: FormData,
+): Promise<EditorActionState> {
+  return runSllBannerAction(previous, data);
 }
 
 export async function restoreSllBannerForm(data: FormData): Promise<void> {
   await restoreSllBanner(data);
-}
-
-export async function moveSllBannerForm(data: FormData): Promise<void> {
-  await moveSllBanner(data);
 }
 
 export async function reorderSllBannersForm(data: FormData) {
@@ -750,16 +724,11 @@ export async function saveSllCopyForm(
   return saveSllCopy(previous, data);
 }
 
-export async function publishSllCopyForm(data: FormData): Promise<void> {
-  await publishSllCopy(data);
-}
-
-export async function discardSllCopyDraftForm(data: FormData): Promise<void> {
-  await discardSllCopyDraft(data);
-}
-
-export async function restoreSllCopyVersionForm(data: FormData): Promise<void> {
-  await restoreSllCopyVersion(data);
+export async function runSllCopyActionForm(
+  previous: EditorActionState,
+  data: FormData,
+): Promise<EditorActionState> {
+  return runSllCopyAction(previous, data);
 }
 
 export async function saveSllResourceForm(
@@ -769,26 +738,13 @@ export async function saveSllResourceForm(
   return saveSllResource(previous, data);
 }
 
-export async function archiveSllResourceForm(data: FormData): Promise<void> {
-  await archiveSllResource(data);
-}
-
-export async function publishSllResourceForm(data: FormData): Promise<void> {
-  await publishSllResource(data);
-}
-
-export async function discardSllResourceDraftForm(data: FormData): Promise<void> {
-  await discardSllResourceDraft(data);
-}
-
-export async function restoreSllResourceVersionForm(data: FormData): Promise<void> {
-  await restoreSllResourceVersion(data);
+export async function runSllResourceActionForm(
+  previous: EditorActionState,
+  data: FormData,
+): Promise<EditorActionState> {
+  return runSllResourceAction(previous, data);
 }
 
 export async function restoreSllResourceForm(data: FormData): Promise<void> {
   await restoreSllResource(data);
-}
-
-export async function moveSllResourceForm(data: FormData): Promise<void> {
-  await moveSllResource(data);
 }

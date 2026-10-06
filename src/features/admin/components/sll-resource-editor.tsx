@@ -1,21 +1,13 @@
 'use client';
 
-import { useActionState, useEffect, useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useActionState, useState, type FormEvent } from 'react';
 import { ArrowDown, ArrowUp, ExternalLink, Plus, Save, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LiveRegion } from '@/components/ui/live-region';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
 import { panelCard } from '@/features/member/components/area-shell';
-import {
-  archiveSllResourceForm,
-  discardSllResourceDraftForm,
-  moveSllResourceForm,
-  publishSllResourceForm,
-  restoreSllResourceVersionForm,
-  saveSllResourceForm,
-} from '../server/actions';
+import { saveSllResourceForm } from '../server/actions';
 import type { ResourceActionState } from '../structure-types';
 type ResourceDraft = {
   groupTitle?: string;
@@ -47,13 +39,17 @@ export function SllResourceEditor({
   isFirst = false,
   isLast = false,
   lessonOptions = [],
+  action,
+  actionPending = false,
 }: {
   resource?: Resource;
   isFirst?: boolean;
   isLast?: boolean;
   lessonOptions?: Array<{ id: string; trackId: string; trackTitle: string; title: string }>;
+  /** Publicar, descartar, voltar, mover e arquivar: o estado fica na lista, que não recarrega. */
+  action?: (form: FormData) => void;
+  actionPending?: boolean;
 }) {
-  const router = useRouter();
   const [state, formAction, pending] = useActionState(saveSllResourceForm, initialState);
   const initial = {
     groupTitle: resource?.draft?.groupTitle ?? resource?.groupTitle ?? '',
@@ -64,6 +60,13 @@ export function SllResourceEditor({
   };
   const [preview, setPreview] = useState(initial);
   const [dirty, setDirty] = useState(false);
+  // Cada resposta é um objeto novo: assim a segunda gravação seguida também limpa o aviso de
+  // "alterações não salvas" (um efeito em `state.saved` não rodaria de novo).
+  const [seenState, setSeenState] = useState(state);
+  if (seenState !== state) {
+    setSeenState(state);
+    if (state.saved) setDirty(false);
+  }
   const [lessonIds, setLessonIds] = useState(resource?.relatedLessonIds ?? []);
   const [lessonChoice, setLessonChoice] = useState('');
   const [trackChoice, setTrackChoice] = useState('');
@@ -81,9 +84,6 @@ export function SllResourceEditor({
     });
     setDirty(true);
   }
-  useEffect(() => {
-    if (state.saved) router.refresh();
-  }, [router, state.saved]);
 
   const editor = (
     <>
@@ -156,14 +156,15 @@ export function SllResourceEditor({
                     {lessonOptions.find((item) => item.id === id)?.trackTitle} ·{' '}
                     {lessonOptions.find((item) => item.id === id)?.title ?? 'Aula indisponível'}
                   </span>
-                  <button
+                  <Button
                     aria-label={`Remover aula ${lessonOptions.find((item) => item.id === id)?.title ?? ''}`}
-                    className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full outline-none focus-visible:outline-2 focus-visible:outline-ring"
                     onClick={() => setLessonIds((current) => current.filter((item) => item !== id))}
+                    size="icon"
                     type="button"
+                    variant="ghost"
                   >
-                    <X aria-hidden="true" className="size-5" />
-                  </button>
+                    <X aria-hidden="true" />
+                  </Button>
                 </li>
               ))}
             </ul>
@@ -229,64 +230,63 @@ export function SllResourceEditor({
           Salvar rascunho
         </Button>
       </form>
-      {resource ? (
-        <div className="flex flex-wrap gap-3 border-t border-border pt-4">
-          <form action={publishSllResourceForm}>
-            <input name="id" type="hidden" value={resource.id} />
-            <Button disabled={resource.status === 'published' && !resource.draft} type="submit">
-              Publicar para alunas
-            </Button>
-          </form>
+      {resource && action ? (
+        // Um formulário só: cada botão manda a ação em `intent`, e a resposta aparece abaixo do
+        // editor. Funciona também sem JavaScript.
+        <form
+          action={action}
+          aria-busy={actionPending}
+          className="flex flex-wrap gap-3 border-t border-border pt-4"
+        >
+          <input name="id" type="hidden" value={resource.id} />
+          <Button
+            className="!w-fit"
+            disabled={resource.status === 'published' && !resource.draft}
+            name="intent"
+            type="submit"
+            value="publish"
+          >
+            Publicar para alunas
+          </Button>
           {resource.draft ? (
-            <form action={discardSllResourceDraftForm}>
-              <input name="id" type="hidden" value={resource.id} />
-              <Button type="submit" variant="soft">
-                Descartar rascunho
-              </Button>
-            </form>
+            <Button className="!w-fit" name="intent" type="submit" value="discard" variant="soft">
+              Descartar rascunho
+            </Button>
           ) : null}
           {resource.hasHistory && !resource.draft ? (
-            <form action={restoreSllResourceVersionForm}>
-              <input name="id" type="hidden" value={resource.id} />
-              <Button type="submit" variant="soft">
-                Voltar à versão anterior
-              </Button>
-            </form>
+            <Button className="!w-fit" name="intent" type="submit" value="restore" variant="soft">
+              Voltar à versão anterior
+            </Button>
           ) : null}
-          <form action={moveSllResourceForm}>
-            <input name="id" type="hidden" value={resource.id} />
-            <input name="direction" type="hidden" value="up" />
-            <Button
-              aria-label={`Mover para cima: ${resource.title}`}
-              disabled={isFirst}
-              type="submit"
-              variant="soft"
-            >
-              <ArrowUp aria-hidden="true" />
-              Mover para cima
-            </Button>
-          </form>
-          <form action={moveSllResourceForm}>
-            <input name="id" type="hidden" value={resource.id} />
-            <input name="direction" type="hidden" value="down" />
-            <Button
-              aria-label={`Mover para baixo: ${resource.title}`}
-              disabled={isLast}
-              type="submit"
-              variant="soft"
-            >
-              <ArrowDown aria-hidden="true" />
-              Mover para baixo
-            </Button>
-          </form>
-          <form action={archiveSllResourceForm}>
-            <input name="id" type="hidden" value={resource.id} />
-            <Button type="submit" variant="soft">
-              <Trash2 aria-hidden="true" />
-              Arquivar recurso
-            </Button>
-          </form>
-        </div>
+          <Button
+            className="!w-fit"
+            aria-label={`Mover para cima: ${resource.title}`}
+            disabled={isFirst}
+            name="intent"
+            type="submit"
+            value="up"
+            variant="soft"
+          >
+            <ArrowUp aria-hidden="true" />
+            Mover para cima
+          </Button>
+          <Button
+            className="!w-fit"
+            aria-label={`Mover para baixo: ${resource.title}`}
+            disabled={isLast}
+            name="intent"
+            type="submit"
+            value="down"
+            variant="soft"
+          >
+            <ArrowDown aria-hidden="true" />
+            Mover para baixo
+          </Button>
+          <Button className="!w-fit" name="intent" type="submit" value="archive" variant="soft">
+            <Trash2 aria-hidden="true" />
+            Arquivar recurso
+          </Button>
+        </form>
       ) : null}
     </>
   );
