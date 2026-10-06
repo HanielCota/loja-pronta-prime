@@ -79,6 +79,14 @@ export function SllBannerList({ banners }: { banners: NonNullable<Banner>[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [order, setOrder] = useState(() => banners.map((banner) => banner.id));
+  // A ordem salva no servidor manda: depois de "Mover para cima/baixo" ou de um arrasto, a
+  // lista nova chega por aqui. Sem isso, a ordem antiga guardada no estado continuaria na tela.
+  const serverOrder = banners.map((banner) => banner.id).join(':');
+  const [seenServerOrder, setSeenServerOrder] = useState(serverOrder);
+  if (seenServerOrder !== serverOrder) {
+    setSeenServerOrder(serverOrder);
+    setOrder(banners.map((banner) => banner.id));
+  }
   const [message, setMessage] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const sensors = useSensors(
@@ -144,6 +152,7 @@ export function SllBannerList({ banners }: { banners: NonNullable<Banner>[] }) {
           <SllBannerEditor
             key={JSON.stringify(selectedBanner)}
             banner={selectedBanner}
+            isFirst={sorted[0]?.id === selectedId}
             isLast={sorted.at(-1)?.id === selectedId}
           />
         </div>
@@ -160,7 +169,8 @@ export function SllBannerList({ banners }: { banners: NonNullable<Banner>[] }) {
             Adicionar banner
           </summary>
           <div className="mt-4">
-            <SllBannerEditor />
+            {/* Novo a cada banner criado: o cartão limpa e volta a criar outro. */}
+            <SllBannerEditor key={serverOrder} />
           </div>
         </details>
       </section>

@@ -88,6 +88,14 @@ export function SllResourceList({
 }) {
   const router = useRouter();
   const [order, setOrder] = useState(() => resources.map((resource) => resource.id));
+  // A ordem salva no servidor manda: depois de "Mover para cima/baixo" ou de um arrasto, a
+  // lista nova chega por aqui. Sem isso, a ordem antiga guardada no estado continuaria na tela.
+  const serverOrder = resources.map((resource) => resource.id).join(':');
+  const [seenServerOrder, setSeenServerOrder] = useState(serverOrder);
+  if (seenServerOrder !== serverOrder) {
+    setSeenServerOrder(serverOrder);
+    setOrder(resources.map((resource) => resource.id));
+  }
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
