@@ -41,6 +41,7 @@ export type StudentKind =
   | 'marca'
   | 'marcateclado'
   | 'marcavoz'
+  | 'marcafonte'
   | 'marcasemlogo'
   | 'perfilnome'
   | 'perfilsenha'

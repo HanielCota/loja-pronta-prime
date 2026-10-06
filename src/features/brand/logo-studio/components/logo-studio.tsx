@@ -9,6 +9,7 @@ import {
   missingStudioSteps,
   STUDIO_STEPS,
   studioSteps,
+  withSuggestedLettering,
   type StudioStep,
   type StudioSuggestions,
 } from '../picks';
@@ -76,9 +77,13 @@ export function LogoStudio({
   /** Sem transcrição configurada, a tela explica que falar ainda não está disponível. */
   speechAvailable: boolean;
 }) {
-  const [studio, setStudio] = useState(initial);
-  const [picks, setPicks] = useState<LogoPicks>(initial.picks);
-  const [screen, setScreen] = useState<Screen>(() => openingScreen(initial, Boolean(oldName)));
+  const initialPicks = withSuggestedLettering(initial.picks, suggestions.lettering);
+  const initialStudio = { ...initial, picks: initialPicks };
+  const [studio, setStudio] = useState(initialStudio);
+  const [picks, setPicks] = useState<LogoPicks>(initialPicks);
+  const [screen, setScreen] = useState<Screen>(() =>
+    openingScreen(initialStudio, Boolean(oldName)),
+  );
   /** A opção sob o mouse: o quadro mostra como fica, sem escolher. */
   const [peek, setPeek] = useState<LogoPicks | null>(null);
   /** O logo que ela tocou pra ver (chegando um novo, ele vale). */

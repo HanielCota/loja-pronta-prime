@@ -19,6 +19,7 @@ import {
   pickLabel,
   studioSteps,
   studioSuggestions,
+  withSuggestedLettering,
 } from './picks';
 import { isLastingTweak, LOGO_TWEAK_IDS } from './tweaks';
 import { toStudioView } from './view';
@@ -110,6 +111,25 @@ describe('studioSuggestions', () => {
     const suggestions = studioSuggestions({ cor: 'Escolho depois' });
     expect(suggestions.colors).toBe('rosa');
     expect(suggestions.lettering).toBe('simples');
+  });
+});
+
+describe('fonte sugerida ao abrir o estúdio', () => {
+  test('mantém a fonte da conversa quando ainda não existe uma escolha salva', () => {
+    const suggested = studioSuggestions({ estilo: 'Elegante' }).lettering;
+    const picks = withSuggestedLettering({ kind: 'desenho' }, suggested);
+
+    expect(picks).toEqual({
+      kind: 'desenho',
+      lettering: { id: 'elegante' },
+    });
+    expect(draftOf(picks).font.id).toBe('elegante');
+  });
+
+  test('não troca uma fonte escolhida e salva no estúdio', () => {
+    expect(withSuggestedLettering({ lettering: { id: 'divertida' } }, 'elegante')).toEqual({
+      lettering: { id: 'divertida' },
+    });
   });
 });
 
@@ -217,6 +237,8 @@ describe('logoImagePrompt', () => {
     expect(prompt).toContain('Colors: rosa e dourado.');
     expect(prompt).toContain('64x64');
     expect(prompt).toContain('flat vector');
+    expect(prompt).toContain('at least 12% safe margin on every edge');
+    expect(prompt).toContain('nothing may touch, cross, bleed, or be cropped');
     expect(logoImagePrompt({ ...BRIEF, look: 'realista' }, 'Bella')).toContain('Photorealistic');
   });
 
