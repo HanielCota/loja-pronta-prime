@@ -52,7 +52,7 @@ export function SllNavigation({
             aria-label="Abrir navegação do SLL"
             className="lg:hidden"
           >
-            <MenuIcon aria-hidden="true" className="size-5" />
+            <MenuIcon aria-hidden="true" className="size-5" strokeWidth={1.8} />
           </Button>
         </Dialog.Trigger>
         <Dialog.Portal>
@@ -69,7 +69,7 @@ export function SllNavigation({
               </div>
               <Dialog.Close asChild>
                 <Button type="button" variant="ghost" size="icon" aria-label="Fechar menu">
-                  <XIcon aria-hidden="true" className="size-5" />
+                  <XIcon aria-hidden="true" className="size-5" strokeWidth={1.8} />
                 </Button>
               </Dialog.Close>
             </div>
@@ -261,7 +261,7 @@ function NavLink({
       ) : null}
       <span className="min-w-0 flex-1 text-pretty">{label}</span>
       {active && !current && !stage ? (
-        <ChevronRightIcon aria-hidden="true" className="size-4 shrink-0" />
+        <ChevronRightIcon aria-hidden="true" className="size-4 shrink-0" strokeWidth={1.8} />
       ) : null}
     </Link>
   );
