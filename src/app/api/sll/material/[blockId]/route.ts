@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getSessionState, needsFirstPassword } from '@/features/auth/server/session';
 import { hasAdminRole } from '@/features/admin/access';
 import { getStudentProducts } from '@/features/products/server/access';
+import { getStageLockMessage } from '@/features/sll/server/stage-lock';
 import { db } from '@/server/db';
 import { learningContentBlocks } from '@/server/db/schema';
 import { storage } from '@/server/storage';
@@ -36,8 +37,8 @@ export async function GET(_request: Request, context: RouteContext) {
             columns: { status: true, archivedAt: true },
             with: {
               stage: {
-                columns: { status: true, archivedAt: true },
-                with: { track: { columns: { status: true, archivedAt: true } } },
+                columns: { id: true, status: true, archivedAt: true },
+                with: { track: { columns: { id: true, status: true, archivedAt: true } } },
               },
             },
           },
@@ -65,6 +66,16 @@ export async function GET(_request: Request, context: RouteContext) {
   if (archived)
     return new Response(null, { status: 404, headers: { 'Cache-Control': 'no-store' } });
   if (!admin && !published)
+    return new Response(null, { status: 404, headers: { 'Cache-Control': 'no-store' } });
+  // Etapa do método ainda fechada: o material só abre junto com a aula.
+  if (
+    !admin &&
+    (await getStageLockMessage(
+      state.session.user.id,
+      block.lesson.module.stage.track.id,
+      block.lesson.module.stage.id,
+    ))
+  )
     return new Response(null, { status: 404, headers: { 'Cache-Control': 'no-store' } });
 
   const data = block.data as Record<string, unknown>;

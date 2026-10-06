@@ -99,7 +99,8 @@ export async function getSllLessonViewer(lessonId: string) {
         current: item.id === lesson.id,
       };
     }),
-    blocks: lesson.blocks.map((block) => ({
+    // Etapa fechada não manda o conteúdo pro navegador: a tela só mostra o aviso.
+    blocks: (stage.access.isUnlocked ? lesson.blocks : []).map((block) => ({
       id: block.id,
       kind: block.kind,
       data: contentPreviewData(block.kind, block.data),

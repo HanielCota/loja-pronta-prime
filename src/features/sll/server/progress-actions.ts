@@ -1,22 +1,12 @@
 'use server';
 
-import { and, asc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireProductAction } from '@/features/products/server/access';
 import { db } from '@/server/db';
-import {
-  learningLessonProgress,
-  learningLessons,
-  learningModules,
-  learningStages,
-  learningTrackProgress,
-  learningTracks,
-} from '@/server/db/schema';
-import {
-  parseProgressLocation,
-  parseProgressPosition,
-  resolveSequentialStageAccess,
-} from '../progress-rules';
+import { learningLessonProgress, learningLessons, learningTrackProgress } from '@/server/db/schema';
+import { parseProgressLocation, parseProgressPosition } from '../progress-rules';
+import { getStageLockMessage } from './stage-lock';
 
 export type SllProgressActionResult = { saved: boolean; message: string };
 
@@ -53,69 +43,6 @@ async function lessonIsAvailable(trackId: string, lessonId: string) {
   );
   if (!available || !lesson) return null;
   return { stageId: lesson.module.stage.id, trackKind: lesson.module.stage.track.kind };
-}
-
-/** Reconfere a etapa no servidor para que um link direto não contorne o bloqueio. */
-async function getStageLockMessage(userId: string, trackId: string, stageId: string) {
-  const track = await db.query.learningTracks.findFirst({
-    columns: { id: true, kind: true },
-    where: and(
-      eq(learningTracks.id, trackId),
-      eq(learningTracks.status, 'published'),
-      isNull(learningTracks.archivedAt),
-    ),
-    with: {
-      stages: {
-        columns: { id: true, title: true, position: true },
-        where: and(eq(learningStages.status, 'published'), isNull(learningStages.archivedAt)),
-        orderBy: [asc(learningStages.position), asc(learningStages.id)],
-        with: {
-          modules: {
-            columns: { id: true },
-            where: and(eq(learningModules.status, 'published'), isNull(learningModules.archivedAt)),
-            with: {
-              lessons: {
-                columns: { id: true, countsTowardProgress: true },
-                where: and(
-                  eq(learningLessons.status, 'published'),
-                  isNull(learningLessons.archivedAt),
-                ),
-              },
-            },
-          },
-        },
-      },
-    },
-  });
-  if (!track) return 'Esta aula não está disponível.';
-  const lessonIds = track.stages.flatMap((stage) =>
-    stage.modules.flatMap((module) => module.lessons.map((lesson) => lesson.id)),
-  );
-  const completed = lessonIds.length
-    ? await db.query.learningLessonProgress.findMany({
-        columns: { lessonId: true },
-        where: and(
-          eq(learningLessonProgress.userId, userId),
-          inArray(learningLessonProgress.lessonId, lessonIds),
-          isNotNull(learningLessonProgress.completedAt),
-        ),
-      })
-    : [];
-  const completedIds = new Set(completed.map((item) => item.lessonId));
-  const access = resolveSequentialStageAccess(
-    track.stages.map((stage) => ({
-      id: stage.id,
-      title: stage.title,
-      lessons: stage.modules.flatMap((module) =>
-        module.lessons
-          .filter((lesson) => lesson.countsTowardProgress)
-          .map((lesson) => ({ completed: completedIds.has(lesson.id) })),
-      ),
-    })),
-  ).find((stage) => stage.stageId === stageId);
-
-  if (track.kind !== 'method' || access?.isUnlocked) return null;
-  return access?.lockMessage ?? 'Conclua a etapa anterior para abrir esta aula.';
 }
 
 /** Registra a aula aberta sem apagar a posição ou a conclusão já salvas. */
