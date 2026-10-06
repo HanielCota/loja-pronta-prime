@@ -143,6 +143,8 @@ export const learningLessons = pgTable(
     slug: text('slug').notNull(),
     title: text('title').notNull(),
     description: text('description'),
+    /** Número que aparecia na área antiga; não substitui o UUID nem a ordem da lista. */
+    sourceNumber: smallint('source_number'),
     durationMinutes: smallint('duration_minutes'),
     countsTowardProgress: boolean('counts_toward_progress').default(true).notNull(),
     position: integer('position').default(0).notNull(),
@@ -159,6 +161,10 @@ export const learningLessons = pgTable(
     index('learning_lessons_order_idx').on(table.moduleId, table.position, table.id),
     check('learning_lessons_slug_check', sql`${table.slug} ~ '^[a-z0-9]+(-[a-z0-9]+)*$'`),
     check('learning_lessons_position_check', sql`${table.position} >= 0`),
+    check(
+      'learning_lessons_source_number_check',
+      sql`${table.sourceNumber} is null or ${table.sourceNumber} > 0`,
+    ),
     check(
       'learning_lessons_duration_check',
       sql`${table.durationMinutes} is null or ${table.durationMinutes} > 0`,

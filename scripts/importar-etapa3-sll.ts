@@ -7,6 +7,7 @@ import {
   learningStages,
   learningTracks,
 } from '@/server/db/schema';
+import { sllLibrarySourceNumber } from '@/features/sll/source-numbers';
 
 const categories = [
   {
@@ -180,6 +181,10 @@ await db.transaction(async (tx) => {
       .limit(1);
     if (!module) throw new Error(`Não foi possível carregar ${category.title}.`);
     for (const [position, [slug, title, description]] of category.lessons.entries()) {
+      const sourceNumber = sllLibrarySourceNumber(slug);
+      if (sourceNumber === null) {
+        throw new Error(`A numeração antiga da aula ${slug} ainda não foi conferida.`);
+      }
       await tx
         .insert(learningLessons)
         .values({
@@ -187,10 +192,14 @@ await db.transaction(async (tx) => {
           slug,
           title,
           description,
+          sourceNumber,
           countsTowardProgress: true,
           position,
         })
-        .onConflictDoNothing();
+        .onConflictDoUpdate({
+          target: [learningLessons.moduleId, learningLessons.slug],
+          set: { sourceNumber },
+        });
     }
   }
 });
