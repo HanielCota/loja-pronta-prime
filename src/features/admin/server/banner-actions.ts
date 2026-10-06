@@ -2,6 +2,7 @@
 
 import { and, asc, eq, isNotNull, isNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { unstable_rethrow } from 'next/navigation';
 import { z } from 'zod';
 import { db } from '@/server/db';
 import {
@@ -373,7 +374,9 @@ export async function runSllBannerAction(
               ? await archiveSllBanner(form)
               : await moveSllBanner(form, intent);
     return { ...result, intent };
-  } catch {
+  } catch (error) {
+    // Sessão vencida: o requireAdmin redireciona para a entrada, e isso não é uma falha.
+    unstable_rethrow(error);
     return { saved: false, message: 'Não consegui concluir. Atualize a página e tente de novo.' };
   }
 }

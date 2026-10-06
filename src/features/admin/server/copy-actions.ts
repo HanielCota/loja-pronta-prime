@@ -2,6 +2,7 @@
 
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { unstable_rethrow } from 'next/navigation';
 import { db } from '@/server/db';
 import { learningTextDrafts, learningTextHistory, learningTexts } from '@/server/db/schema';
 import { SLL_COPY, SLL_COPY_GROUPS } from '@/features/sll/copy';
@@ -150,7 +151,9 @@ export async function runSllCopyAction(
           ? await discardSllCopyDraft(form)
           : await restoreSllCopyVersion(form);
     return { ...result, intent };
-  } catch {
+  } catch (error) {
+    // Sessão vencida: o requireAdmin redireciona para a entrada, e isso não é uma falha.
+    unstable_rethrow(error);
     return { saved: false, message: 'Não consegui concluir. Atualize a página e tente de novo.' };
   }
 }
