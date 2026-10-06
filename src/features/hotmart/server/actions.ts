@@ -39,7 +39,7 @@ export async function saveHotmartSettings(
   ) {
     return {
       message:
-        'Já existem compras registradas. Para trocar o código de um produto, peça ajuda ao suporte para revisar os acessos anteriores.',
+        'Já chegaram compras com esses códigos, então eles não podem mudar: isso mexeria no acesso de quem já comprou. Volte aos códigos de antes e salve de novo.',
     };
   }
   await db.transaction(async (tx) => {
