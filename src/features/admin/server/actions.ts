@@ -1,11 +1,12 @@
 'use server';
 
-import { and, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import { desc } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin } from './access';
 import { parseLessonEdit } from '../lesson-edit';
+import { lessonPublicationIssue } from '../publication-rules';
 import { db } from '@/server/db';
 import {
   learningContentBlocks,
@@ -206,10 +207,11 @@ export async function saveLearningLesson(
   }
 
   const lesson = await db.query.learningLessons.findFirst({
-    columns: { id: true },
+    columns: { id: true, status: true },
     where: eq(learningLessons.id, parsed.data.lessonId),
   });
   if (!lesson) return { message: 'Esta aula não está disponível.', saved: false };
+  let publicationIssue: string | null = null;
 
   const editableBlocks = await db.query.learningContentBlocks.findMany({
     columns: { id: true, kind: true, data: true, position: true },
@@ -229,81 +231,122 @@ export async function saveLearningLesson(
     return { message: 'O conteúdo mudou. Atualize a página e tente de novo.', saved: false };
   }
 
-  await db.transaction(async (tx) => {
-    await tx
-      .update(learningLessons)
-      .set({
-        title: parsed.data.title,
-        description: parsed.data.description,
-      })
-      .where(eq(learningLessons.id, lesson.id));
-
-    let nextPosition = Math.max(-1, ...editableBlocks.map((block) => block.position)) + 1;
-    for (const edited of parsed.data.blocks) {
-      if (!edited.id) {
-        if (edited.kind === 'text') {
-          await tx.insert(learningContentBlocks).values({
-            lessonId: lesson.id,
-            kind: 'text',
-            data: { text: edited.text },
-            position: nextPosition++,
-          });
-        } else if (edited.kind === 'link') {
-          await tx.insert(learningContentBlocks).values({
-            lessonId: lesson.id,
-            kind: 'link',
-            data: { label: edited.label, url: edited.url },
-            position: nextPosition++,
-          });
-        } else if (edited.kind === 'video') {
-          await tx.insert(learningContentBlocks).values({
-            lessonId: lesson.id,
-            kind: 'video',
-            data: { provider: 'pandavideo', videoId: edited.videoId },
-            position: nextPosition++,
-          });
-        }
-        continue;
-      }
-      const original = editableBlocks.find((block) => block.id === edited.id);
-      if (!original || original.kind !== edited.kind) throw new Error('Tipo de bloco alterado.');
-      const originalData = original.data as Record<string, unknown>;
-      let data: LearningContentBlockData;
-      if (edited.kind === 'text') data = { text: edited.text };
-      else if (edited.kind === 'link') data = { url: edited.url, label: edited.label };
-      else if (edited.kind === 'video') data = { provider: 'pandavideo', videoId: edited.videoId };
-      else if (edited.kind === 'image') {
-        if (typeof originalData.storageKey !== 'string') throw new Error('Imagem sem arquivo.');
-        data = {
-          storageKey: originalData.storageKey,
-          contentType:
-            typeof originalData.contentType === 'string' ? originalData.contentType : 'image/webp',
-          size: typeof originalData.size === 'number' ? originalData.size : 0,
-          alt: edited.alt,
-        };
-      } else {
-        if (typeof originalData.storageKey !== 'string') throw new Error('Arquivo sem material.');
-        data = {
-          storageKey: originalData.storageKey,
-          contentType:
-            typeof originalData.contentType === 'string'
-              ? originalData.contentType
-              : 'application/octet-stream',
-          size: typeof originalData.size === 'number' ? originalData.size : 0,
-          fileName: edited.fileName,
-        };
-      }
+  const saved = await db
+    .transaction(async (tx) => {
       await tx
-        .update(learningContentBlocks)
-        .set({ data })
-        .where(
-          and(
-            eq(learningContentBlocks.id, edited.id),
-            eq(learningContentBlocks.lessonId, lesson.id),
-          ),
-        );
-    }
-  });
+        .update(learningLessons)
+        .set({
+          title: parsed.data.title,
+          description: parsed.data.description,
+        })
+        .where(eq(learningLessons.id, lesson.id));
+
+      let nextPosition = Math.max(-1, ...editableBlocks.map((block) => block.position)) + 1;
+      for (const edited of parsed.data.blocks) {
+        if (!edited.id) {
+          if (edited.kind === 'text') {
+            await tx.insert(learningContentBlocks).values({
+              lessonId: lesson.id,
+              kind: 'text',
+              data: { text: edited.text },
+              position: nextPosition++,
+            });
+          } else if (edited.kind === 'link') {
+            await tx.insert(learningContentBlocks).values({
+              lessonId: lesson.id,
+              kind: 'link',
+              data: { label: edited.label, url: edited.url },
+              position: nextPosition++,
+            });
+          } else if (edited.kind === 'video') {
+            await tx.insert(learningContentBlocks).values({
+              lessonId: lesson.id,
+              kind: 'video',
+              data: { provider: 'pandavideo', videoId: edited.videoId },
+              position: nextPosition++,
+            });
+          }
+          continue;
+        }
+        const original = editableBlocks.find((block) => block.id === edited.id);
+        if (!original || original.kind !== edited.kind) throw new Error('Tipo de bloco alterado.');
+        const originalData = original.data as Record<string, unknown>;
+        let data: LearningContentBlockData;
+        if (edited.kind === 'text') data = { text: edited.text };
+        else if (edited.kind === 'link') data = { url: edited.url, label: edited.label };
+        else if (edited.kind === 'video')
+          data = { provider: 'pandavideo', videoId: edited.videoId };
+        else if (edited.kind === 'image') {
+          if (typeof originalData.storageKey !== 'string') throw new Error('Imagem sem arquivo.');
+          data = {
+            storageKey: originalData.storageKey,
+            contentType:
+              typeof originalData.contentType === 'string'
+                ? originalData.contentType
+                : 'image/webp',
+            size: typeof originalData.size === 'number' ? originalData.size : 0,
+            alt: edited.alt,
+          };
+        } else {
+          if (typeof originalData.storageKey !== 'string') throw new Error('Arquivo sem material.');
+          data = {
+            storageKey: originalData.storageKey,
+            contentType:
+              typeof originalData.contentType === 'string'
+                ? originalData.contentType
+                : 'application/octet-stream',
+            size: typeof originalData.size === 'number' ? originalData.size : 0,
+            fileName: edited.fileName,
+          };
+        }
+        await tx
+          .update(learningContentBlocks)
+          .set({ data })
+          .where(
+            and(
+              eq(learningContentBlocks.id, edited.id),
+              eq(learningContentBlocks.lessonId, lesson.id),
+            ),
+          );
+      }
+
+      // Aula publicada já aparece pras alunas: a edição passa pelas mesmas checagens da
+      // publicação, senão um vídeo sem ID ou um link vazio entraria direto na tela delas.
+      if (lesson.status !== 'published') return true;
+      const result = await tx.query.learningLessons.findFirst({
+        columns: { title: true, description: true },
+        where: eq(learningLessons.id, lesson.id),
+        with: {
+          blocks: {
+            columns: { kind: true, data: true },
+            orderBy: [asc(learningContentBlocks.position), asc(learningContentBlocks.id)],
+          },
+        },
+      });
+      publicationIssue = result
+        ? lessonPublicationIssue(
+            result.title,
+            result.description,
+            result.blocks.map((block) => ({
+              kind: block.kind,
+              data: block.data as Record<string, unknown>,
+            })),
+          )
+        : 'Esta aula não está disponível.';
+      if (!publicationIssue) return true;
+      tx.rollback();
+      return false;
+    })
+    .catch((error: unknown) => {
+      if (publicationIssue) return false;
+      throw error;
+    });
+  if (!saved) {
+    return {
+      message: `Esta aula está publicada. ${publicationIssue ?? 'Confira os campos e tente de novo.'}`,
+      saved: false,
+    };
+  }
 
   revalidatePath('/admin');
   return { message: 'A aula foi salva.', saved: true };
