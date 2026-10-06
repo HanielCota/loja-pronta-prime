@@ -143,8 +143,8 @@ o tema escuro e o alto contraste.
   os cartões e os botões deste projeto. A moldura da Loja Pronta não muda.
 - O menu mostra Painel, Minhas Lojas, Comece aqui, Método, etapas publicadas, Recursos e Cursos
   complementares. A seção atual fica identificada; etapas em rascunho não viram links para alunas.
-- No computador, o cartão da navegação lateral se estende até o final do conteúdo, preenchendo
-  pelo menos a altura disponível da página. O menu acompanha a rolagem dentro desse cartão.
+- No computador, o cartão da navegação lateral se estende até o final do conteúdo, sem impor
+  uma altura mínima que alongue páginas curtas. O menu acompanha a rolagem dentro desse cartão.
   As etapas aparecem quando a aluna está no Método; listas longas rolam dentro
   do menu. Rótulos de 16px e alvos de 44px deixam os destinos à vista em telas comuns.
   No celular, o controle mostra a seção atual e volta fechado ao navegar, para deixar
@@ -152,23 +152,27 @@ o tema escuro e o alto contraste.
 - A aula usa vídeo em proporção 16:9 à esquerda e sequência à direita a partir de 1280px;
   em larguras menores, as colunas se empilham para manter a leitura. A aula atual fica numerada
   em azul e visível na lista, que acompanha a rolagem no computador. Anterior/próxima ficam acima do botão
-  de conclusão, que ocupa a largura do cartão. Sem vídeo disponível, o espaço diz “Vídeo em breve”.
-- As etapas têm cartões com ações alinhadas e progresso real. Um passo da Etapa 1 abre a lista
+  de conclusão, que ocupa a largura do cartão. Sem vídeo disponível, um aviso compacto diz
+  “Vídeo em breve”, sem reservar uma área vazia de player.
+- As etapas têm cartões com altura determinada pelo conteúdo e progresso real. Um passo da Etapa 1 abre a lista
   de aulas; o passo da aula a retomar começa aberto. Prioridades da Etapa 2 usam seta para baixo,
   que vira ao abrir as instruções. A Biblioteca usa busca e cartões por categoria, em uma coluna
   no celular e até três no computador, com conclusão e ação visíveis.
 - Cartões de etapas, cursos e biblioteca usam largura mínima de 18rem quando há espaço;
   no celular, cabem na largura disponível. Seus títulos usam `text-xl` (20px), abaixo do título
-  da página, e o preenchimento é de 24px. Nada de cortar títulos para caber na grade.
+  da página, e o preenchimento é de 20px. As classes de preenchimento são combinadas com `cn`
+  para substituir as da moldura. Os cartões não esticam para igualar alturas nem empurram ações
+  com margens automáticas. Nada de cortar títulos ou descrições para caber na grade.
 - O caminho de retorno fica antes do título nas etapas, cursos e aulas. A última aula oferece
   “Voltar às aulas”. O teclado tem o atalho “Pular para o conteúdo”, exclusivo do SLL.
 - A busca da Biblioteca ignora acentos e maiúsculas, oferece contagem e limpeza e mantém a
   busca confirmada no endereço. O formulário GET também funciona sem JavaScript.
-- No painel, o caminho de aprendizagem aparece antes do aviso de lojas. Em Recursos, as ações
-  dos cartões ficam alinhadas por linha; links externos anunciam a abertura em outra aba.
+- No painel, o caminho de aprendizagem aparece antes do aviso de lojas. Em Recursos, os cartões
+  usam sua altura natural; links externos anunciam a abertura em outra aba.
 - Cursos complementares têm destaque amplo e biblioteca em cartões com contagem e progresso
-  individuais. Sem o arquivo da capa, aparece uma superfície neutra “Capa em breve”, sem imagem
-  inventada. A lista do curso mantém numeração, duração e progresso.
+  individuais. Sem o arquivo da capa, aparece um aviso neutro compacto “Capa em breve”, sem imagem
+  inventada nem coluna reservada. Capas reais mantêm proporção 16:9. A lista do curso mantém
+  numeração, duração e progresso.
 - O banner tem chamada grande e imagem ao lado no computador; no celular, os elementos se
   empilham. A troca é manual, com setas e marcadores que têm alvos de 44px e nomes acessíveis.
   Banners em rascunho continuam fora do painel da aluna.

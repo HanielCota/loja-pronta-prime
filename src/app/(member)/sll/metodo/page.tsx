@@ -8,6 +8,7 @@ import { getFirstSllPublishedTrack } from '@/features/sll/server/catalog';
 import { requireProduct } from '@/features/products/server/access';
 import { getSllCopy } from '@/features/sll/server/copy';
 import { SllProgress } from '@/features/sll/components/sll-progress';
+import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Método SLL' };
 
@@ -29,18 +30,18 @@ export default async function MethodPage() {
       }
     >
       {track && track.stages.length ? (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4">
           <section aria-labelledby="method-stages-title">
-            <h2 id="method-stages-title" className="mb-4 text-body font-semibold text-foreground">
+            <h2 id="method-stages-title" className="mb-3 text-body font-semibold text-foreground">
               {copy.methodStagesTitle}
             </h2>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] gap-4">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] items-start gap-4">
               {track.stages.map((stage, index) => {
                 const completedCount = stage.access?.completedCount ?? 0;
                 const totalCount = stage.access?.totalCount ?? 0;
                 const unlocked = stage.access?.isUnlocked ?? false;
                 return (
-                  <article className={`${panelCard} gap-4 sm:p-6`} key={stage.id}>
+                  <article className={cn(panelCard, 'gap-3 p-5 sm:p-5')} key={stage.id}>
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-semibold text-link">ETAPA {index + 1}</p>
                       {stage.access?.isComplete ? (
@@ -59,7 +60,7 @@ export default async function MethodPage() {
                         {stage.description}
                       </p>
                     ) : null}
-                    <p className="mt-auto pt-2 text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                       {unlocked
                         ? `${completedCount} de ${totalCount} ações concluídas`
                         : (stage.access?.lockMessage ??
@@ -88,7 +89,7 @@ export default async function MethodPage() {
             </div>
           </section>
 
-          <section className={panelCard} aria-labelledby="method-tools-title">
+          <section className={cn(panelCard, 'p-5 sm:p-5')} aria-labelledby="method-tools-title">
             <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 flex-1 items-start gap-3">
                 <BookOpen aria-hidden="true" className="mt-1 size-5 text-link" />

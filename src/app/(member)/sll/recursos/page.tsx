@@ -7,6 +7,7 @@ import { SllAreaShell } from '@/features/sll/sll-area-shell';
 import { getSllPublishedResources } from '@/features/sll/server/catalog';
 import { getSllCopy } from '@/features/sll/server/copy';
 import { requireProduct } from '@/features/products/server/access';
+import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Recursos · SLL' };
 
@@ -37,7 +38,7 @@ export default async function SllResourcesPage() {
       title={copy.resourcesTitle}
       intro={copy.resourcesIntro}
     >
-      <div className="flex flex-col gap-9">
+      <div className="flex flex-col gap-6">
         {groups.map((group) => {
           const Icon = ICONS[group.key as keyof typeof ICONS] ?? Lightbulb;
           const isCalculator = group.key === 'calculadora';
@@ -52,13 +53,21 @@ export default async function SllResourcesPage() {
                   {group.title}
                 </h2>
               </div>
-              <ul className={isCalculator ? 'flex flex-col gap-4' : 'grid gap-4 md:grid-cols-2'}>
+              <ul
+                className={
+                  isCalculator ? 'flex flex-col gap-4' : 'grid items-start gap-4 md:grid-cols-2'
+                }
+              >
                 {group.items.map((resource) => {
                   const buttonLabel = resource.buttonLabel ?? 'Abrir recurso';
                   return (
                     <li
                       key={resource.id}
-                      className={`${panelCard} ${isCalculator ? 'gap-4 sm:flex-row sm:items-center' : 'gap-3'}`}
+                      className={cn(
+                        panelCard,
+                        'p-5 sm:p-5',
+                        isCalculator ? 'gap-4 sm:flex-row sm:items-center' : 'gap-3',
+                      )}
                     >
                       <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary-soft text-link">
                         <Icon aria-hidden="true" className="size-6" />
@@ -76,7 +85,7 @@ export default async function SllResourcesPage() {
                       {resource.destination ? (
                         <Button
                           asChild
-                          className={isCalculator ? 'sm:w-auto' : 'mt-auto'}
+                          className={isCalculator ? 'sm:w-auto' : undefined}
                           variant="soft"
                         >
                           {resource.destination.startsWith('/') ? (
@@ -91,7 +100,7 @@ export default async function SllResourcesPage() {
                           )}
                         </Button>
                       ) : (
-                        <span className="mt-auto w-fit rounded-full border border-border bg-muted px-4 py-2 text-sm font-semibold text-muted-foreground">
+                        <span className="w-fit rounded-full border border-border bg-muted px-4 py-2 text-sm font-semibold text-muted-foreground">
                           Em breve
                         </span>
                       )}

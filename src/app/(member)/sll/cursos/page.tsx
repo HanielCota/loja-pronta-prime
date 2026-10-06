@@ -8,6 +8,7 @@ import { getSllPublishedTracks } from '@/features/sll/server/catalog';
 import { getSllCopy } from '@/features/sll/server/copy';
 import { requireProduct } from '@/features/products/server/access';
 import { SllProgress } from '@/features/sll/components/sll-progress';
+import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Cursos complementares · SLL' };
 
@@ -40,7 +41,7 @@ export default async function ComplementaryCoursesPage() {
       intro={copy.coursesIntro}
     >
       {catalog.length ? (
-        <div className="flex flex-col gap-9">
+        <div className="flex flex-col gap-6">
           {featured ? (
             <section aria-labelledby="featured-course-title">
               <h2
@@ -50,7 +51,12 @@ export default async function ComplementaryCoursesPage() {
                 {copy.coursesFeaturedTitle}
               </h2>
               <article
-                className={`${panelCard} gap-6 md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-center`}
+                className={cn(
+                  panelCard,
+                  'gap-4 p-5 sm:p-5',
+                  featured.course.coverStorageKey &&
+                    'md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-center',
+                )}
               >
                 {featured.course.coverStorageKey ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -102,9 +108,9 @@ export default async function ComplementaryCoursesPage() {
                 {catalog.length} {catalog.length === 1 ? 'curso' : 'cursos'}
               </p>
             </div>
-            <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] gap-4">
+            <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] items-start gap-4">
               {catalog.map(({ course, lessonCount, minutes }) => (
-                <li className={`${panelCard} gap-4 sm:p-6`} key={course.id}>
+                <li className={cn(panelCard, 'gap-3 p-5 sm:p-5')} key={course.id}>
                   {course.coverStorageKey ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -130,7 +136,7 @@ export default async function ComplementaryCoursesPage() {
                     </p>
                   ) : null}
                   {lessonCount ? (
-                    <div className="mt-auto flex flex-col gap-2 pt-2">
+                    <div className="flex flex-col gap-2">
                       <p className="text-sm text-muted-foreground">
                         {course.completedCount} de {lessonCount} aulas concluídas
                       </p>
@@ -142,7 +148,7 @@ export default async function ComplementaryCoursesPage() {
                     </div>
                   ) : null}
                   {lessonCount ? (
-                    <Button asChild className="mt-auto" variant="soft">
+                    <Button asChild variant="soft">
                       <Link href={`/sll/cursos/${course.slug}`}>
                         {course.completedCount === lessonCount
                           ? 'Revisar curso'
@@ -153,7 +159,7 @@ export default async function ComplementaryCoursesPage() {
                       </Link>
                     </Button>
                   ) : (
-                    <p className="mt-auto text-body text-muted-foreground">Aulas em breve</p>
+                    <p className="text-body text-muted-foreground">Aulas em breve</p>
                   )}
                 </li>
               ))}
@@ -171,11 +177,11 @@ export default async function ComplementaryCoursesPage() {
   );
 }
 
-/** Reserva a proporção da capa sem inventar uma imagem para um arquivo ainda não enviado. */
+/** Sem arquivo, o aviso ocupa só o necessário; a proporção 16:9 fica para a capa real. */
 function CourseCoverPlaceholder() {
   return (
-    <div className="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-2xl bg-muted text-muted-foreground">
-      <BookOpen aria-hidden="true" className="size-8" />
+    <div className="flex w-full items-center gap-2 rounded-2xl bg-muted p-3 text-muted-foreground">
+      <BookOpen aria-hidden="true" className="size-5 shrink-0" />
       <span className="text-sm">Capa em breve</span>
     </div>
   );

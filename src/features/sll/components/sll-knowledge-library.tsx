@@ -9,6 +9,7 @@ import { panelCard } from '@/features/member/components/area-shell';
 import { Button } from '@/components/ui/button';
 import { usePathname } from 'next/navigation';
 import { filterLibraryModules, type LibraryModule } from '../library-search';
+import { cn } from '@/lib/utils';
 
 export function SllKnowledgeLibrary({
   modules,
@@ -27,7 +28,7 @@ export function SllKnowledgeLibrary({
   const resultCount = results.reduce((count, module) => count + module.lessons.length, 0);
 
   return (
-    <section className="flex flex-col gap-8" aria-labelledby="library-title">
+    <section className="flex flex-col gap-6" aria-labelledby="library-title">
       <div className="flex flex-col gap-3">
         <h2 id="library-title" className="scroll-mt-6 text-body font-semibold text-foreground">
           {modules.reduce((count, module) => count + module.lessons.length, 0)} aulas em{' '}
@@ -88,11 +89,14 @@ export function SllKnowledgeLibrary({
                 {module.lessons.length} {module.lessons.length === 1 ? 'aula' : 'aulas'}
               </span>
             </div>
-            <ol className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] gap-4">
+            <ol className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] items-start gap-4">
               {module.lessons.map((lesson) => (
                 <li key={lesson.id}>
                   <Link
-                    className={`${panelCard} group h-full gap-4 text-body wrap-anywhere text-foreground outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-safe:transition-colors sm:p-6`}
+                    className={cn(
+                      panelCard,
+                      'group gap-3 p-5 text-body wrap-anywhere text-foreground outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-safe:transition-colors sm:p-5',
+                    )}
                     href={`/sll/aula/${lesson.id}`}
                   >
                     <span className="flex items-center justify-between gap-2">
@@ -111,7 +115,7 @@ export function SllKnowledgeLibrary({
                         </span>
                       ) : null}
                     </span>
-                    <span className="mt-auto flex min-h-11 items-center gap-2 pt-2 font-semibold text-link">
+                    <span className="flex min-h-11 items-center gap-2 font-semibold text-link">
                       Abrir aula{' '}
                       <ArrowRight
                         aria-hidden="true"

@@ -169,14 +169,20 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
         <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_18rem]">
           <div className="flex min-w-0 flex-col gap-5">
             {hasVideo ? (
-              <section className="flex flex-col gap-3" aria-label="Vídeo da aula">
-                <div className="flex aspect-video flex-col items-center justify-center gap-3 rounded-card border border-border bg-muted p-4 text-center forced-colors:border forced-colors:border-[CanvasText]">
-                  <CirclePlay aria-hidden="true" className="size-12 text-muted-foreground" />
+              <section
+                className="flex items-start gap-3 rounded-card border border-border bg-muted p-4 forced-colors:border forced-colors:border-[CanvasText]"
+                aria-label="Vídeo da aula"
+              >
+                <CirclePlay
+                  aria-hidden="true"
+                  className="mt-1 size-6 shrink-0 text-muted-foreground"
+                />
+                <div className="flex min-w-0 flex-col gap-1">
                   <h2 className="text-body font-semibold text-foreground">Vídeo em breve</h2>
+                  <p className="text-sm text-muted-foreground">
+                    O vídeo desta aula ainda não está disponível.
+                  </p>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  O vídeo desta aula ainda não está disponível.
-                </p>
               </section>
             ) : null}
 
