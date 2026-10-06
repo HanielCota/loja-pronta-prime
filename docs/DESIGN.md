@@ -106,6 +106,12 @@ o tema escuro e o alto contraste.
   escuro e o sol acompanha o claro; tocar alterna para o outro tema. Ele usa a mesma preferência
   local dos ajustes em Perfil; a pessoa ainda pode escolher "Automático" ou ajustar o tema escuro
   por lá.
+- Quem tem os dois produtos troca de área pelas **abas da barra do topo** (navbar tradicional):
+  “Loja Pronta” e “SLL” com ícone, logo depois da marca; a da vez fica em `text-foreground` com
+  um traço `border-primary` de 2px por cima da linha da barra, as outras em `text-muted-foreground`.
+  No celular, as abas descem pra uma segunda linha da barra. Com o menu lateral do SLL, elas se
+  alinham com o conteúdo. Nada de seletor segmentado acima do título. Fora das áreas (perfil), a
+  trilha continua levando à escolha.
 - O tema padrão é o **claro**, com o "Automático" desligado, mesmo com o aparelho no escuro. O
   escuro e o automático só valem quando ela escolhe (no perfil ou no botão do cabeçalho).
 - Perfil, Aparência, depois do tema: **Tamanho do texto** (Normal, Grande, Maior, num controle
