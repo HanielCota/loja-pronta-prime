@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/server/db';
 import { learningBanners } from '@/server/db/schema';
-import { learningSlugFromTitle } from '../structure-rules';
+import { learningSlugFromTitle, swapWithNeighbor } from '../structure-rules';
 import { requireAdmin } from './access';
 
 import type { BannerActionState } from '../structure-types';
@@ -144,18 +144,19 @@ export async function moveSllBanner(formData: FormData): Promise<void> {
     where: isNull(learningBanners.archivedAt),
     orderBy: [asc(learningBanners.position), asc(learningBanners.id)],
   });
-  const index = banners.findIndex((item) => item.id === parsed.data.id);
-  const other = banners[index + (parsed.data.direction === 'up' ? -1 : 1)];
-  if (index < 0 || !other) return;
+  const reordered = swapWithNeighbor(
+    banners.map((item) => item.id),
+    parsed.data.id,
+    parsed.data.direction,
+  );
+  if (!reordered) return;
   await db.transaction(async (tx) => {
-    await tx
-      .update(learningBanners)
-      .set({ position: other.position })
-      .where(eq(learningBanners.id, parsed.data.id));
-    await tx
-      .update(learningBanners)
-      .set({ position: banners[index]!.position })
-      .where(eq(learningBanners.id, other.id));
+    for (const item of reordered) {
+      await tx
+        .update(learningBanners)
+        .set({ position: item.position })
+        .where(eq(learningBanners.id, item.id));
+    }
   });
   revalidatePath('/admin/banners');
   revalidatePath('/sll');

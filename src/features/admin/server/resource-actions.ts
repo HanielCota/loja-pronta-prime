@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/server/db';
 import { learningResources } from '@/server/db/schema';
-import { learningSlugFromTitle } from '../structure-rules';
+import { learningSlugFromTitle, swapWithNeighbor } from '../structure-rules';
 import { requireAdmin } from './access';
 
 import type { ResourceActionState } from '../structure-types';
@@ -143,12 +143,12 @@ export async function moveSllResource(form: FormData): Promise<void> {
     ),
     orderBy: [asc(learningResources.position), asc(learningResources.id)],
   });
-  const index = ordered.findIndex((item) => item.id === parsed.data.id);
-  const target = ordered[index + (parsed.data.direction === 'up' ? -1 : 1)];
-  if (index < 0 || !target) return;
-  const reordered = ordered.map((item, itemIndex) => ({ id: item.id, position: itemIndex }));
-  const targetIndex = reordered.findIndex((item) => item.id === target.id);
-  [reordered[index], reordered[targetIndex]] = [reordered[targetIndex]!, reordered[index]!];
+  const reordered = swapWithNeighbor(
+    ordered.map((item) => item.id),
+    parsed.data.id,
+    parsed.data.direction,
+  );
+  if (!reordered) return;
   await db.transaction(async (tx) => {
     for (const item of reordered) {
       await tx

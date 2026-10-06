@@ -25,7 +25,15 @@ type Banner = {
 
 const initialState: BannerActionState = { message: '', saved: false };
 
-export function SllBannerEditor({ banner, isLast }: { banner?: Banner; isLast?: boolean }) {
+export function SllBannerEditor({
+  banner,
+  isFirst,
+  isLast,
+}: {
+  banner?: Banner;
+  isFirst?: boolean;
+  isLast?: boolean;
+}) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState(saveSllBannerForm, initialState);
   const bannerId = banner?.id ?? '';
@@ -212,7 +220,7 @@ export function SllBannerEditor({ banner, isLast }: { banner?: Banner; isLast?: 
             <input name="direction" type="hidden" value="up" />
             <Button
               aria-label="Mover banner para cima"
-              disabled={banner.position <= 0}
+              disabled={isFirst}
               size="icon"
               type="submit"
               variant="soft"

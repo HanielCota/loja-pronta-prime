@@ -47,6 +47,7 @@ export default async function AdminBannersPage() {
           <SllBannerEditor
             key={banner.id}
             banner={{ ...banner, hasImage: Boolean(banner.imageStorageKey) }}
+            isFirst={index === 0}
             isLast={index === banners.length - 1}
           />
         ))}
