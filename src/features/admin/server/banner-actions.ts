@@ -4,7 +4,12 @@ import { and, asc, eq, isNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/server/db';
-import { learningBanners, learningNodeDrafts, learningNodeHistory } from '@/server/db/schema';
+import {
+  learningBanners,
+  learningNodeDrafts,
+  learningNodeHistory,
+  type LearningNodeDraftData,
+} from '@/server/db/schema';
 import { learningSlugFromTitle, swapWithNeighbor } from '../structure-rules';
 import { requireAdmin } from './access';
 import { getNodeDraft, saveNodeDraft } from './node-drafts';
@@ -122,6 +127,28 @@ export async function saveSllBanner(
   }
 }
 
+/** Campos do rascunho que substituem os do banner; o que o rascunho não mexeu fica igual. */
+function bannerDraftValues(
+  banner: { description: string; buttonLabel: string; destination: string },
+  data: LearningNodeDraftData | undefined,
+) {
+  return {
+    ...(data?.label !== undefined ? { label: data.label } : {}),
+    ...(data?.title !== undefined ? { title: data.title } : {}),
+    ...(data?.description !== undefined
+      ? { description: data.description ?? banner.description }
+      : {}),
+    ...(data?.buttonLabel !== undefined
+      ? { buttonLabel: data.buttonLabel ?? banner.buttonLabel }
+      : {}),
+    ...(data?.destination !== undefined
+      ? { destination: data.destination ?? banner.destination }
+      : {}),
+    ...(data?.imageAlt !== undefined ? { imageAlt: data.imageAlt } : {}),
+    ...(data?.imageStorageKey !== undefined ? { imageStorageKey: data.imageStorageKey } : {}),
+  };
+}
+
 export async function publishSllBanner(form: FormData): Promise<void> {
   await requireAdmin();
   const id = z.string().uuid().safeParse(form.get('id'));
@@ -158,22 +185,7 @@ export async function publishSllBanner(form: FormData): Promise<void> {
       });
     await tx
       .update(learningBanners)
-      .set({
-        ...(data?.label !== undefined ? { label: data.label } : {}),
-        ...(data?.title !== undefined ? { title: data.title } : {}),
-        ...(data?.description !== undefined
-          ? { description: data.description ?? banner.description }
-          : {}),
-        ...(data?.buttonLabel !== undefined
-          ? { buttonLabel: data.buttonLabel ?? banner.buttonLabel }
-          : {}),
-        ...(data?.destination !== undefined
-          ? { destination: data.destination ?? banner.destination }
-          : {}),
-        ...(data?.imageAlt !== undefined ? { imageAlt: data.imageAlt } : {}),
-        ...(data?.imageStorageKey !== undefined ? { imageStorageKey: data.imageStorageKey } : {}),
-        status: 'published',
-      })
+      .set({ ...bannerDraftValues(banner, data), status: 'published' })
       .where(eq(learningBanners.id, id.data));
     await tx
       .delete(learningNodeDrafts)
@@ -209,12 +221,22 @@ export async function archiveSllBanner(formData: FormData): Promise<void> {
   await requireAdmin();
   const id = z.string().uuid().safeParse(formData.get('id'));
   if (!id.success) return;
-  const [archived] = await db
-    .update(learningBanners)
-    .set({ archivedAt: new Date(), status: 'draft' })
-    .where(and(eq(learningBanners.id, id.data), isNull(learningBanners.archivedAt)))
-    .returning({ id: learningBanners.id });
-  if (!archived) return;
+  const banner = await db.query.learningBanners.findFirst({
+    where: and(eq(learningBanners.id, id.data), isNull(learningBanners.archivedAt)),
+  });
+  if (!banner) return;
+  // O banner volta como rascunho: as edições pendentes passam para ele, senão um rascunho
+  // antigo continuaria na tela e voltaria a valer na próxima publicação.
+  const draft = await getNodeDraft('banner', id.data);
+  await db.transaction(async (tx) => {
+    await tx
+      .update(learningBanners)
+      .set({ ...bannerDraftValues(banner, draft?.data), archivedAt: new Date(), status: 'draft' })
+      .where(eq(learningBanners.id, id.data));
+    await tx
+      .delete(learningNodeDrafts)
+      .where(and(eq(learningNodeDrafts.kind, 'banner'), eq(learningNodeDrafts.nodeId, id.data)));
+  });
   revalidatePath('/admin/banners');
   revalidatePath('/sll');
 }

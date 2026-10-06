@@ -709,6 +709,11 @@ export async function setLearningNodePublication(data: FormData): Promise<Struct
     if (issue) return { message: issue, saved: false };
   }
 
+  // Fora do ar, a edição vai direto para a versão principal. Um rascunho que sobrasse
+  // continuaria na tela do admin e voltaria a valer na próxima publicação.
+  if (status === 'draft' && (await getNodeDraft(kind as LearningNodeKind, id)))
+    await applyNodeDraft(kind as LearningNodeKind, id, { validate: false });
+
   let updated: Array<{ id: string }>;
   if (kind === 'track') {
     updated = await db
@@ -785,7 +790,24 @@ export async function publishNodeDraft(data: FormData): Promise<StructureActionS
     !['track', 'stage', 'module', 'lesson'].includes(kind ?? '')
   )
     return { saved: false, message: 'Conteúdo inválido.' };
-  const nodeKind = kind as LearningNodeKind;
+  const result = await applyNodeDraft(kind as LearningNodeKind, id, { validate: true });
+  if (!result.saved) return result;
+  revalidatePath('/admin');
+  revalidatePath('/sll');
+  revalidatePath('/sll/cursos');
+  revalidatePath(`/sll/aula/${id}`);
+  return { saved: true, message: 'Alterações publicadas para as alunas.' };
+}
+
+/**
+ * Passa o rascunho para a versão principal e apaga o rascunho. Ao publicar, confere as regras
+ * da aula; ao despublicar, só junta as edições, já que as alunas deixam de ver o item.
+ */
+async function applyNodeDraft(
+  nodeKind: LearningNodeKind,
+  id: string,
+  { validate }: { validate: boolean },
+): Promise<StructureActionState> {
   const draft = await getNodeDraft(nodeKind, id);
   if (!draft) return { saved: false, message: 'Não há alterações para publicar.' };
   if (nodeKind === 'lesson') {
@@ -807,7 +829,7 @@ export async function publishNodeDraft(data: FormData): Promise<StructureActionS
       draft.data.description === undefined ? lesson.description : draft.data.description,
       blocks.map((block) => ({ kind: block.kind, data: block.data as Record<string, unknown> })),
     );
-    if (issue) return { saved: false, message: issue };
+    if (validate && issue) return { saved: false, message: issue };
     await db.transaction(async (tx) => {
       const previous = {
         title: lesson.title,
@@ -920,11 +942,7 @@ export async function publishNodeDraft(data: FormData): Promise<StructureActionS
         .where(and(eq(learningNodeDrafts.kind, nodeKind), eq(learningNodeDrafts.nodeId, id)));
     });
   }
-  revalidatePath('/admin');
-  revalidatePath('/sll');
-  revalidatePath('/sll/cursos');
-  revalidatePath(`/sll/aula/${id}`);
-  return { saved: true, message: 'Alterações publicadas para as alunas.' };
+  return { saved: true, message: '' };
 }
 
 /** Restaura a última versão publicada, guardando a atual como a nova versão anterior. */

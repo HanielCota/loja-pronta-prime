@@ -10,6 +10,7 @@ import {
   learningNodeHistory,
   learningResourceLessons,
   learningResources,
+  type LearningNodeDraftData,
 } from '@/server/db/schema';
 import { learningSlugFromTitle, swapWithNeighbor } from '../structure-rules';
 import { requireAdmin } from './access';
@@ -152,6 +153,57 @@ export async function saveSllResource(
   }
 }
 
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/** Passa o rascunho do recurso para a versão principal (textos e aulas ligadas) e o apaga. */
+async function applyResourceDraft(
+  tx: Transaction,
+  resource: typeof learningResources.$inferSelect,
+  data: LearningNodeDraftData | undefined,
+  extra: { status: 'draft' | 'published'; archivedAt?: Date },
+) {
+  await tx
+    .update(learningResources)
+    .set({
+      ...(data?.groupTitle !== undefined ? { groupTitle: data.groupTitle } : {}),
+      ...(data?.title !== undefined ? { title: data.title } : {}),
+      ...(data?.description !== undefined
+        ? { description: data.description ?? resource.description }
+        : {}),
+      ...(data?.buttonLabel !== undefined ? { buttonLabel: data.buttonLabel } : {}),
+      ...(data?.destination !== undefined ? { destination: data.destination } : {}),
+      ...extra,
+    })
+    .where(eq(learningResources.id, resource.id));
+  // Só a publicação renomeia o grupo inteiro; arquivar não mexe nos outros recursos.
+  if (
+    extra.status === 'published' &&
+    data?.groupTitle !== undefined &&
+    data.groupTitle !== resource.groupTitle
+  )
+    await tx
+      .update(learningResources)
+      .set({ groupTitle: data.groupTitle })
+      .where(
+        and(
+          eq(learningResources.groupKey, resource.groupKey),
+          isNull(learningResources.archivedAt),
+        ),
+      );
+  if (data?.relatedLessonIds) {
+    await tx
+      .delete(learningResourceLessons)
+      .where(eq(learningResourceLessons.resourceId, resource.id));
+    for (const lessonId of data.relatedLessonIds)
+      await tx.insert(learningResourceLessons).values({ resourceId: resource.id, lessonId });
+  }
+  await tx
+    .delete(learningNodeDrafts)
+    .where(
+      and(eq(learningNodeDrafts.kind, 'resource'), eq(learningNodeDrafts.nodeId, resource.id)),
+    );
+}
+
 /** Publicação explícita mantém os textos atuais visíveis até a troca completa. */
 export async function publishSllResource(form: FormData): Promise<void> {
   await requireAdmin();
@@ -197,39 +249,7 @@ export async function publishSllResource(form: FormData): Promise<void> {
           },
         },
       });
-    await tx
-      .update(learningResources)
-      .set({
-        ...(data?.groupTitle !== undefined ? { groupTitle: data.groupTitle } : {}),
-        ...(data?.title !== undefined ? { title: data.title } : {}),
-        ...(data?.description !== undefined
-          ? { description: data.description ?? resource.description }
-          : {}),
-        ...(data?.buttonLabel !== undefined ? { buttonLabel: data.buttonLabel } : {}),
-        ...(data?.destination !== undefined ? { destination: data.destination } : {}),
-        status: 'published',
-      })
-      .where(eq(learningResources.id, id.data));
-    if (data?.groupTitle !== undefined && data.groupTitle !== resource.groupTitle)
-      await tx
-        .update(learningResources)
-        .set({ groupTitle: data.groupTitle })
-        .where(
-          and(
-            eq(learningResources.groupKey, resource.groupKey),
-            isNull(learningResources.archivedAt),
-          ),
-        );
-    if (data?.relatedLessonIds) {
-      await tx
-        .delete(learningResourceLessons)
-        .where(eq(learningResourceLessons.resourceId, id.data));
-      for (const lessonId of data.relatedLessonIds)
-        await tx.insert(learningResourceLessons).values({ resourceId: id.data, lessonId });
-    }
-    await tx
-      .delete(learningNodeDrafts)
-      .where(and(eq(learningNodeDrafts.kind, 'resource'), eq(learningNodeDrafts.nodeId, id.data)));
+    await applyResourceDraft(tx, resource, data, { status: 'published' });
   });
   revalidatePath('/admin/recursos');
   revalidatePath('/sll/recursos');
@@ -261,10 +281,16 @@ export async function archiveSllResource(form: FormData): Promise<void> {
   await requireAdmin();
   const id = z.string().uuid().safeParse(form.get('id'));
   if (!id.success) return;
-  await db
-    .update(learningResources)
-    .set({ archivedAt: new Date(), status: 'draft' })
-    .where(and(eq(learningResources.id, id.data), isNull(learningResources.archivedAt)));
+  const resource = await db.query.learningResources.findFirst({
+    where: and(eq(learningResources.id, id.data), isNull(learningResources.archivedAt)),
+  });
+  if (!resource) return;
+  // O recurso volta como rascunho: as edições pendentes passam para ele, senão um rascunho
+  // antigo continuaria na tela e voltaria a valer na próxima publicação.
+  const draft = await getNodeDraft('resource', id.data);
+  await db.transaction((tx) =>
+    applyResourceDraft(tx, resource, draft?.data, { status: 'draft', archivedAt: new Date() }),
+  );
   revalidatePath('/admin/recursos');
   revalidatePath('/sll/recursos');
 }
