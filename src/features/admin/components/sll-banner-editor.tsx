@@ -36,8 +36,11 @@ export function SllBannerEditor({
 }) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState(saveSllBannerForm, initialState);
+  // O cartão de banner novo não adota o banner que acabou de criar: depois do refresh ele
+  // aparece na lista acima (onde recebe a imagem) e este cartão volta a criar outro.
   const bannerId = banner?.id ?? '';
-  const currentBannerId = state.bannerId ?? bannerId;
+  const savedMessage =
+    state.saved && !banner ? 'Banner criado. Envie a imagem dele na lista de banners.' : '';
   const [hasImage, setHasImage] = useState(banner?.hasImage ?? false);
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -49,7 +52,7 @@ export function SllBannerEditor({
   }, [router, state.saved]);
 
   async function uploadImage() {
-    if (!currentBannerId) {
+    if (!bannerId) {
       setUploadMessage('Salve o banner antes de enviar a imagem.');
       return;
     }
@@ -61,13 +64,12 @@ export function SllBannerEditor({
     form.set('file', file);
     form.set(
       'alt',
-      (document.getElementById(`banner-alt-${currentBannerId}`) as HTMLInputElement | null)
-        ?.value ?? '',
+      (document.getElementById(`banner-alt-${bannerId}`) as HTMLInputElement | null)?.value ?? '',
     );
     setUploading(true);
     setUploadMessage('');
     try {
-      const response = await fetch(`/api/admin/sll-banners/${currentBannerId}/media`, {
+      const response = await fetch(`/api/admin/sll-banners/${bannerId}/media`, {
         method: 'POST',
         body: form,
       });
@@ -87,12 +89,12 @@ export function SllBannerEditor({
 
   return (
     <article className={`${panelCard} gap-4`}>
-      {currentBannerId && hasImage ? (
+      {bannerId && hasImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           alt={banner?.imageAlt ?? ''}
           className="aspect-[2/1] w-full rounded-2xl object-cover"
-          src={`/api/admin/sll-banners/${currentBannerId}/media`}
+          src={`/api/admin/sll-banners/${bannerId}/media`}
         />
       ) : (
         <div className="flex aspect-[2/1] items-center justify-center rounded-2xl bg-muted text-body text-muted-foreground">
@@ -101,7 +103,7 @@ export function SllBannerEditor({
       )}
 
       <form action={formAction} className="flex flex-col gap-4">
-        {currentBannerId ? <input name="id" type="hidden" value={currentBannerId} /> : null}
+        {bannerId ? <input name="id" type="hidden" value={bannerId} /> : null}
         <FloatingLabelInput
           defaultValue={banner?.label ?? ''}
           id={`banner-label-${bannerId || 'new'}`}
@@ -176,7 +178,7 @@ export function SllBannerEditor({
             className={state.saved ? 'text-body text-foreground' : 'text-body text-destructive'}
             role={state.saved ? 'status' : 'alert'}
           >
-            {state.message}
+            {savedMessage || state.message}
           </p>
         ) : null}
         <Button loading={pending} loadingText="Salvando…" type="submit">
