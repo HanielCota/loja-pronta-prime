@@ -1,6 +1,6 @@
 'use server';
 
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { desc } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
@@ -13,6 +13,8 @@ import { db } from '@/server/db';
 import {
   learningContentBlocks,
   learningLessons,
+  hotmartProductMappings,
+  hotmartPurchases,
   productAccessEvents,
   manualProductGrants,
   studentProducts,
@@ -99,41 +101,74 @@ export async function changeStudentProductAccess(
 
   const product = productValue as 'sll' | 'loja-pronta';
   const action = actionValue as 'granted' | 'revoked';
-  const changed = await db.transaction(async (tx) => {
-    if (action === 'granted') {
-      const [inserted] = await tx
-        .insert(studentProducts)
-        .values({ userId: target.id, product })
-        .onConflictDoNothing()
-        .returning({ userId: studentProducts.userId });
-      if (!inserted) return false;
-      await tx
-        .insert(manualProductGrants)
-        .values({ userId: target.id, product })
-        .onConflictDoNothing();
-    } else {
-      const removed = await tx
-        .delete(studentProducts)
-        .where(and(eq(studentProducts.userId, target.id), eq(studentProducts.product, product)))
-        .returning({ userId: studentProducts.userId });
-      if (removed.length === 0) return false;
-      await tx
-        .delete(manualProductGrants)
-        .where(
-          and(eq(manualProductGrants.userId, target.id), eq(manualProductGrants.product, product)),
-        );
-    }
+  // 'purchase': já tinha acesso pela compra e agora a liberação manual também ficou guardada.
+  const outcome = await db.transaction(
+    async (tx): Promise<'changed' | 'purchase' | 'unchanged'> => {
+      let result: 'changed' | 'purchase' = 'changed';
+      // Mesma trava do aviso da Hotmart, para os dois não recalcularem o acesso ao mesmo tempo.
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${target.id}))`);
+      if (action === 'granted') {
+        const [inserted] = await tx
+          .insert(studentProducts)
+          .values({ userId: target.id, product })
+          .onConflictDoNothing()
+          .returning({ userId: studentProducts.userId });
+        // A liberação manual fica guardada mesmo quando a compra já dava acesso: assim um
+        // reembolso depois não tira o que a admin quis garantir.
+        const [granted] = await tx
+          .insert(manualProductGrants)
+          .values({ userId: target.id, product })
+          .onConflictDoNothing()
+          .returning({ userId: manualProductGrants.userId });
+        if (!inserted && !granted) return 'unchanged';
+        if (!inserted) result = 'purchase';
+      } else {
+        const removed = await tx
+          .delete(studentProducts)
+          .where(and(eq(studentProducts.userId, target.id), eq(studentProducts.product, product)))
+          .returning({ userId: studentProducts.userId });
+        if (removed.length === 0) return 'unchanged';
+        await tx
+          .delete(manualProductGrants)
+          .where(
+            and(
+              eq(manualProductGrants.userId, target.id),
+              eq(manualProductGrants.product, product),
+            ),
+          );
+        // Encerra as compras da Hotmart que davam este acesso. Sem isso, um aviso seguinte da
+        // mesma compra (como o fim da garantia) liberaria o acesso de novo.
+        const mappedCodes = await tx.query.hotmartProductMappings.findMany({
+          columns: { productUcode: true },
+          where: eq(hotmartProductMappings.access, product),
+        });
+        if (mappedCodes.length)
+          await tx
+            .update(hotmartPurchases)
+            .set({ active: false, updatedAt: new Date() })
+            .where(
+              and(
+                eq(hotmartPurchases.userId, target.id),
+                eq(hotmartPurchases.active, true),
+                inArray(
+                  hotmartPurchases.productUcode,
+                  mappedCodes.map((item) => item.productUcode),
+                ),
+              ),
+            );
+      }
 
-    await tx.insert(productAccessEvents).values({
-      id: randomUUID(),
-      targetUserId: target.id,
-      actorUserId: session.user.id,
-      product,
-      action,
-      reason,
-    });
-    return true;
-  });
+      await tx.insert(productAccessEvents).values({
+        id: randomUUID(),
+        targetUserId: target.id,
+        actorUserId: session.user.id,
+        product,
+        action,
+        reason,
+      });
+      return result;
+    },
+  );
 
   const access = await db.query.studentProducts.findMany({
     columns: { product: true },
@@ -142,14 +177,17 @@ export async function changeStudentProductAccess(
   revalidatePath('/admin/acessos');
   revalidatePath('/');
   return {
-    message: changed
-      ? action === 'granted'
-        ? 'Acesso liberado e alteração registrada.'
-        : 'Acesso removido e alteração registrada.'
-      : action === 'granted'
-        ? 'Essa conta já tinha esse acesso. Nenhuma alteração foi feita.'
-        : 'Essa conta já não tinha esse acesso. Nenhuma alteração foi feita.',
-    saved: changed,
+    message:
+      outcome === 'purchase'
+        ? 'Essa conta já tinha acesso pela compra. A liberação manual foi registrada e continua valendo se a compra for reembolsada.'
+        : outcome === 'changed'
+          ? action === 'granted'
+            ? 'Acesso liberado e alteração registrada.'
+            : 'Acesso removido e alteração registrada.'
+          : action === 'granted'
+            ? 'Essa conta já tinha esse acesso. Nenhuma alteração foi feita.'
+            : 'Essa conta já não tinha esse acesso. Nenhuma alteração foi feita.',
+    saved: outcome !== 'unchanged',
     currentAccess: access.map((item) => item.product),
   };
 }
