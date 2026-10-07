@@ -2,7 +2,8 @@ import { expect, test } from '@playwright/test';
 import { expectNoA11yViolations, signIn } from './support/auth';
 import { PASSWORD, studentEmail } from './support/students';
 
-const SLL = /As aulas abrem em breve/;
+// O título do painel do SLL é a saudação ("Boas-vindas, Ana!" na primeira visita, depois "Olá").
+const SLL = /^(Boas-vindas|Olá)/;
 
 test('depois de criar a senha no primeiro acesso, escolhe entre a Loja Pronta e o SLL', async ({
   page,
@@ -52,7 +53,7 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
 
   await page.getByRole('link', { name: /Sistema Loja Lucrativa/ }).click();
   await expect(page).toHaveURL(/\/sll$/);
-  await expect(page.getByRole('heading', { name: SLL })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: SLL })).toBeVisible();
   await expectNoA11yViolations(page);
 
   // Com os dois produtos, o as abas da barra do topo trocam direto, sem passar pela escolha.
@@ -95,7 +96,7 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
 
   // Na mesma sessão, a saudação não muda; num login seguinte, ela é recebida de volta.
   await page.goto('/sll');
-  await expect(page.getByRole('heading', { name: SLL })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: SLL })).toBeVisible();
   await expect(page.getByText(/^Boas-vindas, Ana!/)).toBeVisible();
   await context.clearCookies();
   await signIn(page, studentEmail('doisprodutos'), PASSWORD, '/sll');
@@ -111,7 +112,7 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
 test('com um produto só: entra direto nele, sem tela de escolha', async ({ page }) => {
   await signIn(page, studentEmail('sosll'), PASSWORD);
   await expect(page).toHaveURL(/\/sll$/);
-  await expect(page.getByRole('heading', { name: SLL })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: SLL })).toBeVisible();
   // Ela nunca passa pela escolha: a conta (e o sair) fica no topo da própria área.
   await page.getByRole('button', { name: 'Sua conta' }).click();
   await expect(page.getByRole('menuitem', { name: 'Sair da conta' })).toBeVisible();
