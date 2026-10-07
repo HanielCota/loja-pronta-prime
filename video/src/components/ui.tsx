@@ -1,11 +1,35 @@
 import { ArrowRightIcon, ChevronLeftIcon, DoorOpenIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { Img } from 'remotion';
+import mascotStill from '@/components/brand/mascot/assets/mascote-rosto.png';
 import { cn } from '@/lib/utils';
 
 /**
  * Peças do app, redesenhadas com as mesmas classes (button.tsx, conversation-layout.tsx,
  * area-shell.tsx). Paradas: quem anima é a cena.
  */
+
+/** O topo das áreas da aluna (site-navbar.tsx): a marca à esquerda e a inicial dela à direita. */
+export function AppNavbar({ mobile }: { mobile: boolean }) {
+  return (
+    <header className="border-b-2 border-border bg-background">
+      <div
+        className={cn(
+          'mx-auto flex min-h-16 w-full max-w-[1040px] items-center justify-between gap-4',
+          mobile ? 'px-4' : 'px-6',
+        )}
+      >
+        <span className="flex items-center gap-2 text-body font-semibold text-foreground">
+          <Img src={mascotStill} alt="" className="size-8" />
+          Loja Pronta Prime
+        </span>
+        <span className="grid size-10 place-items-center rounded-full bg-primary-soft text-body font-semibold text-link">
+          A
+        </span>
+      </div>
+    </header>
+  );
+}
 
 /**
  * O cartão das áreas. As classes `sm:` do app não servem aqui (valem pela largura do vídeo, não

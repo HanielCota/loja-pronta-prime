@@ -15,6 +15,12 @@ export const webpackOverride: WebpackOverrideFn = (config) => {
   const withTailwind = enableTailwind(config);
   return {
     ...withTailwind,
+    output: {
+      ...withTailwind.output,
+      // As imagens vêm da pasta do app, fora de video/. O nome por caminho do Studio sairia
+      // da pasta do pacote e devolveria HTML no lugar do PNG; o hash mantém tudo dentro dele.
+      assetModuleFilename: 'assets/[contenthash][ext]',
+    },
     resolve: {
       ...withTailwind.resolve,
       alias: {
