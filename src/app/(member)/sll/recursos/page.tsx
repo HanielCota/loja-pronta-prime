@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowUpRight, Calculator, Lightbulb, Store } from 'lucide-react';
+import { ArrowUpRight, Calculator, Lightbulb, Store, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { panelCard } from '@/features/member/components/area-shell';
 import { SllAreaShell } from '@/features/sll/sll-area-shell';
@@ -8,10 +8,16 @@ import { getSllPublishedResources } from '@/features/sll/server/catalog';
 import { getSllCopy } from '@/features/sll/server/copy';
 import { requireProduct } from '@/features/products/server/access';
 import { cn } from '@/lib/utils';
+import { resourceHref } from '@/features/sll/tools/catalog';
 
 export const metadata: Metadata = { title: 'Recursos · SLL' };
 
-const ICONS = { calculadora: Calculator, assistentes: Lightbulb, parceiros: Store } as const;
+const ICONS = {
+  calculadora: Calculator,
+  materiais: BookOpen,
+  assistentes: Lightbulb,
+  parceiros: Store,
+} as const;
 
 export default async function SllResourcesPage() {
   const [{ session, products }, resources, copy] = await Promise.all([
@@ -28,7 +34,7 @@ export default async function SllResourcesPage() {
     },
     [],
   );
-  const groupOrder = ['calculadora', 'assistentes', 'parceiros'];
+  const groupOrder = ['calculadora', 'materiais', 'assistentes', 'parceiros'];
   groups.sort((left, right) => groupOrder.indexOf(left.key) - groupOrder.indexOf(right.key));
 
   return (
@@ -60,6 +66,7 @@ export default async function SllResourcesPage() {
               >
                 {group.items.map((resource) => {
                   const buttonLabel = resource.buttonLabel ?? 'Abrir recurso';
+                  const destination = resourceHref(resource);
                   return (
                     <li
                       key={resource.id}
@@ -82,18 +89,21 @@ export default async function SllResourcesPage() {
                           {resource.description}
                         </p>
                       </div>
-                      {resource.destination ? (
+                      {destination ? (
                         <Button
                           asChild
                           className={isCalculator ? 'sm:w-auto' : undefined}
                           variant="soft"
                         >
-                          {resource.destination.startsWith('/') ? (
-                            <Link href={resource.destination}>
-                              {buttonLabel} <ArrowUpRight aria-hidden="true" />
+                          {destination.startsWith('/') ? (
+                            <Link href={destination}>
+                              {resource.groupKey === 'assistentes'
+                                ? 'Como usar e abrir'
+                                : buttonLabel}{' '}
+                              <ArrowUpRight aria-hidden="true" />
                             </Link>
                           ) : (
-                            <a href={resource.destination} rel="noreferrer" target="_blank">
+                            <a href={destination} rel="noreferrer" target="_blank">
                               {buttonLabel} <ArrowUpRight aria-hidden="true" />
                               <span className="sr-only"> (abre em outra aba)</span>
                             </a>

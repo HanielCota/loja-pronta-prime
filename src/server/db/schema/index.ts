@@ -6,6 +6,7 @@ export * from './onboarding';
 export * from './brand';
 export * from './videos';
 export * from './learning-content';
+export * from './learning-content-imports';
 export * from './learning-banners';
 export * from './learning-resources';
 export * from './learning-texts';

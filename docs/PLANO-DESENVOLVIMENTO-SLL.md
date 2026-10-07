@@ -165,6 +165,8 @@ telas foram abertas em computador e celular, sem rolagem horizontal nas telas m�
 
 ## Revisão visual
 
+**Ferramentas, 7 de outubro de 2026:** calculadoras de preço, descontos e anúncios implementadas com taxas oficiais conferidas, quatro guias dos assistentes, ligações às aulas e dois materiais próprios com download privado. Os nove anexos originais e o destino do Envio Velox continuam pendentes. Ver `docs/SLL-FERRAMENTAS.md` para regras, publicação e verificações.
+
 Após cada tarefa que mudar uma tela, abrir a tela no navegador em computador e celular e nos temas
 claro e escuro. Conferir foco, teclado, leitor de tela e áreas de toque conforme `AGENTS.md`. Quando
 o dono pedir execução contínua, seguir pelas tarefas autorizadas e reunir as revisões ou ações

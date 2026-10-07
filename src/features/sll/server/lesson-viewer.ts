@@ -11,6 +11,7 @@ import {
 import { isProgressId } from '../progress-rules';
 import { getSllTrackProgress } from './progress';
 import { isSafeContentDestination } from '@/lib/urls';
+import { resourceHref } from '../tools/catalog';
 
 /** Entrega à aula só os materiais publicados e os dados visíveis para a aluna. */
 export async function getSllLessonViewer(lessonId: string) {
@@ -82,6 +83,7 @@ export async function getSllLessonViewer(lessonId: string) {
     : await db
         .select({
           id: learningResources.id,
+          slug: learningResources.slug,
           title: learningResources.title,
           buttonLabel: learningResources.buttonLabel,
           destination: learningResources.destination,
@@ -136,7 +138,7 @@ export async function getSllLessonViewer(lessonId: string) {
       ...resource,
       destination:
         resource.destination && isSafeContentDestination(resource.destination)
-          ? resource.destination
+          ? resourceHref(resource)
           : null,
     })),
   };

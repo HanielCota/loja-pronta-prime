@@ -11,6 +11,7 @@ await Promise.all([
   cp('public', path.join(runtimeDirectory, 'public'), { recursive: true }),
   cp('.next/static', path.join(runtimeDirectory, '.next/static'), { recursive: true }),
   cp('drizzle', path.join(runtimeDirectory, 'drizzle'), { recursive: true }),
+  cp('data/sll/tools', path.join(runtimeDirectory, 'data/sll/tools'), { recursive: true }),
 ]);
 
 // A rota escolhe a fonte em tempo de execução; o rastreamento do Next não encontra esses caminhos.
