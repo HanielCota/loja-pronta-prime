@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { requireProduct } from '@/features/products/server/access';
@@ -7,6 +8,16 @@ import { getSllPublishedResources } from '@/features/sll/server/catalog';
 import { CalculatorForm } from '@/features/sll/tools/components/calculator-form';
 import { CALCULATORS } from '@/features/sll/tools/catalog';
 import { SHOPEE_FEES } from '@/features/sll/tools/fees';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ tool: string }>;
+}): Promise<Metadata> {
+  const { tool } = await params;
+  const calculator = Object.hasOwn(CALCULATORS, tool) ? CALCULATORS[tool] : undefined;
+  return { title: calculator ? `${calculator.title} · SLL` : 'Calculadoras · SLL' };
+}
 
 export default async function CalculatorPage({ params }: { params: Promise<{ tool: string }> }) {
   const { tool } = await params;
