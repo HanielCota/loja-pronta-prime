@@ -80,9 +80,10 @@ o tema escuro e o alto contraste.
 - Molduras de tela:
   - `PageShell` + `BrandCard`: telas de acesso (entrar, senha), cartão centralizado com o mascote
     no topo.
-  - `AreaShell`: as áreas (Loja Pronta, SLL, perfil). Largura 1040px (perfil, 688px); com menu
-    lateral (`sidebar`, como no SLL), 1440px, com o menu de 240px à esquerda
+  - `AreaShell`: a Loja Pronta, o perfil e o admin. Largura 1040px (perfil, 688px); com menu
+    lateral (`sidebar`, como no admin), 1440px, com o menu de 240px à esquerda
     (`src/lib/member-layout.ts`).
+  - `SllAreaShell`: o SLL, separado da Loja Pronta, como um painel (dashboard). Ver "Área SLL".
   - `CenteredMemberPage`: telas de dentro com o conteúdo no meio (fim da conversa, marca pronta,
     Shopee).
   - `ConversationLayout`: os passo a passo (conversa, marca), com "Voltar", "Terminar depois" e a
@@ -110,15 +111,17 @@ o tema escuro e o alto contraste.
   “Minha loja” e “Curso SLL” (o campo `tab` do catálogo, pra não repetir a marca ao lado), com
   ícone, depois de uma linha vertical curta que as separa da marca. A da vez fica em
   `text-foreground`, com o ícone `text-link` e um traço `bg-primary` de 3px, de pontas redondas,
-  por cima da linha da barra; as outras em `text-muted-foreground`. No celular e no tablet (abaixo de 1024px), as abas descem
-  pra uma segunda linha da barra. Com o menu lateral do SLL, elas se alinham com o conteúdo (sem
-  a linha vertical). Nada de seletor segmentado acima do título. Fora das áreas (perfil), a
-  trilha continua levando à escolha.
+  por cima da linha da barra; as outras em `text-muted-foreground`. No celular e no tablet
+  (abaixo de 1024px), as abas descem pra uma segunda linha da barra. Com o menu lateral do admin,
+  elas se alinham com o conteúdo (sem a linha vertical). Nada de seletor segmentado acima do
+  título. Fora das áreas (perfil), a trilha continua levando à escolha. No SLL, no computador, a
+  troca fica no pé do menu lateral ("Ir pra Minha loja"); no celular e no tablet, são as mesmas
+  abas.
 - A linha de baixo da barra do topo é fina (1px, `border-border`).
 - Nas áreas (`AreaShell`), do tablet pra cima, a barra fica **presa no topo** ao rolar, com fundo
   `bg-background/80` desfocado; com "Mais contraste" ou menos transparência no aparelho, o fundo
-  fica sólido (variante `opaque:`). No celular ela rola junto. O que também fica preso nas áreas
-  (o menu do SLL, o do admin, a prévia da aula, a lista da aula) usa `top-22`, logo abaixo dela, e o
+  fica sólido (variante `opaque:`). No celular ela rola junto. O que também fica preso nessas
+  telas (o menu do admin, a prévia da aula) usa `top-22`, logo abaixo dela, e o
   `scroll-padding-top` evita foco escondido atrás da barra.
 - O tema padrão é o **claro**, com o "Automático" desligado, mesmo com o aparelho no escuro. O
   escuro e o automático só valem quando ela escolhe (no perfil ou no botão do cabeçalho).
@@ -145,22 +148,24 @@ o tema escuro e o alto contraste.
 - Toque: resposta no instante (`active:scale-[0.97]`, 100 a 150ms). Escolher uma opção só marca a
   resposta; a pessoa confirma no botão principal, também pelo teclado.
 - Larguras: acesso 480 a 640px; passo a passo 560 a 680px (mais largo no estúdio do logo); áreas
-  1040px; área SLL (com o menu lateral) 1440px.
+  1040px; SLL: menu lateral de 288px e conteúdo até 1200px.
 
 ### Área SLL
 
 - A referência visual conferida em 6 de outubro de 2026 está em
   `docs/SLL-REFERENCIA-VISUAL.md`. A composição vem do SLL anterior; cores, letras, moldura e
   componentes continuam sendo os da Loja Pronta Prime. Esta adaptação se limita ao SLL.
-- O SLL segue a navegação do site anterior: no computador, seções à esquerda e conteúdo à direita;
-  no celular, a mesma lista abre pelo controle “Seções do SLL”. O conteúdo usa os tokens, a fonte,
-  os cartões e os botões deste projeto. A moldura da Loja Pronta não muda.
+- O SLL tem moldura própria (`SllAreaShell`), separada da Loja Pronta: um painel (dashboard). No
+  computador, **sem barra no topo**: um menu lateral fixo de 288px, de ponta a ponta na altura da
+  tela (`bg-card` com linha à direita), com a marca e o tema no topo, as seções no meio e, no pé,
+  "Ir pra Minha loja" (quem tem os dois produtos) e a conta (foto, nome e email; o menu abre pra
+  cima). O conteúdo começa no alto, à direita, até 1200px. No celular, volta a barra do topo de
+  sempre (com as abas das áreas) e as seções abrem pelo controle “Seções do SLL”, acima do título.
+  O conteúdo usa os tokens, a fonte, os cartões e os botões deste projeto.
 - O menu mostra Painel, Minhas Lojas, Comece aqui, Método, etapas publicadas, Recursos e Cursos
   complementares. A seção atual fica identificada; etapas em rascunho não viram links para alunas.
-- No computador, o cartão da navegação lateral se estende até o final do conteúdo, sem impor
-  uma altura mínima que alongue páginas curtas. O menu acompanha a rolagem dentro desse cartão.
-  As etapas aparecem quando a aluna está no Método; listas longas rolam dentro
-  do menu. Rótulos de 16px e alvos de 44px deixam os destinos à vista em telas comuns.
+- No computador, o menu lateral fica parado enquanto o conteúdo rola. As etapas aparecem quando
+  a aluna está no Método; se as seções não couberem na altura, só a lista do meio rola. Rótulos de 16px e alvos de 44px deixam os destinos à vista em telas comuns.
   No celular, o controle mostra a seção atual e volta fechado ao navegar, para deixar
   o conteúdo à vista.
 - A aula usa vídeo em proporção 16:9 à esquerda e sequência à direita a partir de 1280px;

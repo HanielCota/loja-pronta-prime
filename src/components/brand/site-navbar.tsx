@@ -10,6 +10,23 @@ import {
   MEMBER_AREA_SIDEBAR_COLUMNS,
 } from '@/lib/member-layout';
 
+/** A marca (o mascote e o nome), que leva ao menu das áreas: na barra do topo e no menu do SLL. */
+export function BrandLink({ className }: { className?: string }) {
+  return (
+    <Link
+      href="/menu"
+      prefetch={false}
+      className={cn(
+        '-ml-1 flex min-h-11 items-center gap-2 rounded-full py-1 pr-3 pl-1 text-body font-semibold whitespace-nowrap text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid',
+        className,
+      )}
+    >
+      <Image src={mascotStill} alt="" width={32} height={32} className="size-8" />
+      Loja Pronta Prime
+    </Link>
+  );
+}
+
 /**
  * Barra do topo de todas as telas, com uma linha fina embaixo de ponta a ponta: a marca à
  * esquerda (leva ao menu das áreas; quem não entrou cai no login), as abas das áreas (`nav`, pra
@@ -60,14 +77,7 @@ export function SiteNavbar({
               : 'max-w-[1040px]',
         )}
       >
-        <Link
-          href="/menu"
-          prefetch={false}
-          className="-ml-1 flex min-h-11 items-center gap-2 justify-self-start rounded-full py-1 pr-3 pl-1 text-body font-semibold text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid"
-        >
-          <Image src={mascotStill} alt="" width={32} height={32} className="size-8" />
-          Loja Pronta Prime
-        </Link>
+        <BrandLink className="justify-self-start" />
         {nav ? (
           // No computador, uma linha vertical curta separa as abas da marca.
           <div
