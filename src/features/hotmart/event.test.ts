@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'bun:test';
-import { parseHotmartEvent, purchaseEffect, shouldApplyEvent, transactionMismatch } from './event';
+import {
+  cleanBuyerName,
+  parseHotmartEvent,
+  purchaseEffect,
+  shouldApplyEvent,
+  transactionMismatch,
+} from './event';
 
 describe('avisos da Hotmart', () => {
   const validEvent = {
@@ -28,9 +34,26 @@ describe('avisos da Hotmart', () => {
     expect(
       parseHotmartEvent({
         ...validEvent,
-        data: { ...validEvent.data, buyer: { email: 'ana@exemplo.com', name: 'x'.repeat(201) } },
+        data: { ...validEvent.data, buyer: { email: 'ana@exemplo.com', name: 'x'.repeat(2001) } },
       }).success,
     ).toBe(false);
+  });
+
+  test('nome com quebra de linha ou comprido demais é limpo, sem recusar a compra', () => {
+    const parsed = parseHotmartEvent({
+      ...validEvent,
+      data: {
+        ...validEvent.data,
+        buyer: { email: 'ana@exemplo.com', name: '  Ana\n\tSilva\u0000 ' + 'x'.repeat(300) },
+      },
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      const name = parsed.data.data.buyer.name ?? '';
+      expect(name.startsWith('Ana Silva x')).toBe(true);
+      expect(name.length).toBeLessThanOrEqual(200);
+    }
+    expect(cleanBuyerName('\u0007')).toBe('');
   });
   test('somente pagamento confirmado libera e reembolso retira', () => {
     expect(purchaseEffect('PURCHASE_APPROVED')).toBe('grant');
