@@ -70,8 +70,20 @@ test('sugere a correção de email digitado errado', async ({ page }) => {
 });
 
 test('senha errada mostra o erro e mantém o email digitado', async ({ page }) => {
+  await page.goto('/entrar?next=%2Fsll');
   await login(page, studentEmail('aluna'), 'senha-errada-1');
   await expect(alert(page)).toContainText('Email ou senha incorretos');
+  await expect(alert(page)).toContainText('Lupita');
+  await expect(alert(page)).toHaveAttribute('data-mascot-speech', 'true');
+  await expect(page.getByLabel('Email da compra')).toHaveValue(studentEmail('aluna'));
+
+  // O próximo passo do balão abre a recuperação real e mantém o destino da aluna.
+  const recovery = page.getByRole('link', { name: 'Redefinir minha senha' });
+  await expect(recovery).toHaveAttribute('href', '/recuperar-senha?next=%2Fsll');
+  await recovery.focus();
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/recuperar-senha\?next=%2Fsll$/);
+  await expect(page.getByRole('heading', { name: 'Criar uma senha nova' })).toBeVisible();
   await expect(page.getByLabel('Email da compra')).toHaveValue(studentEmail('aluna'));
 });
 

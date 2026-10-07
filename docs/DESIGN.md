@@ -80,7 +80,11 @@ o tema escuro e o alto contraste.
   círculo no envio. Em Perfil, adicionar, trocar e remover ficam na linha "Foto de perfil", com o
   mesmo formulário expansível dos outros ajustes; o campo de arquivo tem rótulo e ajuda visíveis
   e funciona sem JavaScript.
-- Mascote (`components/brand/mascot`), `Logo`, `BrandCard`, `CardHeading`. O mascote cochila
+- Lupita é o mascote das duas áreas: arte laranja com pontas roxas, cílios, barriga clara,
+  etiqueta com estrela e duas estrelas ao lado. As cores são do desenho; a interface continua
+  usando os tokens da marca. As três artes transparentes em `components/brand/mascot/assets`
+  compartilham a composição; `art.ts` registra as posições do rosto para as reações existentes.
+- Mascote (`components/brand/mascot`), `Logo`, `BrandCard`, `CardHeading`. A Lupita cochila
   depois de 10s sem mexer (com "Zzz"; com a aba escondida, o relógio pausa), mas só nas telas de
   acesso: onde ele faz a pergunta (`MascotBubble`) ou acompanha a leitura (painel da loja), use
   `canSleep={false}`.
@@ -144,6 +148,12 @@ o tema escuro e o alto contraste.
 
 - **Uma decisão por tela.** Título grande com a pergunta ou o que fazer, uma linha de ajuda, as
   opções, e um botão principal. Nada de várias ações competindo.
+- No login, erros de acesso aparecem num balão da Lupita (`AuthErrorAlert` com `speech`),
+  dentro do formulário, com seu nome, o erro e o próximo passo. O balão reutiliza o `Alert`
+  e os tokens de erro, com uma ponta decorativa que some no alto contraste. Email ou senha
+  incorretos oferecem “Redefinir minha senha”, ação secundária que leva à recuperação real,
+  preservando o email no aparelho e o destino após entrar. A moldura e o mascote no topo ficam
+  no padrão de acesso. O alerta continua ligado ao formulário e anunciado por leitor de tela.
 - No estúdio do logo, a alternativa escrita fica visível abaixo das opções. O campo diz “Escreva do
   seu jeito”, inclui um exemplo no placeholder e um botão “Usar essa ideia”; não fica escondido atrás
   de um link. “Usar essa ideia” compartilha o azul de ação com “Continuar”, mas permanece compacto ao

@@ -41,7 +41,7 @@ type MascotProps = {
 };
 
 /**
- * Mascote que acompanha o que a pessoa faz na tela: segue o mouse mesmo durante a digitação;
+ * Lupita acompanha o que a pessoa faz na tela: segue o mouse mesmo durante a digitação;
  * sem posição conhecida do mouse, olha o texto digitado (e sorri). Fecha os olhos na senha (e
  * espia com um olho ao mostrar), fecha a cara com senha
  * errada, se espanta com Caps Lock, desconfia de email digitado errado, acena quando o email
@@ -139,7 +139,12 @@ export function Mascot({
                   height: `${(eye.pupilH / (areaRy * 2)) * 100}%`,
                   transform: `translate(calc(-50% + var(--gx) * ${travelX}%), calc(-50% + var(--gy) * ${travelY}%)) scale(var(--pupil))`,
                 }}
-              />
+              >
+                {/* Os brilhos fazem parte do olhar da Lupita e acompanham a pupila. */}
+                <svg viewBox="0 0 34 49" className="size-full" aria-hidden="true">
+                  <ellipse cx="12" cy="11" rx="4" ry="4.5" fill="#ffffff" />
+                </svg>
+              </div>
               <div
                 data-lid
                 className="absolute inset-0 bg-no-repeat"
@@ -161,7 +166,8 @@ export function Mascot({
             className="pointer-events-none absolute inset-0 bg-size-[100%_100%] bg-no-repeat"
             style={{
               backgroundImage: closedEyesImage,
-              clipPath: `ellipse(${pct(eye.rx * 1.25)} ${pct(eye.ry * 1.25)} at ${pct(eye.cx)} ${pct(eye.cy)})`,
+              // A pele cobre também os cílios da arte quando ela fecha os olhos.
+              clipPath: `ellipse(${pct(eye.rx * 1.45)} ${pct(eye.ry * 1.35)} at ${pct(eye.cx)} ${pct(eye.cy - 3)})`,
               opacity: `var(--closed${index})`,
             }}
           />

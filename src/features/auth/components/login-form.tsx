@@ -33,7 +33,20 @@ export function LoginForm({ next, initialError }: LoginFormProps) {
 
   return (
     <form {...formProps} className="flex flex-col gap-5">
-      {errorCode ? <AuthErrorAlert key={responseKey} id={form.errorId} code={errorCode} /> : null}
+      {errorCode ? (
+        <AuthErrorAlert key={responseKey} id={form.errorId} code={errorCode} speech>
+          {errorCode === 'invalid_credentials' ? (
+            <Button asChild variant="soft">
+              <Link
+                href={authHref('/recuperar-senha', next)}
+                onClick={() => rememberEmail(fields.email.value ?? '')}
+              >
+                Redefinir minha senha
+              </Link>
+            </Button>
+          ) : null}
+        </AuthErrorAlert>
+      ) : null}
       {next ? <input type="hidden" name="next" value={next} /> : null}
 
       <EmailField

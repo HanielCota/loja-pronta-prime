@@ -70,6 +70,16 @@ describe('rosto', () => {
     }
   });
 
+  test('boca de erro curva para baixo, mesmo com as pontas inclinadas da Lupita', () => {
+    for (const expression of [EXPRESSIONS.grumpy, EXPRESSIONS.worried]) {
+      const points = mouthShape(expression.mouth)
+        .d.match(/-?\d+(?:\.\d+)?/g)!
+        .map(Number);
+      // A boca triste sobe no meio da curva em relação à linha entre suas pontas.
+      expect(points[3]!).toBeLessThan((points[1]! + points[5]!) / 2);
+    }
+  });
+
   test('toda expressão com prioridade existe', () => {
     for (const expression of PRIORITY) expect(EXPRESSIONS).toHaveProperty(expression);
   });
