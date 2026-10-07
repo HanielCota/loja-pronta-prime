@@ -2,108 +2,96 @@
 
 ## Em uma frase
 
-A Loja Pronta Prime ([lojaprontaprime.com](https://lojaprontaprime.com)) é uma área de membros para mulheres iniciantes que querem ganhar uma renda vendendo na Shopee. Ela oferece um curso com ferramentas e uma montagem de loja automática, passo a passo, em que a própria aluna cria a loja com tudo já preparado.
+A Loja Pronta Prime ([lojaprontaprime.com](https://lojaprontaprime.com)) é uma área de membros para mulheres iniciantes que querem vender na Shopee. Ela oferece o curso SLL com ferramentas e a jornada Loja Pronta, em que a própria aluna prepara a marca e a conta, um passo por vez.
 
-## O problema que resolve
-
-Muitas mulheres querem vender online, mas não sabem escolher o que vender, criar anúncios, precificar considerando as taxas da Shopee, nem montar a identidade da loja (nome, logo, descrição). A plataforma resolve isso de duas formas: ensinando, ou levando ela pela mão, um passo de cada vez.
+Este documento descreve o que está implementado em 7 de outubro de 2026. Conexão, produtos de fornecedores e publicação automática na Shopee continuam em preparação.
 
 ## Para quem é
 
 - **Aluna:** mulher iniciante em vendas online, sem conhecimento técnico.
-- **Equipe interna:** operação e suporte, que acompanha alunas e lojas.
-- **Dono do sistema:** quem opera o negócio e não é técnico.
+- **Operação e suporte:** administram conteúdos e acessos, sem montar lojas pela aluna.
+- **Dono do sistema:** acompanha as entregas e configura as integrações.
 
 ## Os dois produtos
 
-Ambos são vendidos pela Hotmart, e a compra libera o acesso na plataforma.
+Os produtos têm acessos separados. Quem tem os dois escolhe a área ao entrar e pode trocar de área pelo menu. A compra de um não libera o outro.
 
 ### SLL — Sistema Loja Lucrativa
 
-Curso em vídeo com ferramentas, para a aluna aprender e vender por conta própria.
+Curso em vídeo para a aluna aprender e vender por conta própria.
 
-- Trilha de boas-vindas.
-- Método em 3 Etapas: as etapas seguintes só abrem depois que a aluna conclui a anterior.
-- Minicursos complementares.
-- Marcação de aulas concluídas e acompanhamento do progresso.
-- Painel de métricas da loja Shopee, depois que a aluna conecta a loja dela.
-- Ferramentas: calculadoras de preço, descontos e anúncios, guia e planilha de custos e quatro assistentes de IA com instruções de uso. Detalhes e pendências em `docs/SLL-FERRAMENTAS.md`.
+- Boas-vindas, Método em 3 Etapas e cursos complementares.
+- Progresso salvo no servidor; a próxima etapa do método abre após concluir as aulas obrigatórias da anterior. Aulas opcionais não impedem o avanço.
+- Etapa 2 com uma pergunta sobre o tempo da loja, 6 prioridades e 7 ações complementares.
+- Biblioteca da Etapa 3 com busca, retorno à busca e numeração original das aulas.
+- 71 aulas vinculadas ao Panda, com reprodução iniciada pela aluna; o catálogo também tem aulas em texto. Conteúdo e publicação podem ser editados no admin.
+- Calculadoras de preço e lucro, descontos e anúncios; guia em PDF e planilha de custos em XLSX com download protegido pelo acesso ao SLL.
+- Quatro guias de uso que levam aos assistentes externos no ChatGPT. O acesso externo depende da conta e das condições do serviço.
+- Minhas Lojas mostra o andamento real da Loja Pronta quando a aluna também tem esse produto. A conexão com a Shopee e as métricas de vendas ainda estão em breve.
+
+Arquivos originais ausentes aparecem como “Em breve”. Não há material inventado para substituí-los. Inventário e pendências: `docs/SLL-FERRAMENTAS.md`.
 
 ### Loja Pronta
 
-A aluna monta a própria loja na Shopee pela plataforma, sem equipe: tudo é automático e passo a passo, com uma decisão por tela e ideias já prontas. O público é muito iniciante (muitas mal sabem usar o computador), então nada pode exigir conhecimento técnico.
+A própria aluna monta sua marca e prepara a conta. A interface tem uma decisão por tela, texto simples e respostas salvas para continuar depois. A jornada usa 7 fases no banco, agrupadas em 3 etapas na interface:
 
-A jornada tem 7 fases, da primeira conversa até a loja no ar:
+| Fase | O que a aluna faz                                         | Situação atual                                    |
+| ---- | --------------------------------------------------------- | ------------------------------------------------- |
+| 1    | Responde à conversa inicial                               | Disponível                                        |
+| 2    | Escolhe nome, cria ou envia logo e define o texto da loja | Disponível                                        |
+| 3    | Abre a conta de vendedora no site da Shopee com um guia   | Guia disponível; confirmação informada pela aluna |
+| 4    | Autoriza a conexão com a Shopee                           | Explicação disponível; conexão em breve           |
+| 5    | Escolhe produtos do fornecedor                            | Em breve; depende do fornecedor e da integração   |
+| 6    | Publica a marca e os produtos pela plataforma             | Em breve; depende da Shopee                       |
+| 7    | Confere a finalização e as vendas                         | Consulta de vendas em breve                       |
 
-1. **Conversa inicial:** o perfil e as preferências da aluna (detalhes abaixo).
-2. **Sua marca:** ela escolhe o nome, monta o logo num estúdio e escolhe o texto da loja (detalhes abaixo).
-3. **Conta na Shopee:** ela abre a conta de vendedora (CPF, documento, selfie, conta bancária) com um passo a passo guiado. Só ela pode fazer isso: a Shopee exige a própria pessoa.
-4. **Conexão com a Shopee:** um botão liga a conta dela à plataforma (autorização da Shopee Open Platform).
-5. **Produtos:** a plataforma sugere produtos do fornecedor (dropshipping), com o preço já calculado com as taxas da Shopee.
-6. **Publicação:** a plataforma publica a marca e os produtos na loja dela, pela API da Shopee.
-7. **Loja no ar:** acompanhamento das vendas.
+A plataforma não confirma hoje que uma loja foi publicada na Shopee. A aluna confere a loja e as vendas na Central do Vendedor. Fases pendentes não têm botões que simulam essas operações.
 
-A aluna sempre sabe em que fase está. Fases sem tela ainda aparecem como "em breve", com aviso no WhatsApp quando abrirem.
+#### Conversa inicial
 
-Pendências de fora: as fases 3 a 7 ainda não têm telas. A 3 precisa de prints ou vídeo das telas atuais da Shopee; a 4 e a 6, do cadastro de parceiro na Shopee Open Platform; a 5, do nome e da API do fornecedor. Os limites de nome (30) e de texto da loja (500) em `src/config/brand.ts` precisam ser confirmados na Central do Vendedor.
+Uma pergunta por tela, com o mascote e salvamento de cada resposta:
 
-#### Conversa inicial (fase 1)
+- Experiência com vendas, motivação, preocupação, categorias de interesse e tempo disponível.
+- Nome da loja ou “Ainda não decidi”, estilo, cor, sentimentos e toque pessoal opcional.
+- Revisão das respostas e salvamento do WhatsApp.
 
-Feita na própria plataforma, uma pergunta por tela, com o mascote "fazendo" cada pergunta. Leva uns 5 minutos e dá para parar e continuar depois: cada resposta fica salva.
+Ao enviar, a loja passa para a fase da marca. O WhatsApp fica salvo como contato; **o envio automático de avisos ainda não existe**. O vídeo de orientação só aparece quando um arquivo real for enviado para esse espaço; sem arquivo, a jornada segue para as respostas enviadas.
 
-- **Sobre você:** se já vendeu pela internet, o que a motivou, o que mais a preocupa, que tipo de produto gostaria de vender (até 3) e quanto tempo tem por semana.
-- **Sua marca:** nome da loja (ou "ainda não decidi", e a plataforma sugere), estilo, cor principal (ou "escolho depois"), como quer que as clientes se sintam (até 3) e um toque pessoal opcional.
-- **Confirmar:** revisão de todas as respostas, com edição, e o WhatsApp em que ela recebe os avisos de cada fase.
+#### Sua marca
 
-Ao enviar, a loja passa para a fase 2 e ela já pode criar a marca.
+1. **Nome:** ideias montadas a partir das respostas, ou um nome escrito pela aluna.
+2. **Logo:** estúdio com tipo, desenho, cores, letras, fundo e estilo. O rascunho é ilustrativo; a OpenAI desenha a imagem final. Há escolhas escritas, transcrição quando configurada, ajustes de uma versão e envio de um logo próprio. O limite atual é de 4 criações e 10 envios por conta.
+3. **Texto da loja:** sugestões a partir das respostas ou um texto próprio.
+4. **Revisão:** nome, logo e texto juntos, com edição, confirmação e download do logo em PNG.
 
-#### Sua marca (fase 2)
+As prévias no perfil da loja e no kit de envio são identificadas como exemplos. Confirmar a marca leva à conta na Shopee (fase 3), ou à explicação da conexão (fase 4) para quem informou que já tem loja. Quem já avançou retorna ao painel atual, sem voltar a um passo bloqueado.
 
-Mesmo formato da conversa: um passo por tela, tudo salvo a cada escolha. Leva uns 10 minutos.
+Os limites de nome (30) e descrição (500) estão em `src/config/brand.ts`. As categorias de interesse ainda não vêm de um catálogo de fornecedores.
 
-1. **Nome:** o nome que ela deu na conversa e 6 ideias montadas com as respostas dela (categorias, estilo e o nome dela), ou um nome escrito por ela. Cada nome é um botão: um toque escolhe e segue.
-2. **Modelo do logo:** 6 logos prontos, um por formato (ícone em cima, ícone ao lado, selo redondo, inicial em destaque, só o nome e faixa), já com o nome, a letra do estilo, a cor e um ícone da categoria.
-3. **Estúdio:** ela muda a cor (12, com fundo branco ou colorido), o desenho (29 ícones ou nenhum), a letra (6 fontes) e o formato, vendo o logo mudar na hora e como ele fica no círculo da Shopee. Tem "Desfazer" e "Voltar ao modelo".
-4. **Texto da loja:** 3 textos prontos com as respostas dela, ou um escrito por ela.
-5. **Revisão:** logo, nome e texto juntos, cada um com "Mudar". Ao confirmar, a loja passa para a fase 3 e ela pode baixar o logo em PNG (1000×1000).
+## Como o acesso funciona hoje
 
-Não há IA de imagem: o logo é desenhado pela plataforma a partir dos modelos, então sai igual na tela e no arquivo.
+- Não existe cadastro público. O login usa email e senha de uma conta já criada.
+- A recuperação de senha permite criar a primeira senha ou trocar uma senha existente, por link enviado ao email. Depende do serviço de email configurado.
+- Contas marcadas com senha temporária precisam criar outra antes de acessar as áreas.
+- O recebimento de compras Hotmart já verifica o token, cria a conta e libera o produto mapeado. Uma conta nova recebe uma senha aleatória que não é enviada. **O convite automático de primeiro acesso ainda precisa ser concluído**, assim como a configuração real da Hotmart e do email.
+- Reembolso e contestação recalculam o acesso daquele produto, preservando outra compra ativa ou concessão manual. A política para cancelamento de assinatura continua pendente.
 
-Pendências: as categorias de produto ainda são uma lista provisória (devem vir do catálogo de fornecedores) e o vídeo de boas-vindas da Pri, que existia no sistema antigo, fica para quando houver o vídeo.
+Detalhes atuais e fluxo de convite planejado: `docs/INTEGRACAO-HOTMART.md`. Contas de desenvolvimento são criadas com `bun run dev:aluna`; não representam compras reais.
 
-### Aluna com os dois produtos
+## Painel administrativo disponível
 
-Ao entrar, ela escolhe qual área quer acessar.
+Administradores podem organizar e editar boas-vindas, método e cursos; enviar materiais, imagens e capas; conferir prévias; salvar rascunhos, publicar, arquivar e restaurar itens. Também editam banners, recursos e textos fixos do SLL.
 
-## Como o acesso funciona
+O painel permite liberar ou remover um produto de uma conta existente com motivo e histórico, configurar dois códigos distintos de produtos Hotmart e o token, e consultar avisos de compras. Salvar a configuração não testa a conexão externa nem conclui o convite por email.
 
-1. A aluna compra na Hotmart.
-2. A conta é criada automaticamente e o produto comprado é liberado.
-3. Ela recebe um e-mail de boas-vindas com o botão "Criar minha senha".
-4. O botão abre a tela de criar a senha; ao salvar, ela já entra.
-5. Depois, entra com e-mail e senha.
-
-Hoje, até a integração com a Hotmart existir, as contas de teste usam uma senha temporária no lugar do botão (ver `docs/INTEGRACAO-HOTMART.md`, seção 4.1).
-
-Não existe cadastro público: só entra quem comprou ou quem a equipe liberou manualmente. Reembolso ou cancelamento bloqueia o acesso.
-
-## O que a equipe interna faz
-
-A equipe não participa da montagem das lojas. No painel administrativo (ainda a construir), ela:
-
-- Vê todas as lojas e a fase de cada uma.
-- Consulta o histórico de cada loja.
-- Libera ou remove acessos manualmente, registrando o motivo.
-- Acompanha quantas compradoras chegaram a entrar na plataforma.
-- Configura o sistema por tela, sem mexer em arquivos técnicos.
+Um painel de todas as lojas, histórico de montagem por loja, métricas comerciais e contagem de compradoras que entraram continuam fora da entrega atual.
 
 ## Glossário
 
-- **Aluna:** cliente final que comprou um dos produtos.
 - **SLL:** Sistema Loja Lucrativa, o curso com ferramentas.
-- **Loja Pronta:** produto em que a aluna monta a loja na Shopee pela plataforma, passo a passo e de forma automática.
-- **Shopee:** marketplace onde as lojas vendem.
-- **Dropshipping:** venda sem estoque próprio; o fornecedor envia o produto ao cliente.
-- **Hotmart:** plataforma onde os produtos são vendidos.
-- **Fase:** cada etapa da jornada da Loja Pronta.
-- **Senha temporária:** senha das contas de teste, usada só no primeiro acesso. Com a integração com a Hotmart, dá lugar ao link "Criar minha senha" do email de boas-vindas.
+- **Loja Pronta:** a jornada de preparação da loja pela própria aluna.
+- **Fase:** um dos 7 passos internos da jornada; as telas agrupam esses passos em 3 etapas.
+- **Hotmart:** plataforma de venda dos produtos e origem dos avisos de compras.
+- **Shopee:** plataforma onde a aluna abre a conta e vende.
+- **Dropshipping:** venda sem estoque próprio, com envio pelo fornecedor; integração pendente.
+- **Senha temporária:** senha inicial de uma conta marcada para troca obrigatória.

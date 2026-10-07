@@ -80,8 +80,9 @@ export default async function ConversationDonePage() {
         </ol>
         {whatsapp ? (
           <p className="text-body text-pretty text-muted-foreground">
-            Os avisos de cada fase chegam no WhatsApp{' '}
-            <strong className="font-semibold whitespace-nowrap">{formatWhatsapp(whatsapp)}</strong>.
+            Seu WhatsApp salvo:{' '}
+            <strong className="font-semibold whitespace-nowrap">{formatWhatsapp(whatsapp)}</strong>.{' '}
+            Os avisos automáticos estão em breve.
           </p>
         ) : null}
       </section>

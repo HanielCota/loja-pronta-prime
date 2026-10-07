@@ -46,7 +46,7 @@ export function LoginForm({ next, initialError }: LoginFormProps) {
         meta={fields.password}
         label="Senha"
         autoComplete="current-password"
-        hint="Primeiro acesso? Use a senha temporária que mandamos no seu email."
+        hint="Primeiro acesso? Se ainda não tem uma senha, use o link abaixo para criar a sua."
         below={
           <div className="-my-1 flex justify-end">
             <Button asChild variant="link" size="inline" className="text-sm">

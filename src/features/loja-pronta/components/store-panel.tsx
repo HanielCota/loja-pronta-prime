@@ -139,22 +139,22 @@ function heroFor(
       title: current?.title ?? '',
       text: current?.detail ?? '',
       action: { href: SHOPEE_CONNECT_PATH, label: 'Ver como funciona a conexão' },
-      note: 'A conexão abre em breve. Avisamos no WhatsApp quando der pra conectar.',
+      note: 'A conexão com a Shopee está em breve. Por enquanto, você pode conferir como ela vai funcionar.',
     };
   }
   if (phase >= STORE_PHASES.length) {
     return {
-      eyebrow: 'Pronto',
-      title: 'Sua loja está no ar',
-      text: current?.detail ?? '',
-      note: 'As vendas vão aparecer aqui.',
+      eyebrow: stageEyebrow(3, 'Em breve'),
+      title: 'Última etapa da sua loja',
+      text: 'A publicação automática e a consulta de vendas ainda estão em preparação.',
+      note: 'Confira a publicação e as vendas na Central do Vendedor da Shopee.',
     };
   }
   return {
     eyebrow: stageEyebrow(3, 'Em breve'),
     title: current?.title ?? '',
     text: current?.detail ?? '',
-    note: 'Estamos preparando essa parte. Avisamos no WhatsApp quando ela abrir.',
+    note: 'Esta parte está em breve. Você pode rever as etapas já concluídas.',
   };
 }
 

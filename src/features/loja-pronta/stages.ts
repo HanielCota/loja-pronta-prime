@@ -24,16 +24,14 @@ export function stageNumber(phase: number): number {
 }
 
 /**
- * O caminho em 3 etapas, do jeito que a tela mostra: as feitas, a atual e as próximas. Com a loja
- * no ar (a última fase), tudo conta como feito.
+ * O caminho em 3 etapas, do jeito que a tela mostra: as feitas, a atual e as próximas. A última
+ * fase ainda está em preparação: o número da fase sozinho não confirma publicação na Shopee.
  */
 export function storeStages(phase: number): StageView[] {
-  const live = phase >= STORE_PHASES.length;
   const current = stageNumber(phase);
   return STORE_STAGES.map((stage, index) => {
     const number = index + 1;
-    const status: StageStatus =
-      live || number < current ? 'done' : number === current ? 'current' : 'next';
+    const status: StageStatus = number < current ? 'done' : number === current ? 'current' : 'next';
     const phases = stage.phases as readonly number[];
     const position = phases.indexOf(phase);
     const step =

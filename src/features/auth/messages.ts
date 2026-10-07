@@ -32,7 +32,7 @@ type AuthMessage = {
 export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, AuthMessage> = {
   invalid_credentials: {
     title: 'Email ou senha incorretos',
-    hint: 'Confira se é o mesmo email da compra. No primeiro acesso, use a senha temporária enviada por email.',
+    hint: 'Confira se é o mesmo email da compra. Se ainda não tem uma senha, use “Esqueceu ou não recebeu a senha?” para criar a sua.',
   },
   email_not_confirmed: {
     title: 'Confirme seu email primeiro',
@@ -48,12 +48,12 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, AuthMessage> = {
     hint: 'Abra o mais recente no seu email (olhe também no spam). Se nenhum chegou, fale com o suporte.',
   },
   account_disabled: {
-    title: 'Sua conta foi desativada. Entre em contato com o suporte.',
-    hint: 'Isso acontece depois de um reembolso ou cancelamento. Se achar que é engano, fale com o suporte.',
+    title: 'Sua conta foi desativada',
+    hint: 'Consulte sua compra na Hotmart e os contatos do produtor. Se achar que houve um engano, peça ajuda por lá.',
   },
   session_expired: {
     title: 'Sessão inválida ou expirada. Faça login novamente.',
-    hint: 'Por segurança, a sessão termina depois de um tempo sem uso.',
+    hint: 'Entre novamente com seu email e senha para continuar de onde parou.',
   },
   reset_link_invalid: {
     title: 'Esse link expirou ou já foi usado',

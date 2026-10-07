@@ -25,7 +25,7 @@ type SllAreaProps = {
   copy: SllCopy;
 };
 
-/** Painel do SLL: destaques, situação da Shopee e caminhos de estudo que já estão publicados. */
+/** Painel do SLL: primeiro o estudo disponível, depois a situação da Shopee. */
 export function SllArea({
   user,
   firstVisit,
@@ -48,8 +48,6 @@ export function SllArea({
       intro={hasLessons ? copy.dashboardIntro : copy.dashboardEmptyIntro}
       beforeHeader={banners.length ? <SllBannerCarousel banners={banners} /> : undefined}
     >
-      <SllStoreStatusCard />
-      <SllNextPathCard hasStoreAccess={hasChoice} />
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <SllCourseCard
           welcomeHref={welcomeHref}
@@ -59,6 +57,8 @@ export function SllArea({
         />
         <SllToolsCard copy={copy} />
       </div>
+      <SllStoreStatusCard />
+      <SllNextPathCard hasStoreAccess={hasChoice} />
     </SllAreaShell>
   );
 }

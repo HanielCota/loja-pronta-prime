@@ -27,7 +27,7 @@ export const storeOnboarding = pgTable(
   (table) => [
     // O mesmo formato que o app grava: DDD (sem 0) e número, só dígitos.
     check('store_onboarding_whatsapp_check', sql`${table.whatsapp} ~ '^[1-9][0-9]{9,10}$'`),
-    // Enviada sempre com o WhatsApp: é por ele que chegam os avisos de cada fase.
+    // Enviada sempre com um contato salvo; o envio automático de avisos ainda não está integrado.
     check(
       'store_onboarding_completed_check',
       sql`${table.completedAt} is null or ${table.whatsapp} is not null`,

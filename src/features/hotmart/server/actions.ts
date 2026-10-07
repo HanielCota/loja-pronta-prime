@@ -6,29 +6,22 @@ import { db } from '@/server/db';
 import { hotmartEvents, hotmartProductMappings, hotmartSettings } from '@/server/db/schema';
 import { requireAdmin } from '@/features/admin/server/access';
 import { encryptHottok } from './secret';
+import { parseHotmartSettings } from '../settings-input';
 
-export type SettingsResult = { message: string };
+export type SettingsResult = { message: string; saved: boolean };
 
 export async function saveHotmartSettings(
   _previous: SettingsResult,
   form: FormData,
 ): Promise<SettingsResult> {
   const session = await requireAdmin('/admin/hotmart');
-  const token = form.get('token');
-  const sllCode = form.get('sllCode');
-  const storeCode = form.get('storeCode');
-  if (typeof token !== 'string' || typeof sllCode !== 'string' || typeof storeCode !== 'string')
-    return { message: 'Confira os campos.' };
-  const sll = sllCode.trim();
-  const store = storeCode.trim();
-  if (!sll || !store || sll.length > 150 || store.length > 150)
-    return { message: 'Informe os códigos dos dois produtos.' };
+  const parsed = parseHotmartSettings(form);
+  if (!parsed.ok) return { message: parsed.message, saved: false };
+  const { token, sllCode: sll, storeCode: store } = parsed.value;
   const previous = await db.query.hotmartSettings.findFirst({
     where: eq(hotmartSettings.id, 'main'),
   });
-  if (!previous && !token.trim()) return { message: 'Informe o token de verificação.' };
-  if (token && (token.trim().length < 8 || token.trim().length > 500))
-    return { message: 'O token precisa ter entre 8 e 500 caracteres.' };
+  if (!previous && !token) return { message: 'Informe o token de verificação.', saved: false };
   const currentMappings = await db.query.hotmartProductMappings.findMany();
   const changedMappings = currentMappings.some(
     (item) => (item.access === 'sll' ? sll : store) !== item.productUcode,
@@ -38,6 +31,7 @@ export async function saveHotmartSettings(
     (await db.query.hotmartPurchases.findFirst({ columns: { transaction: true } }))
   ) {
     return {
+      saved: false,
       message:
         'Já chegaram compras com esses códigos, então eles não podem mudar: isso mexeria no acesso de quem já comprou. Volte aos códigos de antes e salve de novo.',
     };
@@ -70,7 +64,7 @@ export async function saveHotmartSettings(
       .onConflictDoNothing();
   });
   revalidatePath('/admin/hotmart');
-  return { message: 'Configuração salva. Novos avisos já podem ser recebidos.' };
+  return { message: 'Configuração salva. Novos avisos já podem ser recebidos.', saved: true };
 }
 
 export async function getHotmartAdminState() {

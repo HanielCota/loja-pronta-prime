@@ -34,8 +34,8 @@ test('conta na Shopee: passo a passo, "falta terminar" e, liberada, a tela da co
   // Liberada: a loja vai pra conexão, que explica o que vai acontecer (e abre em breve).
   await page.getByRole('button', { name: 'Sim, já entro no painel de vendedora' }).click();
   await expect(page).toHaveURL(/\/loja-pronta\/shopee\/conectar$/);
-  await expect(page.getByRole('heading', { name: 'Hora de conectar sua Shopee' })).toBeVisible();
-  await expect(page.getByText('A conexão abre em breve')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Conexão com a Shopee em breve' })).toBeVisible();
+  await expect(page.getByText(/A conexão depende da liberação da Shopee/)).toBeVisible();
   await expectNoA11yViolations(page);
 
   // A conta já foi: a página dela leva pro painel, que mostra a conexão.

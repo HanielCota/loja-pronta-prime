@@ -4,7 +4,7 @@ import { CheckIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
-/** As etapas da criação, pelo tempo que passou (a IA leva de 15 segundos a 1 minuto). */
+/** Orientação estimada pelo tempo de espera; o término depende da resposta da IA. */
 const STAGES: [seconds: number, text: string][] = [
   [0, 'Lendo as suas escolhas'],
   [5, 'Desenhando o símbolo'],
@@ -42,10 +42,10 @@ export function CreatingProgress({ titleId, number }: { titleId: string; number:
           className="text-title font-bold text-balance outline-none sm:text-title-lg"
         >
           A IA está desenhando o seu logo
-          <span className="sr-only">. Leva até 1 minuto.</span>
         </h1>
         <p className="text-body text-pretty text-muted-foreground">
-          Pode esperar aqui. Não feche esta página.
+          Pode esperar aqui. Não feche esta página. A barra é uma estimativa; a criação termina
+          quando o logo aparecer.
         </p>
       </div>
       <div aria-hidden="true" className="h-2.5 overflow-hidden rounded-full bg-progress-track">

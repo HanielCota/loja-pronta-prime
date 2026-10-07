@@ -437,13 +437,15 @@ test('matriz visual, teclado, texto maior, contraste e movimento reduzido', asyn
     });
     await page.evaluate(() => document.documentElement.removeAttribute('data-contrast'));
   }
-  const nav = page.getByRole('button', { name: 'Abrir navegação do SLL' });
+  const nav = page.getByRole('button', { name: /Seções do SLL/ });
+  const sections = page.locator('details').filter({ has: nav });
   await nav.focus();
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('dialog', { name: 'Navegação do SLL' })).toBeVisible();
+  await expect(sections).toHaveAttribute('open', '');
+  await expect(page.getByRole('link', { name: 'Método SLL', exact: true })).toBeVisible();
   await expectNoA11yViolations(page);
-  await page.keyboard.press('Escape');
-  await expect(nav).toHaveAttribute('aria-expanded', 'false');
+  await page.keyboard.press('Enter');
+  await expect(sections).not.toHaveAttribute('open', '');
   await expect(nav).toBeFocused();
   await page.emulateMedia({ forcedColors: 'active', reducedMotion: 'reduce' });
   await page.waitForFunction(() =>

@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { BrandCard } from '@/components/brand/brand-card';
 import { CardHeading } from '@/components/brand/card-heading';
@@ -41,13 +40,13 @@ export async function ProductLobby({ enterSingleProduct = false }: ProductLobbyP
         <BrandCard expression="happy" compact>
           <CardHeading
             title="Seu acesso ainda não foi liberado"
-            description="Se você acabou de comprar, a liberação leva alguns minutos. Se já faz tempo, fale com o suporte."
+            description="Confira se este é o email da compra. Se o acesso não aparecer, consulte a compra na Hotmart e use os contatos do produtor."
           />
           {/* Link comum (recarrega a página): funciona sem JavaScript. */}
           <Button asChild>
-            <Link href="/menu" prefetch={false}>
-              Verificar de novo
-            </Link>
+            {/* Recarregar é necessário para consultar um acesso recém-liberado, sem o cache da navegação. */}
+            {/* oxlint-disable-next-line next/no-html-link-for-pages */}
+            <a href="/menu">Verificar de novo</a>
           </Button>
         </BrandCard>
       </CenteredMemberPage>
@@ -59,7 +58,11 @@ export async function ProductLobby({ enterSingleProduct = false }: ProductLobbyP
     sll: SLL_CHOOSER_STATUS,
     ...(store ? { 'loja-pronta': store.status } : {}),
   };
-  const { primary, description } = chooserHeadline({ store, lastArea });
+  const { primary, description } = chooserHeadline({
+    store,
+    lastArea,
+    hasSllAccess: products.includes('sll'),
+  });
 
   return (
     <CenteredMemberPage account={user} wide={products.length > 1}>

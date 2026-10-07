@@ -6,8 +6,7 @@ import { getParam, type SearchParams } from '@/lib/search-params';
 
 export const metadata: Metadata = {
   title: 'Recuperar senha',
-  description:
-    'Receba um link pra criar uma senha nova, mesmo que a senha temporária não tenha chegado.',
+  description: 'Receba um link para criar sua primeira senha ou trocar a que já usa.',
 };
 
 export default async function RecoverPasswordPage({

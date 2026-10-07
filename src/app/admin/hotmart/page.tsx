@@ -34,6 +34,10 @@ export default async function HotmartAdminPage() {
         <p className="text-body break-all">
           Endereço para cadastrar na Hotmart: <strong>{url}</strong>
         </p>
+        <p className="text-body text-pretty text-muted-foreground">
+          Depois de cadastrar o endereço na Hotmart, confira uma compra de teste no histórico
+          abaixo. O email automático de primeiro acesso está em preparação.
+        </p>
         <HotmartSettingsForm
           configured={state.configured}
           sll={state.mappings.find((item) => item.access === 'sll')?.productUcode ?? ''}

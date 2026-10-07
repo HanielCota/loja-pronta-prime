@@ -27,7 +27,7 @@ const PROMISES: { Icon: LucideIcon; title: string; text: string }[] = [
   {
     Icon: EyeIcon,
     title: 'Permissão',
-    text: 'Liberamos só o que precisamos pra publicar sua loja. Nada além disso.',
+    text: 'Quando a conexão abrir, você poderá conferir as permissões no site da Shopee antes de autorizar.',
   },
   {
     Icon: RefreshCwIcon,
@@ -63,8 +63,8 @@ export default async function ShopeeConnectPage() {
         <Logo expression="happy" compact />
         <CardHeading
           className="mb-0"
-          title="Hora de conectar sua Shopee"
-          description={`Você entra no site oficial da Shopee e autoriza a publicação da ${brand.name ?? 'sua loja'}. Leva 1 minuto.`}
+          title="Conexão com a Shopee em breve"
+          description={`A ${brand.name ?? 'sua loja'} ainda não está conectada pela plataforma. Veja como a autorização vai funcionar.`}
         />
         <ul className="grid gap-3 sm:grid-cols-3">
           {PROMISES.map(({ Icon, title, text }) => (
@@ -80,8 +80,8 @@ export default async function ShopeeConnectPage() {
         <p className="flex gap-3 rounded-2xl bg-primary-soft px-4 py-3 text-body text-pretty text-foreground">
           <BellIcon aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-link" />
           <span>
-            A conexão abre em breve: estamos terminando a liberação com a Shopee. Avisamos você no
-            WhatsApp assim que der pra conectar.
+            A conexão depende da liberação da Shopee. Por enquanto, a plataforma não publica sua
+            marca nem seus produtos por lá.
           </span>
         </p>
         <Button asChild variant="soft">

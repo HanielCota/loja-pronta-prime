@@ -61,7 +61,7 @@ export default async function ProfilePage() {
                 <span className="sr-only"> (abre em outra aba)</span>
               </a>
             ) : (
-              'fale com o suporte'
+              'consulte os contatos do produtor na sua compra na Hotmart'
             )}
             .
           </>

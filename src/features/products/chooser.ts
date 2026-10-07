@@ -29,16 +29,16 @@ type HeadlineInput = {
   /** Situação da Loja Pronta, quando ela tem o produto. */
   store?: { waitsOnStudent: boolean } | undefined;
   lastArea?: ProductId | undefined;
+  hasSllAccess?: boolean | undefined;
 };
 
 /**
  * Qual produto leva o botão cheio e o texto de cima da escolha de área.
  * - Loja Pronta esperando por ela: vem antes de tudo, e o texto aponta pra ela.
- * - Loja numa fase que ainda não abriu: nenhum botão "manda" pra lá (nem pro curso, que ainda
- *   não abriu), e o texto avisa que ela recebe um aviso no WhatsApp.
+ * - Loja numa fase que ainda não abriu: a aluna pode conferir a loja ou estudar no SLL.
  * - Sem loja: continua de onde parou, ou escolhe por onde começar.
  */
-export function chooserHeadline({ store, lastArea }: HeadlineInput): {
+export function chooserHeadline({ store, lastArea, hasSllAccess }: HeadlineInput): {
   primary?: ProductId | undefined;
   description: string;
 } {
@@ -47,7 +47,9 @@ export function chooserHeadline({ store, lastArea }: HeadlineInput): {
   }
   if (store) {
     return {
-      description: 'A próxima fase da sua loja abre em breve. Você recebe um aviso no WhatsApp.',
+      description: hasSllAccess
+        ? 'A próxima fase da sua loja está em preparação. Você pode acessar as aulas do SLL.'
+        : 'A próxima fase da sua loja está em preparação. Você pode rever o que já concluiu.',
     };
   }
   return { description: lastArea ? 'Continue de onde parou.' : 'Escolha por onde começar.' };

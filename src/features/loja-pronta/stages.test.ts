@@ -32,7 +32,10 @@ describe('etapas', () => {
     expect(storeStages(2).map((stage) => stage.fill)).toEqual([1, 0.5, 0]);
   });
 
-  test('loja no ar: tudo feito', () => {
-    expect(storeStages(STORE_PHASES.length).every((stage) => stage.status === 'done')).toBe(true);
+  test('última fase não confirma uma publicação que ainda não está integrada', () => {
+    const stages = storeStages(STORE_PHASES.length);
+    expect(stages.map((stage) => stage.status)).toEqual(['done', 'done', 'current']);
+    expect(stages[2]?.step).toBe('Passo 5 de 5: Finalização da loja');
+    expect(stages[2]?.fill).toBe(0.9);
   });
 });

@@ -67,7 +67,7 @@ function RecoverPasswordFlow({
     <>
       <CardHeading
         title="Criar uma senha nova"
-        description="Digite o email da compra pra receber um link. Serve também se a senha temporária não chegou."
+        description="Digite o email da compra pra receber um link. Você pode criar sua primeira senha ou trocar a que já usa."
       />
       <form {...formProps} className="flex flex-col gap-5">
         {errorCode ? <AuthErrorAlert key={responseKey} id={form.errorId} code={errorCode} /> : null}

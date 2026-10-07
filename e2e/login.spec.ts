@@ -127,9 +127,9 @@ test('bloqueia depois de 5 tentativas em 1 minuto', async ({ page }) => {
   expect(rows[0]?.blocked).toBeGreaterThan(0);
 });
 
-test('a dica da senha temporária é lida junto com o campo de senha', async ({ page }) => {
+test('a orientação para criar a primeira senha é lida junto com o campo', async ({ page }) => {
   await page.goto('/entrar');
   await expect(page.getByLabel('Senha', { exact: true })).toHaveAccessibleDescription(
-    /senha temporária/,
+    /Primeiro acesso.*link abaixo/,
   );
 });
