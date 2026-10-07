@@ -4,6 +4,14 @@ Este plano reúne a reconstrução da área SLL da aluna e o painel administrati
 curta e pode ser executada sozinha. Ao iniciar uma tarefa, leia `AGENTS.md`, `docs/DESIGN.md` e os
 arquivos envolvidos; implemente somente a tarefa pedida e pare ao concluí-la.
 
+## Vídeos Panda — decisão de 7 de outubro de 2026
+
+O dono pediu a incorporação dos vídeos Panda existentes no SLL. O catálogo de 71 aulas está em
+`data/sll/panda-videos.json`; a importação para o banco e a conferência estão em
+`docs/SLL-VIDEOS-PANDA.md`. O player já funciona nas aulas e nas prévias do admin. Essa decisão
+substitui a orientação anterior de aguardar uma definição de hospedagem. Os vídeos mantêm sua
+hospedagem original; arquivos, capas e banners seguem suas pendências próprias.
+
 ## Referências obrigatórias
 
 - Use `docs/SLL-T01-INVENTARIO.md`, `docs/SLL-T02-INVENTARIO.md` e
@@ -40,25 +48,25 @@ arquivos envolvidos; implemente somente a tarefa pedida e pare ao concluí-la.
 | T12    | Salvar conclusão e progresso por aluna, trilha e aula. Retomar do ponto certo e atualizar as contagens usadas pelas telas antigas.                                                                                   | Concluída                                                                                          |
 | T13    | Aplicar o desbloqueio em sequência entre as etapas do Método SLL e explicar com clareza qual etapa falta concluir.                                                                                                   | Concluída                                                                                          |
 | T14    | Criar o visualizador reutilizável de aulas conforme a captura: player, lista lateral do grupo, aula atual, anterior/próxima e conclusão real. No celular, reorganizar a lista sem escondê-la.                        | Implementada; revisão visual pendente                                                              |
-| T15    | Reconstruir “Comece aqui” com as seis aulas, mensagem de abertura, lista/progresso e caminho para a Etapa 1 ao concluir.                                                                                             | Conteúdo inicial publicado; vídeos em branco até definição da hospedagem                           |
-| T16    | Reconstruir a página do Método SLL e Etapa 1: três etapas no resumo, ferramentas e os quatro passos com as 15 aulas inventariadas. Ligar cada aula ao visualizador.                                                  | Conteúdo inicial publicado; vídeos em branco até definição da hospedagem                           |
-| T17    | Reconstruir Etapa 2: seis prioridades em grupos expansíveis, sete ações complementares separadas e links para aulas completas. Só as seis prioridades contam no progresso.                                           | Conteúdo inicial publicado; vídeos em branco até definição da hospedagem                           |
-| T18    | Reconstruir Etapa 3: busca, oito categorias, 19 aulas inventariadas e materiais associados, mantendo o acesso condicionado à conclusão da etapa anterior.                                                            | Estrutura e aulas publicadas; migração de arquivos originais pendente                              |
+| T15    | Reconstruir “Comece aqui” com as seis aulas, mensagem de abertura, lista/progresso e caminho para a Etapa 1 ao concluir.                                                                                             | Conteúdo publicado; vídeos Panda vinculados no banco local                                         |
+| T16    | Reconstruir a página do Método SLL e Etapa 1: três etapas no resumo, ferramentas e os quatro passos com as 15 aulas inventariadas. Ligar cada aula ao visualizador.                                                  | Conteúdo publicado; vídeos Panda vinculados no banco local                                         |
+| T17    | Reconstruir Etapa 2: seis prioridades em grupos expansíveis, sete ações complementares separadas e links para aulas completas. Só as seis prioridades contam no progresso.                                           | Conteúdo publicado; vídeos Panda vinculados no banco local                                         |
+| T18    | Reconstruir Etapa 3: busca, oito categorias, 19 aulas inventariadas e materiais associados, mantendo o acesso condicionado à conclusão da etapa anterior.                                                            | Aulas e vídeos Panda vinculados; arquivos originais pendentes                                      |
 | T19    | Administrar cursos complementares: criar, editar e excluir cursos, aulas, textos, links, vídeos, arquivos e imagens; ordenar itens e definir publicação.                                                             | Implementada                                                                                       |
-| T20    | Reconstruir a biblioteca de cursos complementares Shopee e suas páginas de aula com a mesma navegação do antigo e o visualizador comum.                                                                              | Implementada; vídeos e capas aguardam migração                                                     |
+| T20    | Reconstruir a biblioteca de cursos complementares Shopee e suas páginas de aula com a mesma navegação do antigo e o visualizador comum.                                                                              | Implementada; vídeos Panda vinculados; capas pendentes                                             |
 | T21    | Editar no admin os banners do painel: imagem, chamada, texto, destino e ordem; mostrar o carrossel real para a aluna.                                                                                                | Implementada; imagens originais pendentes                                                          |
 | T22    | Reconstruir Recursos/Ferramentas com os materiais conferidos. Deixar itens sem fórmula, arquivo ou destino validado como indisponíveis/em breve, sem simular funcionamento.                                          | Implementada                                                                                       |
 | T23    | Integrar “Minhas Lojas” aos dados reais disponíveis da Shopee. Status e lojas vêm do backend. Se a conexão depender de credenciais ou API ausente, registrar a dependência e mostrar “em breve”, sem botão fictício. | Implementada; depende da integração Shopee                                                         |
 | T24    | Permitir ao admin liberar ou remover SLL e Loja Pronta separadamente, com motivo registrado. Uma conta pode ter um produto ou os dois; remover um não remove o outro.                                                | Concluída                                                                                          |
 | T25    | Conferir a integração de compra e reembolso da Hotmart para os dois produtos. Compra libera somente o produto comprado; reembolso remove somente aquele acesso; eventos repetidos não duplicam liberações.           | Implementada e testada localmente; ativação real depende dos dados da Hotmart e do envio de email. |
-| T26    | Revisar o percurso completo, acessos duplos, perfil, senha, links, PDFs, navegação das aulas, etapas, temas, celular, teclado, leitor de tela e testes do projeto. Corrigir falhas encontradas.                      | Concluída; aulas ficam em rascunho até receberem vídeos                                            |
+| T26    | Revisar o percurso completo, acessos duplos, perfil, senha, links, PDFs, navegação das aulas, etapas, temas, celular, teclado, leitor de tela e testes do projeto. Corrigir falhas encontradas.                      | Concluída; vídeos Panda conferidos localmente em 7 de outubro                                      |
 
 ## Metas de revisão do editor e da área Aprender
 
 Estes itens registram o feedback recebido após T26 e a nova inspeção de leitura das áreas antigas
 Método SLL, Recursos e Cursos Complementares. São metas pendentes, não uma declaração de que o
 novo site já atende a elas. Preservar o fluxo da aluna do site antigo e o visual de
-`docs/DESIGN.md`. Os vídeos seguem sem solução de hospedagem definida.
+`docs/DESIGN.md`. A decisão sobre vídeos foi atualizada acima em 7 de outubro de 2026.
 
 - [ ] **Painel da aluna:** manter o banner grande como espaço para avisos, novidades e lembretes
       gerais da plataforma, visíveis a todas as alunas com acesso. Abaixo dele, mostrar informações
@@ -68,10 +76,9 @@ novo site já atende a elas. Preservar o fluxo da aluna do site antigo e o visua
 - [ ] **Comece aqui:** reproduzir a composição da aula antiga: área principal de vídeo à esquerda,
       lista lateral de aulas com progresso e aula atual à direita, e abaixo os controles reais de aula
       anterior, próxima aula e marcar como concluída. Conferir o que já existe antes de alterar.
-- [ ] **Espaço do vídeo:** enquanto a hospedagem não for decidida, mostrar um retângulo vazio na
-      proporção do player com ícone de reprodução e texto claro de indisponibilidade. Não escolher
-      Panda Video nem upload como solução definitiva agora. O admin deve poder editar o material da
-      aula depois que a decisão for tomada.
+- [x] **Vídeo da aula:** incorporar os players Panda conferidos nas aulas e nas prévias do admin,
+      em proporção 16:9 e sem reprodução automática. Sem ID válido, mostrar “Vídeo em breve”.
+      O editor aceita o link ou ID do player, com validação no servidor.
 - [ ] **Edição da aula:** tornar editáveis tanto o conteúdo principal quanto a lista lateral
       (títulos, ordem e relação das aulas), sem perder a navegação e o progresso reais da aluna.
 - [ ] **Editor simples:** usar o padrão de arrastar para ordenar/adicionar blocos de conteúdo,

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { pandaVideoId } from '@/features/sll/panda-video';
 import { toSafeWebUrl } from '@/lib/urls';
 
 const safeWebUrl = z
@@ -35,8 +36,12 @@ export const lessonEditSchema = z.object({
           id: z.preprocess((value) => (value === '' ? undefined : value), z.uuid().optional()),
           kind: z.literal('video'),
           provider: z.literal('pandavideo'),
-          // Campo vazio mantém o espaço da aula sem inventar uma URL. A publicação valida o ID.
-          videoId: z.union([z.literal(''), z.uuid()]),
+          // O formulário aceita o link, mas nenhum endereço externo é salvo como vídeo.
+          videoId: z
+            .string()
+            .trim()
+            .transform((value) => pandaVideoId(value) ?? value)
+            .pipe(z.union([z.literal(''), z.uuid()])),
           note: z.string().trim().max(3000).default(''),
         }),
         z.object({

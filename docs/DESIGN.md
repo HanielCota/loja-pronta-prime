@@ -173,6 +173,9 @@ o tema escuro e o alto contraste.
   em azul e visível na lista, que acompanha a rolagem no computador. Anterior/próxima ficam acima do botão
   de conclusão, que ocupa a largura do cartão. Sem vídeo disponível, um aviso compacto diz
   “Vídeo em breve”, sem reservar uma área vazia de player.
+- O vídeo usa o player Panda da conta conferida, com início apenas ao tocar em reproduzir.
+  O mesmo player aparece nas prévias do admin. O campo “Link ou ID do vídeo Panda” aceita o
+  endereço do player ou seu ID; o servidor confere o endereço e salva somente o ID.
 - As etapas têm cartões com altura determinada pelo conteúdo e progresso real. Um passo da Etapa 1 abre a lista
   de aulas; o passo da aula a retomar começa aberto. Prioridades da Etapa 2 usam seta para baixo,
   que vira ao abrir as instruções. A Biblioteca usa busca e cartões por categoria, em uma coluna

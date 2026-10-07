@@ -226,22 +226,23 @@ bun -e "console.log(crypto.randomUUID() + crypto.randomUUID())"
 
 ## 📜 Scripts
 
-| Script                | What it does                                                                                                                                                                                                  |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `bun run dev`         | Development server                                                                                                                                                                                            |
-| `bun run build`       | Production build                                                                                                                                                                                              |
-| `bun run start`       | Production server                                                                                                                                                                                             |
-| `bun run lint`        | Oxlint (`lint:fix` to fix automatically)                                                                                                                                                                      |
-| `bun run format`      | Prettier                                                                                                                                                                                                      |
-| `bun run typecheck`   | `tsc --noEmit`                                                                                                                                                                                                |
-| `bun run db:up`       | Start the development Postgres (`db:down` to stop it)                                                                                                                                                         |
-| `bun run db:generate` | Generate a migration from the Drizzle schema                                                                                                                                                                  |
-| `bun run db:migrate`  | Apply migrations                                                                                                                                                                                              |
-| `bun run db:studio`   | Open Drizzle Studio                                                                                                                                                                                           |
-| `bun run auth:schema` | Regenerate the Better Auth tables schema                                                                                                                                                                      |
-| `bun run dev:aluna`   | Create a test student: `<email> <password> [--nao-confirmada] [--desativada] [--primeiro-acesso] [--so-sll \| --so-loja-pronta \| --sem-produto] [--fase=<1-7>]` (both products and store phase 1 by default) |
-| `bun run test`        | Unit tests (Bun's built-in runner, `*.test.ts` under `src/`)                                                                                                                                                  |
-| `bun run test:e2e`    | End-to-end tests (`test:e2e:ui` for the visual runner)                                                                                                                                                        |
+| Script                         | What it does                                                                                                                                                                                                  |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bun run dev`                  | Development server                                                                                                                                                                                            |
+| `bun run build`                | Production build                                                                                                                                                                                              |
+| `bun run start`                | Production server                                                                                                                                                                                             |
+| `bun run lint`                 | Oxlint (`lint:fix` to fix automatically)                                                                                                                                                                      |
+| `bun run format`               | Prettier                                                                                                                                                                                                      |
+| `bun run typecheck`            | `tsc --noEmit`                                                                                                                                                                                                |
+| `bun run db:up`                | Start the development Postgres (`db:down` to stop it)                                                                                                                                                         |
+| `bun run db:generate`          | Generate a migration from the Drizzle schema                                                                                                                                                                  |
+| `bun run db:migrate`           | Apply migrations                                                                                                                                                                                              |
+| `bun run db:studio`            | Open Drizzle Studio                                                                                                                                                                                           |
+| `bun run db:import-sll-videos` | Link the 71 catalogued Panda videos to existing SLL lessons; use `--check` to preview changes (see [the import guide](docs/SLL-VIDEOS-PANDA.md))                                                              |
+| `bun run auth:schema`          | Regenerate the Better Auth tables schema                                                                                                                                                                      |
+| `bun run dev:aluna`            | Create a test student: `<email> <password> [--nao-confirmada] [--desativada] [--primeiro-acesso] [--so-sll \| --so-loja-pronta \| --sem-produto] [--fase=<1-7>]` (both products and store phase 1 by default) |
+| `bun run test`                 | Unit tests (Bun's built-in runner, `*.test.ts` under `src/`)                                                                                                                                                  |
+| `bun run test:e2e`             | End-to-end tests (`test:e2e:ui` for the visual runner)                                                                                                                                                        |
 
 ## 🧪 Testing
 
@@ -318,6 +319,7 @@ src/
 ## 📚 Documentation
 
 - [Product overview](docs/PRODUTO.md) (Portuguese)
+- [SLL Panda video catalog and import guide](docs/SLL-VIDEOS-PANDA.md) (Portuguese): all 71 lesson players, database import instructions and their project mappings in [`data/sll/panda-videos.json`](data/sll/panda-videos.json).
 - [Hotmart integration](docs/INTEGRACAO-HOTMART.md) (Portuguese): vision, decisions and next steps.
 - [Coolify deployment](docs/DEPLOY-COOLIFY.md) (Portuguese): fields, environment variables and validation.
 

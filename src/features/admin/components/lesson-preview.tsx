@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { ArrowLeft, Download, ExternalLink, Film } from 'lucide-react';
+import { ArrowLeft, Download, ExternalLink } from 'lucide-react';
+import { SllLessonVideo } from '@/features/sll/components/sll-lesson-video';
 import { Button } from '@/components/ui/button';
 import { panelCard } from '@/features/member/components/area-shell';
 import { cn } from '@/lib/utils';
@@ -33,6 +34,7 @@ export function LessonPreview({
     blocks: PreviewBlock[];
   };
 }) {
+  const firstVideo = lesson.blocks.find((block) => block.kind === 'video');
   return (
     <div className="flex flex-col gap-6">
       <Button asChild className="w-fit" variant="ghost">
@@ -46,13 +48,9 @@ export function LessonPreview({
           <p className="text-base text-muted-foreground">
             {lesson.module.stage.track.title} · {lesson.module.stage.title} · {lesson.module.title}
           </p>
-          {lesson.blocks.some((block) => block.kind === 'video') ? (
-            <div className="mt-5 flex min-h-56 flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-muted p-5 text-center sm:min-h-72 forced-colors:border forced-colors:border-[CanvasText]">
-              <Film aria-hidden="true" className="size-8 text-muted-foreground" />
-              <p className="text-body font-semibold text-foreground">Prévia do vídeo</p>
-              <p className="max-w-[55ch] text-base text-muted-foreground">
-                O vídeo desta aula ainda não está disponível.
-              </p>
+          {firstVideo ? (
+            <div className="mt-5">
+              <SllLessonVideo data={firstVideo.data} title={lesson.title} />
             </div>
           ) : null}
           <p className="mt-5 text-base text-muted-foreground">
@@ -81,8 +79,11 @@ export function LessonPreview({
                 const files = lesson.blocks.filter(
                   (item) => item.kind === 'file' && item.data.attachedTo === block.id,
                 );
-                return block.data.note || files.length ? (
+                return block.id !== firstVideo?.id || block.data.note || files.length ? (
                   <div className="flex flex-col gap-2" key={block.id}>
+                    {block.id !== firstVideo?.id ? (
+                      <SllLessonVideo data={block.data} title={lesson.title} />
+                    ) : null}
                     {block.data.note ? (
                       <p className="text-body whitespace-pre-wrap text-foreground">
                         {block.data.note}

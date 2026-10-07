@@ -69,6 +69,11 @@ O comando de início executa `node migrate.cjs` e só então `node server.js`. O
 `drizzle.__drizzle_migrations`, o mesmo histórico usado por `bun run db:migrate` no desenvolvimento.
 Não ative `RAILPACK_PRUNE_DEPS=true` nem use `bun install --production` no build.
 
+A migração `0039_sll-panda-video-links.sql` também vincula os vídeos Panda às aulas SLL já existentes.
+Não substitui vídeos editados nem rascunhos pendentes e não muda publicação, acesso ou progresso.
+Se a estrutura de aulas ainda não existir nesse banco, importe-a antes de conferir os 71 vínculos;
+veja `docs/SLL-VIDEOS-PANDA.md`. A migração e os IDs seguem na imagem, sem depender de arquivos locais.
+
 Faça um deploy por vez. Antes de migrar um banco existente, tenha backup e confira as migrações
 pendentes: há migrações históricas que removem estruturas antigas do logo. Voltar a imagem não
 desfaz alterações do banco. Não gere novas migrações nem use `db:push` na hospedagem.

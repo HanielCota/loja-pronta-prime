@@ -1,5 +1,7 @@
 # SLL — Inventário T02: Etapas 2 e 3
 
+**URLs completas dos players:** [catálogo de vídeos Panda](SLL-VIDEOS-PANDA.md), conferido em 7 de outubro de 2026, incluindo os vínculos da Etapa 2 e as 19 aulas da Biblioteca.
+
 **Leitura feita em:** 5 de outubro de 2026
 **Fonte:** área de membros antiga, páginas Etapa 2 e Etapa 3 e páginas de aula ligadas a elas.
 **Escopo:** registrar textos, ordem, categorias, ações, destinos e materiais que estavam visíveis. Navegação somente de leitura; não marquei ações ou aulas como concluídas nem baixei materiais.

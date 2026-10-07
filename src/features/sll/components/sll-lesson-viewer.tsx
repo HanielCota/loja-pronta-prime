@@ -6,7 +6,6 @@ import {
   Check,
   ArrowLeft,
   ArrowRight,
-  CirclePlay,
   Download,
   ExternalLink,
   Image as ImageIcon,
@@ -18,6 +17,7 @@ import { panelCard } from '@/features/member/components/area-shell';
 import { prefersReducedMotion } from '@/lib/reduced-motion';
 import { cn } from '@/lib/utils';
 import { SllProgress } from './sll-progress';
+import { SllLessonVideo } from './sll-lesson-video';
 import { setSllLessonCompletionForm, recordSllLessonView } from '../server/actions';
 
 export type SllLessonViewerData = {
@@ -99,7 +99,7 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
   const statusMessage = completion.message || viewMessage;
   const lessonList = useRef<HTMLOListElement>(null);
   const isLocked = !data.stage.access.isUnlocked;
-  const hasVideo = data.blocks.some((block) => block.kind === 'video');
+  const firstVideo = data.blocks.find((block) => block.kind === 'video');
   const isCompleted = completion.completed ?? data.lesson.completed;
   const completionChange = Number(isCompleted) - Number(data.lesson.completed);
   const completedCount =
@@ -170,22 +170,8 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
       ) : (
         <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_18rem]">
           <div className="flex min-w-0 flex-col gap-5">
-            {hasVideo ? (
-              <section
-                className="flex items-start gap-3 rounded-card border border-border bg-muted p-4 forced-colors:border forced-colors:border-[CanvasText]"
-                aria-label="Vídeo da aula"
-              >
-                <CirclePlay
-                  aria-hidden="true"
-                  className="mt-1 size-6 shrink-0 text-muted-foreground"
-                />
-                <div className="flex min-w-0 flex-col gap-1">
-                  <h2 className="text-body font-semibold text-foreground">Vídeo em breve</h2>
-                  <p className="text-sm text-muted-foreground">
-                    O vídeo desta aula ainda não está disponível.
-                  </p>
-                </div>
-              </section>
+            {firstVideo ? (
+              <SllLessonVideo data={firstVideo.data} title={data.lesson.title} />
             ) : null}
 
             <section className={cn(panelCard, 'gap-4')} aria-labelledby="lesson-title">
@@ -203,7 +189,11 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
               {data.lesson.description ? (
                 <p className="text-body text-pretty text-foreground">{data.lesson.description}</p>
               ) : null}
-              <LessonBlocks blocks={data.blocks} />
+              <LessonBlocks
+                blocks={data.blocks}
+                primaryVideoId={firstVideo?.id ?? null}
+                title={data.lesson.title}
+              />
               {data.resources.length ? (
                 <section aria-label="Recursos desta aula" className="border-t border-border pt-5">
                   <h3 className="text-body font-semibold text-foreground">Recursos desta aula</h3>
@@ -390,7 +380,15 @@ function LessonNumber({ lesson }: { lesson: SllLessonViewerData['lessons'][numbe
   );
 }
 
-function LessonBlocks({ blocks }: { blocks: SllLessonViewerData['blocks'] }) {
+function LessonBlocks({
+  blocks,
+  primaryVideoId,
+  title,
+}: {
+  blocks: SllLessonViewerData['blocks'];
+  primaryVideoId: string | null;
+  title: string;
+}) {
   const attachedFiles = (targetId: string) =>
     blocks.filter((item) => item.kind === 'file' && item.data.attachedTo === targetId);
   const fileLink = (file: SllLessonViewerData['blocks'][number]) => (
@@ -408,8 +406,11 @@ function LessonBlocks({ blocks }: { blocks: SllLessonViewerData['blocks'] }) {
       {blocks.map((block) => {
         if (block.kind === 'video') {
           const files = attachedFiles(block.id);
-          return block.data.note || files.length ? (
+          return block.id !== primaryVideoId || block.data.note || files.length ? (
             <div className="flex flex-col gap-2" key={block.id}>
+              {block.id !== primaryVideoId ? (
+                <SllLessonVideo data={block.data} title={title} />
+              ) : null}
               {block.data.note ? (
                 <p className="text-body whitespace-pre-wrap text-foreground">{block.data.note}</p>
               ) : null}
