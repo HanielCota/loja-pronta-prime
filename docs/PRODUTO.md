@@ -52,8 +52,8 @@ A plataforma não confirma hoje que uma loja foi publicada na Shopee. A aluna co
 
 Uma pergunta por tela, com o mascote e salvamento de cada resposta:
 
-- Experiência com vendas, motivação, preocupação, categorias de interesse e tempo disponível.
-- Nome da loja ou “Ainda não decidi”, estilo, cor, sentimentos e toque pessoal opcional.
+- Experiência com vendas, para saber se a conta de vendedora já foi criada.
+- Estilo, cor, sentimentos e toque pessoal opcional. O nome da loja é escolhido na marca, com sugestões.
 - Revisão das respostas e salvamento do WhatsApp.
 
 Ao enviar, a loja passa para a fase da marca. O WhatsApp fica salvo como contato; **o envio automático de avisos ainda não existe**. O vídeo de orientação só aparece quando um arquivo real for enviado para esse espaço; sem arquivo, a jornada segue para as respostas enviadas.
@@ -67,7 +67,7 @@ Ao enviar, a loja passa para a fase da marca. O WhatsApp fica salvo como contato
 
 As prévias no perfil da loja e no kit de envio são identificadas como exemplos. Confirmar a marca leva à conta na Shopee (fase 3), ou à explicação da conexão (fase 4) para quem informou que já tem loja. Quem já avançou retorna ao painel atual, sem voltar a um passo bloqueado.
 
-Os limites de nome (30) e descrição (500) estão em `src/config/brand.ts`. As categorias de interesse ainda não vêm de um catálogo de fornecedores.
+Os limites de nome (30) e descrição (500) estão em `src/config/brand.ts`. A conversa não oferece categorias de produtos enquanto não houver um catálogo confirmado do fornecedor. Respostas antigas ficam guardadas, mas essas categorias não alimentam novas sugestões de marca. Não há novas perguntas sobre redes sociais ou outros marketplaces enquanto não existir um recurso que use essas respostas. A conexão com a Shopee ainda não está disponível, então o nome de uma loja existente não pode ser importado: ele é escolhido uma vez na marca, com orientação para manter o nome usado na Shopee.
 
 ## Como o acesso funciona hoje
 

@@ -8,6 +8,7 @@ import { WhatsappStep } from '@/features/loja-pronta/components/whatsapp-step';
 import { requireConversation } from '@/features/loja-pronta/server/conversation';
 import {
   BRAND_INTRO_STEP,
+  CONVERSATION_PATH,
   canOpen,
   findQuestion,
   isStep,
@@ -30,6 +31,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 /**
+ * Perguntas que saíram da conversa (motivação, preocupação, tempo e o nome, que ela escolhe na
+ * marca): o link antigo continua.
+ */
+const OLD_STEPS = new Set(['motivacao', 'dificuldade', 'tempo', 'nome', 'categorias']);
+
+/**
  * Uma etapa da conversa inicial: uma pergunta, a passagem pra marca, a revisão das respostas ou o
  * WhatsApp. Ela pode
  * voltar pras perguntas já respondidas, mas não pular as que faltam. Revendo a conversa já
@@ -37,6 +44,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  */
 export default async function ConversationStepPage({ params, searchParams }: PageProps) {
   const [{ passo }, query] = await Promise.all([params, searchParams]);
+  if (OLD_STEPS.has(passo)) redirect(CONVERSATION_PATH);
   if (!isStep(passo)) notFound();
 
   const { student, onboarding, revising } = await requireConversation(stepPath(passo));

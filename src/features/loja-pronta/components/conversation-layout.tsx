@@ -26,7 +26,7 @@ const topLink =
  * - "Voltar" escrito, não só a setinha (muita gente não sabe o que a seta faz);
  * - "Terminar depois" ("Sair", fora do computador): sair sem medo de perder o que fez (e sem
  *   parecer mais um "Continuar", como os botões de seguir);
- * - "Pergunta 3 de 10" (não "3 de 10") no meio, e embaixo uma barra com um tracinho por pergunta,
+ * - "Pergunta 3 de 5" (não "3 de 5") no meio, e embaixo uma barra com um tracinho por pergunta,
  *   pra ver quanto falta. Nada de letra miúda: o resto quem diz é o título da página.
  * O conteúdo fica numa coluna, centralizado na vertical a partir do tablet (no celular, perto do
  * topo, pra caber sem rolar), e mais larga no computador. Tudo são links de verdade: funciona sem

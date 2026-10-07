@@ -180,9 +180,11 @@ test('marca completa: nome, estúdio do logo, texto, revisão com mudança e log
   await expect(page.getByRole('heading', { name: 'Crie a marca da sua loja' })).toBeVisible();
   await page.getByRole('link', { name: /Criar minha marca/ }).click();
 
-  // Nome: o da conversa já vem no cartão; passar do limite avisa ali, e uma ideia volta a ele.
+  // Nome: o da conversa antiga já vem no cartão; passar do limite avisa ali, e uma ideia volta a
+  // ele. Sem loja na Shopee, nada de "use o mesmo nome".
   await expect(page).toHaveURL(step('nome'));
   await expect(page.getByRole('heading', { name: 'Qual o nome da sua loja?' })).toBeVisible();
+  await expect(page.getByText('Já tem loja na Shopee?')).toHaveCount(0);
   const name = page.getByRole('textbox', { name: 'Nome da loja', exact: true });
   await expect(name).toHaveValue('Patinhas da Ana');
   await expect(page.getByRole('radio', { name: 'Patinhas da Ana' })).toBeChecked();
@@ -208,14 +210,14 @@ test('marca completa: nome, estúdio do logo, texto, revisão com mudança e log
   await expect(page.getByText('Toque numa opção pra continuar.')).toBeVisible();
   await choose(page, 'Com um desenho');
   await goOn(page);
-  // Os desenhos do que ela vende (Pets) vêm primeiro, com a sugestão dita pro leitor de tela.
+  // Sem catálogo do fornecedor, os desenhos gerais vêm primeiro, sem sugerir um nicho de venda.
   await expect(
     page.getByRole('heading', { name: 'Qual desenho combina com a Patinhas da Ana?' }),
   ).toBeFocused();
-  await expect(
-    page.getByRole('radio', { name: 'Patinha', exact: true }),
-  ).toHaveAccessibleDescription('Sugestão');
-  await choose(page, 'Patinha');
+  await expect(page.getByRole('radio', { name: 'Flor', exact: true })).toHaveAccessibleDescription(
+    'Sugestão',
+  );
+  await choose(page, 'Flor');
   await goOn(page);
   // A cor que ela escolheu na conversa (verde) é a sugestão.
   await expect(page.getByRole('radio', { name: 'Verde natural' })).toHaveAccessibleDescription(

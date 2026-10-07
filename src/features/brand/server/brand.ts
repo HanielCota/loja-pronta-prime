@@ -60,6 +60,8 @@ export async function requireBrandStudio(path: string) {
   return {
     student,
     answers: onboarding.answers,
+    /** O nome escrito na conversa antiga, pra começar o passo do nome com ele. */
+    conversationName: onboarding.storeName,
     brand,
     // Só o logo também é rever: escolher volta pro painel, não pros outros passos.
     revising: access !== 'creating',

@@ -3,7 +3,6 @@ import {
   isCustomColor,
   ONBOARDING_QUESTIONS,
   PERSONAL_TOUCH_MAX,
-  STORE_NAME_MAX,
   type OnboardingAnswers,
   type OnboardingQuestion,
   type OnboardingQuestionId,
@@ -18,20 +17,17 @@ export function isAnswered(answers: OnboardingAnswers, id: OnboardingQuestionId)
 /** A resposta como texto, pra revisão. */
 export function answerText(question: OnboardingQuestion, answers: OnboardingAnswers): string {
   const value = answers[question.id];
-  if (question.kind === 'name' && value === null) return `${UNKNOWN_NAME} (a gente sugere)`;
   if (question.kind === 'longtext' && !value) return 'Nada em especial';
   if (question.kind === 'color' && isCustomColor(value)) return 'A cor que você escolheu';
   if (Array.isArray(value)) return value.join(', ');
   return value ?? '';
 }
 
-/** Texto da opção "não sei o nome" (no formulário, no erro e na revisão). */
-export const UNKNOWN_NAME = 'Ainda não decidi';
-
 /**
  * Respostas que ainda valem com a lista de perguntas atual. Uma opção que saiu ou mudou de nome
- * (a lista de categorias é provisória) deixa de contar: na escolha múltipla, só ela sai; se não
- * sobrar nada, a pergunta volta a ficar sem resposta e a conversa pede de novo.
+ * deixa de contar: na escolha múltipla, só ela sai; se não
+ * sobrar nada, a pergunta volta a ficar sem resposta e a conversa pede de novo. Categorias
+ * antigas ficam no banco, mas não alimentam sugestões sem um catálogo confirmado do fornecedor.
  */
 export function cleanAnswers(answers: OnboardingAnswers): OnboardingAnswers {
   const clean: OnboardingAnswers = {};
@@ -40,8 +36,7 @@ export function cleanAnswers(answers: OnboardingAnswers): OnboardingAnswers {
     if (!isAnswered(answers, id)) continue;
     const value = answers[id];
     if (!('options' in question)) {
-      const textOk = typeof value === 'string' || (question.kind === 'name' && value === null);
-      if (textOk) clean[id] = value;
+      if (typeof value === 'string') clean[id] = value;
       continue;
     }
     const labels: string[] = question.options.map((option) => option.label);
@@ -55,6 +50,17 @@ export function cleanAnswers(answers: OnboardingAnswers): OnboardingAnswers {
     }
   }
   return clean;
+}
+
+/**
+ * O nome da loja que ela escreveu na conversa, quando a conversa ainda perguntava (a pergunta saiu:
+ * o nome é escolhido na marca). Fica fora das respostas, só pra tela do nome da marca começar com
+ * ele: quem respondeu e ainda não chegou na marca não perde o que escreveu.
+ */
+export function legacyStoreName(answers: unknown): string | null {
+  if (typeof answers !== 'object' || answers === null || !('nome' in answers)) return null;
+  const { nome } = answers;
+  return typeof nome === 'string' && nome.trim() ? nome.trim() : null;
 }
 
 export type ParsedAnswer =
@@ -95,17 +101,6 @@ export function parseAnswer(question: OnboardingQuestion, formData: FormData): P
       }
       // Na ordem das opções, não na ordem em que foram marcadas.
       return { ok: true, value: labels.filter((label) => unique.includes(label)) };
-    }
-    case 'name': {
-      if (formData.get('unknown')) return { ok: true, value: null };
-      const name = (values[0] ?? '').trim().replace(/\s+/g, ' ');
-      if (!name) {
-        return { ok: false, error: `Escreva o nome da loja ou marque "${UNKNOWN_NAME}".` };
-      }
-      if (name.length > STORE_NAME_MAX) {
-        return { ok: false, error: `Use no máximo ${STORE_NAME_MAX} caracteres.` };
-      }
-      return { ok: true, value: name };
     }
     case 'longtext': {
       // O navegador envia quebra de linha como CRLF (2 caracteres), mas o maxLength do campo

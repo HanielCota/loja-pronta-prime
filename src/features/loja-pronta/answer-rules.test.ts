@@ -11,33 +11,29 @@ import {
 } from './answer-rules';
 import { question } from './test-fixtures';
 
-const EMPTY: Draft = { selected: [], unknownName: false, text: '' };
+const EMPTY: Draft = { selected: [], text: '' };
 
 describe('missingAnswer', () => {
   test('escolhas sem nada marcado avisam; com algo, não', () => {
     expect(missingAnswer(question('vendas'), EMPTY)).toBe('Escolha uma opção.');
-    expect(missingAnswer(question('motivacao'), EMPTY)).toBe('Escolha pelo menos uma opção.');
+    expect(missingAnswer(question('sentimento'), EMPTY)).toBe('Escolha pelo menos uma opção.');
     expect(missingAnswer(question('cor'), { ...EMPTY, selected: ['Rosa'] })).toBeUndefined();
   });
 
-  test('nome: texto ou "ainda não decidi"; toque pessoal é opcional', () => {
-    expect(missingAnswer(question('nome'), { ...EMPTY, text: '  ' })).toMatch(/nome da loja/);
-    expect(missingAnswer(question('nome'), { ...EMPTY, unknownName: true })).toBeUndefined();
+  test('toque pessoal é opcional', () => {
     expect(missingAnswer(question('toque'), EMPTY)).toBeUndefined();
   });
 });
 
 describe('escolhas', () => {
   test('o máximo de escolhas vem da pergunta', () => {
-    expect(maxChoices(question('categorias'))).toBe(3);
+    expect(maxChoices(question('sentimento'))).toBe(2);
     expect(maxChoices(question('vendas'))).toBe(1);
   });
 
   test('contador: chips mostram quantas; no limite (menor que as opções), avisa', () => {
-    expect(choiceCounter(question('categorias'), 1)).toBe('1 de 3 escolhidas');
-    expect(choiceCounter(question('categorias'), 3)).toMatch(/desmarque uma/);
-    // Motivação deixa marcar todas: nada de "desmarque".
-    expect(choiceCounter(question('motivacao'), 5)).toBe('');
+    expect(choiceCounter(question('sentimento'), 1)).toBe('1 de 2 escolhidas');
+    expect(choiceCounter(question('sentimento'), 2)).toMatch(/desmarque uma/);
     expect(choiceCounter(question('vendas'), 1)).toBe('');
   });
 });
@@ -47,8 +43,8 @@ describe('questionHelp, fieldNote e submitButton', () => {
     expect(questionHelp(question('vendas'), false)).toMatch(/Continuar/);
     expect(questionHelp(question('vendas'), true)).toMatch(/Salvar e voltar/);
     expect(questionHelp(question('cor'), false)).toMatch(/Continuar/);
-    expect(questionHelp(question('motivacao'), false)).toBe(
-      'Pode marcar mais de uma. Quando terminar, toque em Continuar.',
+    expect(questionHelp(question('sentimento'), false)).toBe(
+      'Escolha até 2. Quando terminar, toque em Continuar.',
     );
   });
 
@@ -57,7 +53,7 @@ describe('questionHelp, fieldNote e submitButton', () => {
       `3 de ${PERSONAL_TOUCH_MAX} caracteres`,
     );
     expect(fieldNote(question('vendas'), EMPTY)).toBe('');
-    expect(fieldNote(question('motivacao'), EMPTY)).toBe('');
+    expect(fieldNote(question('estilo'), EMPTY)).toBe('');
   });
 
   test('botão: cinza sem resposta, "Pular" no opcional vazio, "Salvar e voltar" editando', () => {

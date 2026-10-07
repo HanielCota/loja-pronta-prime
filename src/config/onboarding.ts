@@ -4,11 +4,14 @@
  *
  * - `single`: uma opção (botões de rádio); `multi`: até `max` opções (caixas de seleção), em
  *   lista ou em `chips` quando as opções são curtas.
- * - `name`: texto curto, com "Ainda não sei" (a plataforma sugere nomes na fase da marca);
- *   `color`: uma cor ou "Escolho depois"; `longtext`: texto livre e opcional.
+ * - `color`: uma cor ou "Escolho depois"; `longtext`: texto livre e opcional.
  * - `label`: nome curto da pergunta na revisão ("Motivação").
  *
  * As respostas guardam o texto da opção escolhida (as sugestões da marca leem daqui).
+ * Só entra pergunta cuja resposta a plataforma usa: motivação, maior preocupação e tempo por
+ * semana saíram por não servirem pra nada (respostas antigas delas são ignoradas, cleanAnswers).
+ * O nome da loja também saiu: ela escolhe na marca, com sugestões (ver legacyStoreName).
+ * Categorias esperam o catálogo real do fornecedor, para não prometer produtos indisponíveis.
  */
 
 export const ONBOARDING_BLOCKS = {
@@ -38,7 +41,6 @@ type QuestionDefinition =
       max: number;
       layout: 'list' | 'chips';
     })
-  | (BaseQuestion & { kind: 'name' })
   | (BaseQuestion & { kind: 'color'; options: readonly Option[] })
   | (BaseQuestion & { kind: 'longtext' });
 
@@ -69,82 +71,6 @@ export const ONBOARDING_QUESTIONS = [
       { label: 'Já vendi, mas parei', description: 'Já tive loja, hoje não vendo' },
       { label: 'Nunca vendi', description: 'É a primeira vez' },
     ],
-  },
-  {
-    id: 'motivacao',
-    block: 'voce',
-    kind: 'multi',
-    layout: 'list',
-    max: 5,
-    ask: 'O que te trouxe até aqui?',
-    help: 'Pode marcar mais de uma.',
-    label: 'Motivação',
-    options: [
-      { label: 'Renda extra' },
-      { label: 'Não depender de chefe' },
-      { label: 'Trabalhar no meu horário' },
-      { label: 'Sair do trabalho fixo' },
-      { label: 'Ter o meu próprio negócio' },
-    ],
-  },
-  {
-    id: 'dificuldade',
-    block: 'voce',
-    kind: 'single',
-    ask: 'O que mais preocupa você hoje?',
-    label: 'Maior preocupação',
-    options: [
-      { label: 'Escolher bons produtos', description: 'Não sei o que vale a pena vender' },
-      { label: 'Configurar a Shopee', description: 'Tenho receio da parte técnica da loja' },
-      { label: 'Criar bons anúncios', description: 'Título, fotos, descrição e preço' },
-      { label: 'Medo de errar', description: 'Quero evitar perder tempo ou dinheiro' },
-      { label: 'Falta de tempo', description: 'Preciso de um caminho mais direto' },
-      { label: 'Não sei por onde começar', description: 'Quero um passo a passo claro' },
-    ],
-  },
-  {
-    id: 'categorias',
-    block: 'voce',
-    kind: 'multi',
-    layout: 'chips',
-    max: 3,
-    ask: 'Que tipo de produto você gostaria de vender?',
-    help: 'Escolha até 3.',
-    label: 'Categorias',
-    // Lista provisória: as categorias de verdade virão do catálogo de fornecedores (fase 5).
-    options: [
-      { label: 'Casa e decoração' },
-      { label: 'Beleza' },
-      { label: 'Moda e acessórios' },
-      { label: 'Infantil' },
-      { label: 'Pets' },
-      { label: 'Cozinha' },
-      { label: 'Fitness' },
-      { label: 'Papelaria' },
-      { label: 'Tecnologia' },
-      { label: 'Outros' },
-    ],
-  },
-  {
-    id: 'tempo',
-    block: 'voce',
-    kind: 'single',
-    ask: 'Quanto tempo por semana você tem pra loja?',
-    label: 'Tempo por semana',
-    options: [
-      { label: 'Até 3 horas', description: 'Um pouquinho por semana' },
-      { label: 'De 3 a 7 horas', description: 'Uma hora por dia, mais ou menos' },
-      { label: 'De 7 a 14 horas', description: 'Umas duas horas por dia' },
-      { label: 'Mais de 14 horas', description: 'Vou me dedicar bastante' },
-    ],
-  },
-  {
-    id: 'nome',
-    block: 'marca',
-    kind: 'name',
-    ask: 'Como vai se chamar sua loja?',
-    help: 'Se ainda não decidiu, a gente sugere nomes pra você escolher.',
-    label: 'Nome da loja',
   },
   {
     id: 'estilo',
@@ -217,15 +143,14 @@ export type OnboardingQuestionId = (typeof ONBOARDING_QUESTIONS)[number]['id'];
 /** Uma pergunta da conversa, com o `id` restrito às perguntas que existem. */
 export type OnboardingQuestion = QuestionDefinition & { id: OnboardingQuestionId };
 
-/**
- * Uma resposta guardada: o texto da opção (uma ou várias); no nome, `null` = "ainda não decidi";
- * no toque pessoal, texto vazio = pulou.
- */
-export type AnswerValue = string | string[] | null;
+/** Uma resposta guardada: o texto da opção (uma ou várias); no toque pessoal, vazio = pulou. */
+export type AnswerValue = string | string[];
 
 /** Respostas guardadas, por pergunta. Pergunta sem chave = ainda não respondida. */
-export type OnboardingAnswers = Partial<Record<OnboardingQuestionId, AnswerValue>>;
+export type OnboardingAnswers = Partial<Record<OnboardingQuestionId, AnswerValue>> & {
+  /** Histórico apenas: não oferecer categorias sem o catálogo real do fornecedor. */
+  categorias?: AnswerValue;
+};
 
-/** Tamanhos máximos dos textos livres. */
-export const STORE_NAME_MAX = 60;
+/** Tamanho máximo do toque pessoal. */
 export const PERSONAL_TOUCH_MAX = 300;

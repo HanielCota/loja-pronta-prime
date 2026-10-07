@@ -19,7 +19,7 @@ import {
 import { saveAnswer } from '../../server/actions';
 import { StickyAction } from '../sticky-action';
 import { OptionField } from './option-field';
-import { LongTextField, NameField } from './text-fields';
+import { LongTextField } from './text-fields';
 
 type QuestionFormProps = {
   question: OnboardingQuestion;
@@ -32,10 +32,9 @@ type QuestionFormProps = {
   helpId?: string | undefined;
 };
 
-function initialDraft(question: OnboardingQuestion, saved: QuestionFormProps['saved']): Draft {
+function initialDraft(saved: QuestionFormProps['saved']): Draft {
   return {
     selected: Array.isArray(saved) ? saved : typeof saved === 'string' && saved ? [saved] : [],
-    unknownName: question.kind === 'name' && saved === null,
     text: typeof saved === 'string' ? saved : '',
   };
 }
@@ -48,7 +47,7 @@ function initialDraft(question: OnboardingQuestion, saved: QuestionFormProps['sa
  */
 export function QuestionForm({ question, saved, editing, titleId, helpId }: QuestionFormProps) {
   const [state, formAction, pending] = useActionState(saveAnswer, undefined);
-  const [draft, setDraft] = useState(() => initialDraft(question, saved));
+  const [draft, setDraft] = useState(() => initialDraft(saved));
   const [clientError, setClientError] = useState<string>();
   const errorId = useId();
   const noteId = useId();
@@ -109,16 +108,7 @@ export function QuestionForm({ question, saved, editing, titleId, helpId }: Ques
       <input type="hidden" name="step" value={question.id} />
       {editing ? <input type="hidden" name="editing" value="1" /> : null}
 
-      {question.kind === 'name' ? (
-        <NameField
-          text={draft.text}
-          unknown={draft.unknownName}
-          describedBy={describedBy}
-          invalid={Boolean(error)}
-          onText={(text) => update({ text })}
-          onUnknown={(unknownName) => update({ unknownName })}
-        />
-      ) : question.kind === 'longtext' ? (
+      {question.kind === 'longtext' ? (
         <LongTextField
           text={draft.text}
           describedBy={describedBy}

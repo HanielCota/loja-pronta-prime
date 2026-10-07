@@ -5,7 +5,7 @@ import type { OnboardingAnswers } from '@/config/onboarding';
 import { requireProduct, requireProductAction } from '@/features/products/server/access';
 import { db } from '@/server/db';
 import { storeOnboarding } from '@/server/db/schema';
-import { cleanAnswers } from '../answers';
+import { cleanAnswers, legacyStoreName } from '../answers';
 import { canReviseDonePhases } from '../editing';
 import { getStorePhase } from './store';
 
@@ -13,9 +13,11 @@ export type Onboarding = {
   answers: OnboardingAnswers;
   whatsapp: string | null;
   completedAt: Date | null;
+  /** O nome da loja respondido na conversa antiga (ver legacyStoreName). */
+  storeName: string | null;
 };
 
-const EMPTY: Onboarding = { answers: {}, whatsapp: null, completedAt: null };
+const EMPTY: Onboarding = { answers: {}, whatsapp: null, completedAt: null, storeName: null };
 
 /** Respostas da conversa inicial (sem linha: ainda não respondeu nada). Lidas uma vez por requisição. */
 export const getOnboarding = cache(async (userId: string): Promise<Onboarding> => {
@@ -28,7 +30,8 @@ export const getOnboarding = cache(async (userId: string): Promise<Onboarding> =
     .from(storeOnboarding)
     .where(eq(storeOnboarding.userId, userId));
   // Só as respostas que ainda valem com as perguntas de hoje (ver cleanAnswers).
-  return row ? { ...row, answers: cleanAnswers(row.answers) } : EMPTY;
+  if (!row) return EMPTY;
+  return { ...row, answers: cleanAnswers(row.answers), storeName: legacyStoreName(row.answers) };
 });
 
 /**

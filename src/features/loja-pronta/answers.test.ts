@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { PERSONAL_TOUCH_MAX, STORE_NAME_MAX, type OnboardingAnswers } from '@/config/onboarding';
-import { answerText, cleanAnswers, parseAnswer, UNKNOWN_NAME } from './answers';
+import { PERSONAL_TOUCH_MAX, type OnboardingAnswers } from '@/config/onboarding';
+import { answerText, cleanAnswers, legacyStoreName, parseAnswer } from './answers';
 import { resumeStep } from './steps';
 import { ALL_ANSWERED, form, question } from './test-fixtures';
 
@@ -16,34 +16,17 @@ describe('parseAnswer', () => {
   });
 
   test('várias: na ordem das opções, sem repetir, até o máximo', () => {
-    const categorias = question('categorias');
-    expect(parseAnswer(categorias, form({ value: ['Pets', 'Beleza', 'Pets'] }))).toEqual({
+    const sentimentos = question('sentimento');
+    expect(
+      parseAnswer(sentimentos, form({ value: ['Diversão', 'Confiança', 'Diversão'] })),
+    ).toEqual({
       ok: true,
-      value: ['Beleza', 'Pets'],
+      value: ['Confiança', 'Diversão'],
     });
-    expect(parseAnswer(categorias, form({})).ok).toBe(false);
-    expect(parseAnswer(categorias, form({ value: ['Beleza', 'Inventada'] })).ok).toBe(false);
-    const tooMany = parseAnswer(
-      categorias,
-      form({ value: ['Beleza', 'Pets', 'Cozinha', 'Infantil'] }),
-    );
-    expect(tooMany).toEqual({ ok: false, error: 'Escolha no máximo 3.' });
-  });
-
-  test('nome: texto limpo, "ainda não sei" e limites', () => {
-    const nome = question('nome');
-    expect(parseAnswer(nome, form({ value: '  Ateliê   da  Ana ' }))).toEqual({
-      ok: true,
-      value: 'Ateliê da Ana',
-    });
-    expect(parseAnswer(nome, form({ unknown: '1' }))).toEqual({ ok: true, value: null });
-    // "Ainda não sei" vale mesmo se sobrou texto no campo.
-    expect(parseAnswer(nome, form({ value: 'x', unknown: '1' }))).toEqual({
-      ok: true,
-      value: null,
-    });
-    expect(parseAnswer(nome, form({ value: '   ' })).ok).toBe(false);
-    expect(parseAnswer(nome, form({ value: 'a'.repeat(STORE_NAME_MAX + 1) })).ok).toBe(false);
+    expect(parseAnswer(sentimentos, form({})).ok).toBe(false);
+    expect(parseAnswer(sentimentos, form({ value: ['Confiança', 'Inventada'] })).ok).toBe(false);
+    const tooMany = parseAnswer(sentimentos, form({ value: ['Confiança', 'Diversão', 'Energia'] }));
+    expect(tooMany).toEqual({ ok: false, error: 'Escolha no máximo 2.' });
   });
 
   test('cor: uma das cores, "Escolho depois" ou a cor que ela escolheu (#rrggbb)', () => {
@@ -80,9 +63,13 @@ describe('parseAnswer', () => {
 });
 
 describe('cleanAnswers', () => {
+  test('ignora categorias antigas sem catálogo confirmado, sem pedir outra resposta', () => {
+    const cleaned = cleanAnswers({ ...ALL_ANSWERED, categorias: ['Beleza', 'Pets'] });
+    expect(cleaned).toEqual(ALL_ANSWERED);
+    expect(resumeStep(cleaned)).toBe('revisao');
+  });
   test('mantém respostas válidas como estão', () => {
     expect(cleanAnswers(ALL_ANSWERED)).toEqual(ALL_ANSWERED);
-    expect(cleanAnswers({ nome: null })).toEqual({ nome: null });
   });
 
   test('a cor escolhida por ela (#rrggbb) vale; o nome da opção "Outra cor" sozinho, não', () => {
@@ -94,10 +81,9 @@ describe('cleanAnswers', () => {
   test('descarta opção que saiu da lista; na múltipla, só ela sai', () => {
     const old: OnboardingAnswers = {
       vendas: 'Opção antiga',
-      categorias: ['Beleza', 'Categoria removida'],
-      sentimento: ['Removido'],
+      sentimento: ['Confiança', 'Categoria removida'],
     };
-    expect(cleanAnswers(old)).toEqual({ categorias: ['Beleza'] });
+    expect(cleanAnswers(old)).toEqual({ sentimento: ['Confiança'] });
     // Sem resposta válida, a conversa volta a pedir a pergunta.
     expect(resumeStep(cleanAnswers({ ...ALL_ANSWERED, vendas: 'Opção antiga' }))).toBe('vendas');
   });
@@ -105,11 +91,28 @@ describe('cleanAnswers', () => {
   test('descarta tipos errados e corta acima do máximo', () => {
     const odd = {
       vendas: ['Nunca vendi'],
-      nome: 42,
       toque: null,
-      categorias: ['Beleza', 'Pets', 'Cozinha', 'Infantil'],
+      sentimento: ['Confiança', 'Diversão', 'Energia'],
     } as unknown as OnboardingAnswers;
-    expect(cleanAnswers(odd)).toEqual({ categorias: ['Beleza', 'Pets', 'Cozinha'] });
+    expect(cleanAnswers(odd)).toEqual({ sentimento: ['Confiança', 'Diversão'] });
+  });
+});
+
+describe('legacyStoreName', () => {
+  test('o nome da conversa antiga, quando ela escreveu um', () => {
+    expect(legacyStoreName({ nome: '  Ateliê da Ana ' })).toBe('Ateliê da Ana');
+    // "Ainda não decidi" (null), vazio, tipo errado ou sem resposta: nada.
+    expect(legacyStoreName({ nome: null })).toBeNull();
+    expect(legacyStoreName({ nome: '  ' })).toBeNull();
+    expect(legacyStoreName({ nome: 42 })).toBeNull();
+    expect(legacyStoreName({ vendas: 'Nunca vendi' })).toBeNull();
+    expect(legacyStoreName(null)).toBeNull();
+  });
+
+  test('cleanAnswers não devolve o nome antigo como resposta', () => {
+    expect(cleanAnswers({ ...ALL_ANSWERED, nome: 'Ateliê' } as OnboardingAnswers)).toEqual(
+      ALL_ANSWERED,
+    );
   });
 });
 
@@ -117,11 +120,9 @@ describe('answerText', () => {
   test('texto da revisão', () => {
     const answers: OnboardingAnswers = {
       ...ALL_ANSWERED,
-      nome: null,
-      categorias: ['Beleza', 'Pets'],
+      sentimento: ['Confiança', 'Diversão'],
     };
-    expect(answerText(question('nome'), answers)).toBe(`${UNKNOWN_NAME} (a gente sugere)`);
     expect(answerText(question('toque'), answers)).toBe('Nada em especial');
-    expect(answerText(question('categorias'), answers)).toBe('Beleza, Pets');
+    expect(answerText(question('sentimento'), answers)).toBe('Confiança, Diversão');
   });
 });

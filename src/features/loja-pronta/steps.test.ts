@@ -17,6 +17,9 @@ import {
 import { ALL_ANSWERED } from './test-fixtures';
 
 describe('perguntas', () => {
+  test('não oferece categorias provisórias como se fossem produtos do fornecedor', () => {
+    expect(ONBOARDING_QUESTIONS.some((item) => String(item.id) === 'categorias')).toBe(false);
+  });
   test('ids únicos e que servem de endereço', () => {
     const ids = ONBOARDING_QUESTIONS.map((item) => item.id);
     expect(new Set(ids).size).toBe(ids.length);
@@ -44,17 +47,16 @@ describe('etapas', () => {
 
   test('retoma na primeira pergunta sem resposta', () => {
     expect(resumeStep({})).toBe('vendas');
-    expect(resumeStep({ vendas: 'Nunca vendi', dificuldade: 'Medo de errar' })).toBe('motivacao');
+    expect(resumeStep({ vendas: 'Nunca vendi', estilo: 'Delicado' })).toBe('cor');
     expect(resumeStep(ALL_ANSWERED)).toBe(REVIEW_STEP);
-    // Nome "ainda não decidi" (null) e toque pulado ('') contam como respondidos.
-    expect(resumeStep({ ...ALL_ANSWERED, nome: null })).toBe(REVIEW_STEP);
+    // Toque pulado ('') conta como respondido.
+    expect(resumeStep({ ...ALL_ANSWERED, toque: '' })).toBe(REVIEW_STEP);
   });
 
   test('não deixa pular perguntas nem ir pra revisão antes da hora', () => {
     const partial: OnboardingAnswers = { vendas: 'Nunca vendi' };
     expect(canOpen('vendas', partial)).toBe(true);
-    expect(canOpen('motivacao', partial)).toBe(true);
-    expect(canOpen('dificuldade', partial)).toBe(false);
+    expect(canOpen('estilo', partial)).toBe(true);
     expect(canOpen(REVIEW_STEP, partial)).toBe(false);
     expect(canOpen(WHATSAPP_STEP, partial)).toBe(false);
     expect(canOpen(WHATSAPP_STEP, ALL_ANSWERED)).toBe(true);
@@ -62,20 +64,20 @@ describe('etapas', () => {
 
   test('voltar: etapa anterior, revisão quando editando, área na primeira', () => {
     expect(previousPath('vendas')).toBe('/loja-pronta');
-    expect(previousPath('motivacao')).toBe(stepPath('vendas'));
+    expect(previousPath(BRAND_INTRO_STEP)).toBe(stepPath('vendas'));
     expect(previousPath('cor', { editing: true })).toBe(stepPath(REVIEW_STEP));
     expect(stepPath('cor', { editing: true })).toBe('/loja-pronta/conversa/cor?editar=1');
   });
 
-  test('topo: "Pergunta N de 10" e tracinhos cheios até a atual', () => {
-    expect(stepHeader('vendas')).toEqual({ label: 'Pergunta 1 de 10', filled: 1, total: 10 });
-    expect(stepHeader('tempo')).toMatchObject({ label: 'Pergunta 5 de 10', filled: 5 });
-    expect(stepHeader('sentimento').label).toBe('Pergunta 9 de 10 · falta só 1');
+  test('topo: "Pergunta N de 5" e tracinhos cheios até a atual', () => {
+    expect(stepHeader('vendas')).toEqual({ label: 'Pergunta 1 de 5', filled: 1, total: 5 });
+    expect(stepHeader('estilo')).toMatchObject({ label: 'Pergunta 2 de 5', filled: 2 });
+    expect(stepHeader('sentimento').label).toBe('Pergunta 4 de 5 · falta só 1');
     expect(stepHeader('toque').label).toBe('Última pergunta');
     expect(stepHeader(REVIEW_STEP)).toEqual({
       label: 'Revisão das respostas',
-      filled: 10,
-      total: 10,
+      filled: 5,
+      total: 5,
     });
     expect(stepHeader(WHATSAPP_STEP).label).toBe('Último passo');
   });
@@ -83,7 +85,7 @@ describe('etapas', () => {
 
 describe('stepTitle', () => {
   test('título da aba', () => {
-    expect(stepTitle('vendas')).toBe('Pergunta 1 de 10');
+    expect(stepTitle('vendas')).toBe('Pergunta 1 de 5');
     expect(stepTitle(REVIEW_STEP)).toBe('Revisão');
     expect(stepTitle(WHATSAPP_STEP)).toBe('Último passo');
   });
@@ -91,24 +93,17 @@ describe('stepTitle', () => {
 
 describe('passagem pra marca', () => {
   test('vem entre as perguntas sobre ela e as da marca, sem contar como pergunta', () => {
-    expect(nextStep('tempo')).toBe(BRAND_INTRO_STEP);
-    expect(nextStep(BRAND_INTRO_STEP)).toBe('nome');
-    expect(previousPath('nome')).toBe(stepPath(BRAND_INTRO_STEP));
+    expect(nextStep('vendas')).toBe(BRAND_INTRO_STEP);
+    expect(nextStep(BRAND_INTRO_STEP)).toBe('estilo');
+    expect(previousPath('estilo')).toBe(stepPath(BRAND_INTRO_STEP));
     expect(stepTitle(BRAND_INTRO_STEP)).toBe('Agora, a sua marca');
-    expect(stepHeader(BRAND_INTRO_STEP).filled).toBe(stepHeader('tempo').filled);
-    expect(stepTitle('nome')).toBe(`Pergunta 6 de ${ONBOARDING_QUESTIONS.length}`);
+    expect(stepHeader(BRAND_INTRO_STEP).filled).toBe(stepHeader('vendas').filled);
+    expect(stepTitle('estilo')).toBe(`Pergunta 2 de ${ONBOARDING_QUESTIONS.length}`);
   });
 
   test('abre junto com a primeira pergunta da marca (nunca é onde ela "parou")', () => {
-    const {
-      nome: _nome,
-      estilo: _estilo,
-      cor: _cor,
-      sentimento: _s,
-      toque: _t,
-      ...voce
-    } = ALL_ANSWERED;
-    expect(resumeStep(voce)).toBe('nome');
+    const { estilo: _estilo, cor: _cor, sentimento: _s, toque: _t, ...voce } = ALL_ANSWERED;
+    expect(resumeStep(voce)).toBe('estilo');
     expect(canOpen(BRAND_INTRO_STEP, voce)).toBe(true);
     expect(canOpen(BRAND_INTRO_STEP, {})).toBe(false);
   });
