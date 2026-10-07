@@ -8,6 +8,7 @@
 - PostgreSQL 17, com as migrações de `drizzle/` aplicadas pelo migrador do Drizzle ORM.
 - Bucket S3 privado (AWS ou compatível) para logos, vídeos e legendas.
 - OpenAI Images API para criar logos com IA; a chave é opcional para iniciar o servidor.
+- Resend com domínio verificado para recuperação de senha e confirmação de email.
 
 É uma aplicação de servidor, com autenticação e Server Actions. Não é exportação estática.
 Railpack reconhece Bun pelo `packageManager` e pelo `bun.lock`; não é necessário Dockerfile.
@@ -240,10 +241,39 @@ Depois de preencher e confirmar os valores reais:
    para revisão. A transcrição usa a OpenAI e tem custo. Confira também a mensagem após negar a
    permissão e a possibilidade de escrever manualmente. Sem `OPENAI_API_KEY`, o microfone aparece como **em breve**.
 
+## Emails de acesso pela Resend
+
+Cadastre um subdomínio de envio na Resend e publique no DNS os registros retornados pelo
+provedor. Preserve os registros existentes do site e de outras caixas de email. Desative
+rastreamento de abertura e de cliques para que os links de acesso não sejam reescritos.
+
+Depois de confirmar o domínio como **Verified**, crie uma chave **Sending access**, limitada
+a esse domínio. Na aplicação do Coolify, configure somente como **Runtime**:
+
+- `RESEND_API_KEY`: a chave de envio; nunca use uma variável `NEXT_PUBLIC_*`.
+- `EMAIL_FROM`: apenas o endereço, como `acesso@mail.seudominio.com`. O sistema acrescenta
+  o nome `Loja Pronta Prime` ao remetente.
+- `EMAIL_REPLY_TO`: opcional; informe apenas uma caixa real que recebe respostas.
+
+Chave e remetente precisam ser configurados juntos. Sem ambos, o desenvolvimento mostra o
+link no terminal e a produção registra uma falha de envio, sem expor destinatário ou token.
+O sistema envia texto simples em português, com o link original e sua validade. Falhas de
+rede, limite temporário e erros 5xx têm até três tentativas com a mesma chave de idempotência.
+Erros de domínio, autenticação e permissão exigem corrigir a configuração.
+
+Após publicar o código e aplicar as variáveis, teste a recuperação de uma conta existente
+com uma caixa sob seu controle e o login de uma conta ainda não confirmada. Confira a
+entrega na Resend e abra o link recebido. O convite automático da Hotmart continua pendente.
+Os testes do transporte podem ser executados sem emails reais com
+`bun test tests/email-delivery.test.ts`; os testes de texto fazem parte de `bun test src`.
+
+Referências: [Resend com Next.js](https://resend.com/docs/send-with-nextjs) e
+[chaves de envio restritas por domínio](https://resend.com/docs/api-reference/api-keys/create-api-key).
+
 ## Limitações encontradas
 
-- O provedor de email ainda não está implementado: redefinição e confirmação não enviam email
-  em produção. Adicionar uma variável SMTP não resolve; falta implementar o envio.
+- Recuperação e confirmação dependem do domínio verificado e das variáveis da Resend.
+  Configurar SMTP não habilita o envio, pois o projeto usa a API da Resend.
 - Hotmart e provisionamento automático de alunas ainda não estão implementados. Não há cadastro
   público, e o script de contas de teste é bloqueado em produção. Um banco novo fica sem alunas.
 - Conexão/publicação pela API da Shopee e partes do curso ainda estão em breve. A publicação
