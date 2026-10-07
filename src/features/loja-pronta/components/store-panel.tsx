@@ -3,6 +3,7 @@ import {
   BellIcon,
   CheckIcon,
   ChevronRightIcon,
+  MapPinIcon,
   MessageCircleIcon,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -252,13 +253,21 @@ function TalkToTeam() {
 
 /**
  * O caminho em 3 etapas, cada uma com a sua barra contornada: as feitas cheias de verde, a atual
- * até onde ela chegou (stages.ts) e as próximas vazias. Embaixo da barra, o nome da etapa e o que
- * tem nela. O caminho todo é verde, como o "Etapa 2 de 3" do destaque, que já diz em palavras
- * onde ela está; o azul fica pro botão.
+ * até onde ela chegou (stages.ts) e as próximas vazias. Em cima da barra, "Etapa 1 · Você está
+ * aqui" (ou "Feita", "A seguir"): o número e o estado escritos, não só a cor. Embaixo, o nome da
+ * etapa e o que tem nela. O caminho todo é verde, como o "Etapa 2 de 3" do destaque; o azul fica
+ * pro botão.
  * Na vertical no celular e lado a lado no computador.
  * Num cartão igual ao do destaque: as duas caixas com a mesma largura e a mesma margem interna,
  * pra o começo e o fim de cada uma se alinharem.
  */
+/** O estado de cada etapa, como aparece ao lado do número. */
+const STAGE_STATUS_LABEL = {
+  done: 'Feita',
+  current: 'Você está aqui',
+  next: 'A seguir',
+} as const satisfies Record<StageView['status'], string>;
+
 /** `reviewHrefs`: onde rever cada etapa, na ordem (sem link: nada a rever ainda, ou já travada). */
 function Path({
   stages,
@@ -279,6 +288,7 @@ function Path({
         {stages.map((stage, index) => (
           <Stage
             key={stage.title}
+            number={index + 1}
             stage={stage}
             reviewHref={stage.status === 'done' ? reviewHrefs[index] : undefined}
           />
@@ -292,10 +302,32 @@ function Path({
  * Uma etapa do caminho. Feita e ainda aberta pra mudanças (até a publicação), ganha "Ver e
  * editar": ela revê o que respondeu ou escolheu e muda, sem voltar de fase.
  */
-function Stage({ stage, reviewHref }: { stage: StageView; reviewHref?: string | undefined }) {
+function Stage({
+  number,
+  stage,
+  reviewHref,
+}: {
+  number: number;
+  stage: StageView;
+  reviewHref?: string | undefined;
+}) {
   const { status } = stage;
   return (
     <li aria-current={status === 'current' ? 'step' : undefined} className="flex flex-col gap-1">
+      {/* Onde ela está, escrito: a cor sozinha não basta (e o leitor de tela lê o mesmo texto). */}
+      <span
+        className={cn(
+          'mb-1 inline-flex items-center gap-1.5 text-sm font-semibold tracking-wide uppercase',
+          status === 'next' ? 'text-muted-foreground' : 'text-progress-text',
+        )}
+      >
+        {status === 'current' ? (
+          <MapPinIcon aria-hidden="true" className="size-4 shrink-0" />
+        ) : status === 'done' ? (
+          <CheckIcon aria-hidden="true" className="size-4 shrink-0" />
+        ) : null}
+        Etapa {number} · {STAGE_STATUS_LABEL[status]}
+      </span>
       {/* A barra da etapa: só o desenho, o estado já está escrito no título. */}
       <span
         aria-hidden="true"
@@ -308,21 +340,11 @@ function Stage({ stage, reviewHref }: { stage: StageView; reviewHref?: string | 
       </span>
       <span
         className={cn(
-          'inline-flex items-start gap-1.5 text-body font-semibold text-balance',
-          status === 'current' && 'text-progress-text',
+          'text-body font-semibold text-balance',
           status === 'next' && 'text-muted-foreground',
         )}
       >
-        {status === 'done' ? (
-          <CheckIcon aria-hidden="true" className="mt-1 size-4 shrink-0 text-progress" />
-        ) : null}
-        <span>
-          {stage.title}
-          <span className="sr-only">
-            {/* A atual já é anunciada pelo aria-current ("etapa atual"). */}
-            {status === 'done' ? ' (feita)' : status === 'next' ? ' (a seguir)' : ''}
-          </span>
-        </span>
+        {stage.title}
       </span>
       <span className="text-body text-pretty text-muted-foreground">{stage.detail}</span>
       {/* Na atual com várias fases, em que passo ela está: "Passo 2 de 5: Conexão com a Shopee". */}

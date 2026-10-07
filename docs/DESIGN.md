@@ -98,6 +98,10 @@ o tema escuro e o alto contraste.
   - `MascotBubble` (a pergunta em destaque), `StickyAction` (o botão preso embaixo no celular),
     `FocusOnArrival` (foco no título ao chegar).
 - Opções de escolha: `optionFocus` / `optionChecked` (`question/option-styles.ts`).
+- No painel da Loja Pronta, o "Seu caminho" mostra as 3 etapas explicadas em duas frases cada.
+  Em cima de cada barra, o número e o estado escritos: "Etapa 1 · Você está aqui" (verde, com o
+  ícone de marcador), "Feita" (verde, com check) ou "A seguir" (cinza). Onde ela está não fica só
+  na cor.
 - No estúdio do logo, a barra acompanha a numeração: a etapa atual e as anteriores ficam azuis;
   avançar não apaga o progresso já mostrado. Sugestões nas etapas futuras não antecipam a barra.
 - A prévia do logo pronto inclui uma imagem ilustrativa do kit de envio (caixa, adesivo e sacola),

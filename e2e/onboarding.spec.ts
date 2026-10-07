@@ -150,7 +150,7 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
   await page.getByRole('link', { name: 'Fazer depois' }).click();
   // O caminho concorda com o destaque: a conversa feita, a marca como a etapa atual.
   const stages = page.getByRole('list', { name: 'As etapas da sua loja' }).getByRole('listitem');
-  await expect(stages.nth(0)).toContainText('(feita)');
+  await expect(stages.nth(0)).toContainText('Feita');
   await expect(stages.nth(1)).toHaveAttribute('aria-current', 'step');
   await expect(page.getByRole('heading', { name: 'Crie a marca da sua loja' })).toBeVisible();
 
