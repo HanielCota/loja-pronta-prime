@@ -41,10 +41,12 @@ A própria aluna monta sua marca e prepara a conta. A interface tem uma decisão
 | 1    | Responde à conversa inicial                               | Disponível                                        |
 | 2    | Escolhe nome, cria ou envia logo e define o texto da loja | Disponível                                        |
 | 3    | Abre a conta de vendedora no site da Shopee com um guia   | Guia disponível; confirmação informada pela aluna |
-| 4    | Autoriza a conexão com a Shopee                           | Explicação disponível; conexão em breve           |
+| 4    | Coloca a marca na Shopee; depois, autoriza a conexão      | Guia da marca disponível; conexão em breve        |
 | 5    | Escolhe produtos do fornecedor                            | Em breve; depende do fornecedor e da integração   |
 | 6    | Publica a marca e os produtos pela plataforma             | Em breve; depende da Shopee                       |
 | 7    | Confere a finalização e as vendas                         | Consulta de vendas em breve                       |
+
+Enquanto a publicação não é automática, a fase 4 tem um guia (`/loja-pronta/shopee/marca`) para a aluna colocar o logo e o texto no Perfil da Loja: passo a passo, logo para baixar, texto para copiar e um espaço de vídeo (`marca-na-shopee`, enviado com `bun run dev:video`), que só aparece depois do envio.
 
 A plataforma não confirma hoje que uma loja foi publicada na Shopee. A aluna confere a loja e as vendas na Central do Vendedor. Fases pendentes não têm botões que simulam essas operações.
 
@@ -65,7 +67,7 @@ Ao enviar, a loja passa para a fase da marca. O WhatsApp fica salvo como contato
 3. **Texto da loja:** sugestões a partir das respostas ou um texto próprio.
 4. **Revisão:** nome, logo e texto juntos, com edição, confirmação e download do logo em PNG.
 
-As prévias no perfil da loja e no kit de envio são identificadas como exemplos. Confirmar a marca leva à conta na Shopee (fase 3), ou à explicação da conexão (fase 4) para quem informou que já tem loja. Quem já avançou retorna ao painel atual, sem voltar a um passo bloqueado.
+As prévias no perfil da loja e no kit de envio são identificadas como exemplos. Confirmar a marca leva à conta na Shopee (fase 3), ou ao guia da marca na Shopee (fase 4) para quem informou que já tem loja. Quem já avançou retorna ao painel atual, sem voltar a um passo bloqueado.
 
 Os limites de nome (30) e descrição (500) estão em `src/config/brand.ts`. As categorias de interesse ainda não vêm de um catálogo de fornecedores.
 

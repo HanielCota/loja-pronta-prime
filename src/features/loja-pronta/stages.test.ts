@@ -22,7 +22,7 @@ describe('etapas', () => {
   test('fase 4: duas feitas, e a atual diz em que passo está', () => {
     const stages = storeStages(4);
     expect(stages.map((stage) => stage.status)).toEqual(['done', 'done', 'current']);
-    expect(stages[2]?.step).toBe('Passo 2 de 5: Conexão com a Shopee');
+    expect(stages[2]?.step).toBe('Passo 2 de 5: Sua marca na Shopee');
     expect(stages[1]?.step).toBeUndefined();
   });
 
