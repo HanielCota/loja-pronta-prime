@@ -76,7 +76,7 @@ export async function changeStudentProductAccess(
 
   const email = emailValue.trim().toLowerCase();
   const reason = reasonValue.trim();
-  if (!email || !email.includes('@') || reason.length < 3 || reason.length > 500) {
+  if (!z.email().max(254).safeParse(email).success || reason.length < 3 || reason.length > 500) {
     return { message: 'Informe um email válido e um motivo de 3 a 500 caracteres.', saved: false };
   }
 

@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { Breadcrumb, type Crumb } from './breadcrumb';
 import type { ProductId } from '@/config/products';
-import { AreaSwitcher } from './area-switcher';
 import { MemberNavbar, type NavbarAccount } from './member-navbar';
 import {
   MEMBER_AREA_COLUMN_GAP,
@@ -30,8 +29,8 @@ type AreaShellProps = {
   /** Quem está logada (a barra do topo). */
   account: NavbarAccount;
   /**
-   * Tem os dois produtos: nas áreas (`area`), o seletor das duas fica acima do título; fora delas
-   * (o perfil), a trilha leva de volta pra escolha.
+   * Tem os dois produtos: nas áreas (`area`), elas viram abas na barra do topo, com a da vez
+   * marcada; fora delas (o perfil), a trilha leva de volta pra escolha.
    */
   hasChoice: boolean;
   /** A área de produto em que ela está (a Loja Pronta ou o SLL). */
@@ -78,10 +77,9 @@ export function AreaShell({
   contentId,
   children,
 }: AreaShellProps) {
+  // Nas áreas, quem tem os dois produtos já vê onde está pelas abas do topo.
   const navigation =
-    hasChoice && area ? (
-      <AreaSwitcher current={area} />
-    ) : hasChoice ? (
+    hasChoice && area ? null : hasChoice ? (
       <Breadcrumb trail={[START]} current={crumb ?? product ?? title} />
     ) : product ? (
       <p className="text-body font-medium text-muted-foreground">{product}</p>
@@ -113,7 +111,12 @@ export function AreaShell({
   );
   return (
     <div className="flex min-h-dvh flex-col">
-      <MemberNavbar account={account} hasSidebar={Boolean(sidebar)} />
+      <MemberNavbar
+        account={account}
+        hasSidebar={Boolean(sidebar)}
+        sticky
+        currentArea={hasChoice ? area : undefined}
+      />
       <main
         className={cn(
           'mx-auto w-full pt-6 pb-12 sm:pt-8',

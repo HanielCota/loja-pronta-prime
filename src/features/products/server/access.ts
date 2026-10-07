@@ -62,20 +62,9 @@ export async function requireStudent(path: string) {
 /** De quanto em quanto tempo a visita a uma área é gravada de novo. */
 const VISIT_INTERVAL_MS = 10 * 60 * 1000;
 
-/**
- * Área de um produto: quem não tem esse produto volta pro início (que mostra o que ela tem).
- * `path` é a página atual (pra onde o login devolve), quando é uma página dentro da área.
- * Registra a visita depois de responder (não atrasa a página). `firstVisit` vale durante toda a
- * sessão em que ela abriu a área pela primeira vez: a página pode ser renderizada de novo logo em
- * seguida, e a saudação não pode trocar no meio da primeira visita.
- */
-export async function requireProduct(product: ProductId, path: string = PRODUCTS[product].path) {
-  const student = await requireStudent(path);
-  if (!student.products.includes(product)) redirect('/');
-
-  const userId = student.session.user.id;
+/** Menu e conteúdo conferem o mesmo produto: registra a visita uma vez por renderização. */
+const recordProductVisit = cache((userId: string, product: ProductId) => {
   after(() => {
-    // Hora do servidor em UTC, como o Drizzle grava as outras datas (as colunas não têm fuso).
     const now = new Date();
     const recent = new Date(now.getTime() - VISIT_INTERVAL_MS);
     return db
@@ -88,11 +77,25 @@ export async function requireProduct(product: ProductId, path: string = PRODUCTS
         and(
           eq(studentProducts.userId, userId),
           eq(studentProducts.product, product),
-          // Uma gravação por visita, não uma por página (cada pergunta da conversa é uma página).
           or(isNull(studentProducts.lastVisitedAt), lt(studentProducts.lastVisitedAt, recent)),
         ),
       );
   });
+});
+
+/**
+ * Área de um produto: quem não tem esse produto volta pro início (que mostra o que ela tem).
+ * `path` é a página atual (pra onde o login devolve), quando é uma página dentro da área.
+ * Registra a visita depois de responder (não atrasa a página). `firstVisit` vale durante toda a
+ * sessão em que ela abriu a área pela primeira vez: a página pode ser renderizada de novo logo em
+ * seguida, e a saudação não pode trocar no meio da primeira visita.
+ */
+export async function requireProduct(product: ProductId, path: string = PRODUCTS[product].path) {
+  const student = await requireStudent(path);
+  if (!student.products.includes(product)) redirect('/');
+
+  const userId = student.session.user.id;
+  recordProductVisit(userId, product);
   const firstVisitedAt = student.firstVisits[product];
   const firstVisit = !firstVisitedAt || firstVisitedAt >= student.session.session.createdAt;
   return { ...student, firstVisit };

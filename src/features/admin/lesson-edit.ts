@@ -1,14 +1,13 @@
 import { z } from 'zod';
 import { pandaVideoId } from '@/features/sll/panda-video';
+import { toSafeWebUrl } from '@/lib/urls';
 
-const safeWebUrl = z.url().refine((value) => {
-  try {
-    const url = new URL(value);
-    return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password;
-  } catch {
-    return false;
-  }
-}, 'Digite um link que comece com http:// ou https://.');
+const safeWebUrl = z
+  .url()
+  .refine(
+    (value) => toSafeWebUrl(value) !== undefined,
+    'Digite um link que comece com http:// ou https://.',
+  );
 
 export const lessonEditSchema = z.object({
   lessonId: z.uuid(),

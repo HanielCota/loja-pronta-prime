@@ -18,6 +18,7 @@ import {
   withNodeDraftLock,
 } from '@/features/admin/server/node-drafts';
 import { removeStorageKeyIfUnused } from '@/features/admin/server/storage-references';
+import { readLimitedFormData, RequestBodyTooLargeError } from '@/lib/request-body';
 
 /** O material trocado sumiu (ou mudou de tipo) enquanto o arquivo subia. */
 class MaterialChangedError extends Error {}
@@ -59,15 +60,12 @@ export async function POST(request: Request) {
   const origin = request.headers.get('origin');
   if (!origin || origin !== new URL(request.url).origin) return jsonError('Pedido inválido.', 403);
 
-  const contentLength = Number(request.headers.get('content-length') ?? 0);
-  if (contentLength > MAX_UPLOAD_BYTES + 64 * 1024) {
-    return jsonError('O arquivo é grande demais. O limite é 20 MB.', 413);
-  }
-
   let form: FormData;
   try {
-    form = await request.formData();
-  } catch {
+    form = await readLimitedFormData(request, MAX_UPLOAD_BYTES + 64 * 1024);
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError)
+      return jsonError('O arquivo é grande demais. O limite é 20 MB.', 413);
     return jsonError('Não consegui ler o arquivo. Tente escolher de novo.', 400);
   }
 
