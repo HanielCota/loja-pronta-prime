@@ -10,6 +10,7 @@ import {
 } from '@/server/db/schema';
 import { isProgressId } from '../progress-rules';
 import { getSllTrackProgress } from './progress';
+import { isSafeContentDestination } from '@/lib/urls';
 
 /** Entrega à aula só os materiais publicados e os dados visíveis para a aluna. */
 export async function getSllLessonViewer(lessonId: string) {
@@ -69,7 +70,8 @@ export async function getSllLessonViewer(lessonId: string) {
   const stage = track?.stages.find((item) => item.id === lesson.module.stage.id);
   if (!track || !stage || !stage.access) return null;
   const stageLessons = stage.modules.flatMap((item) => item.lessons);
-  const currentProgress = stageLessons.find((item) => item.id === lesson.id);
+  const progressByLesson = new Map(stageLessons.map((item) => [item.id, item]));
+  const currentProgress = progressByLesson.get(lesson.id);
 
   const currentIndex = lesson.module.lessons.findIndex((item) => item.id === lesson.id);
   if (currentIndex < 0) return null;
@@ -114,7 +116,7 @@ export async function getSllLessonViewer(lessonId: string) {
       total: lesson.module.lessons.length,
     },
     lessons: lesson.module.lessons.map((item, index) => {
-      const progress = stageLessons.find((saved) => saved.id === item.id);
+      const progress = progressByLesson.get(item.id);
       return {
         id: item.id,
         title: item.title,
@@ -130,6 +132,12 @@ export async function getSllLessonViewer(lessonId: string) {
       kind: block.kind,
       data: contentPreviewData(block.kind, block.data),
     })),
-    resources: linkedResources,
+    resources: linkedResources.map((resource) => ({
+      ...resource,
+      destination:
+        resource.destination && isSafeContentDestination(resource.destination)
+          ? resource.destination
+          : null,
+    })),
   };
 }

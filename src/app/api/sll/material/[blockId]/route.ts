@@ -80,15 +80,16 @@ export async function GET(_request: Request, context: RouteContext) {
 
   const data = block.data as Record<string, unknown>;
   if (typeof data.storageKey !== 'string') return new Response(null, { status: 404 });
-  const bytes = await storage().get(data.storageKey);
-  if (!bytes) return new Response(null, { status: 404 });
+  // O arquivo segue do bucket para o navegador sem acumular cada download na memória.
+  const stored = await storage().stream(data.storageKey);
+  if (!stored) return new Response(null, { status: 404 });
 
   if (block.kind === 'image') {
-    return new Response(bytes.buffer as ArrayBuffer, {
+    return new Response(stored.body, {
       headers: {
         'Content-Type':
           data.contentType === 'image/webp' ? 'image/webp' : 'application/octet-stream',
-        'Content-Length': String(bytes.byteLength),
+        'Content-Length': String(stored.length),
         'Cache-Control': 'private, no-store',
         'X-Content-Type-Options': 'nosniff',
         'Content-Disposition': 'inline',
@@ -99,10 +100,10 @@ export async function GET(_request: Request, context: RouteContext) {
   const fileName = typeof data.fileName === 'string' ? data.fileName : 'material';
   const contentType =
     typeof data.contentType === 'string' ? data.contentType : 'application/octet-stream';
-  return new Response(bytes.buffer as ArrayBuffer, {
+  return new Response(stored.body, {
     headers: {
       'Content-Type': contentType,
-      'Content-Length': String(bytes.byteLength),
+      'Content-Length': String(stored.length),
       'Cache-Control': 'private, no-store',
       'X-Content-Type-Options': 'nosniff',
       'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`,

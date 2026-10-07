@@ -9,7 +9,8 @@ services:
       POSTGRES_PASSWORD: lojaprontaprime
       POSTGRES_DB: lojaprontaprime
     ports:
-      - '5433:5432'
+      # A senha local é pública no repositório: o banco não pode ficar aberto para a rede.
+      - '127.0.0.1:5433:5432'
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:

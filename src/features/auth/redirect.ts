@@ -1,3 +1,5 @@
+import { hasControlCharacters } from '@/lib/text';
+
 const INTERNAL_ORIGIN = 'http://interno.invalid';
 
 /** "//dominio" e "/\dominio" são lidos pelo navegador como outro site. */
@@ -9,7 +11,7 @@ const isProtocolRelative = (path: string) => path.startsWith('//') || path.start
  */
 export function sanitizeRedirect(path: string | undefined): string | undefined {
   if (!path || !path.startsWith('/') || isProtocolRelative(path)) return undefined;
-  if (path.includes('\\') || [...path].some((char) => char.charCodeAt(0) < 32)) return undefined;
+  if (path.includes('\\') || hasControlCharacters(path)) return undefined;
 
   try {
     const url = new URL(path, INTERNAL_ORIGIN);

@@ -1,14 +1,13 @@
 'use server';
 
 import { parseWithZod } from '@conform-to/zod/v4';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, ne } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { auth } from '@/server/auth/auth';
 import { consumeAttempt } from '@/server/auth/rate-limit';
 import { reportAuthError } from '@/server/auth/report-error';
-import { revokeOtherSessions } from '@/server/auth/sessions';
 import { db } from '@/server/db';
-import { account, user } from '@/server/db/schema';
+import { account, session as sessions, user } from '@/server/db/schema';
 import { ENHANCED_SUBMIT_FIELD } from '@/lib/forms';
 import { firstPasswordSchema } from '../schemas';
 import { resolvePostLoginPath } from './post-login';
@@ -116,6 +115,10 @@ export async function createFirstPassword(
         .update(user)
         .set({ mustChangePassword: false, updatedAt: now })
         .where(eq(user.id, userId));
+      // Senha, marca e revogação precisam terminar juntas: a senha temporária veio por email.
+      await tx
+        .delete(sessions)
+        .where(and(eq(sessions.userId, userId), ne(sessions.token, session.session.token)));
       return 'changed';
     });
   } catch (error) {
@@ -125,7 +128,5 @@ export async function createFirstPassword(
 
   if (outcome === 'same-password') return { submission: reject(submission, 'same_password') };
   if (outcome === 'already-done') return alreadyCreated();
-  // Quem souber a senha temporária (ela foi por email) perde as outras sessões; esta continua.
-  await revokeOtherSessions(userId, session.session.token);
   return finish();
 }

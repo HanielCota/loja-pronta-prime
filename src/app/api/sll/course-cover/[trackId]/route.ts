@@ -16,6 +16,7 @@ import {
   withNodeDraftLock,
 } from '@/features/admin/server/node-drafts';
 import { removeStorageKeyIfUnused } from '@/features/admin/server/storage-references';
+import { readLimitedFormData, RequestBodyTooLargeError } from '@/lib/request-body';
 
 const MAX_BYTES = 20 * 1024 * 1024;
 type Context = { params: Promise<{ trackId: string }> };
@@ -90,14 +91,14 @@ export async function POST(request: Request, context: Context) {
   if (!(await access()).admin) return error('Entre com uma conta administradora.', 401);
   if (request.headers.get('origin') !== new URL(request.url).origin)
     return error('Pedido inválido.', 403);
-  if (Number(request.headers.get('content-length') ?? 0) > MAX_BYTES + 64 * 1024)
-    return error('A imagem é grande demais. O limite é 20 MB.', 413);
   const course = await courseFromParams(context);
   if (!course) return error('Este curso não está disponível.', 404);
   let form: FormData;
   try {
-    form = await request.formData();
-  } catch {
+    form = await readLimitedFormData(request, MAX_BYTES + 64 * 1024);
+  } catch (cause) {
+    if (cause instanceof RequestBodyTooLargeError)
+      return error('A imagem é grande demais. O limite é 20 MB.', 413);
     return error('Não consegui ler a imagem.', 400);
   }
   const file = form.get('file');

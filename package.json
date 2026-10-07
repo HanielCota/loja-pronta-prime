@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node ./node_modules/next/dist/bin/next dev",
+    "dev": "node ./node_modules/next/dist/bin/next dev --hostname 127.0.0.1",
     "build": "node ./node_modules/next/dist/bin/next build && bun run build:runtime",
     "build:runtime": "bun scripts/prepare-runtime.ts",
     "start": "node ./node_modules/next/dist/bin/next start --hostname 0.0.0.0",
