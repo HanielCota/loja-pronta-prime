@@ -155,7 +155,9 @@ export function LogoStudio({
         }
       } catch {
         if (back) go(back);
-        setError('Algo deu errado. Confira a internet e tente de novo.');
+        setError(
+          'Não consegui concluir agora. Suas escolhas continuam aqui. Recarregue a página para conferir o que ficou salvo antes de tentar de novo.',
+        );
       } finally {
         if (!navigating) setBusy(null);
       }

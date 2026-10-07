@@ -53,6 +53,15 @@ const SENT_ANSWERS = {
 };
 
 const STUDENTS: Student[] = [
+  {
+    kind: 'marcafalha',
+    emailVerified: true,
+    banned: false,
+    products: ['loja-pronta'],
+    storePhase: 2,
+    conversationSent: true,
+    brandStarted: true,
+  },
   { kind: 'aluna', emailVerified: true, banned: false },
   { kind: 'naoconfirmada', emailVerified: false, banned: false },
   { kind: 'desativada', emailVerified: true, banned: true },

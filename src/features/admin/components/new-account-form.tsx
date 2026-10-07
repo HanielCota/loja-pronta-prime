@@ -115,7 +115,7 @@ export function NewAccountForm() {
           <KeyRoundIcon aria-hidden="true" className="size-5 shrink-0 text-link" />
           <span>Definir uma senha temporária agora</span>
         </label>
-        <Field className="hidden group-has-[#access-password:checked]/access:flex">
+        <Field className="hidden group-has-[[name=access][value=password]:checked]/access:flex">
           <PasswordInput
             aria-describedby={['new-password-hint', errors.password && 'new-password-error']
               .filter(Boolean)

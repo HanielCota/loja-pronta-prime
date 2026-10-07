@@ -86,8 +86,18 @@ async function draw(
     };
   }
   // Daqui pra frente a imagem já foi paga: uma falha ao guardar não devolve a criação.
-  const key = await storeLogoImage(userId, png);
-  return { studio: view(await addLogo(userId, { key, brief })) };
+  // Devolve o saldo real e explica a falha do serviço, sem culpar a internet da aluna.
+  try {
+    const key = await storeLogoImage(userId, png);
+    return { studio: view(await addLogo(userId, { key, brief })) };
+  } catch (error) {
+    console.error('[logo-save] falha ao guardar o logo criado', uploadErrorDetails(error));
+    return {
+      studio: view(await getLogoStudio(userId)),
+      error:
+        'O logo foi desenhado, mas não consegui salvar agora. Esta tentativa contou como uma criação. Suas escolhas estão guardadas. Tente de novo daqui a pouco.',
+    };
+  }
 }
 
 /** "Criar meu logo": guarda as escolhas e desenha o logo com elas. */
