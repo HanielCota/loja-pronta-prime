@@ -371,6 +371,104 @@
   [role='button']:not(:disabled) {
     cursor: pointer;
   }
+  /*
+   * Controles nativos com a cara do app (nada do visual padrão do navegador). Caixa de marcar e
+   * rádio: borda da cor dos campos (3:1 no cartão), azul quando marcados, com o check ou o ponto
+   * aparecendo suave. No alto contraste do Windows, voltam a ser os do sistema.
+   */
+  input:where([type='checkbox'], [type='radio']) {
+    appearance: none;
+    display: inline-grid;
+    place-content: center;
+    flex-shrink: 0;
+    width: 1.375rem;
+    height: 1.375rem;
+    margin: 0;
+    border: 2px solid var(--input);
+    border-radius: 0.375rem;
+    background-color: var(--card);
+    cursor: pointer;
+    transition:
+      background-color 150ms var(--ease-fluid),
+      border-color 150ms var(--ease-fluid);
+  }
+  input:where([type='radio']) {
+    border-radius: 9999px;
+  }
+  input:where([type='checkbox'], [type='radio'])::before {
+    content: '';
+    width: 0.875rem;
+    height: 0.875rem;
+    background-color: var(--primary-foreground);
+    transform: scale(0);
+    transition: transform 150ms var(--ease-fluid);
+  }
+  input:where([type='checkbox'])::before {
+    /* O check do lucide, recortado: a cor vem do fundo, então acompanha o tema. */
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E")
+      center / contain no-repeat;
+  }
+  input:where([type='radio'])::before {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+  }
+  input:where([type='checkbox'], [type='radio']):checked {
+    border-color: var(--primary);
+    background-color: var(--primary);
+  }
+  input:where([type='checkbox'], [type='radio']):checked::before {
+    transform: scale(1);
+  }
+  input:where([type='checkbox'], [type='radio']):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  input:where([type='checkbox'], [type='radio']):disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+  @media (forced-colors: active) {
+    input:where([type='checkbox'], [type='radio']) {
+      appearance: auto;
+    }
+    input:where([type='checkbox'], [type='radio'])::before {
+      content: none;
+    }
+  }
+  /* Barras de rolagem finas, sem as setas e o cinza do Windows: o polegar na cor do trilho das
+     chaves (3:1 com o fundo nos dois temas), o resto transparente. No alto contraste, as do
+     sistema. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--track) transparent;
+  }
+  @media (forced-colors: active) {
+    * {
+      scrollbar-color: auto;
+    }
+  }
+  /* Número sem as setinhas do navegador (os campos de número aqui são digitados). */
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  /* Busca sem o "x" e a lupa que o Chrome e o Safari desenham dentro do campo. */
+  input[type='search']::-webkit-search-cancel-button,
+  input[type='search']::-webkit-search-decoration {
+    -webkit-appearance: none;
+  }
+  /* Seções recolhíveis sem o triângulo do navegador: cada uma tem o próprio ícone. */
+  summary {
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
   /* Realce do mouse e do toque mudando de cor suave, em vez de trocar de uma vez. O que já tem
      transição própria (classes transition-*) continua com a sua. */
   a,

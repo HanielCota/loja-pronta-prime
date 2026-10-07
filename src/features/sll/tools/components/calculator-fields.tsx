@@ -1,6 +1,8 @@
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import type { CalculatorKind } from '../form-input';
 import type { CalculatorState } from '../state';
+import { Select } from '@/components/ui/select';
+import { ChevronDownIcon } from 'lucide-react';
 
 function NumberField({
   name,
@@ -60,32 +62,35 @@ export function CalculatorFields({
           htmlFor="calculator-policy"
         >
           Tipo de conta e taxas
-          <select
+          <Select
             id="calculator-policy"
             name="policy"
             defaultValue={state.values.policy ?? 'cnpj'}
-            className="min-h-12 w-full rounded-field border border-input bg-background px-4 text-body text-foreground focus-visible:outline-2 focus-visible:outline-ring"
             aria-describedby="calculator-policy-help"
           >
             <option value="cnpj">Empresa (CNPJ)</option>
             <option value="cpf">Pessoa física (CPF): até 450 pedidos em 90 dias</option>
             <option value="cpf-volume">Pessoa física (CPF): mais de 450 pedidos em 90 dias</option>
             <option value="custom">Taxas personalizadas da minha loja</option>
-          </select>
+          </Select>
         </label>
         <p id="calculator-policy-help" className="text-sm text-muted-foreground">
           CPF: para preços abaixo de R$ 9,00 (ou R$ 12,00 com mais de 450 pedidos), use taxas
           personalizadas. A regra regressiva precisa ser conferida na sua loja.
         </p>
         <details
-          className="rounded-2xl border border-border p-4"
+          className="group rounded-2xl border border-border p-4"
           open={
             state.values.policy === 'custom' ||
             Boolean(state.errors.commission || state.errors.fixed)
           }
         >
-          <summary className="flex min-h-11 cursor-pointer items-center text-body font-semibold text-foreground focus-visible:outline-2 focus-visible:outline-ring">
+          <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-body font-semibold text-foreground focus-visible:outline-2 focus-visible:outline-ring">
             Preencher taxas personalizadas
+            <ChevronDownIcon
+              aria-hidden="true"
+              className="size-5 shrink-0 text-muted-foreground group-open:rotate-180 motion-safe:transition-transform motion-safe:duration-200"
+            />
           </summary>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <NumberField

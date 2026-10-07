@@ -10,12 +10,10 @@ import {
   setAccountBlockedForm as setAccountBlocked,
   type AccountActionState,
 } from '../server/actions';
+import { Select } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 const initialState: AccountActionState = { message: '', saved: false };
-
-// O mesmo campo de escolha da tela de acessos.
-const selectClass =
-  'min-h-12 rounded-field border border-input bg-background px-4 text-body text-foreground focus-visible:outline-2 focus-visible:outline-ring';
 
 function Result({ state }: { state: AccountActionState }) {
   return (
@@ -83,8 +81,7 @@ export function AccountDetailsForm(account: AccountDetailsProps) {
       />
       <div className="flex flex-col gap-2">
         <Label htmlFor="account-role">Função</Label>
-        <select
-          className={selectClass}
+        <Select
           value={fields.admin ? 'admin' : 'student'}
           onChange={(event) =>
             setFields((previous) => ({ ...previous, admin: event.target.value === 'admin' }))
@@ -94,12 +91,11 @@ export function AccountDetailsForm(account: AccountDetailsProps) {
         >
           <option value="student">Aluna</option>
           <option value="admin">Admin (acessa este painel)</option>
-        </select>
+        </Select>
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="account-password">Senha no próximo acesso</Label>
-        <select
-          className={selectClass}
+        <Select
           value={fields.mustChangePassword ? 'yes' : 'no'}
           onChange={(event) =>
             setFields((previous) => ({
@@ -112,7 +108,7 @@ export function AccountDetailsForm(account: AccountDetailsProps) {
         >
           <option value="no">Continua com a senha atual</option>
           <option value="yes">Precisa criar uma senha nova</option>
-        </select>
+        </Select>
       </div>
       <Button disabled={pending} loading={pending} type="submit">
         Salvar alterações
@@ -132,8 +128,8 @@ export function AccountBlockForm({ id, blocked }: { id: string; blocked: boolean
       {blocked ? null : (
         <div className="flex flex-col gap-2">
           <Label htmlFor="account-block-reason">Motivo do bloqueio</Label>
-          <textarea
-            className="min-h-24 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+          <Textarea
+            className="min-h-24"
             id="account-block-reason"
             maxLength={500}
             minLength={3}

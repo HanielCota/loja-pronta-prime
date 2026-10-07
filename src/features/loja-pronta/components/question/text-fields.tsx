@@ -2,6 +2,7 @@ import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { PERSONAL_TOUCH_MAX, STORE_NAME_MAX } from '@/config/onboarding';
 import { UNKNOWN_NAME } from '../../answers';
 import { Chip } from './option-field';
+import { Textarea } from '@/components/ui/textarea';
 
 type NameFieldProps = {
   text: string;
@@ -64,7 +65,7 @@ export function LongTextField({
       <label htmlFor="toque-pessoal" className="text-body font-semibold">
         Seu toque pessoal <span className="font-normal text-muted-foreground">(opcional)</span>
       </label>
-      <textarea
+      <Textarea
         id="toque-pessoal"
         name="value"
         rows={4}
@@ -72,7 +73,7 @@ export function LongTextField({
         value={text}
         onChange={(event) => onText(event.target.value)}
         aria-describedby={describedBy}
-        className="w-full resize-none scroll-mb-28 rounded-field border border-input bg-card px-4 py-3.5 text-body leading-relaxed outline-none focus-visible:border-ring focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-solid"
+        className="scroll-mb-28"
       />
     </div>
   );

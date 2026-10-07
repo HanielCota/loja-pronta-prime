@@ -8,6 +8,7 @@ import { SllAreaShell } from '@/features/sll/sll-area-shell';
 import { getSllPublishedResources } from '@/features/sll/server/catalog';
 import { ASSISTANT_GUIDES } from '@/features/sll/tools/catalog';
 import { cn } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
 
 export async function generateMetadata({
   params,
@@ -48,12 +49,7 @@ export default async function AssistantPage({ params }: { params: Promise<{ slug
         <label htmlFor="assistant-prompt" className="text-body font-semibold text-foreground">
           Texto para você copiar e completar
         </label>
-        <textarea
-          id="assistant-prompt"
-          readOnly
-          defaultValue={guide.prompt}
-          className="min-h-44 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-        />
+        <Textarea id="assistant-prompt" readOnly defaultValue={guide.prompt} className="min-h-44" />
         <p className="text-sm text-muted-foreground">
           Troque as partes entre colchetes pelas informações da sua loja. O assistente abre em outra
           aba; o ChatGPT pode pedir que você entre na sua conta.
