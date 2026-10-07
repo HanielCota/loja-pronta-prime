@@ -7,6 +7,7 @@ import { AccountMenu } from '@/features/member/components/account-menu';
 import { MemberNavbar, type NavbarAccount } from '@/features/member/components/member-navbar';
 import { ThemeToggleButton } from '@/features/theme/theme-toggle-button';
 import { AdminSidebar, type AdminSection } from './admin-sidebar';
+import { PageMain } from '@/components/ui/page-main';
 
 type AdminShellProps = {
   account: NavbarAccount;
@@ -79,7 +80,7 @@ export function AdminShell({
           <div className="lg:hidden">
             <MemberNavbar account={account} />
           </div>
-          <main
+          <PageMain
             id="admin-content"
             tabIndex={-1}
             className="mx-auto flex w-full max-w-[1400px] flex-col gap-8 px-4 pt-6 pb-12 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring sm:px-6 sm:pt-8 lg:px-10 lg:pt-10"
@@ -114,7 +115,7 @@ export function AdminShell({
               {actions ? <div className="flex shrink-0 gap-3">{actions}</div> : null}
             </div>
             {children}
-          </main>
+          </PageMain>
         </div>
       </div>
     </>

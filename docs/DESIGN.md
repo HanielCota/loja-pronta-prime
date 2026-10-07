@@ -241,6 +241,24 @@ o tema escuro e o alto contraste.
   Use `motion-safe:` para respeitar o aparelho e o ajuste da aluna; nenhum conteúdo depende da
   animação para ser entendido.
 
+## Movimento
+
+- Uma curva só: `ease-fluid` (`cubic-bezier(0.22, 1, 0.36, 1)`), que sai rápido e assenta devagar,
+  como uma mola sem balanço. Nada de quicar.
+- **Troca de página:** ao navegar dentro do app, o conteúdo da página nova (o `<main>`, pelo
+  `PageMain`) entra subindo 0,5rem e esmaecendo em 0,45s; a barra do topo e os menus laterais
+  ficam parados. No primeiro carregamento e sem JavaScript, a página já chega parada. Todas as
+  molduras usam o `PageMain`; tela nova com moldura própria também deve usar.
+- **Seções recolhíveis** (`<details>`): abrem e fecham deslizando (altura e opacidade), onde o
+  navegador consegue; nos outros, abrem na hora.
+- **Troca de tema:** a tela inteira esmaece de um tema pro outro em 0,3s, sem piscar.
+- **Realces:** cor de fundo, texto e borda de links e botões mudam em 150ms. Menus abrem e
+  fecham com esmaecido e um leve zoom a partir do botão. Cartões clicáveis do painel encolhem
+  de leve ao toque.
+- **Reduzir animações** (perfil ou aparelho): a troca de página só esmaece, as seções e o tema
+  trocam na hora. A animação termina sem deixar `transform` no `<main>`, pra não atrapalhar o
+  que fica preso na tela (`fixed`).
+
 ### Já foram testados e recusados (não proponha de novo)
 
 - Tela de entrada dividida (painel azul da marca ao lado do formulário).

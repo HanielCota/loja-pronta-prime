@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { SiteNavbar } from './site-navbar';
+import { PageMain } from '@/components/ui/page-main';
 
 type PageShellProps = {
   children: ReactNode;
@@ -19,14 +20,14 @@ export function PageShell({ children, wide, navbar = <SiteNavbar /> }: PageShell
     <div className="flex min-h-dvh flex-col">
       {navbar}
       <div className="flex flex-1 flex-col items-center px-4 py-8 sm:justify-center sm:py-16 short:py-3">
-        <main
+        <PageMain
           className={cn(
             'flex w-full max-w-[480px] flex-col gap-6',
             wide ? 'sm:max-w-[720px] lg:max-w-[880px]' : 'lg:max-w-[640px]',
           )}
         >
           {children}
-        </main>
+        </PageMain>
       </div>
     </div>
   );

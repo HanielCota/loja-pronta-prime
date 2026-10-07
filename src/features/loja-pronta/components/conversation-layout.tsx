@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { MemberNavbar, type NavbarAccount } from '@/features/member/components/member-navbar';
 import { cn } from '@/lib/utils';
 import type { StepHeader } from '../steps';
+import { PageMain } from '@/components/ui/page-main';
 
 type ConversationLayoutProps = {
   /** Quem está logada (a barra do topo, a mesma de todas as telas). */
@@ -99,9 +100,9 @@ export function ConversationLayout({
           ))}
         </div>
       </nav>
-      <main className={cn(column, 'flex-1 gap-8 pt-8 pb-10 sm:justify-center sm:py-12')}>
+      <PageMain className={cn(column, 'flex-1 gap-8 pt-8 pb-10 sm:justify-center sm:py-12')}>
         {children}
-      </main>
+      </PageMain>
     </div>
   );
 }

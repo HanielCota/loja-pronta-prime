@@ -9,6 +9,7 @@ import {
   MEMBER_AREA_MAX_WIDTH,
   MEMBER_AREA_SIDEBAR_COLUMNS,
 } from '@/lib/member-layout';
+import { PageMain } from '@/components/ui/page-main';
 
 /** Cartão branco das áreas; no alto contraste, a borda desenha o que a sombra desenhava. */
 export const panelCard =
@@ -117,7 +118,7 @@ export function AreaShell({
         sticky
         currentArea={hasChoice ? area : undefined}
       />
-      <main
+      <PageMain
         className={cn(
           'mx-auto w-full pt-6 pb-12 sm:pt-8',
           MEMBER_AREA_GUTTERS,
@@ -138,7 +139,7 @@ export function AreaShell({
         ) : (
           <div className="flex flex-col gap-8">{content}</div>
         )}
-      </main>
+      </PageMain>
     </div>
   );
 }
@@ -171,14 +172,14 @@ export function CenteredMemberPage({
           <Breadcrumb trail={trail} current={current} />
         </div>
       ) : null}
-      <main
+      <PageMain
         className={cn(
           'mx-auto flex w-full flex-1 flex-col justify-center gap-6 px-4 py-8 sm:px-6 sm:py-12',
           wide ? 'max-w-[1040px]' : 'max-w-[512px] lg:max-w-[688px]',
         )}
       >
         {children}
-      </main>
+      </PageMain>
     </div>
   );
 }
