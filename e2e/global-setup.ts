@@ -119,6 +119,7 @@ const STUDENTS: Student[] = [
   { kind: 'perfilfotoinvalida', emailVerified: true, banned: false },
   { kind: 'perfilfotogrande', emailVerified: true, banned: false },
   { kind: 'perfilfotosemjs', emailVerified: true, banned: false },
+  { kind: 'perfilfotooutra', emailVerified: true, banned: false },
   // Rever fases feitas (e2e/revise.spec.ts): a conversa enviada; a marca confirmada; e uma loja já
   // publicada, em que nada reabre.
   {

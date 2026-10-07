@@ -54,6 +54,7 @@ export type StudentKind =
   | 'perfilfotoinvalida'
   | 'perfilfotogrande'
   | 'perfilfotosemjs'
+  | 'perfilfotooutra'
   | 'revisaconversa'
   | 'revisamarca'
   | 'revisatravada'
