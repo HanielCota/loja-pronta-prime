@@ -77,7 +77,6 @@ if (products.includes('loja-pronta')) {
       userId: user.id,
       answers: {
         vendas: 'Nunca vendi',
-        categorias: ['Beleza', 'Casa e decoração'],
         estilo: 'Delicado',
         cor: 'Rosa',
         sentimento: ['Acolhimento', 'Sofisticação'],

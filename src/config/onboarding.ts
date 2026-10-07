@@ -72,29 +72,6 @@ export const ONBOARDING_QUESTIONS = [
     ],
   },
   {
-    id: 'categorias',
-    block: 'voce',
-    kind: 'multi',
-    layout: 'chips',
-    max: 3,
-    ask: 'Que tipo de produto você gostaria de vender?',
-    help: 'Escolha até 3.',
-    label: 'Categorias',
-    // Lista provisória: as categorias de verdade virão do catálogo de fornecedores (fase 5).
-    options: [
-      { label: 'Casa e decoração' },
-      { label: 'Beleza' },
-      { label: 'Moda e acessórios' },
-      { label: 'Infantil' },
-      { label: 'Pets' },
-      { label: 'Cozinha' },
-      { label: 'Fitness' },
-      { label: 'Papelaria' },
-      { label: 'Tecnologia' },
-      { label: 'Outros' },
-    ],
-  },
-  {
     id: 'estilo',
     block: 'marca',
     kind: 'single',
@@ -169,7 +146,10 @@ export type OnboardingQuestion = QuestionDefinition & { id: OnboardingQuestionId
 export type AnswerValue = string | string[];
 
 /** Respostas guardadas, por pergunta. Pergunta sem chave = ainda não respondida. */
-export type OnboardingAnswers = Partial<Record<OnboardingQuestionId, AnswerValue>>;
+export type OnboardingAnswers = Partial<Record<OnboardingQuestionId, AnswerValue>> & {
+  /** Histórico apenas: não oferecer categorias sem o catálogo real do fornecedor. */
+  categorias?: AnswerValue;
+};
 
 /** Tamanho máximo do toque pessoal. */
 export const PERSONAL_TOUCH_MAX = 300;

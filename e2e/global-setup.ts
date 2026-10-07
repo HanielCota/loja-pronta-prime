@@ -45,7 +45,6 @@ type Student = {
 const SENT_ANSWERS = {
   vendas: 'Nunca vendi',
   nome: 'Patinhas da Ana',
-  categorias: ['Pets'],
   estilo: 'Divertido',
   cor: 'Verde',
   sentimento: ['Acolhimento'],

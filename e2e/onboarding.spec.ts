@@ -4,12 +4,9 @@ import { PASSWORD, studentEmail } from './support/students';
 
 const step = (id: string) => new RegExp(`/loja-pronta/conversa/${id}(\\?.*)?$`);
 
-/** Responde as perguntas de "Sobre você" (as 2 primeiras), tocando nas opções. */
+/** Responde sobre a conta existente antes das escolhas da marca. */
 async function answerAboutYou(page: Page) {
   await page.getByText('Já vendi, mas parei').click();
-  await page.getByRole('button', { name: 'Continuar' }).click();
-  await expect(page).toHaveURL(step('categorias'));
-  await page.getByText('Beleza').click();
   await page.getByRole('button', { name: 'Continuar' }).click();
   await expect(page).toHaveURL(step('sua-marca'));
   await page.getByRole('link', { name: 'Bora começar' }).click();
@@ -29,29 +26,13 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
 
   // Pergunta 1: escolher uma opção só avança ao confirmar no botão.
   await expect(page).toHaveURL(step('vendas'));
-  await expect(page).toHaveTitle(/Pergunta 1 de 6/);
+  await expect(page).toHaveTitle(/Pergunta 1 de 5/);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Você já vendeu pela internet?');
   await expect(page.getByRole('radiogroup').or(page.getByRole('group'))).toHaveAccessibleName(
     'Você já vendeu pela internet?',
   );
   await expectNoA11yViolations(page);
   await page.getByText('Já vendi, mas parei').click();
-  await page.getByRole('button', { name: 'Continuar' }).click();
-
-  // Várias opções: sem nenhuma, avisa na hora (sem ir ao servidor).
-  await expect(page).toHaveURL(step('categorias'));
-  await page.getByRole('button', { name: 'Continuar' }).click();
-  await expect(page.getByRole('main').getByRole('alert')).toHaveText(
-    'Escolha pelo menos uma opção.',
-  );
-  await expect(page).toHaveURL(step('categorias'));
-
-  // Até 3: na terceira, as outras travam e o contador explica.
-  for (const label of ['Beleza', 'Pets', 'Cozinha']) await page.getByText(label).click();
-  await expect(page.getByText('Você escolheu 3 de 3. Pra trocar, desmarque uma.')).toBeVisible();
-  await expect(page.getByRole('checkbox', { name: 'Fitness' })).toBeDisabled();
-  await expectNoA11yViolations(page);
-  await expect(page.getByRole('main').getByRole('alert')).toHaveCount(0);
   await page.getByRole('button', { name: 'Continuar' }).click();
 
   // A passagem pra marca: o que já foi, o que vem agora (sem contar como pergunta).
@@ -72,7 +53,12 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
   await page.getByText('Lilás').click();
   await page.getByRole('button', { name: 'Continuar' }).click();
   await expect(page).toHaveURL(step('sentimento'));
-  await page.getByText('Acolhimento').click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Escolha pelo menos uma opção.');
+  for (const label of ['Acolhimento', 'Confiança'])
+    await page.getByText(label, { exact: true }).click();
+  await expect(page.getByText('Você escolheu 2 de 2. Pra trocar, desmarque uma.')).toBeVisible();
+  await expect(page.getByRole('checkbox', { name: 'Diversão' })).toBeDisabled();
   await page.getByRole('button', { name: 'Continuar' }).click();
   await expect(page).toHaveURL(step('toque'));
   // Opcional: sem texto, o botão diz "Pular".
@@ -80,7 +66,6 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
 
   // Revisão: as respostas como foram salvas.
   await expect(page).toHaveURL(step('revisao'));
-  await expect(page.getByText('Beleza, Pets, Cozinha')).toBeVisible();
   await expect(page.getByText('Nada em especial')).toBeVisible();
   // Cada grupo da revisão é uma região com nome.
   await expect(page.getByRole('region', { name: 'Sobre você' })).toBeVisible();
@@ -148,24 +133,27 @@ test('continua de onde parou e não deixa pular perguntas', async ({ page }) => 
   await expect(page).toHaveURL(step('vendas'));
   await page.getByText('Nunca vendi').click();
   await page.getByRole('button', { name: 'Continuar' }).click();
-  await expect(page).toHaveURL(step('categorias'));
+  await expect(page).toHaveURL(step('sua-marca'));
 
   // "Terminar depois" volta pra área, que oferece continuar.
   await page.getByRole('link', { name: 'Terminar depois' }).click();
   await expect(page).toHaveURL(/\/loja-pronta$/);
   await page.getByRole('link', { name: 'Continuar a conversa' }).click();
-  await expect(page).toHaveURL(step('categorias'));
+  await expect(page).toHaveURL(step('estilo'));
 
   // Pular pelo endereço leva de volta pra pergunta que falta; a revisão também.
-  await page.goto('/loja-pronta/conversa/estilo');
-  await expect(page).toHaveURL(step('categorias'));
+  await page.goto('/loja-pronta/conversa/cor');
+  await expect(page).toHaveURL(step('estilo'));
   // Link de uma pergunta que saiu da conversa: volta pra onde ela parou.
-  await page.goto('/loja-pronta/conversa/nome');
-  await expect(page).toHaveURL(step('categorias'));
+  for (const removed of ['nome', 'categorias', 'motivacao', 'dificuldade', 'tempo']) {
+    await page.goto(`/loja-pronta/conversa/${removed}`);
+    await expect(page).toHaveURL(step('estilo'));
+  }
   await page.goto('/loja-pronta/conversa/revisao');
-  await expect(page).toHaveURL(step('categorias'));
+  await expect(page).toHaveURL(step('estilo'));
 
-  // Voltar mostra a resposta já salva.
+  // Voltar passa pela apresentação da marca e mostra a resposta já salva.
+  await page.getByRole('link', { name: 'Voltar' }).click();
   await page.getByRole('link', { name: 'Voltar' }).click();
   await expect(page).toHaveURL(step('vendas'));
   await expect(page.getByRole('radio', { name: 'Nunca vendi' })).toBeChecked();
@@ -176,7 +164,7 @@ test('continua de onde parou e não deixa pular perguntas', async ({ page }) => 
 
   // A tela de "pronto" só depois do envio.
   await page.goto('/loja-pronta/conversa/pronto');
-  await expect(page).toHaveURL(step('categorias'));
+  await expect(page).toHaveURL(step('estilo'));
 });
 
 test('pelo teclado, trocar a opção com as setas não avança sozinho', async ({ page }) => {
@@ -194,7 +182,7 @@ test('pelo teclado, trocar a opção com as setas não avança sozinho', async (
   await expect(page).toHaveURL(step('vendas'));
 
   await page.getByRole('button', { name: 'Continuar' }).press('Enter');
-  await expect(page).toHaveURL(step('categorias'));
+  await expect(page).toHaveURL(step('sua-marca'));
 });
 
 test('clique duplo numa opção não avança até tocar em Continuar', async ({ page }) => {
@@ -215,7 +203,7 @@ test('clique duplo numa opção não avança até tocar em Continuar', async ({ 
   expect(posts).toBe(0);
 
   await page.getByRole('button', { name: 'Continuar' }).click();
-  await expect(page).toHaveURL(step('categorias'));
+  await expect(page).toHaveURL(step('sua-marca'));
   expect(posts).toBe(1);
 
   await page.getByRole('link', { name: 'Voltar' }).click();
@@ -237,7 +225,7 @@ test.describe('sem JavaScript', () => {
 
     await page.getByText('Vendo em outro lugar').click();
     await page.getByRole('button', { name: 'Continuar' }).click();
-    await expect(page).toHaveURL(step('categorias'));
+    await expect(page).toHaveURL(step('sua-marca'));
 
     // Até o fim, só com formulários comuns.
     const choose = async (label: string, next: string) => {
@@ -245,7 +233,6 @@ test.describe('sem JavaScript', () => {
       await page.getByRole('button', { name: /Continuar|Pular/ }).click();
       await expect(page).toHaveURL(step(next));
     };
-    await choose('Pets', 'sua-marca');
     await page.getByRole('link', { name: 'Bora começar' }).click();
     await expect(page).toHaveURL(step('estilo'));
     await choose('Moderno', 'cor');

@@ -25,8 +25,9 @@ export function answerText(question: OnboardingQuestion, answers: OnboardingAnsw
 
 /**
  * Respostas que ainda valem com a lista de perguntas atual. Uma opção que saiu ou mudou de nome
- * (a lista de categorias é provisória) deixa de contar: na escolha múltipla, só ela sai; se não
- * sobrar nada, a pergunta volta a ficar sem resposta e a conversa pede de novo.
+ * deixa de contar: na escolha múltipla, só ela sai; se não
+ * sobrar nada, a pergunta volta a ficar sem resposta e a conversa pede de novo. Categorias
+ * antigas ficam no banco, mas não alimentam sugestões sem um catálogo confirmado do fornecedor.
  */
 export function cleanAnswers(answers: OnboardingAnswers): OnboardingAnswers {
   const clean: OnboardingAnswers = {};

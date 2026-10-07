@@ -170,14 +170,14 @@ test('marca completa: nome, estúdio do logo, texto, revisão com mudança e log
   await expect(page.getByText('Toque numa opção pra continuar.')).toBeVisible();
   await choose(page, 'Com um desenho');
   await goOn(page);
-  // Os desenhos do que ela vende (Pets) vêm primeiro, com a sugestão dita pro leitor de tela.
+  // Sem catálogo do fornecedor, os desenhos gerais vêm primeiro, sem sugerir um nicho de venda.
   await expect(
     page.getByRole('heading', { name: 'Qual desenho combina com a Patinhas da Ana?' }),
   ).toBeFocused();
-  await expect(
-    page.getByRole('radio', { name: 'Patinha', exact: true }),
-  ).toHaveAccessibleDescription('Sugestão');
-  await choose(page, 'Patinha');
+  await expect(page.getByRole('radio', { name: 'Flor', exact: true })).toHaveAccessibleDescription(
+    'Sugestão',
+  );
+  await choose(page, 'Flor');
   await goOn(page);
   // A cor que ela escolheu na conversa (verde) é a sugestão.
   await expect(page.getByRole('radio', { name: 'Verde natural' })).toHaveAccessibleDescription(

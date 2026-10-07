@@ -19,7 +19,6 @@ export function question(id: string) {
 /** Todas as perguntas respondidas (com respostas válidas). */
 export const ALL_ANSWERED: OnboardingAnswers = {
   vendas: 'Nunca vendi',
-  categorias: ['Beleza'],
   estilo: 'Delicado',
   cor: 'Rosa',
   sentimento: ['Diversão'],

@@ -27,13 +27,13 @@ describe('missingAnswer', () => {
 
 describe('escolhas', () => {
   test('o máximo de escolhas vem da pergunta', () => {
-    expect(maxChoices(question('categorias'))).toBe(3);
+    expect(maxChoices(question('sentimento'))).toBe(2);
     expect(maxChoices(question('vendas'))).toBe(1);
   });
 
   test('contador: chips mostram quantas; no limite (menor que as opções), avisa', () => {
-    expect(choiceCounter(question('categorias'), 1)).toBe('1 de 3 escolhidas');
-    expect(choiceCounter(question('categorias'), 3)).toMatch(/desmarque uma/);
+    expect(choiceCounter(question('sentimento'), 1)).toBe('1 de 2 escolhidas');
+    expect(choiceCounter(question('sentimento'), 2)).toMatch(/desmarque uma/);
     expect(choiceCounter(question('vendas'), 1)).toBe('');
   });
 });

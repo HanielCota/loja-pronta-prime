@@ -16,18 +16,17 @@ describe('parseAnswer', () => {
   });
 
   test('várias: na ordem das opções, sem repetir, até o máximo', () => {
-    const categorias = question('categorias');
-    expect(parseAnswer(categorias, form({ value: ['Pets', 'Beleza', 'Pets'] }))).toEqual({
+    const sentimentos = question('sentimento');
+    expect(
+      parseAnswer(sentimentos, form({ value: ['Diversão', 'Confiança', 'Diversão'] })),
+    ).toEqual({
       ok: true,
-      value: ['Beleza', 'Pets'],
+      value: ['Confiança', 'Diversão'],
     });
-    expect(parseAnswer(categorias, form({})).ok).toBe(false);
-    expect(parseAnswer(categorias, form({ value: ['Beleza', 'Inventada'] })).ok).toBe(false);
-    const tooMany = parseAnswer(
-      categorias,
-      form({ value: ['Beleza', 'Pets', 'Cozinha', 'Infantil'] }),
-    );
-    expect(tooMany).toEqual({ ok: false, error: 'Escolha no máximo 3.' });
+    expect(parseAnswer(sentimentos, form({})).ok).toBe(false);
+    expect(parseAnswer(sentimentos, form({ value: ['Confiança', 'Inventada'] })).ok).toBe(false);
+    const tooMany = parseAnswer(sentimentos, form({ value: ['Confiança', 'Diversão', 'Energia'] }));
+    expect(tooMany).toEqual({ ok: false, error: 'Escolha no máximo 2.' });
   });
 
   test('cor: uma das cores, "Escolho depois" ou a cor que ela escolheu (#rrggbb)', () => {
@@ -64,6 +63,11 @@ describe('parseAnswer', () => {
 });
 
 describe('cleanAnswers', () => {
+  test('ignora categorias antigas sem catálogo confirmado, sem pedir outra resposta', () => {
+    const cleaned = cleanAnswers({ ...ALL_ANSWERED, categorias: ['Beleza', 'Pets'] });
+    expect(cleaned).toEqual(ALL_ANSWERED);
+    expect(resumeStep(cleaned)).toBe('revisao');
+  });
   test('mantém respostas válidas como estão', () => {
     expect(cleanAnswers(ALL_ANSWERED)).toEqual(ALL_ANSWERED);
   });
@@ -77,10 +81,9 @@ describe('cleanAnswers', () => {
   test('descarta opção que saiu da lista; na múltipla, só ela sai', () => {
     const old: OnboardingAnswers = {
       vendas: 'Opção antiga',
-      categorias: ['Beleza', 'Categoria removida'],
-      sentimento: ['Removido'],
+      sentimento: ['Confiança', 'Categoria removida'],
     };
-    expect(cleanAnswers(old)).toEqual({ categorias: ['Beleza'] });
+    expect(cleanAnswers(old)).toEqual({ sentimento: ['Confiança'] });
     // Sem resposta válida, a conversa volta a pedir a pergunta.
     expect(resumeStep(cleanAnswers({ ...ALL_ANSWERED, vendas: 'Opção antiga' }))).toBe('vendas');
   });
@@ -89,9 +92,9 @@ describe('cleanAnswers', () => {
     const odd = {
       vendas: ['Nunca vendi'],
       toque: null,
-      categorias: ['Beleza', 'Pets', 'Cozinha', 'Infantil'],
+      sentimento: ['Confiança', 'Diversão', 'Energia'],
     } as unknown as OnboardingAnswers;
-    expect(cleanAnswers(odd)).toEqual({ categorias: ['Beleza', 'Pets', 'Cozinha'] });
+    expect(cleanAnswers(odd)).toEqual({ sentimento: ['Confiança', 'Diversão'] });
   });
 });
 
@@ -117,9 +120,9 @@ describe('answerText', () => {
   test('texto da revisão', () => {
     const answers: OnboardingAnswers = {
       ...ALL_ANSWERED,
-      categorias: ['Beleza', 'Pets'],
+      sentimento: ['Confiança', 'Diversão'],
     };
     expect(answerText(question('toque'), answers)).toBe('Nada em especial');
-    expect(answerText(question('categorias'), answers)).toBe('Beleza, Pets');
+    expect(answerText(question('sentimento'), answers)).toBe('Confiança, Diversão');
   });
 });
