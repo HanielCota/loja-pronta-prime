@@ -1,13 +1,23 @@
 import { desc, eq, gte, inArray } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { learningLessons, user, userPresence } from '@/server/db/schema';
+import { describeDevice } from '@/features/presence/device';
 import { describePresence, ONLINE_WINDOW_MS } from '@/features/presence/presence';
+import type { DeviceClient } from '@/features/presence/device';
 import type { PresenceRow } from '../components/presence-table';
 import { requireAdmin } from './access';
 
 /** Põe o título da aula nas linhas que estão numa aula (uma consulta só pra todas). */
 async function withLessonTitles(
-  rows: { userId: string; name: string; email: string; path: string; lastSeenAt: Date }[],
+  rows: {
+    userId: string;
+    name: string;
+    email: string;
+    path: string;
+    lastSeenAt: Date;
+    userAgent: string | null;
+    device: DeviceClient | null;
+  }[],
 ): Promise<PresenceRow[]> {
   const places = rows.map((row) => ({ row, place: describePresence(row.path) }));
   const lessonIds = [...new Set(places.flatMap(({ place }) => place.lessonId ?? []))];
@@ -23,6 +33,9 @@ async function withLessonTitles(
     name: row.name,
     email: row.email,
     lastSeenAt: row.lastSeenAt,
+    // Avisos antigos (de antes do aparelho existir) não têm nada: melhor "sem informação".
+    device: row.userAgent || row.device ? describeDevice(row.userAgent, row.device ?? {}) : null,
+    deviceClient: row.device ?? {},
     lessonTitle: lessons.find((lesson) => lesson.id === place.lessonId)?.title ?? null,
   }));
 }
@@ -33,6 +46,8 @@ const presenceColumns = {
   email: user.email,
   path: userPresence.path,
   lastSeenAt: userPresence.lastSeenAt,
+  userAgent: userPresence.userAgent,
+  device: userPresence.device,
 };
 
 /**

@@ -231,7 +231,10 @@ o tema escuro e o alto contraste.
   largura toda: quem está com a plataforma aberta, a área (etiqueta) e a página em palavras (na
   aula, o título). A Visão geral se atualiza sozinha a cada 30s.
 - Online agora (`/admin/online`): a lista completa, em tabela (aluna, área, onde está, último
-  sinal), atualizada a cada 15s. A tela de uma conta mostra o "Último acesso" no resumo.
+  sinal, aparelho), atualizada a cada 15s, com a contagem por tipo de aparelho embaixo do total. O
+  aparelho tem ícone (celular, tablet, monitor) e o tipo escrito, e embaixo modelo, sistema e
+  navegador. A tela de uma conta mostra o "Último acesso" no resumo e um cartão "Aparelho" com
+  os detalhes que o navegador contou.
 - Contas: tabela no computador (nome e email, produtos, situação, data), com a linha toda
   clicável e etiquetas `rounded-full` (produto em `bg-primary-soft`, bloqueada em
   `bg-destructive-soft`, o resto em `bg-muted`); no celular, a mesma informação em lista. A

@@ -13,6 +13,7 @@ import { productLabel } from '@/features/admin/account-labels';
 import { requireAdmin } from '@/features/admin/server/access';
 import { getAccount } from '@/features/admin/server/accounts';
 import { getLastPresence } from '@/features/admin/server/online';
+import { deviceDetails } from '@/features/presence/device';
 import { formatLastSeen, isOnline } from '@/features/presence/presence';
 
 export const metadata: Metadata = { title: 'Conta · Administração' };
@@ -114,6 +115,27 @@ export default async function AdminAccountPage({ params }: { params: Promise<{ i
               <dd className="text-foreground">{dateFormat.format(account.createdAt)}</dd>
             </dl>
           </section>
+
+          {presence?.device ? (
+            <section aria-labelledby="account-device" className={`${panelCard} gap-4`}>
+              <div>
+                <h2 className="text-title font-semibold text-foreground" id="account-device">
+                  Aparelho
+                </h2>
+                <p className="mt-1 text-body text-muted-foreground">
+                  O que o navegador contou no último acesso.
+                </p>
+              </div>
+              <dl className="grid gap-x-6 gap-y-2 text-body sm:grid-cols-[auto_1fr]">
+                {deviceDetails(presence.device, presence.deviceClient).map(([term, value]) => (
+                  <div className="contents" key={term}>
+                    <dt className="text-muted-foreground">{term}</dt>
+                    <dd className="mb-2 break-words text-foreground sm:mb-0">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          ) : null}
 
           {isSelf ? null : (
             <section aria-labelledby="account-security" className={`${panelCard} gap-5`}>

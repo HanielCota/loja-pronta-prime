@@ -222,7 +222,9 @@ export function AdminOverview({
                 <span className="flex shrink-0 flex-col items-end gap-1">
                   <AreaTag area={row.area} />
                   <span className="text-sm text-muted-foreground">
-                    {formatLastSeen(row.lastSeenAt, now)}
+                    {[row.device?.kindLabel, formatLastSeen(row.lastSeenAt, now)]
+                      .filter(Boolean)
+                      .join(' · ')}
                   </span>
                 </span>
               </Link>
