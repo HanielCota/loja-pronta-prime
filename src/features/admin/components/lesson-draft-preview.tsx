@@ -1,4 +1,5 @@
-import { CirclePlay, FileText, Link2 } from 'lucide-react';
+import { FileText, Link2 } from 'lucide-react';
+import { SllLessonVideo } from '@/features/sll/components/sll-lesson-video';
 import { panelCard } from '@/features/member/components/area-shell';
 
 export type DraftPreviewBlock = {
@@ -7,7 +8,7 @@ export type DraftPreviewBlock = {
   data: Record<string, string>;
 };
 
-/** A prévia nunca executa links ou arquivos antes de a edição ser salva e publicada. */
+/** Mostra o vídeo conferido antes de salvar, mantendo links e arquivos como informações. */
 export function LessonDraftPreview({
   currentLessonId,
   siblingLessons,
@@ -23,7 +24,7 @@ export function LessonDraftPreview({
   blocks: DraftPreviewBlock[];
   changed: boolean;
 }) {
-  const hasVideo = blocks.some((block) => block.kind === 'video');
+  const firstVideo = blocks.find((block) => block.kind === 'video');
   return (
     <section className={`${panelCard} gap-4`} aria-labelledby="draft-preview-heading">
       <div>
@@ -37,12 +38,8 @@ export function LessonDraftPreview({
             : 'Confira como o conteúdo está organizado.'}
         </p>
       </div>
-      {hasVideo ? (
-        <div className="flex aspect-video min-h-40 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-muted p-4 text-center forced-colors:border-[CanvasText]">
-          <CirclePlay aria-hidden="true" className="size-11 text-link" />
-          <p className="text-body font-semibold text-foreground">Espaço do vídeo</p>
-          <p className="text-sm text-muted-foreground">Vídeo ainda não disponível.</p>
-        </div>
+      {firstVideo ? (
+        <SllLessonVideo data={firstVideo.data} title={title.trim() || 'Aula sem título'} />
       ) : null}
       {description.trim() ? (
         <p className="text-body whitespace-pre-wrap text-foreground">{description}</p>
@@ -50,10 +47,15 @@ export function LessonDraftPreview({
       <div className="flex flex-col gap-4">
         {blocks.map((block) => {
           if (block.kind === 'video')
-            return block.data.note?.trim() ? (
-              <p className="text-body whitespace-pre-wrap text-foreground" key={block.id}>
-                {block.data.note}
-              </p>
+            return block.id !== firstVideo?.id || block.data.note?.trim() ? (
+              <div className="flex flex-col gap-2" key={block.id}>
+                {block.id !== firstVideo?.id ? (
+                  <SllLessonVideo data={block.data} title={title.trim() || 'Aula sem título'} />
+                ) : null}
+                {block.data.note?.trim() ? (
+                  <p className="text-body whitespace-pre-wrap text-foreground">{block.data.note}</p>
+                ) : null}
+              </div>
             ) : null;
           if (block.kind === 'text')
             return block.data.text?.trim() ? (
@@ -91,7 +93,7 @@ export function LessonDraftPreview({
           ) : null;
         })}
       </div>
-      {!hasVideo && !description.trim() && blocks.length === 0 ? (
+      {!firstVideo && !description.trim() && blocks.length === 0 ? (
         <p className="text-body text-muted-foreground">Esta aula ainda não tem conteúdo.</p>
       ) : null}
       {siblingLessons.length > 0 ? (

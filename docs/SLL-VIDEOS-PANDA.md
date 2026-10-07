@@ -4,7 +4,20 @@ Catálogo das 71 aulas com player da área [SLL](https://membros.escalashop.com.
 
 Os dados estruturados estão em [`data/sll/panda-videos.json`](../data/sll/panda-videos.json). Cada aula tem título, ordem, página de origem, URL completa do player e ID Panda. Os campos `project` e `projectLessonSlug` identificam a aula correspondente nos importadores deste projeto.
 
-As URLs foram lidas do atributo `src` dos players incorporados. A reprodução e o funcionamento no domínio da Loja Pronta Prime ainda não foram verificados. Este catálogo registra os vídeos de origem; não publica aulas nem altera a hospedagem definida pelo projeto.
+As URLs foram lidas do atributo `src` dos players incorporados. Os IDs alimentam o player das aulas e das prévias do admin. A reprodução foi conferida no projeto local, com navegação entre aulas e visualização no computador e celular, nos temas claro e escuro. A validação não reproduziu os 70 vídeos individualmente nem verificou o domínio de produção.
+
+## Vincular os vídeos ao banco
+
+Depois de importar a estrutura das aulas do SLL, execute no banco do ambiente desejado:
+
+```bash
+bun run db:import-sll-videos --check # informa o que será preenchido
+bun run db:import-sll-videos         # vincula os IDs às aulas existentes
+```
+
+O script usa a conexão de `.env.local`, como os demais comandos de banco. A importação é transacional e pode ser repetida: preenche espaços vazios ou adiciona o bloco de vídeo quando ele não existe. Preserva vídeos diferentes já editados, aulas com rascunho pendente, textos, materiais, publicação e progresso. Se faltar uma aula, interrompe antes de escrever e informa qual estrutura precisa ser importada.
+
+No banco local, foram adicionados 50 blocos e preenchidos 21 espaços. A conferência seguinte encontrou as 71 aulas já vinculadas. A Etapa 2 mantém seus links para essas aulas, sem duplicar vídeos. Para trocar um vídeo, use o campo “Link ou ID do vídeo Panda” no editor da aula; alterações publicadas continuam seguindo o fluxo de rascunho e publicação do admin.
 
 ## Quantidade por seção
 

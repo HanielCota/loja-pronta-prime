@@ -54,6 +54,24 @@ describe('edição de aula', () => {
     expect(result.success).toBe(true);
   });
 
+  it('aceita o link do player da conta e salva somente o ID do vídeo', () => {
+    const videoId = '44408d11-f282-4a43-9949-8b3c44b94ee4';
+    const video = {
+      kind: 'video',
+      provider: 'pandavideo',
+      videoId: `https://player-vz-dbb97dad-52b.tv.pandavideo.com.br/embed/?v=${videoId}`,
+    };
+    const result = parseLessonEdit({ ...valid, blocks: [video] });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.blocks[0]).toMatchObject({ videoId });
+    expect(
+      parseLessonEdit({
+        ...valid,
+        blocks: [{ ...video, videoId: video.videoId.replace('dbb97dad-52b', 'unknown') }],
+      }).success,
+    ).toBe(false);
+  });
+
   it('aceita anotações em links e vídeos e um arquivo ligado a um deles', () => {
     const linkId = '1928c79d-8bd5-4241-8ddf-0c06803dd91c';
     const result = parseLessonEdit({

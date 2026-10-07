@@ -23,6 +23,7 @@
     "db:seed-sll-courses": "bun --env-file=.env.local --bun scripts/importar-cursos-complementares-sll.ts",
     "db:seed-sll-banners": "bun --env-file=.env.local --bun scripts/importar-banners-sll.ts",
     "db:seed-sll-resources": "bun --env-file=.env.local --bun scripts/importar-recursos-sll.ts",
+    "db:import-sll-videos": "bun --env-file=.env.local --bun scripts/importar-videos-panda-sll.ts",
     "auth:schema": "bun x auth@1.7.7 generate --config src/server/auth/auth.ts --output src/server/db/schema/auth.ts -y",
     "dev:aluna": "bun scripts/criar-aluna-teste.ts",
     "dev:video": "bun scripts/enviar-video.ts",

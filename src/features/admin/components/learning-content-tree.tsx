@@ -139,7 +139,7 @@ function LessonBlock({
     const videoId = readText(block.data, 'videoId');
     return (
       <p className="text-body text-muted-foreground">
-        {provider === 'pandavideo' ? 'Espaço do vídeo' : 'Vídeo'}
+        {provider === 'pandavideo' ? 'Vídeo Panda' : 'Vídeo'}
         {videoId ? ` · ID ${videoId}` : ''}
       </p>
     );

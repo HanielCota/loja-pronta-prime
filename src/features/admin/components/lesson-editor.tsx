@@ -270,7 +270,11 @@ export function LessonEditor({
                   url: value(`${prefix}:url`),
                   note: value(`${prefix}:note`),
                 }
-              : { note: value(`${prefix}:note`) },
+              : {
+                  provider: 'pandavideo',
+                  videoId: value(`${prefix}:videoId`),
+                  note: value(`${prefix}:note`),
+                },
       });
     });
     setDraft({ title: value('title'), description: value('description'), blocks });
@@ -412,13 +416,16 @@ export function LessonEditor({
                       </>
                     ) : block.kind === 'video' ? (
                       <>
-                        <input
+                        <FloatingLabelInput
                           defaultValue={block.data.videoId ?? ''}
                           name={`block:${block.id}:videoId`}
-                          type="hidden"
+                          id={`block-${block.id}-video`}
+                          label="Link ou ID do vídeo Panda"
+                          autoCapitalize="none"
+                          spellCheck={false}
                         />
                         <p className="text-body text-muted-foreground">
-                          O espaço do vídeo já aparece para a aluna. O envio será definido depois.
+                          Cole o link do player Panda. Deixe vazio para mostrar “Vídeo em breve”.
                         </p>
                         <div className="flex flex-col gap-2">
                           <Label htmlFor={`block-${block.id}-note`}>Anotação para este vídeo</Label>
@@ -596,13 +603,15 @@ export function LessonEditor({
                 </>
               ) : block.kind === 'video' ? (
                 <>
-                  <input
+                  <FloatingLabelInput
                     name={`newBlock:${newContentIndex(index)}:videoId`}
-                    type="hidden"
-                    value=""
+                    id={`new-block-${block.key}-video`}
+                    label="Link ou ID do vídeo Panda"
+                    autoCapitalize="none"
+                    spellCheck={false}
                   />
                   <p className="text-body text-muted-foreground">
-                    Este espaço fica reservado para o vídeo. O envio será definido depois.
+                    Cole o link do player Panda. Deixe vazio para mostrar “Vídeo em breve”.
                   </p>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor={`new-block-${block.key}-note`}>Anotação para este vídeo</Label>
