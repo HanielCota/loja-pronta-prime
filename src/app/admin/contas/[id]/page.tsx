@@ -12,6 +12,7 @@ import { hasAdminRole } from '@/features/admin/access';
 import { productLabel } from '@/features/admin/account-labels';
 import { requireAdmin } from '@/features/admin/server/access';
 import { getAccount } from '@/features/admin/server/accounts';
+import { RESET_LINK_TTL_HOURS } from '@/config/auth';
 import { getLastPresence } from '@/features/admin/server/online';
 import { deviceDetails } from '@/features/presence/device';
 import { formatLastSeen, isOnline } from '@/features/presence/presence';
@@ -21,8 +22,24 @@ export const metadata: Metadata = { title: 'Conta · Administração' };
 const dateFormat = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium', timeStyle: 'short' });
 
 /** Uma conta: cada coisa que dá pra mudar num cartão próprio, com o resumo ao lado. */
-export default async function AdminAccountPage({ params }: { params: Promise<{ id: string }> }) {
+const CREATED_NOTICES: Record<string, string> = {
+  email: `Conta criada. Enviamos um email com o link para ela criar a senha (o link vale ${RESET_LINK_TTL_HOURS} hora).`,
+  senha:
+    'Conta criada com a senha temporária. Passe a senha pra ela; no primeiro acesso, ela cria outra.',
+  'sem-email':
+    'Conta criada, mas o email com o link não saiu. Peça para ela usar "Esqueci minha senha" na tela de entrar.',
+};
+
+export default async function AdminAccountPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ criada?: string }>;
+}) {
   const { id } = await params;
+  const { criada } = await searchParams;
+  const createdNotice = criada ? CREATED_NOTICES[criada] : undefined;
   const session = await requireAdmin(`/admin/contas/${id}`);
   const [data, { now, presence }] = await Promise.all([getAccount(id), getLastPresence(id)]);
   if (!data) notFound();
@@ -50,6 +67,12 @@ export default async function AdminAccountPage({ params }: { params: Promise<{ i
       title={account.name}
       intro={account.email}
     >
+      {createdNotice ? (
+        // Logo depois de criar: diz como ela vai entrar. Some ao navegar (vem só do endereço).
+        <output className="block rounded-2xl bg-progress/15 px-5 py-4 text-body text-foreground forced-colors:border forced-colors:border-[CanvasText]">
+          {createdNotice}
+        </output>
+      ) : null}
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
         <div className="flex flex-col gap-6">
           <section aria-labelledby="account-details" className={`${panelCard} gap-5`}>

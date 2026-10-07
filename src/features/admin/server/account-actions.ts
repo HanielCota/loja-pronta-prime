@@ -1,14 +1,129 @@
 'use server';
 
+import { randomBytes, randomUUID } from 'node:crypto';
 import { and, eq, ne } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { auth } from '@/server/auth/auth';
+import { reportAuthError } from '@/server/auth/report-error';
 import { db } from '@/server/db';
-import { session, user } from '@/server/db/schema';
+import {
+  manualProductGrants,
+  productAccessEvents,
+  session,
+  studentProducts,
+  user,
+} from '@/server/db/schema';
 import { parseAccountEdit, withAdminRole } from '../account-edit';
+import { parseNewAccount, type NewAccountErrors } from '../new-account';
 import { hasAdminRole } from '../access';
 import { requireAdmin } from './access';
 
 export type AccountActionState = { message: string; saved: boolean };
+
+export type NewAccountState = {
+  /** Cresce a cada resposta: o formulário recomeça com o que foi digitado. */
+  attempt: number;
+  errors?: NewAccountErrors;
+  values?: { name: string; email: string; role: string; access: string; products: string[] };
+};
+
+/**
+ * Cria uma conta pelo painel: aluna ou admin, com os produtos escolhidos (liberação manual, com
+ * histórico) e o primeiro acesso por email (o link de criar senha) ou por senha temporária (que
+ * ela troca ao entrar). Depois, abre a tela da conta nova.
+ */
+export async function createAccount(
+  previous: NewAccountState,
+  data: FormData,
+): Promise<NewAccountState> {
+  const admin = await requireAdmin('/admin/contas/nova');
+  const parsed = parseNewAccount(data);
+  const values = {
+    name: String(data.get('name') ?? ''),
+    email: String(data.get('email') ?? ''),
+    role: String(data.get('role') ?? 'student'),
+    access: String(data.get('access') ?? 'email'),
+    products: data.getAll('products').map(String),
+  };
+  const fail = (errors: NewAccountErrors): NewAccountState => ({
+    attempt: previous.attempt + 1,
+    errors,
+    values,
+  });
+  if (!parsed.ok) return fail(parsed.errors);
+  const account = parsed.account;
+
+  const existing = await db.query.user.findFirst({
+    columns: { id: true },
+    where: eq(user.email, account.email),
+  });
+  if (existing) return fail({ email: 'Já existe uma conta com esse email.' });
+
+  let userId: string;
+  try {
+    const created = await auth.api.createUser({
+      body: {
+        email: account.email,
+        name: account.name,
+        // Por email, ela cria a senha pelo link: a senha inicial é aleatória e ninguém a conhece.
+        password: account.password ?? randomBytes(48).toString('base64url'),
+        role: account.admin ? 'admin' : 'user',
+        // Quem criou é a admin: o email não precisa de outra confirmação. Com senha temporária,
+        // ela troca no primeiro acesso; pelo link do email, a senha já é dela.
+        data: { emailVerified: true, mustChangePassword: account.access === 'password' },
+      },
+    });
+    userId = created.user.id;
+  } catch (error) {
+    // Outra admin pode ter criado o mesmo email no mesmo instante.
+    const concurrent = await db.query.user.findFirst({
+      columns: { id: true },
+      where: eq(user.email, account.email),
+    });
+    if (concurrent) return fail({ email: 'Já existe uma conta com esse email.' });
+    reportAuthError('criação de conta pelo painel', error);
+    return fail({ form: 'Não foi possível criar a conta agora. Tente de novo.' });
+  }
+
+  if (account.products.length) {
+    await db.transaction(async (tx) => {
+      for (const product of account.products) {
+        await tx.insert(studentProducts).values({ userId, product }).onConflictDoNothing();
+        // Manual: um reembolso da Hotmart depois não tira o que a admin liberou.
+        await tx.insert(manualProductGrants).values({ userId, product }).onConflictDoNothing();
+        await tx.insert(productAccessEvents).values({
+          id: randomUUID(),
+          targetUserId: userId,
+          actorUserId: admin.user.id,
+          product,
+          action: 'granted',
+          reason: 'Conta criada no painel',
+        });
+      }
+    });
+  }
+
+  let emailSent = true;
+  if (account.access === 'email') {
+    try {
+      await auth.api.requestPasswordReset({
+        body: { email: account.email, redirectTo: '/redefinir-senha' },
+        headers: await headers(),
+      });
+    } catch (error) {
+      emailSent = false;
+      reportAuthError('convite da conta criada no painel', error);
+    }
+  }
+
+  revalidatePath('/admin/contas');
+  revalidatePath('/admin');
+  redirect(
+    `/admin/contas/${userId}?criada=${account.access === 'password' ? 'senha' : emailSent ? 'email' : 'sem-email'}`,
+  );
+}
 
 function accountId(data: FormData) {
   const id = data.get('id');

@@ -49,10 +49,12 @@ import {
 } from './resource-actions';
 import { runSllCopyAction, saveSllCopy } from './copy-actions';
 import {
+  createAccount,
   endAccountSessions,
   saveAccount,
   setAccountBlocked,
   type AccountActionState,
+  type NewAccountState,
 } from './account-actions';
 import type { BannerActionState, EditorActionState, ResourceActionState } from '../structure-types';
 
@@ -757,7 +759,11 @@ export async function restoreSllResourceForm(data: FormData): Promise<void> {
   await restoreSllResource(data);
 }
 
-export type { AccountActionState } from './account-actions';
+export type { AccountActionState, NewAccountState } from './account-actions';
+
+export async function createAccountForm(previous: NewAccountState, data: FormData) {
+  return createAccount(previous, data);
+}
 
 export async function saveAccountForm(previous: AccountActionState, data: FormData) {
   return saveAccount(previous, data);

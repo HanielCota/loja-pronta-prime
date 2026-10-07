@@ -138,3 +138,44 @@ test('o formulário da conta salva sem JavaScript', async ({ browser }) => {
     await context.close();
   }
 });
+
+test('criar conta pelo painel: senha temporária, produto e email repetido', async ({
+  page,
+  browser,
+}) => {
+  const admin = await createAccount('admin-create', true);
+  const newEmail = studentEmail('created-by-admin');
+  await signIn(page, admin.email, PASSWORD, '/admin/contas');
+  await page.getByRole('link', { name: 'Criar conta' }).click();
+  await expect(page).toHaveURL(/\/admin\/contas\/nova$/);
+  await expectNoA11yViolations(page);
+
+  // Email que já existe: avisa no campo e mantém o que foi digitado.
+  await page.getByLabel('Nome completo').fill('Conta Repetida');
+  await page.getByRole('textbox', { name: 'Email' }).fill(admin.email);
+  await page.getByRole('checkbox', { name: 'SLL' }).check();
+  await page.getByRole('button', { name: 'Criar conta' }).click();
+  await expect(page.getByText('Já existe uma conta com esse email.')).toBeVisible();
+  await expect(page.getByLabel('Nome completo')).toHaveValue('Conta Repetida');
+  await expect(page.getByRole('checkbox', { name: 'SLL' })).toBeChecked();
+
+  await page.getByRole('textbox', { name: 'Email' }).fill(newEmail);
+  await page.getByRole('radio', { name: /senha temporária/ }).check();
+  await page.getByRole('textbox', { name: 'Senha temporária' }).fill('temporaria-123');
+  await page.getByRole('button', { name: 'Criar conta' }).click();
+  await expect(page).toHaveURL(/\/admin\/contas\/[^/]+\?criada=senha$/);
+  await expect(
+    page.getByText('Conta criada com a senha temporária.', { exact: false }),
+  ).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Resumo', exact: true })).toContainText('SLL');
+
+  // Ela entra com a senha temporária e precisa criar outra antes de tudo.
+  const studentContext = await browser.newContext();
+  try {
+    const studentPage = await studentContext.newPage();
+    await signIn(studentPage, newEmail, 'temporaria-123');
+    await expect(studentPage).toHaveURL(/\/primeiro-acesso/);
+  } finally {
+    await studentContext.close();
+  }
+});
