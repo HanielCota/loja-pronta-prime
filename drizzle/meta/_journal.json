@@ -309,6 +309,13 @@
       "when": 1791398630690,
       "tag": "0043_user-presence",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1791402783381,
+      "tag": "0044_presence-device",
+      "breakpoints": true
     }
   ]
 }

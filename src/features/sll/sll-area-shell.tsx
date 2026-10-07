@@ -9,6 +9,7 @@ import { PRODUCTS } from '@/features/products/catalog';
 import { ThemeToggleButton } from '@/features/theme/theme-toggle-button';
 import { SllSidebar } from './sll-sidebar';
 import { PageMain } from '@/components/ui/page-main';
+import { ScrollFade } from '@/components/ui/scroll-fade';
 
 type SllAreaShellProps = {
   /** Quem está logada (o pé do menu lateral, ou a barra do topo no celular). */
@@ -89,9 +90,9 @@ export function SllAreaShell({
             <BrandLink className="ml-1" />
             <ThemeToggleButton />
           </div>
-          <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
+          <ScrollFade className="-mx-1 min-h-0 flex-1 px-1">
             <SllSidebar variant="rail" currentSection={currentSection} />
-          </div>
+          </ScrollFade>
           <div className="flex flex-col gap-2 border-t border-border pt-4">
             {hasChoice ? (
               <nav aria-label="Suas áreas">

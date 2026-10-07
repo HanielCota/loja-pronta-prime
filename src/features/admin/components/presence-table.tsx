@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
+import type { DeviceClient, DeviceInfo } from '@/features/presence/device';
 import { formatLastSeen, type PresencePlace } from '@/features/presence/presence';
+import { DeviceLabel } from './device-label';
 import { cn } from '@/lib/utils';
 
 export type PresenceRow = PresencePlace & {
@@ -10,6 +12,10 @@ export type PresenceRow = PresencePlace & {
   lastSeenAt: Date;
   /** Título da aula aberta, quando ela está numa aula. */
   lessonTitle: string | null;
+  /** O aparelho em palavras (null nos avisos de antes do aparelho existir). */
+  device: DeviceInfo | null;
+  /** O que o navegador contou (tela, idioma, fuso...), pros detalhes da conta. */
+  deviceClient: DeviceClient;
 };
 
 /** Etiqueta da área (o texto diz qual; a cor só reforça). */
@@ -55,6 +61,9 @@ export function PresenceTable({ rows, now }: { rows: PresenceRow[]; now: Date })
               <th className="py-3 pr-4 font-semibold" scope="col">
                 Onde está
               </th>
+              <th className="py-3 pr-4 font-semibold" scope="col">
+                Aparelho
+              </th>
               <th className="py-3 pr-4 font-semibold whitespace-nowrap" scope="col">
                 Último sinal
               </th>
@@ -69,7 +78,7 @@ export function PresenceTable({ rows, now }: { rows: PresenceRow[]; now: Date })
                 className="relative hover:bg-muted motion-safe:transition-colors motion-safe:duration-150"
                 key={row.userId}
               >
-                <td className="max-w-0 py-3 pr-4 pl-3 lg:w-[34%]">
+                <td className="max-w-0 py-3 pr-4 pl-3 lg:w-[26%]">
                   <Link
                     className="block truncate font-semibold text-foreground outline-none after:absolute after:inset-0 after:rounded-2xl focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-ring"
                     href={`/admin/contas/${row.userId}`}
@@ -81,8 +90,11 @@ export function PresenceTable({ rows, now }: { rows: PresenceRow[]; now: Date })
                 <td className="py-3 pr-4">
                   <AreaTag area={row.area} />
                 </td>
-                <td className="max-w-0 py-3 pr-4 lg:w-[34%]">
+                <td className="max-w-0 py-3 pr-4 lg:w-[26%]">
                   <PresencePlaceText row={row} />
+                </td>
+                <td className="max-w-0 py-3 pr-4 lg:w-[22%]">
+                  <DeviceLabel device={row.device} />
                 </td>
                 <td className="py-3 pr-4 text-sm whitespace-nowrap text-muted-foreground">
                   {formatLastSeen(row.lastSeenAt, now)}
@@ -115,6 +127,7 @@ export function PresenceTable({ rows, now }: { rows: PresenceRow[]; now: Date })
                   </span>
                 </span>
                 <PresencePlaceText row={row} />
+                <DeviceLabel device={row.device} />
               </span>
               <ChevronRight aria-hidden="true" className="size-5 text-muted-foreground" />
             </Link>

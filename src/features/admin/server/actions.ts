@@ -1,11 +1,12 @@
 'use server';
 
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, sql } from 'drizzle-orm';
 import { desc } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireAdmin } from './access';
+import { ONLINE_WINDOW_MS } from '@/features/presence/presence';
 import { parseLessonEdit } from '../lesson-edit';
 import { getEditableLessonBlocks, saveNodeDraft, withNodeDraftLock } from './node-drafts';
 import { removeStorageKeyIfUnused } from './storage-references';
@@ -19,6 +20,7 @@ import {
   manualProductGrants,
   studentProducts,
   user,
+  userPresence,
   type LearningContentBlockData,
 } from '@/server/db/schema';
 import {
@@ -767,4 +769,14 @@ export async function setAccountBlockedForm(previous: AccountActionState, data: 
 
 export async function endAccountSessionsForm(previous: AccountActionState, data: FormData) {
   return endAccountSessions(previous, data);
+}
+
+/** Quantas pessoas estão online agora (o número ao lado de "Online agora" no menu). */
+export async function getOnlineCount(): Promise<number> {
+  await requireAdmin();
+  const [row] = await db
+    .select({ total: sql<number>`count(*)::int` })
+    .from(userPresence)
+    .where(gte(userPresence.lastSeenAt, new Date(Date.now() - ONLINE_WINDOW_MS)));
+  return row?.total ?? 0;
 }

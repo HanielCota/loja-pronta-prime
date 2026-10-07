@@ -15,6 +15,20 @@ const REFRESH_MS = 15_000;
 export default async function AdminOnlinePage() {
   const session = await requireAdmin('/admin/online');
   const { now, rows } = await getOnlineStudents();
+  // "2 no celular · 1 no computador": quantas pessoas em cada tipo de aparelho.
+  const byKind = (['mobile', 'tablet', 'desktop'] as const)
+    .map((kind) => ({
+      kind,
+      count: rows.filter((row) => row.device?.kind === kind).length,
+    }))
+    .filter((item) => item.count > 0)
+    .map(({ kind, count }) =>
+      kind === 'mobile'
+        ? `${count} no celular`
+        : kind === 'tablet'
+          ? `${count} no tablet`
+          : `${count} no computador`,
+    );
 
   return (
     <AdminShell
@@ -25,9 +39,14 @@ export default async function AdminOnlinePage() {
     >
       <AutoRefresh everyMs={REFRESH_MS} />
       <section aria-labelledby="online-list" className={cn(panelCard, 'gap-5 !p-5 sm:!p-6')}>
-        <h2 className="text-title font-semibold text-foreground" id="online-list">
-          {rows.length === 1 ? '1 pessoa online' : `${rows.length} pessoas online`}
-        </h2>
+        <div>
+          <h2 className="text-title font-semibold text-foreground" id="online-list">
+            {rows.length === 1 ? '1 pessoa online' : `${rows.length} pessoas online`}
+          </h2>
+          {byKind.length ? (
+            <p className="mt-1 text-body text-muted-foreground">{byKind.join(' · ')}</p>
+          ) : null}
+        </div>
         {rows.length ? (
           <PresenceTable now={now} rows={rows} />
         ) : (
