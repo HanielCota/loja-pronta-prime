@@ -1,6 +1,10 @@
 import { CirclePlay } from 'lucide-react';
 import { pandaVideoEmbedUrl } from '../panda-video';
 
+// O Panda precisa da própria origem para desenhar os ícones SVG. O src sempre usa o domínio
+// externo conferido em pandaVideoEmbedUrl, mantendo o player separado da origem da aplicação.
+/* oxlint-disable react/iframe-missing-sandbox */
+
 /** Mesmo player na aula e nas prévias, sem carregar o catálogo inteiro no navegador. */
 export function SllLessonVideo({ data, title }: { data: Record<string, unknown>; title: string }) {
   const src = pandaVideoEmbedUrl(data);
@@ -29,7 +33,7 @@ export function SllLessonVideo({ data, title }: { data: Record<string, unknown>;
         className="h-full w-full border-0"
         loading="lazy"
         referrerPolicy="strict-origin-when-cross-origin"
-        sandbox="allow-scripts allow-presentation"
+        sandbox="allow-scripts allow-same-origin allow-presentation"
         src={src}
         title={`Vídeo da aula: ${title}`}
       />
