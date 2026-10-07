@@ -10,11 +10,16 @@ As artes foram preparadas com a ferramenta integrada de imagem do Codex, em 7 de
 
 - `mascote-rosto.png`: desenho completo, para a barra do topo e usos pequenos.
 - `mascote-base.png`: olhos brancos e cílios, sem pupilas, sobrancelhas ou boca.
+- `mascote-corpo.png`: mesma base sem os braços, para receber as articulações por cima.
+- `mascote-bracos.png`: só os dois braços, com a ligação do ombro arredondada e transparente
+  ao redor. Cada metade é posicionada no próprio ombro; a mão da frente fica sobre o corpo.
 - `mascote-olhos-fechados.png`: pele nas regiões dos olhos, para cobrir olhos e cílios.
 
 O rosto animado usa as medidas de `art.ts`, com pupilas, brilhos, boca e sobrancelhas por cima
-da base. As reações existentes continuam: olhar, senha, erro, sucesso, toque e cochilo. Se uma
-arte mudar de composição, as medidas precisam ser conferidas junto no navegador.
+do corpo. As reações existentes continuam: olhar, senha, erro, sucesso, toque e cochilo. As mãos
+ficam baixas, com balanço independente e um movimento pequeno do corpo durante gestos de 4,4s
+ao chegar e interagir. Os gestos param fora da tela, com a aba escondida ou movimento reduzido.
+Se uma arte mudar de composição, as medidas precisam ser conferidas junto no navegador.
 
 ## Prompts usados
 
@@ -54,3 +59,35 @@ arte mudar de composição, as medidas precisam ser conferidas junto no navegado
 > alpha, ears, hands, belly, purple strap and star tag, feet, both floating stars. Do NOT draw
 > closed-eye lines or any other face details. Do NOT move, reframe, zoom, rotate, crop or redesign
 > anything.
+
+### Corpo sem braços
+
+> Use case: precise-object-edit. Asset type: Lupita body layer for a web animation rig. Input is
+> the exact edit target, a square transparent mascot with blank white eyes and no eyebrows or
+> mouth. Remove ONLY the two arms/hands: the round orange-purple arm/hand in the lower LEFT
+> foreground (the rounded oval in front of her side) and the orange-purple waving arm protruding
+> to the RIGHT. Reconstruct her smooth orange side and torso behind those two removed arms with
+> matching skin, lighting and volume. No replacement arms. Keep the original eye whites and
+> eyelashes exactly where they are; keep the face blank without pupils, mouth or eyebrows. Keep
+> cheeks, ears, feet, peach belly, purple diagonal strap, star tag and both floating stars.
+> CRITICAL: preserve the exact input square canvas, character size, position, body proportions
+> and all other original pixels/geometry. No shift, zoom, crop, rotation or redesign. Genuine
+> transparent alpha outside the body; no floor shadow. This layer will be overlaid with the
+> original arms rotated downward by code.
+
+### Braços separados
+
+> Use case: precise-object-edit. Asset type: two isolated Lupita arm layers for a web animation
+> rig. This transparent square image is the exact edit target. Keep ONLY the TWO orange-purple
+> arms/hands in their exact existing locations and orientations: (1) the round oval foreground
+> arm/hand at lower LEFT around x 19-36%, y 57-75%, and (2) the longer raised arm/hand at RIGHT
+> around x 70-86%, y 43-63%. Remove EVERYTHING else to genuine transparent alpha: the head,
+> ears, eye whites, eyelashes, cheeks, torso, belly, strap, tag, legs, feet and floating stars.
+> Carefully separate the arms from the body: no stray pieces of orange torso, face, cheek,
+> strap or tag. Reconstruct just the small shoulder end of each arm into a smooth rounded
+> orange cap, so each isolated arm is one soft rounded shape with no pointed corners or angular
+> wedges. Preserve the original orange-to-purple gradients, material, volume, lighting and hand
+> shapes. CRITICAL: preserve exact input square canvas and register each arm to its exact
+> original pixel location and scale; no shift, zoom, crop, repositioning, change in orientation
+> or redesign. Exactly two disconnected rounded arms on a transparent square canvas, no other
+> objects, no shadow, no text.

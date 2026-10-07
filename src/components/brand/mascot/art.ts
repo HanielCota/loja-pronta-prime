@@ -1,7 +1,8 @@
 import { getImageProps, type StaticImageData } from 'next/image';
 // Importadas (e não servidas de public/): o endereço leva um hash do conteúdo, então qualquer
 // mudança na arte invalida os caches (navegador, CDN e otimizador de imagens) sozinha.
-import mascotBase from './assets/mascote-base.png';
+import mascotArms from './assets/mascote-bracos.png';
+import mascotBody from './assets/mascote-corpo.png';
 import mascotClosedEyes from './assets/mascote-olhos-fechados.png';
 // O mascote inteiro, com o rosto desenhado na própria imagem: pros lugares pequenos e parados
 // (a barra do topo, o chat), onde o rosto animado não faz falta.
@@ -9,7 +10,7 @@ import mascotStill from './assets/mascote-rosto.png';
 
 /** A arte e as medidas do desenho: o que muda junto quando a arte do mascote muda. */
 
-export { mascotBase, mascotClosedEyes, mascotStill };
+export { mascotArms, mascotBody, mascotClosedEyes, mascotStill };
 
 export const IMAGE_SIZE = 512;
 /**
@@ -54,6 +55,24 @@ export const SLEEP_Z = [
  */
 export const EYE_AREA_SCALE = 1.08;
 export const INK = '#38171d';
+
+/** Braços separados da arte: ombro e posição relaxada, com a mão original preservada. */
+export const ARMS = {
+  left: {
+    origin: '34.8% 63%',
+    rest: '-48deg',
+    direction: -1,
+    // A imagem tem os dois braços; cada metade mostra só a articulação correspondente.
+    clip: 'inset(0 50% 0 0)',
+  },
+  right: {
+    origin: '68% 58%',
+    rest: '102deg',
+    direction: 1,
+    // Este braço nasce atrás da lateral do corpo e da alça.
+    clip: 'inset(0 0 0 50%)',
+  },
+} as const;
 
 export const pct = (value: number) => `${(value / IMAGE_SIZE) * 100}%`;
 export const round = (value: number) => Math.round(value * 10) / 10;

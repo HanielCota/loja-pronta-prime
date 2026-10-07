@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useId, useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import {
+  ARMS,
   BROWS,
   BROW_STROKE,
   CHEEKS,
@@ -16,7 +17,8 @@ import {
   MOUTH,
   SLEEP_Z,
   imageSet,
-  mascotBase,
+  mascotArms,
+  mascotBody,
   mascotClosedEyes,
   pct,
   round,
@@ -58,6 +60,7 @@ export function Mascot({
   canSleep = true,
 }: MascotProps) {
   const closedEyesImage = useMemo(() => imageSet(mascotClosedEyes, displaySize), [displaySize]);
+  const armsImage = useMemo(() => imageSet(mascotArms, displaySize), [displaySize]);
   const rootRef = useRef<HTMLDivElement>(null);
   const faceRef = useRef<HTMLDivElement>(null);
   const id = useId().replace(/[^\w-]/g, '');
@@ -86,154 +89,162 @@ export function Mascot({
       )}
     >
       <div
-        ref={faceRef}
-        data-slot="mascot-face"
-        className="absolute inset-0 [transform:translate(calc(var(--gx)*2px),calc(var(--gy)*1.5px))_rotate(calc(var(--gx)*4deg_+_var(--tilt)*1deg))]"
-        style={
-          {
-            '--gx': IDLE.x,
-            '--gy': IDLE.y,
-            '--tilt': base.tilt,
-            '--pupil': base.pupil,
-            '--lid0': base.lid,
-            '--lid1': base.lid,
-            '--closed0': closedAmount(base.lid),
-            '--closed1': closedAmount(base.lid),
-          } as React.CSSProperties
-        }
+        data-slot="mascot-sway"
+        className="absolute inset-0 [transform-origin:50%_85%] motion-safe:group-data-[sway=true]/mascot:animate-[mascot-sway_4.4s_ease-in-out]"
       >
-        <Image
-          src={mascotBase}
-          alt=""
-          fill
-          sizes={`${displaySize}px`}
-          quality={IMAGE_QUALITY}
-          loading="eager"
-          preload={preload}
-          draggable={false}
-          className="pointer-events-none select-none"
-        />
-        {EYES.map((eye, index) => {
-          // Quanto a pupila pode andar, em % do próprio tamanho (unidade do translate).
-          // A pupila continua limitada ao olho original (eye.rx/ry), não à área ampliada.
-          const travelX = ((eye.rx - eye.pupilW / 2) / eye.pupilW) * 100;
-          const travelY = ((eye.ry - eye.pupilH / 2) / eye.pupilH) * 100;
-          const areaRx = eye.rx * EYE_AREA_SCALE;
-          const areaRy = eye.ry * EYE_AREA_SCALE;
-          return (
-            <div
-              key={eye.cx}
-              className="absolute overflow-hidden rounded-[50%]"
-              style={{
-                left: pct(eye.cx - areaRx),
-                top: pct(eye.cy - areaRy),
-                width: pct(areaRx * 2),
-                height: pct(areaRy * 2),
-              }}
-            >
+        <div
+          ref={faceRef}
+          data-slot="mascot-face"
+          className="absolute inset-0 [transform:translate(calc(var(--gx)*2px),calc(var(--gy)*1.5px))_rotate(calc(var(--gx)*4deg_+_var(--tilt)*1deg))]"
+          style={
+            {
+              '--gx': IDLE.x,
+              '--gy': IDLE.y,
+              '--tilt': base.tilt,
+              '--pupil': base.pupil,
+              '--lid0': base.lid,
+              '--lid1': base.lid,
+              '--closed0': closedAmount(base.lid),
+              '--closed1': closedAmount(base.lid),
+            } as React.CSSProperties
+          }
+        >
+          <MascotArm side="right" image={armsImage} />
+          <Image
+            src={mascotBody}
+            data-slot="mascot-body"
+            alt=""
+            fill
+            sizes={`${displaySize}px`}
+            quality={IMAGE_QUALITY}
+            loading="eager"
+            preload={preload}
+            draggable={false}
+            className="pointer-events-none select-none"
+          />
+          <MascotArm side="left" image={armsImage} />
+          {EYES.map((eye, index) => {
+            // Quanto a pupila pode andar, em % do próprio tamanho (unidade do translate).
+            // A pupila continua limitada ao olho original (eye.rx/ry), não à área ampliada.
+            const travelX = ((eye.rx - eye.pupilW / 2) / eye.pupilW) * 100;
+            const travelY = ((eye.ry - eye.pupilH / 2) / eye.pupilH) * 100;
+            const areaRx = eye.rx * EYE_AREA_SCALE;
+            const areaRy = eye.ry * EYE_AREA_SCALE;
+            return (
               <div
-                className="absolute top-1/2 left-1/2 rounded-[50%]"
+                key={eye.cx}
+                className="absolute overflow-hidden rounded-[50%]"
                 style={{
-                  backgroundColor: INK,
-                  width: `${(eye.pupilW / (areaRx * 2)) * 100}%`,
-                  height: `${(eye.pupilH / (areaRy * 2)) * 100}%`,
-                  transform: `translate(calc(-50% + var(--gx) * ${travelX}%), calc(-50% + var(--gy) * ${travelY}%)) scale(var(--pupil))`,
+                  left: pct(eye.cx - areaRx),
+                  top: pct(eye.cy - areaRy),
+                  width: pct(areaRx * 2),
+                  height: pct(areaRy * 2),
                 }}
               >
-                {/* Os brilhos fazem parte do olhar da Lupita e acompanham a pupila. */}
-                <svg viewBox="0 0 34 49" className="size-full" aria-hidden="true">
-                  <ellipse cx="12" cy="11" rx="4" ry="4.5" fill="#ffffff" />
-                </svg>
+                <div
+                  className="absolute top-1/2 left-1/2 rounded-[50%]"
+                  style={{
+                    backgroundColor: INK,
+                    width: `${(eye.pupilW / (areaRx * 2)) * 100}%`,
+                    height: `${(eye.pupilH / (areaRy * 2)) * 100}%`,
+                    transform: `translate(calc(-50% + var(--gx) * ${travelX}%), calc(-50% + var(--gy) * ${travelY}%)) scale(var(--pupil))`,
+                  }}
+                >
+                  {/* Os brilhos fazem parte do olhar da Lupita e acompanham a pupila. */}
+                  <svg viewBox="0 0 34 49" className="size-full" aria-hidden="true">
+                    <ellipse cx="12" cy="11" rx="4" ry="4.5" fill="#ffffff" />
+                  </svg>
+                </div>
+                <div
+                  data-lid
+                  className="absolute inset-0 bg-no-repeat"
+                  style={{
+                    // Pele da mesma região da arte, alinhada com o olho; desce sem esticar.
+                    backgroundImage: closedEyesImage,
+                    backgroundSize: `${(IMAGE_SIZE / (areaRx * 2)) * 100}% ${(IMAGE_SIZE / (areaRy * 2)) * 100}%`,
+                    backgroundPosition: `${((eye.cx - areaRx) / (IMAGE_SIZE - areaRx * 2)) * 100}% ${((eye.cy - areaRy) / (IMAGE_SIZE - areaRy * 2)) * 100}%`,
+                    clipPath: `inset(0 0 calc((1 - var(--lid${index})) * 100%) 0)`,
+                  }}
+                />
               </div>
-              <div
-                data-lid
-                className="absolute inset-0 bg-no-repeat"
-                style={{
-                  // Pele da mesma região da arte, alinhada com o olho; desce sem esticar.
-                  backgroundImage: closedEyesImage,
-                  backgroundSize: `${(IMAGE_SIZE / (areaRx * 2)) * 100}% ${(IMAGE_SIZE / (areaRy * 2)) * 100}%`,
-                  backgroundPosition: `${((eye.cx - areaRx) / (IMAGE_SIZE - areaRx * 2)) * 100}% ${((eye.cy - areaRy) / (IMAGE_SIZE - areaRy * 2)) * 100}%`,
-                  clipPath: `inset(0 0 calc((1 - var(--lid${index})) * 100%) 0)`,
-                }}
-              />
-            </div>
-          );
-        })}
-        {/* Olho fechado: pele um pouco maior que o olho, que cobre também a borda clara da arte. */}
-        {EYES.map((eye, index) => (
-          <div
-            key={eye.cx}
-            className="pointer-events-none absolute inset-0 bg-size-[100%_100%] bg-no-repeat"
-            style={{
-              backgroundImage: closedEyesImage,
-              // A pele cobre também os cílios da arte quando ela fecha os olhos.
-              clipPath: `ellipse(${pct(eye.rx * 1.45)} ${pct(eye.ry * 1.35)} at ${pct(eye.cx)} ${pct(eye.cy - 3)})`,
-              opacity: `var(--closed${index})`,
-            }}
-          />
-        ))}
-        <svg
-          viewBox={`0 0 ${IMAGE_SIZE} ${IMAGE_SIZE}`}
-          className="pointer-events-none absolute inset-0 size-full overflow-visible"
-        >
-          <defs>
-            <radialGradient id={`${id}-blush`}>
-              <stop offset="0%" stopColor="#ff6f9f" stopOpacity="0.85" />
-              <stop offset="100%" stopColor="#ff6f9f" stopOpacity="0" />
-            </radialGradient>
-            <clipPath id={`${id}-mouth`}>
-              <path data-mouth-clip d={initialMouth.d} />
-            </clipPath>
-          </defs>
-          {/* Tracinho curvo de olho fechado ("‿"). */}
+            );
+          })}
+          {/* Olho fechado: pele um pouco maior que o olho, que cobre também a borda clara da arte. */}
           {EYES.map((eye, index) => (
-            <g key={eye.cx} style={{ opacity: `var(--closed${index})` }}>
+            <div
+              key={eye.cx}
+              className="pointer-events-none absolute inset-0 bg-size-[100%_100%] bg-no-repeat"
+              style={{
+                backgroundImage: closedEyesImage,
+                // A pele cobre também os cílios da arte quando ela fecha os olhos.
+                clipPath: `ellipse(${pct(eye.rx * 1.45)} ${pct(eye.ry * 1.35)} at ${pct(eye.cx)} ${pct(eye.cy - 3)})`,
+                opacity: `var(--closed${index})`,
+              }}
+            />
+          ))}
+          <svg
+            viewBox={`0 0 ${IMAGE_SIZE} ${IMAGE_SIZE}`}
+            className="pointer-events-none absolute inset-0 size-full overflow-visible"
+          >
+            <defs>
+              <radialGradient id={`${id}-blush`}>
+                <stop offset="0%" stopColor="#ff6f9f" stopOpacity="0.85" />
+                <stop offset="100%" stopColor="#ff6f9f" stopOpacity="0" />
+              </radialGradient>
+              <clipPath id={`${id}-mouth`}>
+                <path data-mouth-clip d={initialMouth.d} />
+              </clipPath>
+            </defs>
+            {/* Tracinho curvo de olho fechado ("‿"). */}
+            {EYES.map((eye, index) => (
+              <g key={eye.cx} style={{ opacity: `var(--closed${index})` }}>
+                <path
+                  d={`M${round(eye.cx - eye.rx * 0.72)} ${round(eye.cy + eye.ry * 0.05)} Q${eye.cx} ${round(eye.cy + eye.ry * 0.6)} ${round(eye.cx + eye.rx * 0.72)} ${round(eye.cy + eye.ry * 0.05)}`}
+                  fill="none"
+                  stroke={INK}
+                  strokeWidth={BROW_STROKE}
+                  strokeLinecap="round"
+                />
+              </g>
+            ))}
+            <g data-blush opacity={Math.max(0, base.mouth)}>
+              {CHEEKS.map((cheek) => (
+                <ellipse key={cheek.cx} {...cheek} fill={`url(#${id}-blush)`} />
+              ))}
+            </g>
+            {BROWS.map((brow, index) => (
               <path
-                d={`M${round(eye.cx - eye.rx * 0.72)} ${round(eye.cy + eye.ry * 0.05)} Q${eye.cx} ${round(eye.cy + eye.ry * 0.6)} ${round(eye.cx + eye.rx * 0.72)} ${round(eye.cy + eye.ry * 0.05)}`}
+                key={brow.outer[0]}
+                data-brow
+                d={browShape(index, base)}
                 fill="none"
                 stroke={INK}
                 strokeWidth={BROW_STROKE}
                 strokeLinecap="round"
               />
-            </g>
-          ))}
-          <g data-blush opacity={Math.max(0, base.mouth)}>
-            {CHEEKS.map((cheek) => (
-              <ellipse key={cheek.cx} {...cheek} fill={`url(#${id}-blush)`} />
             ))}
-          </g>
-          {BROWS.map((brow, index) => (
             <path
-              key={brow.outer[0]}
-              data-brow
-              d={browShape(index, base)}
-              fill="none"
+              data-mouth
+              d={initialMouth.d}
+              fill={INK}
               stroke={INK}
-              strokeWidth={BROW_STROKE}
+              strokeWidth={MOUTH.stroke}
               strokeLinecap="round"
+              strokeLinejoin="round"
             />
-          ))}
-          <path
-            data-mouth
-            d={initialMouth.d}
-            fill={INK}
-            stroke={INK}
-            strokeWidth={MOUTH.stroke}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <g clipPath={`url(#${id}-mouth)`}>
-            <ellipse
-              data-tongue
-              cx={MOUTH.cx}
-              cy={initialMouth.tongueY}
-              rx="15"
-              ry="9"
-              fill="#ff7a93"
-              opacity={initialMouth.tongueOpacity}
-            />
-          </g>
-        </svg>
+            <g clipPath={`url(#${id}-mouth)`}>
+              <ellipse
+                data-tongue
+                cx={MOUTH.cx}
+                cy={initialMouth.tongueY}
+                rx="15"
+                ry="9"
+                fill="#ff7a93"
+                opacity={initialMouth.tongueOpacity}
+              />
+            </g>
+          </svg>
+        </div>
       </div>
       <svg
         viewBox={`0 0 ${IMAGE_SIZE} ${IMAGE_SIZE}`}
@@ -257,6 +268,30 @@ export function Mascot({
           </text>
         ))}
       </svg>
+    </div>
+  );
+}
+
+/** A articulação fica no ombro; a mão gira junto e continua presa ao corpo. */
+function MascotArm({ side, image }: { side: keyof typeof ARMS; image: string }) {
+  const arm = ARMS[side];
+  return (
+    <div
+      data-slot="mascot-arm"
+      data-arm={side}
+      className="pointer-events-none absolute inset-0 [rotate:var(--arm-rest)] motion-safe:group-data-[sway=true]/mascot:animate-[mascot-arm-sway_4.4s_ease-in-out]"
+      style={
+        {
+          transformOrigin: arm.origin,
+          '--arm-rest': arm.rest,
+          '--arm-direction': arm.direction,
+        } as React.CSSProperties
+      }
+    >
+      <div
+        className="absolute inset-0 bg-size-[100%_100%] bg-no-repeat"
+        style={{ backgroundImage: image, clipPath: arm.clip }}
+      />
     </div>
   );
 }

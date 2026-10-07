@@ -82,8 +82,9 @@ o tema escuro e o alto contraste.
   e funciona sem JavaScript.
 - Lupita é o mascote das duas áreas: arte laranja com pontas roxas, cílios, barriga clara,
   etiqueta com estrela e duas estrelas ao lado. As cores são do desenho; a interface continua
-  usando os tokens da marca. As três artes transparentes em `components/brand/mascot/assets`
-  compartilham a composição; `art.ts` registra as posições do rosto para as reações existentes.
+  usando os tokens da marca. As artes transparentes em `components/brand/mascot/assets`
+  compartilham a composição; `art.ts` registra as posições do rosto e os ombros. Corpo e braços
+  separados permitem deixar as mãos baixas e mover cada braço sem deformar o desenho.
 - Mascote (`components/brand/mascot`), `Logo`, `BrandCard`, `CardHeading`. A Lupita cochila
   depois de 10s sem mexer (com "Zzz"; com a aba escondida, o relógio pausa), mas só nas telas de
   acesso: onde ele faz a pergunta (`MascotBubble`) ou acompanha a leitura (painel da loja), use
@@ -279,6 +280,10 @@ o tema escuro e o alto contraste.
 
 - Uma curva só: `ease-fluid` (`cubic-bezier(0.22, 1, 0.36, 1)`), que sai rápido e assenta devagar,
   como uma mola sem balanço. Nada de quicar.
+- **Lupita:** a pedido do dono, braços relaxados balançam até 4° e o corpo até 0,8°, com
+  `ease-in-out`. O gesto dura 4,4s ao chegar, focar um campo, digitar, tocar ou receber um aviso;
+  novas letras não reiniciam o gesto em andamento. Depois, assenta. Não roda continuamente e
+  para fora da tela, com a aba escondida ou com movimento reduzido (perfil ou aparelho).
 - **Troca de página:** ao navegar dentro do app, o conteúdo da página nova (o `<main>`, pelo
   `PageMain`) entra subindo 0,5rem e esmaecendo em 0,45s; a barra do topo e os menus laterais
   ficam parados. No primeiro carregamento e sem JavaScript, a página já chega parada. Todas as
