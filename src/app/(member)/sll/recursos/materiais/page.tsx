@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Download, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,8 @@ import { getLessonMaterials } from '@/features/sll/tools/server/materials';
 import { getSllPublishedResources } from '@/features/sll/server/catalog';
 import { TOOL_MATERIALS } from '@/features/sll/tools/catalog';
 import { cn } from '@/lib/utils';
+
+export const metadata: Metadata = { title: 'Materiais · SLL' };
 
 export default async function MaterialsPage() {
   const [{ session, products }, materials, resources] = await Promise.all([

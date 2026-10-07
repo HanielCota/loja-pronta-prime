@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import { ArrowUpRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { requireProduct } from '@/features/products/server/access';
@@ -7,6 +8,16 @@ import { SllAreaShell } from '@/features/sll/sll-area-shell';
 import { getSllPublishedResources } from '@/features/sll/server/catalog';
 import { ASSISTANT_GUIDES } from '@/features/sll/tools/catalog';
 import { cn } from '@/lib/utils';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const guide = Object.hasOwn(ASSISTANT_GUIDES, slug) ? ASSISTANT_GUIDES[slug] : undefined;
+  return { title: guide ? `${guide.title} · SLL` : 'Assistentes · SLL' };
+}
 
 export default async function AssistantPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
