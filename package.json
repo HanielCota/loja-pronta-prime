@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "node ./node_modules/next/dist/bin/next dev",
-    "build": "node ./node_modules/next/dist/bin/next build",
+    "build": "node ./node_modules/next/dist/bin/next build && bun run build:runtime",
+    "build:runtime": "bun scripts/prepare-runtime.ts",
     "start": "node ./node_modules/next/dist/bin/next start --hostname 0.0.0.0",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
