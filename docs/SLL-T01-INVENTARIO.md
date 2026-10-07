@@ -1,5 +1,7 @@
 # SLL — Inventário T01: boas-vindas e Etapa 1
 
+**URLs completas dos players:** [catálogo de vídeos Panda](SLL-VIDEOS-PANDA.md), conferido em 7 de outubro de 2026, com os dados em [`data/sll/panda-videos.json`](../data/sll/panda-videos.json).
+
 **Leitura feita em:** 5 de outubro de 2026
 
 **Fonte:** área de membros antiga, páginas “Comece aqui” e Etapa 1.

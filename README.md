@@ -318,6 +318,7 @@ src/
 ## 📚 Documentation
 
 - [Product overview](docs/PRODUTO.md) (Portuguese)
+- [SLL Panda video catalog](docs/SLL-VIDEOS-PANDA.md) (Portuguese): all 71 lesson players and their project mappings in [`data/sll/panda-videos.json`](data/sll/panda-videos.json).
 - [Hotmart integration](docs/INTEGRACAO-HOTMART.md) (Portuguese): vision, decisions and next steps.
 - [Coolify deployment](docs/DEPLOY-COOLIFY.md) (Portuguese): fields, environment variables and validation.
 
