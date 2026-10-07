@@ -3,6 +3,8 @@ import type { ProductId } from '@/config/products';
 type Product = {
   /** Nome curto, pra botões ("Ir pra Loja Pronta"). */
   name: string;
+  /** Nome da aba na barra do topo: o que tem lá, sem repetir a marca "Loja Pronta Prime". */
+  tab: string;
   /** Nome completo, pra títulos. */
   title: string;
   /** Título da área, com o artigo certo ("ao Sistema…", "à Loja Pronta"). */
@@ -20,6 +22,7 @@ type Product = {
 export const PRODUCTS: Record<ProductId, Product> = {
   sll: {
     name: 'SLL',
+    tab: 'Curso SLL',
     title: 'Sistema Loja Lucrativa (SLL)',
     welcome: 'Boas-vindas ao Sistema Loja Lucrativa',
     path: '/sll',
@@ -29,6 +32,7 @@ export const PRODUCTS: Record<ProductId, Product> = {
   },
   'loja-pronta': {
     name: 'Loja Pronta',
+    tab: 'Minha loja',
     title: 'Loja Pronta',
     welcome: 'Boas-vindas à Loja Pronta',
     path: '/loja-pronta',

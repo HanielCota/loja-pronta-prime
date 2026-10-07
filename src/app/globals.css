@@ -28,6 +28,17 @@
   }
 }
 
+/* Fundo sólido no lugar do translúcido (a barra do topo presa): o pedido do aparelho por menos
+   transparência ou a chave "Mais contraste" do perfil. */
+@custom-variant opaque {
+  @media (prefers-reduced-transparency: reduce) {
+    @slot;
+  }
+  &:where([data-contrast='more'], [data-contrast='more'] *) {
+    @slot;
+  }
+}
+
 /*
  * Tokens de design Loja Pronta Prime, estilo Apple, no formato do shadcn/ui.
  * Use pelas classes geradas: bg-primary, text-muted-foreground, rounded-card, text-body...
@@ -266,6 +277,13 @@
   @media (width < 40rem) {
     html {
       scroll-padding-bottom: 7rem;
+    }
+  }
+  /* Com a barra do topo presa (as áreas, do tablet pra cima), o que recebe foco ou o "Pular para o
+     conteúdo" para abaixo dela, em vez de escondido atrás (WCAG 2.4.11). */
+  @media (width >= 40rem) {
+    html:has(header[data-sticky]) {
+      scroll-padding-top: 6rem;
     }
   }
   /* Tamanho do texto (perfil, Aparência): muda a base do rem, então texto, botões e espaços

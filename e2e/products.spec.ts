@@ -57,10 +57,13 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
 
   // Com os dois produtos, o as abas da barra do topo trocam direto, sem passar pela escolha.
   const areas = page.getByRole('navigation', { name: 'Suas áreas' });
-  await expect(areas.getByRole('link', { name: 'SLL' })).toHaveAttribute('aria-current', 'page');
-  await areas.getByRole('link', { name: 'Loja Pronta' }).click();
+  await expect(areas.getByRole('link', { name: 'Curso SLL' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await areas.getByRole('link', { name: 'Minha loja' }).click();
   await expect(page).toHaveURL(/\/loja-pronta$/);
-  await expect(areas.getByRole('link', { name: 'Loja Pronta' })).toHaveAttribute(
+  await expect(areas.getByRole('link', { name: 'Minha loja' })).toHaveAttribute(
     'aria-current',
     'page',
   );
@@ -101,7 +104,7 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
   await expect(page.getByText(/^Boas-vindas/)).toHaveCount(0);
   // Quem volta vê em qual produto está, acima do título (a área da vez marcada nas abas do topo).
   await expect(
-    page.getByRole('navigation', { name: 'Suas áreas' }).getByRole('link', { name: 'SLL' }),
+    page.getByRole('navigation', { name: 'Suas áreas' }).getByRole('link', { name: 'Curso SLL' }),
   ).toHaveAttribute('aria-current', 'page');
 });
 

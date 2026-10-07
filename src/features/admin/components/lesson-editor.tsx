@@ -670,7 +670,7 @@ export function LessonEditor({
           </div>
         </div>
       </form>
-      <div className={cn('self-start xl:sticky xl:top-6', !showPreview && 'hidden xl:block')}>
+      <div className={cn('self-start xl:sticky xl:top-22', !showPreview && 'hidden xl:block')}>
         <LessonDraftPreview
           currentLessonId={lesson.id}
           siblingLessons={siblingLessons}

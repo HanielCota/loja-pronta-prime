@@ -11,22 +11,36 @@ import {
 } from '@/lib/member-layout';
 
 /**
- * Barra do topo de todas as telas, com uma linha embaixo de ponta a ponta: a marca à esquerda
- * (leva ao menu das áreas; quem não entrou cai no login), as abas das áreas (`nav`, pra quem tem
- * os dois produtos) e, à direita, o que a tela tiver (a conta, nas telas de dentro). O voltar
- * fica no conteúdo, na trilha acima do título.
+ * Barra do topo de todas as telas, com uma linha fina embaixo de ponta a ponta: a marca à
+ * esquerda (leva ao menu das áreas; quem não entrou cai no login), as abas das áreas (`nav`, pra
+ * quem tem os dois produtos) e, à direita, o que a tela tiver (a conta, nas telas de dentro). O
+ * voltar fica no conteúdo, na trilha acima do título.
+ *
+ * `sticky` (as áreas): do tablet pra cima, a barra fica presa no topo ao rolar, com o fundo
+ * translúcido e desfocado, como no site da Apple. No celular ela rola junto (com as abas, ela tem
+ * duas linhas e tomaria espaço demais). Com "Mais contraste" ou o pedido do aparelho por menos
+ * transparência, o fundo fica sólido.
  */
 export function SiteNavbar({
   children,
   nav,
   hasSidebar = false,
+  sticky = false,
 }: {
   children?: ReactNode;
   nav?: ReactNode;
   hasSidebar?: boolean;
+  sticky?: boolean;
 }) {
   return (
-    <header className="border-b-2 border-border bg-background">
+    <header
+      data-sticky={sticky || undefined}
+      className={cn(
+        'border-b border-border bg-background',
+        sticky &&
+          'sm:sticky sm:top-0 sm:z-40 sm:bg-background/80 sm:backdrop-blur-xl sm:backdrop-saturate-150 opaque:sm:bg-background opaque:sm:backdrop-blur-none',
+      )}
+    >
       <div
         className={cn(
           'mx-auto grid min-h-16 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4',
@@ -54,7 +68,14 @@ export function SiteNavbar({
           Loja Pronta Prime
         </Link>
         {nav ? (
-          <div className="col-span-2 row-start-2 flex self-stretch sm:col-span-1 sm:col-start-2 sm:row-start-1">
+          // Do tablet pra cima, uma linha vertical curta separa as abas da marca.
+          <div
+            className={cn(
+              'col-span-2 row-start-2 flex gap-8 self-stretch sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:before:my-auto sm:before:h-6 sm:before:w-px sm:before:bg-border',
+              // Com o menu lateral, as abas se alinham com o conteúdo: a coluna já as separa.
+              hasSidebar && 'lg:before:hidden',
+            )}
+          >
             {nav}
           </div>
         ) : null}
