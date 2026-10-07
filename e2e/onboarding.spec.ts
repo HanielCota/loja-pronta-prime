@@ -54,7 +54,9 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
   await page.getByRole('button', { name: 'Continuar' }).click();
   await expect(page).toHaveURL(step('sentimento'));
   await page.getByRole('button', { name: 'Continuar' }).click();
-  await expect(page.getByRole('alert')).toHaveText('Escolha pelo menos uma opção.');
+  await expect(page.getByRole('main').getByRole('alert')).toHaveText(
+    'Escolha pelo menos uma opção.',
+  );
   for (const label of ['Acolhimento', 'Confiança'])
     await page.getByText(label, { exact: true }).click();
   await expect(page.getByText('Você escolheu 2 de 2. Pra trocar, desmarque uma.')).toBeVisible();
@@ -154,6 +156,7 @@ test('continua de onde parou e não deixa pular perguntas', async ({ page }) => 
 
   // Voltar passa pela apresentação da marca e mostra a resposta já salva.
   await page.getByRole('link', { name: 'Voltar' }).click();
+  await expect(page).toHaveURL(step('sua-marca'));
   await page.getByRole('link', { name: 'Voltar' }).click();
   await expect(page).toHaveURL(step('vendas'));
   await expect(page.getByRole('radio', { name: 'Nunca vendi' })).toBeChecked();

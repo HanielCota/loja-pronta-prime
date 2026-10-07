@@ -11,6 +11,7 @@
  * Só entra pergunta cuja resposta a plataforma usa: motivação, maior preocupação e tempo por
  * semana saíram por não servirem pra nada (respostas antigas delas são ignoradas, cleanAnswers).
  * O nome da loja também saiu: ela escolhe na marca, com sugestões (ver legacyStoreName).
+ * Categorias esperam o catálogo real do fornecedor, para não prometer produtos indisponíveis.
  */
 
 export const ONBOARDING_BLOCKS = {
