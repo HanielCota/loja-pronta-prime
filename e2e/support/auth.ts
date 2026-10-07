@@ -12,8 +12,11 @@ export function studentIp(email: string): string {
 }
 
 /** Página sem problemas de acessibilidade (lista o que falhou e onde, se houver). */
-export async function expectNoA11yViolations(page: Page) {
-  const { violations } = await new AxeBuilder({ page }).withTags(A11Y_TAGS).analyze();
+export async function expectNoA11yViolations(page: Page, externalFrameSelectors: string[] = []) {
+  const scan = new AxeBuilder({ page }).withTags(A11Y_TAGS);
+  // Exclui apenas o documento externo indicado: o elemento iframe e seu título continuam avaliados.
+  for (const selector of externalFrameSelectors) scan.exclude([selector, 'body']);
+  const { violations } = await scan.analyze();
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(' | ')}`)).toEqual([]);
 }
 

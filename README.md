@@ -256,6 +256,8 @@ The end-to-end suite runs against the real app and database, on desktop Chrome a
 - **Layout** on phones, phones in landscape and 320px screens.
 - **Accessibility:** WCAG 2.2 AA checks with axe, keyboard order and focus visibility.
 
+The Stage 1 lesson scan evaluates the app and the video iframe's accessible title. Panda's embedded document is maintained externally and is excluded from that scan: its mobile seek control currently fails axe's `target-size` rule. This remains a provider accessibility limitation, not a passing audit of the embedded player.
+
 Each database test run creates a temporary database on the local Postgres and applies the migrations. End-to-end tests start their own app server on a free port; catalog scenarios run sequentially. Test students and uploaded files are removed after the run, then the temporary database is dropped. The normal development database and server are preserved. The Postgres account needs permission to create databases.
 
 Pure rules (like the conversation's answer validation) also have unit tests, which run in milliseconds and need no database: `bun run test`.
