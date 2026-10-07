@@ -23,6 +23,7 @@ Curso em vídeo para a aluna aprender e vender por conta própria.
 - Boas-vindas, Método em 3 Etapas e cursos complementares.
 - Progresso salvo no servidor; a próxima etapa do método abre após concluir as aulas obrigatórias da anterior. Aulas opcionais não impedem o avanço.
 - Etapa 2 com uma pergunta sobre o tempo da loja, 6 prioridades e 7 ações complementares.
+- Aulas de apoio vinculadas ao plano ficam disponíveis quando a Etapa 2 abre, mesmo antes de liberar toda a Biblioteca. Cada dia mostra todas as suas ações obrigatórias e só fica concluído quando todas terminam.
 - Biblioteca da Etapa 3 com busca, retorno à busca e numeração original das aulas.
 - 71 aulas vinculadas ao Panda, com reprodução iniciada pela aluna; o catálogo também tem aulas em texto. Conteúdo e publicação podem ser editados no admin.
 - Calculadoras de preço e lucro, descontos e anúncios; guia em PDF e planilha de custos em XLSX com download protegido pelo acesso ao SLL.

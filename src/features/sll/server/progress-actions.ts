@@ -11,7 +11,7 @@ import {
   parseProgressPosition,
   undoCompletionMessage,
 } from '../progress-rules';
-import { getStageLockMessage, getTrackStageAccess } from './stage-lock';
+import { getLessonLockMessage, getTrackStageAccess } from './stage-lock';
 
 export type SllProgressActionResult = { saved: boolean; message: string; completed?: boolean };
 
@@ -59,7 +59,12 @@ export async function recordSllLessonView(
   const location = parseProgressLocation(trackId, lessonId);
   const lesson = location ? await lessonIsAvailable(location.trackId, location.lessonId) : null;
   if (!location || !lesson) return { saved: false, message: 'Esta aula não está disponível.' };
-  const lockMessage = await getStageLockMessage(userId, location.trackId, lesson.stageId);
+  const lockMessage = await getLessonLockMessage(
+    userId,
+    location.trackId,
+    lesson.stageId,
+    location.lessonId,
+  );
   if (lockMessage) return { saved: false, message: lockMessage };
 
   const now = new Date();
@@ -100,7 +105,12 @@ export async function saveSllLessonPosition(
   const lesson = location ? await lessonIsAvailable(location.trackId, location.lessonId) : null;
   if (!location || position === null || !lesson)
     return { saved: false, message: 'Não foi possível salvar o ponto da aula.' };
-  const lockMessage = await getStageLockMessage(userId, location.trackId, lesson.stageId);
+  const lockMessage = await getLessonLockMessage(
+    userId,
+    location.trackId,
+    lesson.stageId,
+    location.lessonId,
+  );
   if (lockMessage) return { saved: false, message: lockMessage };
 
   const now = new Date();
@@ -146,7 +156,12 @@ export async function setSllLessonCompletion(
   const location = parseProgressLocation(trackId, lessonId);
   const lesson = location ? await lessonIsAvailable(location.trackId, location.lessonId) : null;
   if (!location || !lesson) return { saved: false, message: 'Esta aula não está disponível.' };
-  const lockMessage = await getStageLockMessage(userId, location.trackId, lesson.stageId);
+  const lockMessage = await getLessonLockMessage(
+    userId,
+    location.trackId,
+    lesson.stageId,
+    location.lessonId,
+  );
   if (lockMessage) return { saved: false, message: lockMessage };
 
   const now = new Date();

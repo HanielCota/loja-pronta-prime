@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { getSessionState, needsFirstPassword } from '@/features/auth/server/session';
 import { hasAdminRole } from '@/features/admin/access';
 import { getStudentProducts } from '@/features/products/server/access';
-import { getStageLockMessage } from '@/features/sll/server/stage-lock';
+import { getLessonLockMessage } from '@/features/sll/server/stage-lock';
 import { db } from '@/server/db';
 import { learningContentBlocks } from '@/server/db/schema';
 import { storage } from '@/server/storage';
@@ -31,7 +31,7 @@ export async function GET(_request: Request, context: RouteContext) {
     where: eq(learningContentBlocks.id, blockId),
     with: {
       lesson: {
-        columns: { status: true, archivedAt: true },
+        columns: { id: true, status: true, archivedAt: true },
         with: {
           module: {
             columns: { status: true, archivedAt: true },
@@ -70,10 +70,11 @@ export async function GET(_request: Request, context: RouteContext) {
   // Etapa do método ainda fechada: o material só abre junto com a aula.
   if (
     !admin &&
-    (await getStageLockMessage(
+    (await getLessonLockMessage(
       state.session.user.id,
       block.lesson.module.stage.track.id,
       block.lesson.module.stage.id,
+      block.lesson.id,
     ))
   )
     return new Response(null, { status: 404, headers: { 'Cache-Control': 'no-store' } });

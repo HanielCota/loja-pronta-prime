@@ -14,6 +14,7 @@ import { getSllExpectedMaterial } from '../material-catalog';
 import { getSllTrackProgress } from './progress';
 import { isSafeContentDestination } from '@/lib/urls';
 import { resourceHref } from '../tools/catalog';
+import { isPlanReferenceAvailable } from '../lesson-access';
 
 /** Entrega à aula só os materiais publicados e os dados visíveis para a aluna. */
 export async function getSllLessonViewer(lessonId: string) {
@@ -82,6 +83,17 @@ export async function getSllLessonViewer(lessonId: string) {
   const track = await getSllTrackProgress(lesson.module.stage.track.id);
   const stage = track?.stages.find((item) => item.id === lesson.module.stage.id);
   if (!track || !stage || !stage.access) return null;
+  const planStages = track.stages.map((item) => ({
+    slug: item.slug,
+    isUnlocked: item.access?.isUnlocked ?? false,
+    relatedLessonIds: item.modules.flatMap((module) =>
+      module.lessons.map((sourceLesson) => sourceLesson.relatedLessonId),
+    ),
+  }));
+  const isUnlocked =
+    stage.access.isUnlocked ||
+    (track.kind === 'method' && isPlanReferenceAvailable(planStages, lesson.id));
+  const referenceOnly = isUnlocked && !stage.access.isUnlocked;
   const stageLessons = stage.modules.flatMap((item) => item.lessons);
   const progressByLesson = new Map(stageLessons.map((item) => [item.id, item]));
   const currentProgress = progressByLesson.get(lesson.id);
@@ -93,13 +105,22 @@ export async function getSllLessonViewer(lessonId: string) {
       moduleTitle: item.title,
     })),
   );
-  const adjacent = getAdjacentSllLessons(orderedStageLessons, lesson.id);
+  // Uma aula de apoio não oferece navegação para aulas que continuam fechadas.
+  const adjacent = getAdjacentSllLessons(
+    referenceOnly
+      ? orderedStageLessons.filter((item) => isPlanReferenceAvailable(planStages, item.id))
+      : orderedStageLessons,
+    lesson.id,
+  );
 
-  const currentIndex = lesson.module.lessons.findIndex((item) => item.id === lesson.id);
+  const moduleLessons = referenceOnly
+    ? lesson.module.lessons.filter((item) => isPlanReferenceAvailable(planStages, item.id))
+    : lesson.module.lessons;
+  const currentIndex = moduleLessons.findIndex((item) => item.id === lesson.id);
   if (currentIndex < 0) return null;
 
   // Etapa fechada: nem procura as ferramentas da aula (a tela só mostra o aviso de bloqueio).
-  const linkedResources = !stage.access.isUnlocked
+  const linkedResources = !isUnlocked
     ? []
     : await db
         .select({
@@ -125,7 +146,15 @@ export async function getSllLessonViewer(lessonId: string) {
     hasChoice: products.length > 1,
     track: { id: track.id, slug: track.slug, title: track.title, kind: track.kind },
     progress: { completedCount: track.completedCount, totalCount: track.totalCount },
-    stage: { id: stage.id, title: stage.title, access: stage.access },
+    stage: {
+      id: stage.id,
+      title: stage.title,
+      access: {
+        ...stage.access,
+        isUnlocked,
+        lockMessage: isUnlocked ? null : stage.access.lockMessage,
+      },
+    },
     module: {
       id: lesson.module.id,
       title: lesson.module.title,
@@ -147,9 +176,9 @@ export async function getSllLessonViewer(lessonId: string) {
       nextId: adjacent.next?.id ?? null,
       nextModuleId: adjacent.next?.moduleId ?? null,
       number: currentIndex + 1,
-      total: lesson.module.lessons.length,
+      total: moduleLessons.length,
     },
-    lessons: lesson.module.lessons.map((item, index) => {
+    lessons: moduleLessons.map((item, index) => {
       const progress = progressByLesson.get(item.id);
       return {
         id: item.id,
@@ -162,7 +191,7 @@ export async function getSllLessonViewer(lessonId: string) {
       };
     }),
     // Etapa fechada não manda o conteúdo pro navegador: a tela só mostra o aviso.
-    blocks: (stage.access.isUnlocked ? lesson.blocks : []).map((block) => ({
+    blocks: (isUnlocked ? lesson.blocks : []).map((block) => ({
       id: block.id,
       kind: block.kind,
       data: contentPreviewData(block.kind, block.data),

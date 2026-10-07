@@ -8,6 +8,7 @@ import {
   learningTracks,
 } from '@/server/db/schema';
 import { resolveSequentialStageAccess } from '../progress-rules';
+import { isPlanReferenceAvailable } from '../lesson-access';
 
 // Fica fora do arquivo 'use server': exportada de lá, viraria uma ação que qualquer
 // navegador pode chamar. Aqui ela serve às ações de progresso e à rota de materiais.
@@ -25,7 +26,7 @@ export async function getTrackStageAccess(userId: string, trackId: string) {
     ),
     with: {
       stages: {
-        columns: { id: true, title: true, position: true },
+        columns: { id: true, title: true, slug: true, position: true },
         where: and(eq(learningStages.status, 'published'), isNull(learningStages.archivedAt)),
         orderBy: [asc(learningStages.position), asc(learningStages.id)],
         with: {
@@ -34,7 +35,7 @@ export async function getTrackStageAccess(userId: string, trackId: string) {
             where: and(eq(learningModules.status, 'published'), isNull(learningModules.archivedAt)),
             with: {
               lessons: {
-                columns: { id: true, countsTowardProgress: true },
+                columns: { id: true, countsTowardProgress: true, relatedLessonId: true },
                 where: and(
                   eq(learningLessons.status, 'published'),
                   isNull(learningLessons.archivedAt),
@@ -74,6 +75,10 @@ export async function getTrackStageAccess(userId: string, trackId: string) {
   ).map((access, index) => ({
     ...access,
     title: track.stages[index]!.title,
+    slug: track.stages[index]!.slug,
+    relatedLessonIds: track.stages[index]!.modules.flatMap((module) =>
+      module.lessons.map((lesson) => lesson.relatedLessonId),
+    ),
     ...(track.kind === 'method' ? {} : { isUnlocked: true, lockMessage: null }),
   }));
   return { kind: track.kind, stages };
@@ -85,5 +90,24 @@ export async function getStageLockMessage(userId: string, trackId: string, stage
   if (!track) return 'Esta aula não está disponível.';
   const access = track.stages.find((stage) => stage.stageId === stageId);
   if (track.kind !== 'method' || access?.isUnlocked) return null;
+  return access?.lockMessage ?? 'Conclua a etapa anterior para abrir esta aula.';
+}
+
+/** A exceção vem de uma ação publicada e aberta no banco, nunca de um parâmetro do navegador. */
+export async function getLessonLockMessage(
+  userId: string,
+  trackId: string,
+  stageId: string,
+  lessonId: string,
+) {
+  const track = await getTrackStageAccess(userId, trackId);
+  if (!track) return 'Esta aula não está disponível.';
+  const access = track.stages.find((stage) => stage.stageId === stageId);
+  if (
+    track.kind !== 'method' ||
+    access?.isUnlocked ||
+    isPlanReferenceAvailable(track.stages, lessonId)
+  )
+    return null;
   return access?.lockMessage ?? 'Conclua a etapa anterior para abrir esta aula.';
 }
