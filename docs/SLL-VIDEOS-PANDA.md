@@ -4,7 +4,7 @@ Catálogo das 71 aulas com player da área [SLL](https://membros.escalashop.com.
 
 Os dados estruturados estão em [`data/sll/panda-videos.json`](../data/sll/panda-videos.json). Cada aula tem título, ordem, página de origem, URL completa do player e ID Panda. Os campos `project` e `projectLessonSlug` identificam a aula correspondente nos importadores deste projeto.
 
-As URLs foram lidas do atributo `src` dos players incorporados. Os IDs alimentam o player das aulas e das prévias do admin. A reprodução foi conferida no projeto local, com navegação entre aulas e visualização no computador e celular, nos temas claro e escuro. A validação não reproduziu os 70 vídeos individualmente nem verificou o domínio de produção.
+As URLs foram lidas do atributo `src` dos players incorporados. Os IDs alimentam o player das aulas e das prévias do admin. A reprodução foi conferida no projeto local e em `lojaprontaprime.com`, em **7 de outubro de 2026**: boas-vindas, Etapa 1, prévia da Biblioteca e os três cursos complementares. A aula também foi conferida no computador e no celular (390px), nos temas claro e escuro. A validação não reproduziu os 70 vídeos individualmente.
 
 ## Vincular os vídeos ao banco
 
@@ -24,6 +24,12 @@ Em **7 de outubro de 2026**, a conferência do primeiro deploy encontrou o site 
 sem trilhas cadastradas no admin e com zero aulas vinculadas. O importador automático corrige
 essa diferença entre o inventário local e o banco online. O log de início informa as quantidades
 importadas e o total de aulas com vídeo para verificar o resultado.
+
+O deploy do commit `dc290f19142a7dfd253ac40aa637cd53de9dfe1e` terminou em **7 de outubro de 2026,
+às 09h59 (Brasília)**. Os logs confirmaram 5 trilhas, 84 aulas e ações, 71 vídeos e 8 recursos
+importados, com 71 aulas vinculadas. O painel, o admin e os recursos foram conferidos online;
+os players testados avançaram e pausaram normalmente. A liberação sequencial das etapas foi
+preservada. Capas e banners sem imagens e os recursos sem destino continuam pendentes.
 
 Para conferir ou repetir a vinculação depois de importar a estrutura do SLL, execute:
 
