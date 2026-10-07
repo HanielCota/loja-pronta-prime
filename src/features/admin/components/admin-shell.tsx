@@ -70,6 +70,7 @@ export function AdminShell({
               Ver a área das alunas
             </Link>
             <AccountMenu
+              styledEmailTooltip
               variant="sidebar"
               name={accountName}
               email={account.email}

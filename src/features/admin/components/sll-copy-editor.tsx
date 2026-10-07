@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useState, type FormEvent } from 'react';
-import { ChevronDown, Save } from 'lucide-react';
+import { ChevronDown, FileX, History, Save, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LiveRegion } from '@/components/ui/live-region';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
@@ -57,7 +57,7 @@ function CopyGroup({
   return (
     <details className={`${panelCard} group`}>
       <summary
-        className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-title font-semibold text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        className="flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-field text-title font-semibold text-foreground outline-none hover:text-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         id={`copy-group-${index}`}
       >
         {group.title}
@@ -69,6 +69,7 @@ function CopyGroup({
       <div className="mt-5 grid gap-6 border-t border-border pt-5 xl:grid-cols-2">
         <div className="flex flex-col gap-3">
           <form
+            noValidate
             action={action}
             className="flex flex-col gap-4"
             key={groupActions.revision}
@@ -129,6 +130,7 @@ function CopyGroup({
               {hasDraft ? (
                 <>
                   <Button className="sm:!w-fit" name="intent" type="submit" value="publish">
+                    <Send aria-hidden="true" data-icon="inline-start" />
                     Publicar para alunas
                   </Button>
                   <Button
@@ -138,6 +140,7 @@ function CopyGroup({
                     value="discard"
                     variant="soft"
                   >
+                    <FileX aria-hidden="true" data-icon="inline-start" />
                     Descartar rascunho
                   </Button>
                 </>
@@ -149,6 +152,7 @@ function CopyGroup({
                   value="restore"
                   variant="soft"
                 >
+                  <History aria-hidden="true" data-icon="inline-start" />
                   Voltar à versão anterior
                 </Button>
               )}

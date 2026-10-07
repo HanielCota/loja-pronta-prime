@@ -2,7 +2,7 @@
 
 import { useActionState, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowDown, ArrowUp, Save, Trash2 } from 'lucide-react';
+import { Archive, ArrowDown, ArrowUp, FileX, History, Save, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LiveRegion } from '@/components/ui/live-region';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
@@ -158,6 +158,7 @@ export function SllBannerEditor({
       ) : null}
 
       <form
+        noValidate
         action={formAction}
         className="flex flex-col gap-4"
         onChange={updatePreview}
@@ -263,15 +264,18 @@ export function SllBannerEditor({
               type="submit"
               value="publish"
             >
+              <Send aria-hidden="true" data-icon="inline-start" />
               Publicar para alunas
             </Button>
             {banner.draft ? (
               <Button className="!w-fit" name="intent" type="submit" value="discard" variant="soft">
+                <FileX aria-hidden="true" data-icon="inline-start" />
                 Descartar rascunho
               </Button>
             ) : null}
             {banner.hasHistory && !banner.draft ? (
               <Button className="!w-fit" name="intent" type="submit" value="restore" variant="soft">
+                <History aria-hidden="true" data-icon="inline-start" />
                 Voltar à versão anterior
               </Button>
             ) : null}
@@ -298,7 +302,7 @@ export function SllBannerEditor({
               <ArrowDown aria-hidden="true" />
             </Button>
             <Button className="!w-fit" name="intent" type="submit" value="archive" variant="soft">
-              <Trash2 aria-hidden="true" />
+              <Archive aria-hidden="true" data-icon="inline-start" />
               Arquivar banner
             </Button>
           </div>

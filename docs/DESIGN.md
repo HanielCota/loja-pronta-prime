@@ -227,6 +227,14 @@ o tema escuro e o alto contraste.
   "Ver a área das alunas" e a conta. O conteúdo vai até 1400px. No celular, volta a barra do topo
   e as seções abrem por "Seções do painel", acima do título. O que fica preso ao rolar usa
   `top-10`. A seção atual fica em `bg-primary-soft` com texto `text-link`.
+- As ações do admin têm ícones lucide junto do texto: salvar, editar, adicionar, publicar,
+  descartar, restaurar e arquivar; arquivar usa o ícone de caixa de arquivo, sem lixeira.
+  Os selects do admin abrem uma lista com a superfície do painel, hover, foco e check na opção
+  marcada. Mantêm o campo nativo como reserva antes da hidratação e sem JavaScript.
+  Confirmações de conteúdo usam uma janela do painel com título, descrição e Cancelar, com foco
+  preso e devolvido à ação ao fechar. O email completo no pé do admin usa uma dica estilizada
+  ao passar o mouse ou focar pelo teclado. Os erros de formulário aparecem nos avisos e campos
+  do painel, validados no servidor, sem os balões nativos. Estes ajustes ficam restritos ao admin.
 - No menu do admin, "Conteúdo das alunas" (o grupo mais longo) abre e fecha pelo título, com a
   seta que gira, e lembra a escolha no aparelho; abre sozinho quando a página atual é dele.
   "Online agora" mostra quantas pessoas estão online (ponto verde e número numa pílula

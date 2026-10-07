@@ -2,7 +2,24 @@
 
 import { useActionState, useEffect, useRef, useState, useTransition, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowDown, ArrowUp, Archive, ImagePlus, RotateCcw, Trash2 } from 'lucide-react';
+import { useAdminConfirmation } from './admin-confirmation';
+import {
+  Archive,
+  Ellipsis,
+  ArrowDown,
+  ArrowUp,
+  FilePenLine,
+  FileX,
+  History,
+  ImagePlus,
+  Pencil,
+  RotateCcw,
+  Save,
+  Send,
+  Star,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LiveRegion } from '@/components/ui/live-region';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
@@ -25,7 +42,7 @@ import type {
   LearningNodeKind,
   StructureActionState,
 } from '../structure-types';
-import { Select } from '@/components/ui/select';
+import { AdminSelect as Select } from './admin-select';
 import { Textarea } from '@/components/ui/textarea';
 import { FileField } from '@/components/ui/file-field';
 
@@ -99,6 +116,7 @@ export function ContentNodeForm({
   return (
     <div className="mt-4 grid items-start gap-6 xl:grid-cols-2">
       <form
+        noValidate
         action={formAction}
         className="flex flex-col gap-4 rounded-2xl border border-border bg-background p-4 forced-colors:border forced-colors:border-[CanvasText]"
         onChange={updatePreview}
@@ -208,9 +226,11 @@ export function ContentNodeForm({
         ) : null}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Button loading={pending} loadingText="Salvando…" type="submit">
+            <Save aria-hidden="true" data-icon="inline-start" />
             Salvar
           </Button>
           <Button className="!w-full" onClick={onCancel} type="button" variant="soft">
+            <X aria-hidden="true" data-icon="inline-start" />
             Cancelar
           </Button>
         </div>
@@ -376,6 +396,7 @@ export function LearningNodeControls({
     error: false,
   });
   const published = node.status === 'published';
+  const confirmation = useAdminConfirmation();
 
   function showResult(result: { message: string; saved: boolean }) {
     setMessage({ text: result.message, error: !result.saved });
@@ -395,11 +416,15 @@ export function LearningNodeControls({
     });
   }
 
-  function archive() {
-    const confirmation = window.confirm(
-      `Arquivar “${node.title}”? O conteúdo e os materiais ficam guardados e podem ser restaurados.`,
-    );
-    if (!confirmation) return;
+  async function archive() {
+    if (
+      !(await confirmation.ask({
+        title: `Arquivar “${node.title}”?`,
+        description: 'O conteúdo e os materiais ficam guardados e podem ser restaurados.',
+        confirmLabel: 'Arquivar',
+      }))
+    )
+      return;
     run(archiveLearningNode, { kind, nodeId: node.id });
   }
 
@@ -417,11 +442,13 @@ export function LearningNodeControls({
     });
   }
 
-  function discardDraft() {
+  async function discardDraft() {
     if (
-      !window.confirm(
-        `Descartar as alterações de “${node.title}”? A versão publicada continua visível.`,
-      )
+      !(await confirmation.ask({
+        title: 'Descartar rascunho?',
+        description: `As alterações de “${node.title}” serão descartadas. A versão publicada continua visível.`,
+        confirmLabel: 'Descartar rascunho',
+      }))
     )
       return;
     const data = new FormData();
@@ -433,8 +460,15 @@ export function LearningNodeControls({
     });
   }
 
-  function restoreVersion() {
-    if (!window.confirm(`Restaurar a versão anterior de “${node.title}”?`)) return;
+  async function restoreVersion() {
+    if (
+      !(await confirmation.ask({
+        title: 'Restaurar versão anterior?',
+        description: `“${node.title}” volta aos textos da versão anterior.`,
+        confirmLabel: 'Restaurar versão',
+      }))
+    )
+      return;
     const data = new FormData();
     data.set('kind', kind);
     data.set('nodeId', node.id);
@@ -455,6 +489,7 @@ export function LearningNodeControls({
 
   return (
     <div className="mt-2 flex items-start gap-2 pl-13">
+      {confirmation.dialog}
       <Button
         aria-label={`Editar ${node.title}`}
         className="!w-fit !px-4"
@@ -463,13 +498,15 @@ export function LearningNodeControls({
         type="button"
         variant="soft"
       >
+        <Pencil aria-hidden="true" data-icon="inline-start" />
         Editar
       </Button>
       <details className="min-w-0 flex-1 sm:flex-none sm:open:flex-1">
         <summary
           aria-label={`Mais opções para ${node.title}`}
-          className="inline-flex min-h-11 cursor-pointer items-center rounded-full px-3 text-body text-muted-foreground outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full px-3 text-body text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-safe:transition-colors motion-safe:duration-150"
         >
+          <Ellipsis aria-hidden="true" className="size-5" />
           Mais opções
         </summary>
         <div className="flex flex-col gap-2 border-t border-border py-3 sm:flex-row sm:flex-wrap">
@@ -525,6 +562,11 @@ export function LearningNodeControls({
             type="button"
             variant={published ? 'ghost' : 'soft'}
           >
+            {published && !node.hasDraft ? (
+              <FilePenLine aria-hidden="true" data-icon="inline-start" />
+            ) : (
+              <Send aria-hidden="true" data-icon="inline-start" />
+            )}
             {published && node.hasDraft
               ? 'Publicar alterações'
               : published
@@ -539,6 +581,7 @@ export function LearningNodeControls({
               type="button"
               variant="ghost"
             >
+              <FileX aria-hidden="true" data-icon="inline-start" />
               Descartar rascunho
             </Button>
           ) : null}
@@ -550,6 +593,7 @@ export function LearningNodeControls({
               type="button"
               variant="ghost"
             >
+              <History aria-hidden="true" data-icon="inline-start" />
               Versão anterior
             </Button>
           ) : null}
@@ -575,6 +619,7 @@ export function LearningNodeControls({
               type="button"
               variant="soft"
             >
+              <Star aria-hidden="true" data-icon="inline-start" />
               {node.featured ? 'Remover destaque' : 'Destacar curso'}
             </Button>
           ) : null}
@@ -634,6 +679,7 @@ export function ArchivedLearningContent({
         type="button"
         variant="ghost"
       >
+        <Archive aria-hidden="true" data-icon="inline-start" />
         {standalone ? 'Aulas e cursos' : `Itens arquivados (${items.length})`}
       </Button>
       {open ? (

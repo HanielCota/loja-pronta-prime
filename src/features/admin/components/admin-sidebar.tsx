@@ -2,6 +2,7 @@ import Link from 'next/link';
 import {
   Archive,
   BookOpen,
+  ChevronDown,
   FileText,
   Images,
   KeyRound,
@@ -90,8 +91,10 @@ function NavLinks({
           <Link
             aria-current={current === section ? 'page' : undefined}
             className={cn(
-              'flex min-h-11 items-center gap-3 rounded-2xl px-3 py-2 text-body text-foreground outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-safe:transition-colors motion-safe:duration-150',
-              current === section && 'bg-primary-soft font-semibold text-link',
+              'flex min-h-11 items-center gap-3 rounded-2xl px-3 py-2 text-body text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-safe:transition-colors motion-safe:duration-150',
+              current === section
+                ? 'bg-primary-soft font-semibold text-link hover:bg-primary/15'
+                : 'hover:bg-muted',
             )}
             href={href}
           >
@@ -143,11 +146,15 @@ export function AdminSidebar({
 }) {
   if (variant === 'rail') return <Navigation current={current} />;
   return (
-    <details className="rounded-card bg-card p-4 shadow-card forced-colors:border forced-colors:border-[CanvasText]">
-      <summary className="flex min-h-11 cursor-pointer items-center gap-3 text-body font-semibold text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+    <details className="group/sections rounded-card bg-card p-4 shadow-card forced-colors:border forced-colors:border-[CanvasText]">
+      <summary className="flex min-h-11 cursor-pointer items-center gap-3 text-body font-semibold text-foreground outline-none hover:text-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-safe:transition-colors motion-safe:duration-150">
         {/* Abre a lista de seções (a do lado esquerdo no computador). */}
         <PanelLeft aria-hidden="true" className="size-5 text-link" />
         Seções do painel
+        <ChevronDown
+          aria-hidden="true"
+          className="ml-auto size-5 shrink-0 text-muted-foreground group-open/sections:rotate-180 motion-safe:transition-transform motion-safe:duration-150"
+        />
       </summary>
       <div className="mt-4 border-t border-border pt-4">
         <Navigation current={current} />

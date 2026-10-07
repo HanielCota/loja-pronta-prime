@@ -1,7 +1,18 @@
 'use client';
 
 import { useActionState, useState, type FormEvent } from 'react';
-import { ArrowDown, ArrowUp, ExternalLink, Plus, Save, Trash2, X } from 'lucide-react';
+import {
+  Archive,
+  ArrowDown,
+  ArrowUp,
+  ExternalLink,
+  FileX,
+  History,
+  Plus,
+  Save,
+  Send,
+  X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LiveRegion } from '@/components/ui/live-region';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
@@ -9,7 +20,7 @@ import { Label } from '@/components/ui/label';
 import { panelCard } from '@/features/member/components/area-shell';
 import { saveSllResourceForm } from '../server/actions';
 import type { ResourceActionState } from '../structure-types';
-import { Select } from '@/components/ui/select';
+import { AdminSelect as Select } from './admin-select';
 import { Textarea } from '@/components/ui/textarea';
 type ResourceDraft = {
   groupTitle?: string;
@@ -90,6 +101,7 @@ export function SllResourceEditor({
   const editor = (
     <>
       <form
+        noValidate
         action={formAction}
         className="flex flex-col gap-4"
         onChange={updatePreview}
@@ -246,15 +258,18 @@ export function SllResourceEditor({
             type="submit"
             value="publish"
           >
+            <Send aria-hidden="true" data-icon="inline-start" />
             Publicar para alunas
           </Button>
           {resource.draft ? (
             <Button className="!w-fit" name="intent" type="submit" value="discard" variant="soft">
+              <FileX aria-hidden="true" data-icon="inline-start" />
               Descartar rascunho
             </Button>
           ) : null}
           {resource.hasHistory && !resource.draft ? (
             <Button className="!w-fit" name="intent" type="submit" value="restore" variant="soft">
+              <History aria-hidden="true" data-icon="inline-start" />
               Voltar à versão anterior
             </Button>
           ) : null}
@@ -283,7 +298,7 @@ export function SllResourceEditor({
             Mover para baixo
           </Button>
           <Button className="!w-fit" name="intent" type="submit" value="archive" variant="soft">
-            <Trash2 aria-hidden="true" />
+            <Archive aria-hidden="true" data-icon="inline-start" />
             Arquivar recurso
           </Button>
         </form>

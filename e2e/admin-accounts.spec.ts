@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+import { AxeBuilder } from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { auth } from '@/server/auth/auth';
 import { expectNoA11yViolations, signIn } from './support/auth';
@@ -53,7 +55,27 @@ for (const mobile of [false, true]) {
         fullPage: true,
       });
       // A proteção precisa valer também quando o formulário é enviado diretamente.
-      await page.getByLabel('Função', { exact: true }).selectOption('student');
+      const role = page.getByRole('combobox', { name: 'Função', exact: true });
+      await role.click();
+      await expect(
+        page.getByRole('option', { name: 'Admin (acessa este painel)' }),
+      ).toHaveAttribute('data-state', 'checked');
+      await page.getByRole('option', { name: 'Aluna', exact: true }).hover();
+      // A página inteira já foi conferida. Aberta, a lista do Radix retira o fundo da árvore
+      // acessível; aqui a varredura cobre a lista, e abaixo o teclado e a volta do foco.
+      const popupA11y = await new AxeBuilder({ page }).include('[role="listbox"]').analyze();
+      expect(popupA11y.violations.map((violation) => violation.id)).toEqual([]);
+      await page.screenshot({
+        path: `.data/admin-select-${mobile ? 'mobile' : 'desktop'}-${dark ? 'dark' : 'light'}.png`,
+      });
+      await page.keyboard.press('Escape');
+      await expect(role).toBeFocused();
+      await role.press('ArrowDown');
+      await expect(page.getByRole('option', { name: 'Admin (acessa este painel)' })).toBeFocused();
+      await page.keyboard.press('Home');
+      await expect(page.getByRole('option', { name: 'Aluna', exact: true })).toBeFocused();
+      await page.keyboard.press('Enter');
+      await expect(role).toHaveText('Aluna');
       await page.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
       await expect(
         page.getByText('Você não pode tirar a sua própria função de admin.'),
@@ -106,7 +128,8 @@ test('editar, liberar produto, desconectar e bloquear uma conta tem efeito real'
     ).toBeVisible();
     await page.getByRole('button', { name: 'Desbloquear conta', exact: true }).click();
     await expect(page.getByRole('region', { name: 'Resumo', exact: true })).toContainText('Ativa');
-    await page.getByLabel('Senha no próximo acesso').selectOption('yes');
+    await page.getByRole('combobox', { name: 'Senha no próximo acesso' }).click();
+    await page.getByRole('option', { name: 'Precisa criar uma senha nova' }).click();
     await page.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
     await expect(page.getByText('Alterações salvas.', { exact: true })).toBeVisible();
     await signIn(studentPage, email, PASSWORD);
@@ -130,14 +153,78 @@ test('o formulário da conta salva sem JavaScript', async ({ browser }) => {
     await signIn(page, admin.email, PASSWORD, `/admin/contas/${target.id}`);
     await expect(page.getByRole('heading', { name: 'Dados da conta', exact: true })).toBeVisible();
     await page.getByLabel('Nome completo').fill('Conta sem JavaScript');
+    await page.getByLabel('Senha no próximo acesso').selectOption('yes');
     await page.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
     await expect(
       page.getByRole('heading', { name: 'Conta sem JavaScript', exact: true }),
     ).toBeVisible();
+    await expect(page.getByLabel('Senha no próximo acesso')).toHaveValue('yes');
   } finally {
     await context.close();
   }
 });
+
+for (const mobile of [false, true]) {
+  for (const dark of [false, true]) {
+    test(`confirmação de arquivo: ${mobile ? 'celular' : 'computador'}, ${dark ? 'escuro' : 'claro'}`, async ({
+      page,
+    }) => {
+      const admin = await createAccount(`admin-dialog-${mobile}-${dark}`, true);
+      const id = randomUUID();
+      const title = `Curso para conferir arquivo ${id}`;
+      await database().query(
+        "insert into learning_tracks (id, kind, slug, title, status) values ($1, 'complementary_course', $2, $3, 'draft')",
+        [id, `admin-dialog-${id}`, title],
+      );
+      try {
+        await page.setViewportSize(
+          mobile ? { width: 390, height: 844 } : { width: 1440, height: 1000 },
+        );
+        await page.addInitScript(
+          (useDark) => localStorage.setItem('theme', useDark ? 'dark' : 'light'),
+          dark,
+        );
+        await signIn(page, admin.email, PASSWORD, '/admin?area=courses');
+        await page.getByLabel(`Mais opções para ${title}`).click();
+        const archive = page.getByRole('button', { name: `Arquivar ${title}`, exact: true });
+        await archive.click();
+        const dialog = page.getByRole('alertdialog');
+        await expect(dialog).toHaveAccessibleName(`Arquivar “${title}”?`);
+        await expect(dialog.getByRole('button', { name: 'Cancelar' })).toBeFocused();
+        await expectNoA11yViolations(page);
+        expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+          true,
+        );
+        await page.screenshot({
+          path: `.data/admin-confirmation-${mobile ? 'mobile' : 'desktop'}-${dark ? 'dark' : 'light'}.png`,
+        });
+        await page.keyboard.press('Tab');
+        await expect(dialog.getByRole('button', { name: 'Arquivar', exact: true })).toBeFocused();
+        await page.keyboard.press('Tab');
+        await expect(dialog.getByRole('button', { name: 'Cancelar' })).toBeFocused();
+        await page.keyboard.press('Escape');
+        await expect(dialog).toHaveCount(0);
+        await expect(archive).toBeFocused();
+        const before = await database().query(
+          'select archived_at from learning_tracks where id=$1',
+          [id],
+        );
+        expect(before.rows[0].archived_at).toBeNull();
+        await archive.click();
+        await dialog.getByRole('button', { name: 'Arquivar', exact: true }).click();
+        await expect(archive).toHaveCount(0);
+        const after = await database().query(
+          'select archived_at from learning_tracks where id=$1',
+          [id],
+        );
+        expect(after.rows[0].archived_at).not.toBeNull();
+      } finally {
+        await database().query('delete from learning_tracks where id=$1', [id]);
+      }
+    });
+  }
+}
 
 test('criar conta pelo painel: senha temporária, produto e email repetido', async ({
   page,
@@ -149,6 +236,12 @@ test('criar conta pelo painel: senha temporária, produto e email repetido', asy
   await page.getByRole('link', { name: 'Criar conta' }).click();
   await expect(page).toHaveURL(/\/admin\/contas\/nova$/);
   await expectNoA11yViolations(page);
+
+  // A validação vem do servidor e aparece nos campos, sem o balão nativo do navegador.
+  await page.getByRole('button', { name: 'Criar conta' }).click();
+  await expect(page.getByText('Escreva o nome completo (2 a 120 letras).')).toBeVisible();
+  await expect(page.getByText('Escreva um email válido.')).toBeVisible();
+  await expect(page.getByLabel('Nome completo')).toBeFocused();
 
   // Email que já existe: avisa no campo e mantém o que foi digitado.
   await page.getByLabel('Nome completo').fill('Conta Repetida');

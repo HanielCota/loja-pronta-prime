@@ -20,16 +20,23 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useRouter } from 'next/navigation';
+import { useAdminConfirmation } from './admin-confirmation';
 import {
+  Download,
   ArrowLeft,
   BookOpen,
   ChevronRight,
   CirclePlay,
   ExternalLink,
   Eye,
+  FileX,
+  GripVertical,
+  History,
   Layers3,
   ListTree,
-  GripVertical,
+  Pencil,
+  Plus,
+  Send,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -151,7 +158,7 @@ function LessonBlock({
     const label = readText(block.data, 'label') ?? url;
     return url ? (
       <a
-        className="inline-flex min-h-11 items-center text-body font-medium text-link underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        className="inline-flex min-h-11 items-center text-body font-medium text-link underline underline-offset-4 hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         href={url}
         rel="noopener noreferrer"
         target="_blank"
@@ -167,9 +174,10 @@ function LessonBlock({
     const fileName = readText(block.data, 'fileName');
     return fileName ? (
       <a
-        className="inline-flex min-h-11 items-center text-body font-medium text-link underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        className="inline-flex min-h-11 items-center text-body font-medium text-link underline underline-offset-4 hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         href={`/api/admin/learning-content/draft-media/${block.id}`}
       >
+        <Download aria-hidden="true" className="mr-2 size-5" />
         Baixar {fileName}
       </a>
     ) : null;
@@ -706,6 +714,7 @@ function CollectionScreen({
           type="button"
           variant="soft"
         >
+          <Plus aria-hidden="true" data-icon="inline-start" />
           Adicionar {kindName[management.kind]}
         </Button>
       ) : null}
@@ -753,14 +762,27 @@ function LessonScreen({
   const [draftMessage, setDraftMessage] = useState({ text: '', error: false });
   const [draftPending, startDraftTransition] = useTransition();
   const router = useRouter();
+  const confirmation = useAdminConfirmation();
 
-  function changeDraft(action: 'publish' | 'discard' | 'restore') {
+  async function changeDraft(action: 'publish' | 'discard' | 'restore') {
     if (
-      action === 'discard' &&
-      !window.confirm('Descartar as alterações desta aula? A versão publicada continua visível.')
+      action !== 'publish' &&
+      !(await confirmation.ask(
+        action === 'discard'
+          ? {
+              title: 'Descartar rascunho?',
+              description:
+                'As alterações desta aula serão descartadas. A versão publicada continua visível.',
+              confirmLabel: 'Descartar rascunho',
+            }
+          : {
+              title: 'Restaurar versão anterior?',
+              description: 'Esta aula volta aos textos da versão anterior.',
+              confirmLabel: 'Restaurar versão',
+            },
+      ))
     )
       return;
-    if (action === 'restore' && !window.confirm('Restaurar a versão anterior desta aula?')) return;
     const data = new FormData();
     data.set('kind', 'lesson');
     data.set('nodeId', lesson.id);
@@ -802,6 +824,7 @@ function LessonScreen({
 
   return (
     <section className={cn(panelCard, '!p-4 sm:!p-6')} aria-labelledby="content-level-heading">
+      {confirmation.dialog}
       <Button
         className="mb-4 w-fit !rounded-full !px-4 text-foreground"
         onClick={back}
@@ -833,6 +856,7 @@ function LessonScreen({
             onClick={() => changeDraft('publish')}
             type="button"
           >
+            <Send aria-hidden="true" data-icon="inline-start" />
             Publicar alterações
           </Button>
           <Button
@@ -842,6 +866,7 @@ function LessonScreen({
             type="button"
             variant="ghost"
           >
+            <FileX aria-hidden="true" data-icon="inline-start" />
             Descartar rascunho
           </Button>
         </div>
@@ -854,6 +879,7 @@ function LessonScreen({
           type="button"
           variant="ghost"
         >
+          <History aria-hidden="true" data-icon="inline-start" />
           Voltar à versão anterior
         </Button>
       ) : null}
@@ -877,6 +903,7 @@ function LessonScreen({
         type="button"
         variant="soft"
       >
+        <Pencil aria-hidden="true" data-icon="inline-start" />
         Editar aula
       </Button>
       <Button asChild className="mt-2 w-fit" variant="ghost">
