@@ -20,8 +20,17 @@ class EmailDeliveryError extends Error {
   }
 }
 
+/**
+ * Fora de produção, `EMAIL_DELIVERY=log` registra o link em vez de enviar, mesmo com o Resend
+ * configurado no `.env.local`: os testes automáticos usam endereços inventados (de domínios que
+ * existem) e não podem mandar emails de verdade. Em produção é ignorado.
+ */
+function deliveryDisabled() {
+  return process.env.NODE_ENV !== 'production' && process.env.EMAIL_DELIVERY === 'log';
+}
+
 async function deliver(kind: AuthEmailKind, { to, url }: AuthEmail): Promise<void> {
-  if (!env.RESEND_API_KEY || !env.EMAIL_FROM) {
+  if (!env.RESEND_API_KEY || !env.EMAIL_FROM || deliveryDisabled()) {
     if (process.env.NODE_ENV === 'production') throw new EmailDeliveryError('not_configured');
     // Sem credenciais em dev, continua possível testar o acesso sem enviar emails reais.
     console.info(`[auth] link de ${kind} (só em dev): ${url}`);
