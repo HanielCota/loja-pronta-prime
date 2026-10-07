@@ -19,6 +19,95 @@ async function expectLogoLoaded(page: Page, alt: RegExp) {
     .toBe(true);
 }
 
+/** A foto, a caixa, o adesivo e a sacola continuam dentro da moldura responsiva. */
+async function expectShippingKitInsideFrame(page: Page) {
+  const scene = page.locator('img[src="/brand/kit-envio-kraft.webp"]');
+  await expect(scene).toBeVisible();
+  await expect
+    .poll(() =>
+      scene.evaluate((element) => {
+        const image = element as HTMLImageElement;
+        const frame = image.parentElement;
+        if (!frame || !image.complete || !image.naturalWidth) return false;
+        const bounds = frame.getBoundingClientRect();
+        const ratio = bounds.width / bounds.height;
+        const images = Array.from(frame.querySelectorAll('img'));
+        const layers = images.slice(1).map((layer) => layer.getBoundingClientRect());
+        const boxLayer = layers[0];
+        const stickerLayer = layers[1];
+        const bagLayer = layers[2];
+        if (!boxLayer || !stickerLayer || !bagLayer) return false;
+        const boxStickerOverlap =
+          boxLayer.left < stickerLayer.right &&
+          boxLayer.right > stickerLayer.left &&
+          boxLayer.top < stickerLayer.bottom &&
+          boxLayer.bottom > stickerLayer.top;
+        const stickerBagOverlap =
+          stickerLayer.left < bagLayer.right &&
+          stickerLayer.right > bagLayer.left &&
+          stickerLayer.top < bagLayer.bottom &&
+          stickerLayer.bottom > bagLayer.top;
+        return (
+          Math.abs(image.naturalWidth / image.naturalHeight - ratio) < 0.01 &&
+          getComputedStyle(image).objectFit === 'contain' &&
+          layers.length === 3 &&
+          stickerLayer.width / bounds.width >= 0.12 &&
+          !boxStickerOverlap &&
+          !stickerBagOverlap &&
+          images.every((layer) => {
+            if (!layer.complete || !layer.naturalWidth) return false;
+            const box = layer.getBoundingClientRect();
+            return (
+              box.left >= bounds.left - 0.5 &&
+              box.top >= bounds.top - 0.5 &&
+              box.right <= bounds.right + 0.5 &&
+              box.bottom <= bounds.bottom + 0.5 &&
+              getComputedStyle(layer).objectFit === 'contain'
+            );
+          })
+        );
+      }),
+    )
+    .toBe(true);
+}
+
+test('mantém no estúdio a fonte escolhida na conversa, no celular e no computador', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ colorScheme: 'light' });
+  await signIn(page, studentEmail('marcafonte'), PASSWORD);
+  await expect(page).toHaveURL(/\/loja-pronta$/);
+  await page.getByRole('link', { name: /^(Criar|Continuar) minha marca$/ }).click();
+  await expect(page).toHaveURL(step('nome'));
+  const storeName = await page.getByRole('textbox', { name: 'Nome da loja' }).inputValue();
+  await page.getByRole('button', { name: /^Continuar com/ }).click();
+  await expect(page).toHaveURL(step('logo'));
+
+  const draft = page.getByRole('img', { name: `Rascunho do logo da ${storeName}` });
+  const lettering = draft.locator('text').first();
+  const expectSuggestedFont = async () => {
+    await expect
+      .poll(() => lettering.evaluate((element) => (element as SVGTextElement).style.fontFamily))
+      .toContain('Logo delicada');
+  };
+
+  await expect(draft).toBeVisible();
+  await expectSuggestedFont();
+  await expectNoA11yViolations(page);
+
+  await page.getByRole('button', { name: 'Ativar tema escuro' }).click();
+  await expect(page.locator('html')).toHaveClass(/dark/);
+  await expectSuggestedFont();
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expectSuggestedFont();
+
+  await page.getByRole('button', { name: 'Ativar tema claro' }).click();
+  await expect(page.locator('html')).not.toHaveClass(/dark/);
+  await expectSuggestedFont();
+});
+
 test('marca completa: nome, estúdio do logo, texto, revisão com mudança e logo pra baixar', async ({
   page,
 }) => {
@@ -117,7 +206,16 @@ test('marca completa: nome, estúdio do logo, texto, revisão com mudança e log
   await expect(
     page.getByRole('heading', { name: 'Gostou? Veja como fica na sua loja' }),
   ).toBeFocused();
-  await expect(page.getByText('No perfil da Shopee', { exact: true })).toBeVisible();
+  await expect(page.getByText('Prévia ilustrativa da loja', { exact: true })).toBeVisible();
+  await expect(page.getByText('Kit de envio', { exact: true })).toBeVisible();
+  await expect(page.getByText('Caixa, adesivo e sacola', { exact: true })).toBeVisible();
+  await expectShippingKitInsideFrame(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expectShippingKitInsideFrame(page);
+  expect(await page.locator('body').evaluate((body) => body.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+  await page.setViewportSize({ width: 1440, height: 900 });
   await expectNoA11yViolations(page);
   // Um ajuste de um toque cria a versão nova direto; "Seus logos" troca entre eles.
   await tweakLogo(page, 'Mais simples', 2);

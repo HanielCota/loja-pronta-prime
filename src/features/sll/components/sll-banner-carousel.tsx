@@ -44,7 +44,7 @@ export function SllBannerCarousel({ banners }: { banners: Banner[] }) {
     </Button>
   ) : (
     <Button asChild className="mt-2 w-full sm:w-auto">
-      <a href={banner.destination} rel="noreferrer" target="_blank">
+      <a href={banner.destination} rel="noopener noreferrer" target="_blank">
         {banner.buttonLabel}
         <ArrowRight aria-hidden="true" />
         <span className="sr-only"> (abre em outra aba)</span>

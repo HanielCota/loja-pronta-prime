@@ -85,7 +85,7 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
     });
   }).toPass();
   await expect(
-    page.getByRole('link', { name: /^Ver o que vem aí, Sistema Loja Lucrativa/ }),
+    page.getByRole('link', { name: /^Acessar o SLL, Sistema Loja Lucrativa/ }),
   ).toBeVisible();
   // A loja dela está na fase 1, que depende dela: o texto de cima diz isso, em vez do genérico
   // "Continue de onde parou".

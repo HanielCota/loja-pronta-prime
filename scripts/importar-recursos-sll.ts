@@ -1,6 +1,7 @@
 /** Importa somente ferramentas e destinos registrados no inventário da área antiga. */
+import { and, eq } from 'drizzle-orm';
 import { db } from '@/server/db';
-import { learningResources } from '@/server/db/schema';
+import { learningLessons, learningResourceLessons, learningResources } from '@/server/db/schema';
 
 const items = [
   {
@@ -8,18 +9,19 @@ const items = [
     groupKey: 'calculadora',
     groupTitle: 'Calculadora de preço',
     title: 'Calculadora de preço Shopee',
-    description: 'Pra entrar sem prejuízo ou pra lucrar o quanto você escolher.',
+    description: 'Mostra o preço de cadastro depois que as taxas e os custos forem confirmados.',
     buttonLabel: 'Abrir calculadora',
-    destination: null,
+    destination: '/sll/recursos/calculadora-shopee',
     position: 0,
     status: 'published' as const,
   },
   {
     slug: 'mentora-pri',
     groupKey: 'assistentes',
-    groupTitle: 'Ajuda para sua loja',
+    groupTitle: 'Assistentes no ChatGPT',
     title: 'Mentora Pri',
-    description: 'Tua mentora 24/7: tira dúvidas, entrega diagnósticos e recomenda aulas.',
+    description:
+      'Ajuda a tirar dúvidas sobre sua loja e a encontrar aulas relacionadas no ChatGPT.',
     buttonLabel: 'Conversar com a Pri',
     destination:
       'https://chatgpt.com/g/g-6a21eb8f921c819192b57ce24cd11c63-sll-mentora-pri-sua-pri-24-7',
@@ -29,9 +31,9 @@ const items = [
   {
     slug: 'artista-de-loja',
     groupKey: 'assistentes',
-    groupTitle: 'Ajuda para sua loja',
+    groupTitle: 'Assistentes no ChatGPT',
     title: 'Artista de Loja',
-    description: 'Logo em 5 minutos: cria logo estratégica e descrição da loja.',
+    description: 'Ajuda a criar uma sugestão de logo e descrição da loja no ChatGPT.',
     buttonLabel: 'Criar logo e descrição',
     destination:
       'https://chatgpt.com/g/g-6a21dc4f4d7c819196e2589bbd751976-sll-logo-e-descricao-da-sua-loja-shopee',
@@ -41,9 +43,9 @@ const items = [
   {
     slug: 'fotografo-profissional',
     groupKey: 'assistentes',
-    groupTitle: 'Ajuda para sua loja',
+    groupTitle: 'Assistentes no ChatGPT',
     title: 'Fotógrafo Profissional',
-    description: 'Gera fotos profissionais de produto para a vitrine.',
+    description: 'Ajuda a criar fotos de produto para a vitrine no ChatGPT.',
     buttonLabel: 'Criar fotos do produto',
     destination: 'https://chatgpt.com/g/g-6a21e2daeab4819195332cc14028f537-sll-fotos-de-produto',
     position: 2,
@@ -52,9 +54,9 @@ const items = [
   {
     slug: 'anuncio-lucrativo',
     groupKey: 'assistentes',
-    groupTitle: 'Ajuda para sua loja',
+    groupTitle: 'Assistentes no ChatGPT',
     title: 'Anúncio Lucrativo',
-    description: 'Título, descrição e preço para montar o anúncio.',
+    description: 'Ajuda a montar título, descrição e preço de um anúncio no ChatGPT.',
     buttonLabel: 'Montar meu anúncio',
     destination:
       'https://chatgpt.com/g/g-6a21e670d4bc8191b44e19a496bac040-sll-anuncio-pronto-titulo-descricao-e-preco',
@@ -66,7 +68,8 @@ const items = [
     groupKey: 'parceiros',
     groupTitle: 'Parceiros recomendados',
     title: 'Envio Velox',
-    description: 'Fornecedores para sua loja na Shopee.',
+    description:
+      'Parceiro externo de fornecedores para sua loja na Shopee. O destino está em preparação.',
     buttonLabel: null,
     destination: null,
     position: 0,
@@ -77,7 +80,7 @@ const items = [
     groupKey: 'parceiros',
     groupTitle: 'Parceiros recomendados',
     title: 'ChatGPT Plus',
-    description: 'Plano pago apresentado como forma de potencializar os GPTs do SLL.',
+    description: 'Página externa com os planos do ChatGPT. A assinatura não está incluída no SLL.',
     buttonLabel: 'Saber mais sobre ChatGPT Plus',
     destination: 'https://chatgpt.com/pt-BR/pricing/',
     position: 1,
@@ -89,7 +92,7 @@ const items = [
     groupTitle: 'Parceiros recomendados',
     title: 'Bling',
     description:
-      'Gestão pós-venda e nota fiscal automática, com integração com Shopee e controle de estoque.',
+      'Serviço externo para gestão pós-venda, notas fiscais e estoque. Confira as condições no site.',
     buttonLabel: 'Saber mais sobre Bling',
     destination: 'https://www.bling.com.br/',
     position: 2,
@@ -102,10 +105,31 @@ if (process.env.NODE_ENV === 'production')
 
 await db.transaction(async (tx) => {
   for (const item of items) {
+    // Uma nova importação não pode sobrescrever uma edição feita pela administração.
     await tx.insert(learningResources).values(item).onConflictDoNothing();
   }
+  const [photographer] = await tx
+    .select({ id: learningResources.id })
+    .from(learningResources)
+    .where(eq(learningResources.slug, 'fotografo-profissional'))
+    .limit(1);
+  const [lesson33] = await tx
+    .select({ id: learningLessons.id })
+    .from(learningLessons)
+    .where(
+      and(eq(learningLessons.sourceNumber, 33), eq(learningLessons.slug, 'videos-shopee-videos')),
+    )
+    .limit(1);
+  if (!photographer || !lesson33)
+    throw new Error(
+      'Importe a Biblioteca de Conhecimento antes dos recursos para ligar o Fotógrafo Profissional à aula 33.',
+    );
+  await tx
+    .insert(learningResourceLessons)
+    .values({ resourceId: photographer.id, lessonId: lesson33.id })
+    .onConflictDoNothing();
 });
 console.info(
-  'Recursos conferidos importados. A calculadora e o parceiro sem destino não têm botão funcional.',
+  'Recursos conferidos importados. O Fotógrafo Profissional foi ligado à aula 33. As calculadoras são publicadas pela importação de ferramentas; o Envio Velox continua em preparação.',
 );
 process.exit(0);

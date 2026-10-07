@@ -95,7 +95,7 @@ export function SllToolsCard({ copy }: { copy: SllCopy }) {
         <BookOpen aria-hidden="true" className="size-5 shrink-0 text-link" />
         <p className="flex-1 text-body text-muted-foreground">{copy.dashboardToolsDetail}</p>
       </div>
-      <Button asChild className="mt-2" variant="soft">
+      <Button asChild className="mt-2" variant="default">
         <Link href="/sll/recursos">
           {copy.dashboardToolsButton} <ArrowRight aria-hidden="true" />
         </Link>
@@ -104,27 +104,52 @@ export function SllToolsCard({ copy }: { copy: SllCopy }) {
   );
 }
 
-/** Reserva o lugar dos avisos individuais enquanto a Shopee ainda não envia status reais. */
-export function SllStoresCard({ copy }: { copy: SllCopy }) {
+/** Explica a indisponibilidade real da conexão, sem simular lojas ou métricas. */
+export function SllStoreStatusCard() {
   return (
     <section
-      aria-labelledby="avisos-da-conta"
+      aria-labelledby="sll-store-status-title"
       className={cn(panelCard, 'gap-4 sm:flex-row sm:items-center')}
     >
       <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary-soft text-link">
         <Store aria-hidden="true" className="size-6" />
       </span>
       <div className="min-w-0 flex-1">
-        <h2 id="avisos-da-conta" className={sectionTitleClass}>
-          {copy.dashboardStoresTitle}
+        <span className="mb-2 inline-flex rounded-full border border-border px-3 py-1 text-sm font-medium text-muted-foreground">
+          Shopee · Em breve
+        </span>
+        <h2 id="sll-store-status-title" className={sectionTitleClass}>
+          Situação da sua loja
         </h2>
         <p className="mt-1 text-body text-pretty text-muted-foreground">
-          {copy.dashboardStoresDetail}
+          A conexão com a Shopee ainda não está disponível no SLL. Por isso, esta área ainda não
+          mostra dados da sua loja nem métricas de venda.
         </p>
       </div>
-      <Button asChild className="sm:w-auto sm:max-w-52" variant="soft">
+      <Button asChild className="w-full sm:w-auto sm:max-w-52" variant="default">
         <Link href="/sll/minhas-lojas">
-          {copy.dashboardStoresButton} <ArrowRight aria-hidden="true" />
+          Ver situação das lojas <ArrowRight aria-hidden="true" />
+        </Link>
+      </Button>
+    </section>
+  );
+}
+
+/** Só mostra o atalho interno à Loja Pronta quando a conta também tem esse produto. */
+export function SllNextPathCard({ hasStoreAccess }: { hasStoreAccess: boolean }) {
+  if (!hasStoreAccess) return null;
+
+  return (
+    <section aria-labelledby="sll-next-path-title" className={cn(panelCard, 'gap-3')}>
+      <h2 id="sll-next-path-title" className={sectionTitleClass}>
+        Você também tem acesso à Loja Pronta
+      </h2>
+      <p className="text-body text-pretty text-muted-foreground">
+        Acesse a área da Loja Pronta para montar sua loja na Shopee, passo a passo, pela plataforma.
+      </p>
+      <Button asChild variant="default" className="w-full sm:w-fit">
+        <Link href="/loja-pronta">
+          Acessar Loja Pronta <ArrowRight aria-hidden="true" />
         </Link>
       </Button>
     </section>

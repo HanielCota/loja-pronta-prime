@@ -25,6 +25,7 @@ import {
   BookOpen,
   ChevronRight,
   CirclePlay,
+  ExternalLink,
   Eye,
   Layers3,
   ListTree,
@@ -152,10 +153,12 @@ function LessonBlock({
       <a
         className="inline-flex min-h-11 items-center text-body font-medium text-link underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         href={url}
-        rel="noreferrer"
+        rel="noopener noreferrer"
         target="_blank"
       >
+        <ExternalLink aria-hidden="true" className="mr-2 size-5" />
         {label}
+        <span className="sr-only"> (abre em outra aba)</span>
       </a>
     ) : null;
   }
@@ -747,7 +750,7 @@ function LessonScreen({
     returnFocus.current = true;
     setEditing(false);
   }
-  const [draftMessage, setDraftMessage] = useState('');
+  const [draftMessage, setDraftMessage] = useState({ text: '', error: false });
   const [draftPending, startDraftTransition] = useTransition();
   const router = useRouter();
 
@@ -768,7 +771,7 @@ function LessonScreen({
           : action === 'discard'
             ? await discardNodeDraft(data)
             : await restorePreviousNodeVersion(data);
-      setDraftMessage(result.message);
+      setDraftMessage({ text: result.message, error: !result.saved });
       if (result.saved) router.refresh();
     });
   }
@@ -854,9 +857,19 @@ function LessonScreen({
           Voltar à versão anterior
         </Button>
       ) : null}
-      {draftMessage ? <p className="mt-2 text-body text-muted-foreground">{draftMessage}</p> : null}
+      {draftMessage.text ? (
+        <p
+          className={cn(
+            'mt-2 text-body',
+            draftMessage.error ? 'text-destructive' : 'text-muted-foreground',
+          )}
+          role={draftMessage.error ? 'alert' : undefined}
+        >
+          {draftMessage.text}
+        </p>
+      ) : null}
       {/* Sempre presente: regiões criadas junto com o texto costumam não ser anunciadas. */}
-      <LiveRegion>{draftMessage}</LiveRegion>
+      <LiveRegion>{draftMessage.text}</LiveRegion>
       <Button
         className="mt-4 w-fit"
         onClick={() => setEditing(true)}

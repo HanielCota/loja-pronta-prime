@@ -1,7 +1,14 @@
 export type LibraryModule = {
   id: string;
   title: string;
-  lessons: Array<{ id: string; title: string; description: string | null; completed: boolean }>;
+  lessons: Array<{
+    id: string;
+    title: string;
+    description: string | null;
+    durationMinutes?: number | null;
+    materialLabel?: string | null;
+    completed: boolean;
+  }>;
 };
 
 const normalize = (text: string) =>

@@ -8,8 +8,8 @@ import type { StudioViewLogo } from '../view';
 import { logoSrc } from './logo-src';
 
 /**
- * O logo pronto (ele mesmo fica no quadro): como fica na loja (no perfil da Shopee, na
- * embalagem e pequenininho), os logos que ela já tem, os ajustes de um toque e "Usar o logo".
+ * O logo pronto (ele mesmo fica no quadro): como fica no perfil da loja e no kit de envio, os
+ * logos que ela já tem, os ajustes de um toque e "Usar o logo".
  */
 export function StudioResult({
   logos,
@@ -61,73 +61,66 @@ export function StudioResult({
         </h1>
       </div>
 
-      {/* As prévias são só enfeite pro leitor de tela: a frase diz o que mostram. */}
+      {/* A descrição serve quem usa leitor de tela; a foto e os logos sobrepostos são decorativos. */}
       <p className="sr-only">
-        Prévias do logo {selected.number} no perfil da Shopee, numa sacola e em tamanhos pequenos.
+        Prévia ilustrativa da loja: logo {selected.number} no perfil da loja e no kit de envio, com
+        caixa, adesivo e sacola.
       </p>
-      <div aria-hidden="true" className="grid grid-cols-2 gap-3">
-        <div className="col-span-2 flex flex-col gap-2 rounded-3xl bg-card p-3 shadow-card forced-colors:border forced-colors:border-[CanvasText]">
-          <div className="overflow-hidden rounded-2xl bg-muted">
-            <div className="h-12 bg-primary-soft" />
-            <div className="-mt-6 flex items-end gap-3 px-3 pb-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={src}
-                alt=""
-                width={64}
-                height={64}
-                className="size-16 shrink-0 rounded-full border-4 border-card bg-card"
-              />
-              <span className="flex min-w-0 flex-col pb-1">
-                <span className="truncate text-body font-bold">{storeName}</span>
-                <span className="text-sm text-muted-foreground">Loja nova · 0 vendas</span>
-              </span>
-            </div>
+      <div aria-hidden="true" className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2 rounded-3xl bg-card p-3 shadow-card forced-colors:border forced-colors:border-[CanvasText]">
+          <span className="text-sm text-muted-foreground">Prévia ilustrativa da loja</span>
+          <div className="flex items-center gap-3 rounded-2xl bg-muted p-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={src}
+              alt=""
+              width={56}
+              height={56}
+              className="size-14 shrink-0 rounded-full border border-border bg-card object-contain"
+            />
+            <span className="min-w-0 truncate text-body font-bold">{storeName}</span>
           </div>
-          <span className="text-center text-sm text-muted-foreground">No perfil da Shopee</span>
         </div>
 
         <div className="flex flex-col gap-2 rounded-3xl bg-card p-3 shadow-card forced-colors:border forced-colors:border-[CanvasText]">
-          {/* A sacola kraft (foto, fundo transparente) com o logo impresso na frente: "multiplicar"
-              some com o branco do logo e deixa a textura do papel aparecer, como tinta no papel.
-              A posição é a da face da sacola na foto. */}
-          <div className="relative mx-auto aspect-[400/665] w-full max-w-28">
+          <span className="text-body font-bold">Kit de envio</span>
+          <div className="relative aspect-[3/2] w-full overflow-hidden rounded-2xl bg-muted">
+            {/* A foto deixa ao menos 12% de folga; proporção original e contain evitam cortes em telas estreitas. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/brand/sacola-kraft.webp"
+              src="/brand/kit-envio-kraft.webp"
               alt=""
-              width={400}
-              height={665}
-              className="size-full"
+              width={1536}
+              height={1024}
+              className="absolute inset-0 size-full object-contain"
+            />
+            {/* O logo inteiro fica dentro do painel da caixa, do adesivo solto e da sacola. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={src}
+              alt=""
+              width={1024}
+              height={1024}
+              className="absolute top-[68%] left-[30%] h-[10%] w-[24%] object-contain opacity-90 mix-blend-multiply"
             />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={src}
               alt=""
-              width={64}
-              height={64}
-              className="absolute top-[40%] left-1/2 w-[64%] -translate-x-1/2 opacity-90 mix-blend-multiply"
+              width={1024}
+              height={1024}
+              className="absolute top-[79%] left-[54%] h-[9%] w-[14%] rounded-full object-contain"
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={src}
+              alt=""
+              width={1024}
+              height={1024}
+              className="absolute top-[42%] left-[56.5%] h-[18%] w-[22%] object-contain opacity-90 mix-blend-multiply"
             />
           </div>
-          <span className="text-center text-sm text-muted-foreground">Na embalagem</span>
-        </div>
-
-        <div className="flex flex-col gap-2 rounded-3xl bg-card p-3 shadow-card forced-colors:border forced-colors:border-[CanvasText]">
-          <div className="flex flex-1 items-end justify-center gap-3 pb-1">
-            {[56, 36, 24].map((size) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={size}
-                src={src}
-                alt=""
-                width={size}
-                height={size}
-                style={{ width: size, height: size }}
-                className="rounded-[22%] border border-border bg-card"
-              />
-            ))}
-          </div>
-          <span className="text-center text-sm text-muted-foreground">Pequenininho</span>
+          <span className="text-center text-sm text-muted-foreground">Caixa, adesivo e sacola</span>
         </div>
       </div>
 
@@ -190,7 +183,7 @@ export function StudioResult({
               <Button
                 key={tweak}
                 type="button"
-                variant="soft"
+                variant="default"
                 className="w-auto px-5"
                 disabled={busy}
                 onClick={() => onTweak(tweak)}

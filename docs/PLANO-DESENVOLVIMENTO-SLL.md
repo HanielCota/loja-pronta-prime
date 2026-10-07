@@ -14,6 +14,11 @@ hospedagem original; arquivos, capas e banners seguem suas pendências próprias
 
 ## Referências obrigatórias
 
+A conciliação de 7 de outubro mantém a moldura atual `SllAreaShell`, os players Panda e as três
+calculadoras já publicadas. Inclui a entrada e as prioridades do plano, a numeração original da
+Biblioteca, o retorno à busca e as lojas reais da Loja Pronta. As migrações `0041` e `0042`
+acrescentam os dados novos após as migrações publicadas, sem alterar o histórico do banco.
+
 - Use `docs/SLL-T01-INVENTARIO.md`, `docs/SLL-T02-INVENTARIO.md` e
   `docs/SLL-T03-INVENTARIO.md` para títulos, textos, aulas, cursos, links, vídeos e arquivos.
 - As capturas enviadas na conversa e a navegação de leitura no site antigo definem a organização e

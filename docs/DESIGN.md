@@ -93,6 +93,9 @@ o tema escuro e o alto contraste.
 - Opções de escolha: `optionFocus` / `optionChecked` (`question/option-styles.ts`).
 - No estúdio do logo, a barra acompanha a numeração: a etapa atual e as anteriores ficam azuis;
   avançar não apaga o progresso já mostrado. Sugestões nas etapas futuras não antecipam a barra.
+- A prévia do logo pronto inclui uma imagem ilustrativa do kit de envio (caixa, adesivo e sacola),
+  com o logo sobreposto e identificado como exemplo. As proporções acompanham a largura do cartão.
+  A fonte sugerida na conversa entra no estúdio apenas quando ainda não existe uma escolha salva.
 - Na pergunta de cor, a seleção é indicada por um aro azul fino e um check na amostra, sem contornar
   o cartão. Ao abrir “Outra cor”, a opção anterior é desmarcada e o mesmo aro aparece na amostra
   redonda, indicando o seletor aberto; a resposta é marcada só depois da escolha, quando a amostra

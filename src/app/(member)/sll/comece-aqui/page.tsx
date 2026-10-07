@@ -6,6 +6,7 @@ import { SllLessonViewer } from '@/features/sll/components/sll-lesson-viewer';
 import { getFirstSllPublishedTrack } from '@/features/sll/server/catalog';
 import { getSllLessonViewer } from '@/features/sll/server/lesson-viewer';
 import { requireProduct } from '@/features/products/server/access';
+import { sllLessonHref } from '@/features/sll/lesson-navigation';
 
 export const metadata: Metadata = { title: 'Comece aqui · SLL' };
 
@@ -19,8 +20,12 @@ export default async function WelcomePage({
   searchParams: Promise<{ aula?: string | string[] }>;
 }) {
   const { aula } = await searchParams;
-  const [{ session, products }, welcome, method] = await Promise.all([
-    requireProduct('sll'),
+  // Confere primeiro o acesso para o login conservar também a aula escolhida no link direto.
+  const { session, products } = await requireProduct(
+    'sll',
+    typeof aula === 'string' ? sllLessonHref('welcome', aula) : '/sll/comece-aqui',
+  );
+  const [welcome, method] = await Promise.all([
     getFirstSllPublishedTrack('welcome'),
     getFirstSllPublishedTrack('method'),
   ]);
@@ -35,7 +40,7 @@ export default async function WelcomePage({
   // Guarda a aula no endereço: salvar a conclusão atualiza o progresso, sem trocar o vídeo
   // sozinha quando o servidor recalcula qual é a próxima aula para retomar.
   if (firstLessonId && aula !== firstLessonId) {
-    redirect(`/sll/comece-aqui?aula=${firstLessonId}`);
+    redirect(sllLessonHref('welcome', firstLessonId));
   }
   const lesson = firstLessonId ? await getSllLessonViewer(firstLessonId) : null;
 

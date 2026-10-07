@@ -1,5 +1,5 @@
 /** Importa as 19 aulas visíveis da Biblioteca, sem inventar as oito aulas citadas só no texto. */
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
 import {
   learningLessons,
@@ -7,6 +7,10 @@ import {
   learningStages,
   learningTracks,
 } from '@/server/db/schema';
+import {
+  sllLibrarySourceDurationMinutes,
+  sllLibrarySourceNumber,
+} from '@/features/sll/source-numbers';
 
 const categories = [
   {
@@ -180,6 +184,11 @@ await db.transaction(async (tx) => {
       .limit(1);
     if (!module) throw new Error(`Não foi possível carregar ${category.title}.`);
     for (const [position, [slug, title, description]] of category.lessons.entries()) {
+      const sourceNumber = sllLibrarySourceNumber(slug);
+      if (sourceNumber === null) {
+        throw new Error(`A numeração antiga da aula ${slug} ainda não foi conferida.`);
+      }
+      const durationMinutes = sllLibrarySourceDurationMinutes(slug);
       await tx
         .insert(learningLessons)
         .values({
@@ -187,15 +196,35 @@ await db.transaction(async (tx) => {
           slug,
           title,
           description,
+          sourceNumber,
+          ...(durationMinutes === null ? {} : { durationMinutes }),
           countsTowardProgress: true,
           position,
         })
-        .onConflictDoNothing();
+        .onConflictDoUpdate({
+          target: [learningLessons.moduleId, learningLessons.slug],
+          set: {
+            // Uma edição já salva no admin prevalece sobre nova importação.
+            sourceNumber: sql`coalesce(${learningLessons.sourceNumber}, ${sourceNumber})`,
+            ...(durationMinutes === null
+              ? {}
+              : {
+                  durationMinutes: sql`coalesce(${learningLessons.durationMinutes}, ${durationMinutes})`,
+                }),
+          },
+        });
     }
   }
 });
 
+const lessonCount = categories.reduce((count, category) => count + category.lessons.length, 0);
+const durationCount = categories.reduce(
+  (count, category) =>
+    count +
+    category.lessons.filter(([slug]) => sllLibrarySourceDurationMinutes(slug) !== null).length,
+  0,
+);
 console.info(
-  'As 19 aulas em 8 categorias foram importadas como rascunho; os oito itens não vistos não foram criados.',
+  `${lessonCount} aulas em ${categories.length} categorias conferidas; ${durationCount} durações confirmadas gravadas. Os oito itens não vistos não foram criados; estados de publicação existentes foram preservados.`,
 );
 process.exit(0);

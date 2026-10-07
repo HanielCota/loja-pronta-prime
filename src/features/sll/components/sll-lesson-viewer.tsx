@@ -18,9 +18,13 @@ import { prefersReducedMotion } from '@/lib/reduced-motion';
 import { cn } from '@/lib/utils';
 import { SllProgress } from './sll-progress';
 import { SllLessonVideo } from './sll-lesson-video';
+import { sllLessonHref, sllLibraryReturnHref } from '../lesson-navigation';
+import { describeSllMaterial } from '../material-format';
+import type { SllExpectedMaterial } from '../material-catalog';
 import { setSllLessonCompletionForm, recordSllLessonView } from '../server/actions';
 
 export type SllLessonViewerData = {
+  returnHref?: string | null;
   track: {
     id: string;
     slug: string;
@@ -41,6 +45,10 @@ export type SllLessonViewerData = {
     completed: boolean;
     previousId: string | null;
     nextId: string | null;
+    previousModuleId?: string | null;
+    nextModuleId?: string | null;
+    sourceNumber?: number | null;
+    unavailableMaterial?: SllExpectedMaterial | null;
     number: number;
     total: number;
   };
@@ -48,6 +56,7 @@ export type SllLessonViewerData = {
     id: string;
     title: string;
     number: number;
+    sourceNumber?: number | null;
     durationMinutes: number | null;
     completed: boolean;
     current: boolean;
@@ -176,7 +185,9 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
 
             <section className={cn(panelCard, 'gap-4')} aria-labelledby="lesson-title">
               <p className="text-body text-muted-foreground">
-                Aula {data.lesson.number} de {data.lesson.total}
+                {data.lesson.sourceNumber
+                  ? `Aula ${data.lesson.sourceNumber}`
+                  : `Aula ${data.lesson.number} de ${data.lesson.total}`}
                 {data.lesson.durationMinutes ? ` · ${data.lesson.durationMinutes} min` : ''}
               </p>
               <h2
@@ -194,6 +205,12 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
                 primaryVideoId={firstVideo?.id ?? null}
                 title={data.lesson.title}
               />
+              {data.lesson.unavailableMaterial ? (
+                <p className="text-body text-muted-foreground">
+                  {data.lesson.unavailableMaterial.title} (
+                  {data.lesson.unavailableMaterial.formatLabel}) — em breve.
+                </p>
+              ) : null}
               {data.resources.length ? (
                 <section aria-label="Recursos desta aula" className="border-t border-border pt-5">
                   <h3 className="text-body font-semibold text-foreground">Recursos desta aula</h3>
@@ -239,7 +256,17 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
                     {data.lesson.previousId ? (
                       <Button asChild variant="soft" className="px-4">
                         <Link
-                          href={`/sll/aula/${data.lesson.previousId}`}
+                          href={sllLessonHref(
+                            data.track.kind,
+                            data.lesson.previousId,
+                            data.returnHref
+                              ? sllLibraryReturnHref(
+                                  data.returnHref,
+                                  data.lesson.previousModuleId ?? data.module.id,
+                                  data.lesson.previousId,
+                                )
+                              : undefined,
+                          )}
                           onClick={openLesson(data.lesson.previousId)}
                           scroll={false}
                         >
@@ -254,7 +281,17 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
                     {data.lesson.nextId ? (
                       <Button asChild variant="soft" className="px-4">
                         <Link
-                          href={`/sll/aula/${data.lesson.nextId}`}
+                          href={sllLessonHref(
+                            data.track.kind,
+                            data.lesson.nextId,
+                            data.returnHref
+                              ? sllLibraryReturnHref(
+                                  data.returnHref,
+                                  data.lesson.nextModuleId ?? data.module.id,
+                                  data.lesson.nextId,
+                                )
+                              : undefined,
+                          )}
                           onClick={openLesson(data.lesson.nextId)}
                           scroll={false}
                         >
@@ -342,9 +379,15 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
                     </div>
                   ) : (
                     <Link
-                      aria-label={`Abrir aula ${lesson.number}: ${lesson.title}`}
+                      aria-label={`Abrir aula ${lesson.sourceNumber ?? lesson.number}: ${lesson.title}`}
                       className="flex min-h-12 items-center gap-3 rounded-2xl px-2 py-2 text-sm wrap-anywhere text-foreground outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid motion-safe:transition-colors forced-colors:border forced-colors:border-[CanvasText]"
-                      href={`/sll/aula/${lesson.id}`}
+                      href={sllLessonHref(
+                        data.track.kind,
+                        lesson.id,
+                        data.returnHref
+                          ? sllLibraryReturnHref(data.returnHref, data.module.id, lesson.id)
+                          : undefined,
+                      )}
                       onClick={openLesson(lesson.id)}
                       scroll={false}
                     >
@@ -375,7 +418,7 @@ function LessonNumber({ lesson }: { lesson: SllLessonViewerData['lessons'][numbe
           : 'border border-border text-muted-foreground',
       )}
     >
-      {lesson.number}
+      {lesson.sourceNumber ?? lesson.number}
     </span>
   );
 }
@@ -399,6 +442,9 @@ function LessonBlocks({
     >
       <Download aria-hidden="true" className="size-5" />
       Baixar {file.data.fileName}
+      <span className="text-sm text-muted-foreground">
+        ({describeSllMaterial(file.data.fileName ?? '', file.data.contentType).label})
+      </span>
     </a>
   );
   return (

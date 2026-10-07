@@ -89,6 +89,12 @@ export async function saveSllResource(
       position: Number(field(form, 'position')),
     });
   if (!parsed.success) return { message: 'Confira o nome, grupo e texto.', saved: false };
+  if (parsed.data.destination && !parsed.data.buttonLabel) {
+    return {
+      message: 'Dê um nome à ação do botão quando o recurso tiver um destino.',
+      saved: false,
+    };
+  }
   if (!safeDestination(parsed.data.destination)) {
     return {
       message: 'Use uma rota desta plataforma ou um link http:// ou https://.',
@@ -247,6 +253,12 @@ async function publishResource(
       };
     const data = replacement ?? draft?.data;
     const destination = data?.destination === undefined ? resource.destination : data.destination;
+    const buttonLabel = data?.buttonLabel === undefined ? resource.buttonLabel : data.buttonLabel;
+    if (destination && !buttonLabel?.trim())
+      return {
+        saved: false,
+        message: 'Dê um nome à ação do botão antes de publicar o destino.',
+      };
     if (destination && !safeDestination(destination))
       return { saved: false, message: 'Confira o destino do recurso e salve antes de publicar.' };
     const currentLinks = await tx.query.learningResourceLessons.findMany({

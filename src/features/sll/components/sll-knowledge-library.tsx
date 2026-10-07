@@ -9,21 +9,28 @@ import { panelCard } from '@/features/member/components/area-shell';
 import { Button } from '@/components/ui/button';
 import { usePathname } from 'next/navigation';
 import { filterLibraryModules, type LibraryModule } from '../library-search';
+import { sllLibraryLessonHref } from '../lesson-navigation';
 import { cn } from '@/lib/utils';
 
 export function SllKnowledgeLibrary({
   modules,
   initialQuery = '',
+  stageId,
 }: {
   modules: LibraryModule[];
   initialQuery?: string;
+  stageId: string;
 }) {
   const [query, setQuery] = useState(initialQuery);
   const pathname = usePathname();
   const normalizedQuery = query.trim().toLocaleLowerCase('pt-BR');
+  const catalogModules = useMemo(
+    () => modules.filter((module) => module.lessons.length > 0),
+    [modules],
+  );
   const results = useMemo(
-    () => filterLibraryModules(modules, normalizedQuery),
-    [modules, normalizedQuery],
+    () => filterLibraryModules(catalogModules, normalizedQuery),
+    [catalogModules, normalizedQuery],
   );
   const resultCount = results.reduce((count, module) => count + module.lessons.length, 0);
 
@@ -31,8 +38,8 @@ export function SllKnowledgeLibrary({
     <section className="flex flex-col gap-6" aria-labelledby="library-title">
       <div className="flex flex-col gap-3">
         <h2 id="library-title" className="scroll-mt-6 text-body font-semibold text-foreground">
-          {modules.reduce((count, module) => count + module.lessons.length, 0)} aulas em{' '}
-          {modules.length} categorias
+          {catalogModules.reduce((count, module) => count + module.lessons.length, 0)} aulas em{' '}
+          {catalogModules.length} categorias
         </h2>
         <form
           action={`${pathname}#library-title`}
@@ -91,13 +98,13 @@ export function SllKnowledgeLibrary({
             </div>
             <ol className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] items-start gap-4">
               {module.lessons.map((lesson) => (
-                <li key={lesson.id}>
+                <li id={`library-lesson-${module.id}-${lesson.id}`} key={lesson.id}>
                   <Link
                     className={cn(
                       panelCard,
                       'group gap-3 p-5 text-body wrap-anywhere text-foreground outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-safe:transition-colors sm:p-5',
                     )}
-                    href={`/sll/aula/${lesson.id}`}
+                    href={sllLibraryLessonHref(stageId, lesson.id, module.id, query)}
                   >
                     <span className="flex items-center justify-between gap-2">
                       <CirclePlay aria-hidden="true" className="size-6 shrink-0 text-link" />
@@ -112,6 +119,16 @@ export function SllKnowledgeLibrary({
                       {lesson.description ? (
                         <span className="mt-1 block text-muted-foreground">
                           {lesson.description}
+                        </span>
+                      ) : null}
+                      {lesson.durationMinutes || lesson.materialLabel ? (
+                        <span className="mt-2 block text-sm text-muted-foreground">
+                          {[
+                            lesson.durationMinutes ? `${lesson.durationMinutes} min` : null,
+                            lesson.materialLabel,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')}
                         </span>
                       ) : null}
                     </span>

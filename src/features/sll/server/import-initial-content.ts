@@ -14,6 +14,7 @@ import {
   validateInitialSllContent,
   type InitialSllContent,
 } from '../initial-content';
+import { sllLibrarySourceNumber } from '../source-numbers';
 
 /** Só cria trilhas ausentes. Conteúdo do admin, arquivos e progresso nunca são copiados ou alterados. */
 export async function importInitialSllContent(
@@ -81,6 +82,7 @@ export async function importInitialSllContent(
                 slug: lesson.slug,
                 title: lesson.title,
                 description: lesson.description,
+                sourceNumber: stage.slug === 'etapa-3' ? sllLibrarySourceNumber(lesson.slug) : null,
                 durationMinutes: lesson.durationMinutes,
                 countsTowardProgress: lesson.countsTowardProgress,
                 position,

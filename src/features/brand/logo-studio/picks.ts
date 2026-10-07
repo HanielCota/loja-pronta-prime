@@ -99,6 +99,11 @@ export function studioSuggestions(answers: OnboardingAnswers): StudioSuggestions
   };
 }
 
+/** Mantém a fonte escolhida na conversa ao abrir o estúdio, sem trocar uma escolha já salva. */
+export function withSuggestedLettering(picks: LogoPicks, suggested: LogoLetteringId): LogoPicks {
+  return picks.lettering ? picks : { ...picks, lettering: { id: suggested } };
+}
+
 /** O que a escolha de uma tela diz, em palavras (o resumo, a barra das telas). */
 export function pickLabel(step: StudioStep, picks: LogoPicks): string | null {
   switch (step) {

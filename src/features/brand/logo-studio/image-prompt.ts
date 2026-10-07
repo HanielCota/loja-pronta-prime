@@ -25,7 +25,7 @@ export function logoImagePrompt(brief: LogoBrief, storeName: string, tweak?: Log
     brief.extras ? `Extra details: ${brief.extras}.` : '',
     ...tweaks.map((id) => LOGO_TWEAKS[id].prompt),
     look,
-    'Centered composition with comfortable margins, everything inside a circle-safe area (it will be cropped to a circle as a profile picture).',
+    'Centered composition with comfortable margins. Keep every part of the lettering, symbol, and decoration fully inside the square with at least 12% safe margin on every edge; nothing may touch, cross, bleed, or be cropped by the image border. Keep the complete logo inside a circle-safe area because it will also be cropped to a circle as a profile picture.',
     'Must stay legible at 64x64 pixels. No mockup, no hands, no extra words, no watermark, no border frame.',
     'The texts above may be in Portuguese: keep the store name in its original language.',
   ]

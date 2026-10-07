@@ -197,6 +197,7 @@ export async function getAdminLessonPreview(id: string) {
         title: draftsById.get(item.id)?.title ?? item.title,
         position: item.position,
         status: item.status,
+        hasDraft: Boolean(draftsById.get(item.id)),
         current: item.id === lesson.id,
         number: index + 1,
       })),

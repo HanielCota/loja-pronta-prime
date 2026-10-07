@@ -18,12 +18,11 @@ export type ProductStatus = {
 };
 
 /**
- * O SLL ainda não tem aulas no ar: o cartão diz isso, e o botão promete só o que a área mostra
- * (o que vem aí), em vez de mandar ela entrar.
+ * As aulas e ferramentas publicadas já podem ser abertas pela aluna.
  */
 export const SLL_CHOOSER_STATUS: ProductStatus = {
-  label: 'As aulas abrem em breve',
-  cta: 'Ver o que vem aí',
+  label: 'Suas aulas e ferramentas estão disponíveis',
+  cta: 'Acessar o SLL',
 };
 
 type HeadlineInput = {
