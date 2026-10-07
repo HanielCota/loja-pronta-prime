@@ -90,6 +90,21 @@ describe('progresso da trilha', () => {
 });
 
 describe('desbloqueio das etapas do método', () => {
+  it('desfazer uma etapa anterior fecha todas as seguintes, preservando o progresso delas', () => {
+    expect(
+      resolveSequentialStageAccess([
+        { id: 'etapa-1', title: 'Etapa 1', lessons: [{ completed: false }] },
+        { id: 'etapa-2', title: 'Etapa 2', lessons: [{ completed: true }] },
+        { id: 'vazia', title: 'Vazia', lessons: [] },
+        { id: 'etapa-3', title: 'Etapa 3', lessons: [{ completed: true }] },
+      ]),
+    ).toMatchObject([
+      { isUnlocked: true },
+      { isUnlocked: false, isComplete: true, lockMessage: 'Conclua Etapa 1 para abrir Etapa 2.' },
+      { isUnlocked: false, lockMessage: 'Conclua Etapa 1 para abrir Vazia.' },
+      { isUnlocked: false, isComplete: true, lockMessage: 'Conclua Etapa 1 para abrir Etapa 3.' },
+    ]);
+  });
   it('libera a etapa seguinte só quando todas as aulas da etapa anterior terminam', () => {
     expect(
       resolveSequentialStageAccess([
@@ -108,7 +123,7 @@ describe('desbloqueio das etapas do método', () => {
         isComplete: false,
         lockMessage: 'Conclua Etapa 1 para abrir Etapa 2.',
       },
-      { isUnlocked: false, lockMessage: 'Conclua Etapa 2 para abrir Etapa 3.' },
+      { isUnlocked: false, lockMessage: 'Conclua Etapa 1 para abrir Etapa 3.' },
     ]);
   });
 

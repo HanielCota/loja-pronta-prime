@@ -35,7 +35,8 @@ export function resolveSequentialStageAccess(stages: StageProgressRecord[]) {
       lockMessage: isUnlocked ? null : `Conclua ${previousTitle} para abrir ${stage.title}.`,
     };
 
-    if (totalCount > 0) {
+    if (totalCount > 0 && previousComplete) {
+      // A primeira etapa pendente continua sendo o bloqueio, mesmo se há progresso nas seguintes.
       previousComplete = isComplete;
       previousTitle = stage.title;
     }
