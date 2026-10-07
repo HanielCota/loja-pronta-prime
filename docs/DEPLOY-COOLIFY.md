@@ -2,10 +2,10 @@
 
 ## O que este projeto precisa
 
-- Next.js 16.3.8 (App Router), React 19.3.0 e Bun 1.4.2 como runtime e gerenciador de pacotes.
-- Node.js 24 LTS para ferramentas de build. O mínimo declarado pelo Next e pelo Sharp é 20.9.0,
+- Next.js 16.3.8 (App Router), React 19.3.0 e Bun 1.4.2 como gerenciador de pacotes e bundler.
+- Node.js 24 LTS para build e servidor de produção. O mínimo declarado pelo Next e pelo Sharp é 20.9.0,
   mas o projeto seleciona a linha 24 no `package.json` para a hospedagem.
-- PostgreSQL 17, com as migrações de `drizzle/` aplicadas pelo Drizzle Kit.
+- PostgreSQL 17, com as migrações de `drizzle/` aplicadas pelo migrador do Drizzle ORM.
 - Bucket S3 privado (AWS ou compatível) para logos, vídeos e legendas.
 - OpenAI Images API para criar logos com IA; a chave é opcional para iniciar o servidor.
 
@@ -30,9 +30,9 @@ bancos e volumes existentes.
 | Build Pack                                                | Railpack                                                                   |
 | Base Directory                                            | `/`                                                                        |
 | Is it a static site?                                      | Desativado                                                                 |
-| Install Command                                           | `bun install --frozen-lockfile`                                            |
+| Install Command                                           | Vazio: o Railpack já instala com `bun install --frozen-lockfile`           |
 | Build Command                                             | `bun run build`                                                            |
-| Start Command                                             | `bun run db:migrate && exec bun run start`                                 |
+| Start Command                                             | Vazio: usa o comando versionado em `railpack.json`                         |
 | Ports Exposes                                             | `3000`                                                                     |
 | Port Mappings                                             | Vazio; o proxy encaminha o domínio para a porta interna                    |
 | Publish Directory                                         | Vazio                                                                      |
@@ -41,13 +41,33 @@ bancos e volumes existentes.
 | Persistent Storage da aplicação                           | Nenhum volume obrigatório                                                  |
 | Domains                                                   | URL HTTPS do domínio escolhido; preencha com o domínio real                |
 | Health Check                                              | Ativado, `GET`, HTTP, porta `3000`, caminho `/api/auth/ok`, esperado `200` |
-| Health Check: interval / timeout / retries / start period | `30s` / `5s` / `3` / `60s`                                                 |
+| Health Check: interval / timeout / retries / start period | `10s` / `5s` / `6` / `10s`                                                 |
+
+Em **Advanced**, mantenha **Use Docker build cache** ativado. Não preencha o Install Command:
+um comando personalizado faz o Railpack copiar todas as fontes antes da instalação, invalidando
+o cache quando só o código muda. O comando automático continua usando o lockfile congelado.
+
+Em **Watch Paths**, use uma linha por padrão, nesta ordem:
+
+```text
+**
+!video/**
+!docs/**
+!**/*.md
+```
+
+Assim, mudanças só no vídeo de apresentação ou na documentação não publicam o site. O filtro
+vale para deploy automático por webhook; o botão Deploy continua disponível quando necessário.
 
 O comando de início aplica migrações **na imagem nova**, inclusive no primeiro deploy. Se
 falharem, o servidor não inicia. Não use o pre-deployment para isso: ele pode executar na
 aplicação antiga e é pulado no primeiro deploy. Não execute migrações durante o build.
-O Drizzle Kit está em `devDependencies`: mantenha a instalação completa e não ative
-`RAILPACK_PRUNE_DEPS=true` nem use `bun install --production` nesta configuração.
+O build instala as dependências completas. `next build` gera o servidor standalone, e
+`scripts/prepare-runtime.ts` reúne em `build/runtime` o servidor, assets, as seis fontes dos logos,
+SQL e um migrador pequeno. A imagem final copia essa pasta e os runtimes, conforme `railpack.json`.
+O comando de início executa `node migrate.cjs` e só então `node server.js`. O migrador preserva
+`drizzle.__drizzle_migrations`, o mesmo histórico usado por `bun run db:migrate` no desenvolvimento.
+Não ative `RAILPACK_PRUNE_DEPS=true` nem use `bun install --production` no build.
 
 Faça um deploy por vez. Antes de migrar um banco existente, tenha backup e confira as migrações
 pendentes: há migrações históricas que removem estruturas antigas do logo. Voltar a imagem não
@@ -109,8 +129,8 @@ deploys, com uma política de backup ou versionamento adequada.
 
 Não há uploads locais persistentes. `.next/cache` é um cache descartável; não monte um volume
 sobre `.next`, `/app`, `node_modules` ou `public`, pois ocultaria arquivos da imagem. As fontes
-dos logos são lidas de `node_modules/@fontsource`; essas dependências precisam permanecer na
-imagem. Sharp precisa dos binários Linux instalados pelo Bun: não copie `node_modules` do
+dos logos são lidas de `node_modules/@fontsource`; o build copia os seis arquivos usados para a
+imagem standalone. Sharp precisa dos binários Linux instalados pelo Bun: não copie `node_modules` do
 Windows para a VPS.
 
 ### Armazenamento S3 novo no Coolify
@@ -138,7 +158,7 @@ aplicação. O hostname usado no navegador deve coincidir com `BETTER_AUTH_URL`;
 links de acesso são derivados dessa variável. Se publicar mais de um hostname, escolha um
 canônico e redirecione os demais. Não há OAuth de Google ou Shopee configurado nesta versão.
 
-O Next já usa `PORT` (padrão `3000`); `start` explicita `--hostname 0.0.0.0`. A porta pública
+O Next já usa `PORT` (padrão `3000`); `railpack.json` define `HOSTNAME=0.0.0.0`. A porta pública
 continua sendo HTTPS `443`, encaminhada pelo proxy para `3000`. Não publique um mapeamento
 direto da porta da aplicação: isso permitiria contornar o proxy usado para identificar o IP.
 Confirme `TRUSTED_PROXY_HOPS` se houver CDN ou outro proxy; não presuma a quantidade.
@@ -153,6 +173,35 @@ depois. O build precisa alcançar Google Fonts e o registro de pacotes. As image
 são locais; os logos vêm das rotas da aplicação. Não são necessários `images.remotePatterns`.
 
 ## Validação e publicação
+
+O servidor standalone foi validado com Railpack 0.23.0 (helper do Coolify 1.0.17), Node 24.21.0
+e Bun 1.4.2, sem secrets no build. A imagem resultante tem aproximadamente 763 MB, e a pasta
+da aplicação tem 86 MB. Uma segunda construção, com alteração nas fontes do projeto e o mesmo
+lockfile, reutilizou `bun install --frozen-lockfile` em cache. A imagem iniciou na porta `3307`,
+aplicou migrações, respondeu `200` no login, na saúde, nas seis fontes e no redimensionamento
+de imagem pelo Sharp. Uma conta em PostgreSQL temporário entrou pela Server Action e acessou
+o início autenticado. O migrador e o Drizzle Kit foram alternados em bancos novo e já migrado:
+o histórico permaneceu com 39 registros, sem reaplicar SQL. Sem `DATABASE_URL`, o migrador
+terminou com erro, impedindo o início do servidor.
+
+O primeiro deploy dessa configuração em `contabo-prod-01` foi concluído em 6 de outubro de
+2026, às 21h28 (Brasília), com o container saudável e migrações concluídas. Comparação com o
+deploy anterior, na mesma VPS:
+
+| Medida                           | Antes    | Depois  |
+| -------------------------------- | -------- | ------- |
+| Deploy completo                  | 10min28s | 4min50s |
+| Imagem no Docker                 | 3,06 GB  | 772 MB  |
+| Build da aplicação               | 102,6s   | 61,7s   |
+| Cópia da aplicação para a imagem | 33,5s    | 1,1s    |
+| Exportação e carga da imagem     | 211,4s   | 64,5s   |
+| Espera inicial de saúde          | 60s      | 10s     |
+
+Deploys comparados: `sbl4os94wd6e8um7wpmc50vp` (antes) e `ql6mtmoxwelw6oftuwht7mqi` (depois),
+com a correção do PR #87 (`3478a8c`). A primeira construção ainda instalou as dependências
+na nova camada de cache; construções seguintes podem reutilizá-la quando `package.json` e
+`bun.lock` não mudam. Os tempos também dependem de CPU, disco e rede da VPS.
+Saúde, login, seis fontes e redimensionamento de imagem responderam HTTP `200` no domínio real.
 
 Esta preparação foi validada em Windows e em um container Linux com Node 24.21.0, Bun 1.4.2 e
 limite de 4 vCPU / 4 GB de RAM. O container Linux recebeu somente arquivos versionados, sem
@@ -203,5 +252,7 @@ Depois de preencher e confirmar os valores reais:
 - [Node e configuração de pacotes no Railpack](https://railpack.com/languages/node/)
 - [Banco e conexão interna no Coolify](https://coolify.io/docs/databases/)
 - [Comandos de deployment no Coolify](https://coolify.io/docs/applications/builds/dockerfile)
-- [Porta e hostname do Next](https://nextjs.org/docs/app/api-reference/cli/next)
+- [Servidor standalone do Next](https://nextjs.org/docs/app/api-reference/config/next-config-js/output)
+- [Configuração e arquivos da imagem Railpack](https://railpack.com/config/file/)
+- [Filtros dos deploys automáticos](https://coolify.io/docs/applications/deployments/automatic-deployments)
 - [Limite de corpo das Server Actions](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverActions)

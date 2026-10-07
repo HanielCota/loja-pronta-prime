@@ -128,7 +128,7 @@ Frames are written straight to CSS variables and SVG attributes, so the animatio
 | Layer         | Technology                                                                  |
 | ------------- | --------------------------------------------------------------------------- |
 | Framework     | Next.js 16 (App Router, Server Actions, Turbopack) · React 19               |
-| Runtime       | Bun 1.4, used as both runtime and package manager                           |
+| Runtime       | Node.js 24 LTS for Next.js · Bun 1.4 for packages, scripts and tests        |
 | Auth          | Better Auth (email and password, cookie sessions, admin plugin)             |
 | Database      | PostgreSQL 17 · Drizzle ORM                                                 |
 | Forms         | Conform + Zod 4, with the same schema in the browser and on the server      |
@@ -265,7 +265,7 @@ bun run test:e2e                    # starts `bun run dev` if it isn't running
 ```
 
 > [!NOTE]
-> The Playwright runner uses **Node.js**, not Bun: its CLI starts with `#!/usr/bin/env node` and `bun run` respects that, since Playwright doesn't officially support the Bun runtime. The app under test still runs on Bun.
+> The Playwright runner and Next.js use **Node.js**. Bun manages packages and runs the project scripts and unit tests. Production runs the standalone server configured in [`railpack.json`](railpack.json); the complete Coolify setup is in [`docs/DEPLOY-COOLIFY.md`](docs/DEPLOY-COOLIFY.md).
 
 ## 🛡️ Security
 

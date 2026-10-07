@@ -1,6 +1,8 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  // A imagem leva só os arquivos usados pelo servidor, sem as ferramentas de desenvolvimento.
+  output: 'standalone',
   reactStrictMode: true,
   // Sem o cabeçalho "X-Powered-By: Next.js" (não conta pra ninguém com o que o site é feito).
   poweredByHeader: false,

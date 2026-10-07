@@ -20,11 +20,17 @@ type NavItem = { href: string; label: string; icon: typeof Store; exact?: boolea
 const itemClass =
   'group flex min-h-11 shrink-0 items-center gap-3 rounded-2xl px-3 py-2 text-sm wrap-anywhere outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-safe:transition-colors motion-safe:duration-150';
 
+/**
+ * As seções do SLL. `rail`: a lista do menu lateral fixo do computador. `disclosure`: no celular,
+ * a mesma lista dentro do controle "Seções do SLL", que abre e fecha (sem JavaScript também).
+ */
 export function SllSidebarLinks({
+  variant,
   stages,
   copy,
   currentSection,
 }: {
+  variant: 'rail' | 'disclosure';
   stages: Array<{ href: string; label: string }>;
   copy: SllCopy;
   /** A seção desta página quando o endereço não está no menu (a aula: a etapa ou a lista). */
@@ -133,36 +139,28 @@ export function SllSidebarLinks({
     </nav>
   );
 
+  // No computador, a lista fica solta no menu lateral fixo (a moldura é do SllAreaShell).
+  if (variant === 'rail') return navigation;
+
   return (
-    <>
-      <aside
-        className="hidden rounded-card bg-card p-3 shadow-card lg:block lg:self-stretch forced-colors:border forced-colors:border-[CanvasText]"
-        aria-label="Navegação do SLL"
-      >
-        {/* O cartão vai até o fim do conteúdo; só o menu acompanha a rolagem. */}
-        <div className="p-1 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-8rem)] lg:overflow-y-auto">
-          {navigation}
-        </div>
-      </aside>
-      <details
-        key={pathname}
-        className="group rounded-card bg-card p-4 shadow-card lg:hidden forced-colors:border forced-colors:border-[CanvasText]"
-      >
-        <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 text-body font-semibold text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-          <BookOpen aria-hidden="true" className="size-5 shrink-0 text-link" />
-          <span className="flex min-w-0 flex-1 flex-col gap-1">
-            Seções do SLL
-            {currentLabel ? (
-              <span className="text-sm font-normal text-muted-foreground">{currentLabel}</span>
-            ) : null}
-          </span>
-          <ChevronDown
-            aria-hidden="true"
-            className="size-5 shrink-0 group-open:rotate-180 motion-safe:transition-transform"
-          />
-        </summary>
-        <div className="pt-3">{navigation}</div>
-      </details>
-    </>
+    <details
+      key={pathname}
+      className="group rounded-card bg-card p-4 shadow-card forced-colors:border forced-colors:border-[CanvasText]"
+    >
+      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 text-body font-semibold text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+        <BookOpen aria-hidden="true" className="size-5 shrink-0 text-link" />
+        <span className="flex min-w-0 flex-1 flex-col gap-1">
+          Seções do SLL
+          {currentLabel ? (
+            <span className="text-sm font-normal text-muted-foreground">{currentLabel}</span>
+          ) : null}
+        </span>
+        <ChevronDown
+          aria-hidden="true"
+          className="size-5 shrink-0 group-open:rotate-180 motion-safe:transition-transform"
+        />
+      </summary>
+      <div className="pt-3">{navigation}</div>
+    </details>
   );
 }
