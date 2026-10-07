@@ -56,13 +56,10 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
   await expect(page.getByRole('heading', { level: 1, name: SLL })).toBeVisible();
   await expectNoA11yViolations(page);
 
-  // Com os dois produtos, o as abas da barra do topo trocam direto, sem passar pela escolha.
+  // Com os dois produtos, dá pra trocar de área direto, sem passar pela escolha: no SLL, pelo pé
+  // do menu lateral; na Loja Pronta, pelas abas da barra do topo.
   const areas = page.getByRole('navigation', { name: 'Suas áreas' });
-  await expect(areas.getByRole('link', { name: 'Curso SLL' })).toHaveAttribute(
-    'aria-current',
-    'page',
-  );
-  await areas.getByRole('link', { name: 'Minha loja' }).click();
+  await areas.getByRole('link', { name: 'Ir pra Minha loja' }).click();
   await expect(page).toHaveURL(/\/loja-pronta$/);
   await expect(areas.getByRole('link', { name: 'Minha loja' })).toHaveAttribute(
     'aria-current',
@@ -103,17 +100,19 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
   await expect(page).toHaveURL(/\/sll$/);
   // Quem volta não é cumprimentada de novo (já foi, na escolha de área).
   await expect(page.getByText(/^Boas-vindas/)).toHaveCount(0);
-  // Quem volta vê em qual produto está, acima do título (a área da vez marcada nas abas do topo).
+  // E continua podendo ir pra outra área pelo menu lateral.
   await expect(
-    page.getByRole('navigation', { name: 'Suas áreas' }).getByRole('link', { name: 'Curso SLL' }),
-  ).toHaveAttribute('aria-current', 'page');
+    page
+      .getByRole('navigation', { name: 'Suas áreas' })
+      .getByRole('link', { name: 'Ir pra Minha loja' }),
+  ).toBeVisible();
 });
 
 test('com um produto só: entra direto nele, sem tela de escolha', async ({ page }) => {
   await signIn(page, studentEmail('sosll'), PASSWORD);
   await expect(page).toHaveURL(/\/sll$/);
   await expect(page.getByRole('heading', { level: 1, name: SLL })).toBeVisible();
-  // Ela nunca passa pela escolha: a conta (e o sair) fica no topo da própria área.
+  // Ela nunca passa pela escolha: a conta (e o sair) fica no pé do menu da própria área.
   await page.getByRole('button', { name: 'Sua conta' }).click();
   await expect(page.getByRole('menuitem', { name: 'Sair da conta' })).toBeVisible();
   await page.keyboard.press('Escape');
