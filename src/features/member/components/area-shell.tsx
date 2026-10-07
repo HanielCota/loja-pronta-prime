@@ -114,6 +114,7 @@ export function AreaShell({
       <MemberNavbar
         account={account}
         hasSidebar={Boolean(sidebar)}
+        sticky
         currentArea={hasChoice ? area : undefined}
       />
       <main

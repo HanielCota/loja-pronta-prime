@@ -308,7 +308,7 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
           <aside
             className={cn(
               panelCard,
-              'gap-4 p-5 sm:p-6 xl:sticky xl:top-6 xl:max-h-[calc(100dvh-3rem)]',
+              'gap-4 p-5 sm:p-6 xl:sticky xl:top-22 xl:max-h-[calc(100dvh-7rem)]',
             )}
             aria-label="Aulas deste módulo"
           >

@@ -139,8 +139,9 @@ export function SllSidebarLinks({
         className="hidden rounded-card bg-card p-3 shadow-card lg:block lg:self-stretch forced-colors:border forced-colors:border-[CanvasText]"
         aria-label="Navegação do SLL"
       >
-        {/* O cartão vai até o fim do conteúdo; só o menu acompanha a rolagem. */}
-        <div className="p-1 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-8rem)] lg:overflow-y-auto">
+        {/* O cartão vai até o fim do conteúdo; só o menu acompanha a rolagem, logo abaixo da barra
+            do topo, que fica presa (top-22: a barra de 4rem e um respiro). */}
+        <div className="p-1 lg:sticky lg:top-22 lg:max-h-[calc(100dvh-12rem)] lg:overflow-y-auto">
           {navigation}
         </div>
       </aside>

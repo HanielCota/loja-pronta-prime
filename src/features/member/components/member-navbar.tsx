@@ -19,15 +19,19 @@ export type NavbarAccount = {
 export function MemberNavbar({
   account,
   hasSidebar = false,
+  sticky = false,
   currentArea,
 }: {
   account: NavbarAccount;
   hasSidebar?: boolean;
+  /** Presa no topo ao rolar (as áreas, que têm páginas longas). */
+  sticky?: boolean;
   currentArea?: ProductId | undefined;
 }) {
   return (
     <SiteNavbar
       hasSidebar={hasSidebar}
+      sticky={sticky}
       nav={currentArea ? <AreaNav current={currentArea} /> : undefined}
     >
       <div className="flex items-center gap-1">

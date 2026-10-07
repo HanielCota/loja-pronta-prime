@@ -107,11 +107,19 @@ o tema escuro e o alto contraste.
   local dos ajustes em Perfil; a pessoa ainda pode escolher "Automático" ou ajustar o tema escuro
   por lá.
 - Quem tem os dois produtos troca de área pelas **abas da barra do topo** (navbar tradicional):
-  “Loja Pronta” e “SLL” com ícone, logo depois da marca; a da vez fica em `text-foreground` com
-  um traço `border-primary` de 2px por cima da linha da barra, as outras em `text-muted-foreground`.
-  No celular, as abas descem pra uma segunda linha da barra. Com o menu lateral do SLL, elas se
-  alinham com o conteúdo. Nada de seletor segmentado acima do título. Fora das áreas (perfil), a
+  “Minha loja” e “Curso SLL” (o campo `tab` do catálogo, pra não repetir a marca ao lado), com
+  ícone, depois de uma linha vertical curta que as separa da marca. A da vez fica em
+  `text-foreground`, com o ícone `text-link` e um traço `bg-primary` de 3px, de pontas redondas,
+  por cima da linha da barra; as outras em `text-muted-foreground`. No celular e no tablet (abaixo de 1024px), as abas descem
+  pra uma segunda linha da barra. Com o menu lateral do SLL, elas se alinham com o conteúdo (sem
+  a linha vertical). Nada de seletor segmentado acima do título. Fora das áreas (perfil), a
   trilha continua levando à escolha.
+- A linha de baixo da barra do topo é fina (1px, `border-border`).
+- Nas áreas (`AreaShell`), do tablet pra cima, a barra fica **presa no topo** ao rolar, com fundo
+  `bg-background/80` desfocado; com "Mais contraste" ou menos transparência no aparelho, o fundo
+  fica sólido (variante `opaque:`). No celular ela rola junto. O que também fica preso nas áreas
+  (o menu do SLL, o do admin, a prévia da aula, a lista da aula) usa `top-22`, logo abaixo dela, e o
+  `scroll-padding-top` evita foco escondido atrás da barra.
 - O tema padrão é o **claro**, com o "Automático" desligado, mesmo com o aparelho no escuro. O
   escuro e o automático só valem quando ela escolhe (no perfil ou no botão do cabeçalho).
 - Perfil, Aparência, depois do tema: **Tamanho do texto** (Normal, Grande, Maior, num controle
