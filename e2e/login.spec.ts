@@ -1,8 +1,10 @@
 import { createHash } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
 import { database, PASSWORD, studentEmail } from './support/students';
+import { studentIp } from './support/auth';
 
 async function login(page: Page, email: string, password: string) {
+  await page.setExtraHTTPHeaders({ 'x-forwarded-for': studentIp(email) });
   await page.getByLabel('Email da compra').fill(email);
   await page.getByLabel('Senha', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Entrar' }).click();
@@ -19,6 +21,31 @@ test('mostra a tela de login sem cadastro público', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Sua loja na Shopee começa aqui' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Esqueceu ou não recebeu a senha?' })).toBeVisible();
   await expect(page.getByText(/criar conta/i)).toHaveCount(0);
+});
+
+test('não restaura o email antigo quando a aluna já começou a preencher o campo', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem('lojaprontaprime:auth-email', 'email-antigo@teste.com');
+    // Foco antes de hidratar: reproduz quem toca no campo enquanto a página ainda carrega.
+    const observer = new MutationObserver(() => {
+      const input = document.querySelector<HTMLInputElement>('input[type="email"]');
+      if (!input) return;
+      input.focus();
+      observer.disconnect();
+    });
+    observer.observe(document, { childList: true, subtree: true });
+  });
+  await page.goto('/entrar');
+  const email = page.getByLabel('Email da compra');
+  await expect
+    .poll(() => page.evaluate(() => sessionStorage.getItem('lojaprontaprime:auth-email')))
+    .toBe('');
+  await expect(email).toBeFocused();
+  await expect(email).toHaveValue('');
+  await email.fill('novo-email@teste.com');
+  await expect(email).toHaveValue('novo-email@teste.com');
 });
 
 test('valida no navegador e foca o primeiro campo com erro', async ({ page }) => {
@@ -117,8 +144,10 @@ test('bloqueia depois de 5 tentativas em 1 minuto', async ({ page }) => {
   await expect(alert(page)).toContainText('Aguarde 1 minuto pra tentar novamente');
 
   // A contagem fica no Postgres (vale entre reinícios e vários servidores), não só em memória.
-  // A chave é o hash do email (o email em si nunca vai pro banco).
-  const key = `auth:loginPerEmail:${createHash('sha256').update(email).digest('base64url')}`;
+  // O limite de 5 tentativas usa o par email/IP (o email em si nunca vai pro banco).
+  const key = `auth:loginPerEmailAndIp:${createHash('sha256')
+    .update(`${email} ${studentIp(email)}`)
+    .digest('base64url')}`;
   const { rows } = await database().query<{ blocked: number }>(
     `select count(*)::int as blocked from rate_limits
       where key = $1 and points >= 6 and expire > now()`,

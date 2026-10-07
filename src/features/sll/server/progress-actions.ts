@@ -11,7 +11,7 @@ import {
   parseProgressPosition,
   undoCompletionMessage,
 } from '../progress-rules';
-import { getStageLockMessage, getTrackStageAccess } from './stage-lock';
+import { getLessonLockMessage, getTrackStageAccess } from './stage-lock';
 
 export type SllProgressActionResult = { saved: boolean; message: string; completed?: boolean };
 
@@ -59,7 +59,12 @@ export async function recordSllLessonView(
   const location = parseProgressLocation(trackId, lessonId);
   const lesson = location ? await lessonIsAvailable(location.trackId, location.lessonId) : null;
   if (!location || !lesson) return { saved: false, message: 'Esta aula não está disponível.' };
-  const lockMessage = await getStageLockMessage(userId, location.trackId, lesson.stageId);
+  const lockMessage = await getLessonLockMessage(
+    userId,
+    location.trackId,
+    lesson.stageId,
+    location.lessonId,
+  );
   if (lockMessage) return { saved: false, message: lockMessage };
 
   const now = new Date();
@@ -84,7 +89,8 @@ export async function recordSllLessonView(
         set: { currentLessonId: location.lessonId, lastAccessedAt: now, updatedAt: now },
       });
   });
-  revalidatePath('/sll');
+  // O painel consulta o progresso ao abrir. Revalidar a renderização durante a troca de aula
+  // pode aplicar a resposta da aula anterior depois de uma navegação ou do botão Voltar.
   return { saved: true, message: '' };
 }
 
@@ -100,7 +106,12 @@ export async function saveSllLessonPosition(
   const lesson = location ? await lessonIsAvailable(location.trackId, location.lessonId) : null;
   if (!location || position === null || !lesson)
     return { saved: false, message: 'Não foi possível salvar o ponto da aula.' };
-  const lockMessage = await getStageLockMessage(userId, location.trackId, lesson.stageId);
+  const lockMessage = await getLessonLockMessage(
+    userId,
+    location.trackId,
+    lesson.stageId,
+    location.lessonId,
+  );
   if (lockMessage) return { saved: false, message: lockMessage };
 
   const now = new Date();
@@ -146,7 +157,12 @@ export async function setSllLessonCompletion(
   const location = parseProgressLocation(trackId, lessonId);
   const lesson = location ? await lessonIsAvailable(location.trackId, location.lessonId) : null;
   if (!location || !lesson) return { saved: false, message: 'Esta aula não está disponível.' };
-  const lockMessage = await getStageLockMessage(userId, location.trackId, lesson.stageId);
+  const lockMessage = await getLessonLockMessage(
+    userId,
+    location.trackId,
+    lesson.stageId,
+    location.lessonId,
+  );
   if (lockMessage) return { saved: false, message: lockMessage };
 
   const now = new Date();

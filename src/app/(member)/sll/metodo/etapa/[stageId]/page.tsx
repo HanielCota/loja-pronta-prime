@@ -16,6 +16,7 @@ import { getSllStageCardState } from '@/features/sll/stage-card-state';
 import { sllLessonHref } from '@/features/sll/lesson-navigation';
 import { getSllPlanIntake } from '@/features/sll/server/plan';
 import { libraryMaterialLabel } from '@/features/sll/material-format';
+import { splitPlanModules } from '@/features/sll/plan-modules';
 
 export const metadata: Metadata = { title: 'Etapa do Método SLL' };
 
@@ -60,43 +61,31 @@ export default async function MethodStagePage({
       .map((lesson) => [lesson.id, { id: lesson.id, title: lesson.title }]),
   );
   const planIntake = stage.slug === 'etapa-2' ? await getSllPlanIntake(session.user.id) : null;
-  const requiredModules = stage.modules
-    .filter((module) => module.slug !== 'acoes-complementares')
-    .map((module) => {
-      const lesson = module.lessons.find((item) => item.countsTowardProgress);
-      return {
-        id: module.id,
-        title: module.title,
-        lesson: lesson
-          ? {
-              id: lesson.id,
-              title: lesson.title,
-              description: lesson.description,
-              completed: Boolean(lesson.completedAt),
-              relatedLesson: lesson.relatedLessonId
-                ? (lessonsById.get(lesson.relatedLessonId) ?? null)
-                : null,
-            }
+  const { requiredModules, optionalLessons } = splitPlanModules(
+    stage.modules.map((module) => ({
+      id: module.id,
+      slug: module.slug,
+      title: module.title,
+      lessons: module.lessons.map((lesson) => ({
+        id: lesson.id,
+        title: lesson.title,
+        description: lesson.description,
+        countsTowardProgress: lesson.countsTowardProgress,
+        completed: Boolean(lesson.completedAt),
+        relatedLesson: lesson.relatedLessonId
+          ? (lessonsById.get(lesson.relatedLessonId) ?? null)
           : null,
-      };
-    });
+      })),
+    })),
+  );
   const optionalModule = stage.modules.find((module) => module.slug === 'acoes-complementares');
-  const optionalPlanModule = optionalModule
-    ? {
-        title: optionalModule.title,
-        lessons: optionalModule.lessons
-          .filter((lesson) => !lesson.countsTowardProgress)
-          .map((lesson) => ({
-            id: lesson.id,
-            title: lesson.title,
-            description: lesson.description,
-            completed: Boolean(lesson.completedAt),
-            relatedLesson: lesson.relatedLessonId
-              ? (lessonsById.get(lesson.relatedLessonId) ?? null)
-              : null,
-          })),
-      }
-    : null;
+  const optionalPlanModule =
+    optionalLessons.length > 0
+      ? {
+          title: optionalModule?.title ?? 'Ações complementares',
+          lessons: optionalLessons,
+        }
+      : null;
 
   return (
     <SllAreaShell

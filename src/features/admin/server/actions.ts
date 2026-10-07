@@ -46,6 +46,12 @@ import {
   saveSllResource,
 } from './resource-actions';
 import { runSllCopyAction, saveSllCopy } from './copy-actions';
+import {
+  endAccountSessions,
+  saveAccount,
+  setAccountBlocked,
+  type AccountActionState,
+} from './account-actions';
 import type { BannerActionState, EditorActionState, ResourceActionState } from '../structure-types';
 
 export type LessonEditState = { message: string; saved: boolean };
@@ -747,4 +753,18 @@ export async function runSllResourceActionForm(
 
 export async function restoreSllResourceForm(data: FormData): Promise<void> {
   await restoreSllResource(data);
+}
+
+export type { AccountActionState } from './account-actions';
+
+export async function saveAccountForm(previous: AccountActionState, data: FormData) {
+  return saveAccount(previous, data);
+}
+
+export async function setAccountBlockedForm(previous: AccountActionState, data: FormData) {
+  return setAccountBlocked(previous, data);
+}
+
+export async function endAccountSessionsForm(previous: AccountActionState, data: FormData) {
+  return endAccountSessions(previous, data);
 }

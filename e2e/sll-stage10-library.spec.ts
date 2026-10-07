@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 import { auth } from '@/server/auth/auth';
 import { assertTestDatabase } from './support/cleanup';
-import { database, PASSWORD } from './support/students';
+import { closeDatabase, database, PASSWORD } from './support/students';
 import { expectNoA11yViolations, signIn } from './support/auth';
 
 const run = randomUUID();
@@ -83,7 +83,7 @@ test.afterAll(async () => {
   assertTestDatabase();
   await database().query('delete from learning_tracks where id=$1', [trackId]);
   await database().query('delete from "user" where id=$1 and email=$2', [userId, email]);
-  await database().end();
+  await closeDatabase();
 });
 
 test('busca, retorno e conclusão preservam a biblioteca publicada', async ({ page }) => {
@@ -126,7 +126,9 @@ test('busca, retorno e conclusão preservam a biblioteca publicada', async ({ pa
   );
   expect(previousLessonHref).not.toContain(`library-lesson-${moduleIds[3]}-${lessonIds[3]}`);
   await page.getByRole('button', { name: 'Marcar como concluída', exact: true }).click();
-  await expect(page.getByRole('paragraph').filter({ hasText: 'Aula concluída' })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Desmarcar como concluída', exact: true }),
+  ).toBeVisible();
   await page.getByRole('link', { name: 'Voltar à biblioteca', exact: true }).click();
   await expect(page).toHaveURL(/q=AVALIACOES#library-lesson-/);
   await expect(page.getByLabel('Buscar aula ou tema')).toHaveValue('AVALIACOES');

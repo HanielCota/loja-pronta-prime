@@ -4,7 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { AxeBuilder } from '@axe-core/playwright';
 import { auth } from '@/server/auth/auth';
 import { assertTestDatabase } from './support/cleanup';
-import { database, PASSWORD } from './support/students';
+import { closeDatabase, database, PASSWORD } from './support/students';
 import { expectNoA11yViolations, signIn } from './support/auth';
 
 // Catálogo temporário com os títulos confirmados no T01. Os rascunhos reais permanecem intactos.
@@ -113,7 +113,7 @@ test.afterAll(async () => {
     userIds,
     emails,
   ]);
-  await database().end();
+  await closeDatabase();
 });
 
 test('link direto preserva a aula escolhida durante o login', async ({ page }) => {
@@ -147,7 +147,7 @@ test('sequência, link antigo, recarga, Voltar, conclusão e avanço explícito'
   await dashboardPath.getByRole('link', { name: /Trilha de boas-vindas/ }).click();
   await expect(page).toHaveURL(lessonUrl(0));
   await firstViewSaved;
-  const sequence = page.getByRole('complementary', { name: 'Aulas da trilha de boas-vindas' });
+  const sequence = page.getByRole('complementary', { name: 'Aulas deste módulo' });
   await expect(sequence.locator('li')).toHaveCount(6);
   await expect(sequence.locator('li').allTextContents()).resolves.toEqual(
     titles.map((title, i) => `${i + 1}${title}`),
@@ -172,7 +172,9 @@ test('sequência, link antigo, recarga, Voltar, conclusão e avanço explícito'
   await expect(page).toHaveURL(lessonUrl(0));
   await expect(page.locator('#lesson-title')).toHaveText(titles[0]!);
   await page.getByRole('button', { name: 'Marcar como concluída', exact: true }).click();
-  await expect(page.getByText('Aula concluída', { exact: true }).first()).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Desmarcar como concluída', exact: true }),
+  ).toBeVisible();
   await expect(sequence).toContainText('1 de 6 aulas concluídas');
   await expect(page).toHaveURL(lessonUrl(0));
   await mkdir('.data/sll-stage04-screens', { recursive: true });
@@ -188,12 +190,15 @@ test('sequência, link antigo, recarga, Voltar, conclusão e avanço explícito'
   await expect(
     page.getByRole('button', { name: 'Marcar como concluída', exact: true }),
   ).toBeVisible();
-  await expect(page.getByText('Aula concluída', { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Desmarcar como concluída', exact: true }),
+  ).toHaveCount(0);
   const legacyViewSaved = waitForLessonView(page);
   await page.goto(`/sll/aula/${lessonIds[3]}`);
   await legacyViewSaved;
   await expect(page).toHaveURL(lessonUrl(3));
-  await expect(page.getByRole('heading', { name: 'Vídeo em breve' })).toBeVisible();
+  await expect(page.locator('#lesson-title')).toHaveText(titles[3]!);
+  await expect(page.locator('iframe')).toHaveCount(0);
   const lastViewSaved = waitForLessonView(page);
   await page.goto(lessonUrl(5));
   await lastViewSaved;
@@ -263,7 +268,9 @@ test('salvamento recusado mantém conclusão e permite tentar outra vez', async 
   }, draftId);
   await page.getByRole('button', { name: 'Desmarcar como concluída', exact: true }).click();
   await expect(page.locator('[aria-live="polite"]')).toHaveText('Esta aula não está disponível.');
-  await expect(page.getByText('Aula concluída', { exact: true }).first()).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Desmarcar como concluída', exact: true }),
+  ).toBeVisible();
   const saved = await database().query(
     'select completed_at from learning_lesson_progress where user_id=$1 and lesson_id=$2',
     [userIds[0], lessonIds[0]],
@@ -314,7 +321,9 @@ test('falha do banco não anuncia sucesso nem apaga a conclusão', async ({ page
     await expect(page.locator('[aria-live="polite"]')).toHaveText(
       'Não foi possível salvar a conclusão. Tente novamente.',
     );
-    await expect(page.getByText('Aula concluída', { exact: true }).first()).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Desmarcar como concluída', exact: true }),
+    ).toBeVisible();
     const saved = await database().query(
       'select completed_at from learning_lesson_progress where user_id=$1 and lesson_id=$2',
       [userIds[0], lessonIds[0]],
@@ -337,10 +346,12 @@ test('conclusão e sequência funcionam sem JavaScript', async ({ browser }) => 
     await signIn(page, emails[1]!, PASSWORD, lessonUrl(2));
     await expect(page).toHaveURL(lessonUrl(2));
     await page.getByRole('button', { name: 'Marcar como concluída', exact: true }).click();
-    await expect(page.getByText('Aula concluída', { exact: true }).first()).toBeVisible();
     await expect(
-      page.getByRole('complementary', { name: 'Aulas da trilha de boas-vindas' }),
-    ).toContainText('1 de 6 aulas concluídas');
+      page.getByRole('button', { name: 'Desmarcar como concluída', exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole('complementary', { name: 'Aulas deste módulo' })).toContainText(
+      '1 de 6 aulas concluídas',
+    );
     await expect(page).toHaveURL(lessonUrl(2));
     await page.reload();
     await expect(
@@ -370,17 +381,16 @@ test('matriz visual, teclado, texto maior, contraste e movimento reduzido', asyn
     }
     for (const width of [320, 390, 768, 1024, 1280, 1440]) {
       await page.setViewportSize({ width, height: 960 });
-      const brandName = page
-        .getByRole('link', { name: 'Loja Pronta Prime', exact: true })
-        .getByText('Loja Pronta Prime', { exact: true });
-      await expect(brandName).toHaveCSS('position', width <= 360 ? 'absolute' : 'static');
+      await expect(
+        page.getByRole('link', { name: 'Loja Pronta Prime', exact: true }),
+      ).toBeVisible();
       await expectNoA11yViolations(page);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
         true,
       );
       const heading = await page.locator('#lesson-title').boundingBox();
       const list = await page
-        .getByRole('complementary', { name: 'Aulas da trilha de boas-vindas' })
+        .getByRole('complementary', { name: 'Aulas deste módulo' })
         .boundingBox();
       expect(heading).not.toBeNull();
       expect(list).not.toBeNull();
@@ -437,8 +447,8 @@ test('matriz visual, teclado, texto maior, contraste e movimento reduzido', asyn
     });
     await page.evaluate(() => document.documentElement.removeAttribute('data-contrast'));
   }
-  const nav = page.getByRole('button', { name: /Seções do SLL/ });
-  const sections = page.locator('details').filter({ has: nav });
+  const sections = page.locator('#sll-content details').first();
+  const nav = sections.locator('summary');
   await nav.focus();
   await page.keyboard.press('Enter');
   await expect(sections).toHaveAttribute('open', '');

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { readRememberedEmail, rememberEmail } from './email-storage';
 
 export { rememberEmail };
@@ -12,12 +12,14 @@ export function useRestoreRememberedEmail(inputId: string, restore: (email: stri
   const restoreRef = useRef(restore);
   const inputIdRef = useRef(inputId);
 
-  useEffect(() => {
+  // A atualização remonta o campo no Conform: termina antes do desenho e da próxima digitação.
+  useLayoutEffect(() => {
     const email = readRememberedEmail();
     if (!email) return;
     rememberEmail('');
     const input = document.getElementById(inputIdRef.current);
-    if (input instanceof HTMLInputElement && input.value) return;
+    if (input instanceof HTMLInputElement && (input.value || document.activeElement === input))
+      return;
     restoreRef.current(email);
   }, []);
 }

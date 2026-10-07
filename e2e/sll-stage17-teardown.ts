@@ -1,4 +1,4 @@
-import { database, runId } from './support/students';
+import { closeDatabase, database, runId } from './support/students';
 
 /** Remove as contas deste teste diretamente do banco; nenhum arquivo foi enviado ao S3. */
 export default async function globalTeardown() {
@@ -12,5 +12,5 @@ export default async function globalTeardown() {
     await db.query(`delete from verification where value = any($1)`, [ids]);
     await db.query(`delete from "user" where id = any($1)`, [ids]);
   }
-  await db.end();
+  await closeDatabase();
 }

@@ -107,6 +107,30 @@ describe('simulações SLL', () => {
     expect(advertisingLimits(1000, costs, 2000).breakEvenRoas).toBeNull();
     expect(advertisingLimits(5000, costs, 5000).targetRoas).toBeNull();
   });
+  test('considera o primeiro preço da faixa do CPF quando a estimativa é menor', () => {
+    for (const moreThan450Orders of [false, true]) {
+      const lowCosts: SaleCosts = {
+        ...costs,
+        productCents: moreThan450Orders ? 50 : 100,
+        packagingCents: 0,
+        policy: { mode: 'shopee', seller: 'cpf', moreThan450Orders },
+      };
+      const recommended = suggestPrice(lowCosts, 1000);
+      expect(recommended.priceCents).toBe(moreThan450Orders ? 1200 : 900);
+      expect(recommended.marginPercent).toBeGreaterThanOrEqual(10);
+    }
+    expect(
+      suggestPrice(
+        {
+          ...costs,
+          productCents: 0,
+          packagingCents: 0,
+          policy: { mode: 'custom', commissionBps: 0, fixedCents: 0 },
+        },
+        0,
+      ).priceCents,
+    ).toBe(1);
+  });
   test('recusa valores não finitos, negativos, fracionários em centavos e percentuais impossíveis', () => {
     for (const value of [-1, NaN, Infinity, 0, 1.5, 100000001])
       expect(() => calculateSale(value, costs)).toThrow();

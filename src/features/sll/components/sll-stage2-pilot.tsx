@@ -23,7 +23,7 @@ export type SllStage2PlanLesson = {
 export type SllStage2PlanModule = {
   id: string;
   title: string;
-  lesson: SllStage2PlanLesson | null;
+  lessons: SllStage2PlanLesson[];
 };
 
 type SllStage2PilotProps = {
@@ -49,7 +49,9 @@ export function SllStage2Pilot({
   resumeLessonId,
   returnHref,
 }: SllStage2PilotProps) {
-  const completeRequiredDays = requiredModules.filter((module) => module.lesson?.completed).length;
+  const completeRequiredDays = requiredModules.filter(
+    (module) => module.lessons.length > 0 && module.lessons.every((lesson) => lesson.completed),
+  ).length;
 
   return (
     <div className="flex flex-col gap-6">
@@ -155,9 +157,11 @@ function PlanModule({
   returnHref: string;
   nextModule: SllStage2PlanModule | null;
 }) {
-  const open = module.lesson?.id === resumeLessonId || (resumeLessonId === null && index === 0);
+  const open =
+    module.lessons.some((lesson) => lesson.id === resumeLessonId) ||
+    (resumeLessonId === null && index === 0);
   const [isOpen, setIsOpen] = useState(open);
-  const completed = module.lesson?.completed ?? false;
+  const completed = module.lessons.length > 0 && module.lessons.every((lesson) => lesson.completed);
   const dayTitle = module.title.replace(/^Dia \d+ · /, '');
 
   return (
@@ -184,13 +188,21 @@ function PlanModule({
         />
       </summary>
 
-      {module.lesson ? (
-        <PlanLessonContent
-          lesson={module.lesson}
-          trackId={trackId}
-          returnHref={returnHref}
-          nextModule={nextModule}
-        />
+      {module.lessons.length > 0 ? (
+        module.lessons.map((lesson) => (
+          <PlanLessonContent
+            key={lesson.id}
+            lesson={lesson}
+            trackId={trackId}
+            returnHref={returnHref}
+            nextModule={
+              module.lessons.every((item) => item.completed || item.id === lesson.id)
+                ? nextModule
+                : null
+            }
+            wholeDay={module.lessons.length === 1}
+          />
+        ))
       ) : (
         <p className="mt-4 border-t border-border pt-4 text-body text-muted-foreground">
           Esta ação ainda não foi publicada.
@@ -206,16 +218,18 @@ function PlanLessonContent({
   returnHref,
   nextModule,
   optional = false,
+  wholeDay = true,
 }: {
   lesson: SllStage2PlanLesson;
   trackId: string;
   returnHref: string;
   nextModule?: SllStage2PlanModule | null;
   optional?: boolean;
+  wholeDay?: boolean;
 }) {
   const [state, action, isPending] = useActionState(setSllLessonCompletionForm, INITIAL_STATE);
   const completed = state.completed ?? lesson.completed;
-  const nextLesson = nextModule?.lesson;
+  const nextLesson = nextModule?.lessons.find((item) => !item.completed) ?? nextModule?.lessons[0];
 
   return (
     <div className="mt-4 border-t border-border pt-4">
@@ -247,10 +261,10 @@ function PlanLessonContent({
         >
           {completed ? <RotateCcw aria-hidden="true" /> : <Check aria-hidden="true" />}
           {completed
-            ? optional
+            ? optional || !wholeDay
               ? 'Desmarcar ação concluída'
               : 'Desmarcar como concluída'
-            : optional
+            : optional || !wholeDay
               ? 'Marcar ação como concluída'
               : 'Marcar este dia como concluído'}
         </Button>

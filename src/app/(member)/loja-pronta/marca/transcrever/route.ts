@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { env } from '@/config/env';
+import { hasTrustedOrigin } from '@/server/request/origin';
 import { requireBrandAction } from '@/features/brand/server/brand';
 import { transcribeSpeech } from '@/features/brand/logo-studio/server/transcribe';
 import { consumeAttempts } from '@/server/auth/rate-limit';
@@ -17,7 +18,7 @@ function failure(error: string, status: number) {
 
 export async function POST(request: NextRequest) {
   // O navegador envia da própria tela. Origem alheia não pode gastar a cota da aluna.
-  if (request.headers.get('origin') !== request.nextUrl.origin) {
+  if (!hasTrustedOrigin(request)) {
     return failure('Pedido inválido.', 403);
   }
   const { userId } = await requireBrandAction({ logo: true });

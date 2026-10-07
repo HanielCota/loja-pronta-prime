@@ -73,6 +73,16 @@ const STUDENTS: Student[] = [
   { kind: 'sllprogress', emailVerified: true, banned: false, products: ['sll'] },
   { kind: 'semproduto', emailVerified: true, banned: false, products: [] },
   { kind: 'doisprodutos', emailVerified: true, banned: false },
+  { kind: 'doisprodutosrota', emailVerified: true, banned: false },
+  {
+    kind: 'doisprodutosmontagem',
+    emailVerified: true,
+    banned: false,
+    storePhase: 2,
+    conversationSent: true,
+    brandStarted: true,
+    answers: { nome: 'Casa da Ana' },
+  },
   { kind: 'voltaarea', emailVerified: true, banned: false },
   {
     kind: 'lojafase3',
@@ -109,6 +119,15 @@ const STUDENTS: Student[] = [
   { kind: 'perfilfotoinvalida', emailVerified: true, banned: false },
   { kind: 'perfilfotogrande', emailVerified: true, banned: false },
   { kind: 'perfilfotosemjs', emailVerified: true, banned: false },
+  { kind: 'perfilfotooutra', emailVerified: true, banned: false },
+  {
+    kind: 'marcapersistencia',
+    emailVerified: true,
+    banned: false,
+    storePhase: 2,
+    conversationSent: true,
+    brandStarted: true,
+  },
   // Rever fases feitas (e2e/revise.spec.ts): a conversa enviada; a marca confirmada; e uma loja já
   // publicada, em que nada reabre.
   {
@@ -257,10 +276,10 @@ async function createStudents() {
       );
     }
     if (student.brandStarted) {
-      await database().query(
-        `insert into store_brand (user_id, name) values ($1, 'Patinhas da Ana')`,
-        [user.id],
-      );
+      await database().query(`insert into store_brand (user_id, name) values ($1, $2)`, [
+        user.id,
+        student.answers?.nome ?? SENT_ANSWERS.nome,
+      ]);
     }
     if (student.brandDoneWithoutLogo) {
       await database().query(

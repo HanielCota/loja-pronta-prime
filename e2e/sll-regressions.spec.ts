@@ -81,7 +81,11 @@ for (const size of [
       await signIn(page, studentEmail('sllprogress'), PASSWORD, '/sll/cursos');
       await expect(page).toHaveURL(/\/sll\/cursos$/);
       if (theme === 'dark') {
-        await page.getByRole('button', { name: 'Ativar tema escuro' }).click();
+        const navigation =
+          size.name === 'desktop'
+            ? page.getByRole('complementary', { name: 'Navegação do SLL' })
+            : page.getByRole('banner');
+        await navigation.getByRole('button', { name: 'Ativar tema escuro' }).click();
       }
       const card = page.getByRole('heading', { level: 3, name: title, exact: true }).locator('..');
       await expect(card).toContainText('1 de 2 aulas concluídas');

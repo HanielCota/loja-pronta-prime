@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 import { auth } from '@/server/auth/auth';
 import { assertTestDatabase } from './support/cleanup';
-import { database, PASSWORD } from './support/students';
+import { closeDatabase, database, PASSWORD } from './support/students';
 import { expectNoA11yViolations, signIn } from './support/auth';
 
 const run = randomUUID();
@@ -96,7 +96,7 @@ test.afterAll(async () => {
   assertTestDatabase();
   await database().query('delete from learning_tracks where id=$1', [trackId]);
   await database().query('delete from "user" where id=$1 and email=$2', [userId, email]);
-  await database().end();
+  await closeDatabase();
 });
 
 test('a entrada do plano funciona sem JavaScript', async ({ browser }) => {
@@ -145,7 +145,12 @@ test('entrada do plano e conclusão do Dia 1 persistem', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Desmarcar como concluída' })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('button', { name: 'Marcar este dia como concluído' })).toBeVisible();
-  await page.locator('details').first().locator('summary').click();
+  await page
+    .getByRole('region', { name: 'Comece pelo primeiro dia' })
+    .locator('details')
+    .first()
+    .locator('summary')
+    .click();
   await expect(page.getByRole('button', { name: 'Desmarcar como concluída' })).toBeVisible();
 
   const optionalSection = page.getByRole('region', { name: 'Ações complementares' });

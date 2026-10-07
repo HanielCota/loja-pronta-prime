@@ -98,7 +98,11 @@ export function suggestPrice(costs: SaleCosts, targetMarginBps: number): SaleRes
     // Quatro arredondamentos podem oscilar: uma busca binária perderia o primeiro preço válido.
     // Estes limites cobrem todo o erro possível (2 centavos nas taxas + 1 na margem).
     const start = Math.max(band.min, Math.ceil(((fixed - 2) * 10_000) / available));
-    const end = Math.min(band.max, Math.ceil(((fixed + 3) * 10_000) / available));
+    // Se o preço estimado ficou abaixo da faixa, o primeiro preço dela ainda pode atingir a margem.
+    const end = Math.min(
+      band.max,
+      Math.max(band.min, Math.ceil(((fixed + 3) * 10_000) / available)),
+    );
     for (let price = start; price <= end; price++) {
       if (enough(price)) {
         const candidate = calculateSale(price, costs);

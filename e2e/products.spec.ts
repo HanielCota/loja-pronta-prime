@@ -138,7 +138,8 @@ test('menu da marca mostra a área única e permite voltar à conversa', async (
   await expect(page.getByRole('link', { name: /Sistema Loja Lucrativa/ })).toHaveCount(0);
   await expectNoA11yViolations(page);
 
-  await page.getByRole('link', { name: 'Voltar à etapa 1: Conte sobre você e sua loja' }).click();
+  await page.getByRole('link', { name: /^(Entrar|Continuar), Loja Pronta$/ }).click();
+  await page.getByRole('link', { name: 'Ver e editar: Conte sobre você e sua loja' }).click();
   await expect(page).toHaveURL(/\/loja-pronta\/conversa/);
 });
 

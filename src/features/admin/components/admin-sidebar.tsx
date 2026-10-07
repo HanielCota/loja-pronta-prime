@@ -9,6 +9,7 @@ import {
   PanelLeft,
   ReceiptText,
   Rocket,
+  UsersRound,
   Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -21,6 +22,7 @@ export type AdminSection =
   | 'texts'
   | 'resources'
   | 'archived'
+  | 'accounts'
   | 'access'
   | 'hotmart';
 
@@ -41,6 +43,7 @@ const contentLinks = [
 ] as const;
 
 const accountLinks = [
+  { href: '/admin/contas', label: 'Contas', section: 'accounts', Icon: UsersRound },
   { href: '/admin/acessos', label: 'Acessos das alunas', section: 'access', Icon: KeyRound },
   { href: '/admin/hotmart', label: 'Compras da Hotmart', section: 'hotmart', Icon: ReceiptText },
 ] as const;

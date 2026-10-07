@@ -12,6 +12,7 @@ import {
   type LearningDraftBlock,
 } from '@/server/db/schema';
 import { storage } from '@/server/storage';
+import { hasTrustedOrigin } from '@/server/request/origin';
 import {
   getEditableLessonBlocks,
   saveNodeDraft,
@@ -57,8 +58,7 @@ function safeFileName(value: string): string {
 /** Salva uma imagem ou documento e associa o arquivo à aula sem expor a chave do bucket. */
 export async function POST(request: Request) {
   if (!(await hasAdminSession())) return jsonError('Entre com uma conta administradora.', 401);
-  const origin = request.headers.get('origin');
-  if (!origin || origin !== new URL(request.url).origin) return jsonError('Pedido inválido.', 403);
+  if (!hasTrustedOrigin(request)) return jsonError('Pedido inválido.', 403);
 
   let form: FormData;
   try {

@@ -10,7 +10,8 @@ import type { ProductAccessState } from '../server/actions';
 
 const initialState: ProductAccessState = { message: '', saved: false };
 
-export function ProductAccessManager() {
+/** `email` já preenche o campo quando o formulário aparece na tela de uma conta. */
+export function ProductAccessManager({ email }: { email?: string } = {}) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState(changeStudentProductAccess, initialState);
 
@@ -22,6 +23,7 @@ export function ProductAccessManager() {
     <form action={formAction} className="flex flex-col gap-4">
       <FloatingLabelInput
         autoComplete="email"
+        defaultValue={email}
         id="access-email"
         label="Email da aluna"
         maxLength={254}

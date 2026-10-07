@@ -50,7 +50,8 @@ for (const mobile of [false, true]) {
         .browser()!
         .newContext({ baseURL: new URL(page.url()).origin });
       const otherPage = await other.newPage();
-      await signIn(otherPage, studentEmail('aluna'), PASSWORD, '/perfil');
+      // Própria deste arquivo: os testes de login não gastam a cota da conta usada aqui.
+      await signIn(otherPage, studentEmail('perfilfotooutra'), PASSWORD, '/perfil');
       await expect(otherPage).toHaveURL(/\/perfil$/);
       expect((await other.request.get(firstUrl)).status()).toBe(404);
       await other.close();

@@ -1,6 +1,6 @@
 'use server';
 
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { unstable_rethrow } from 'next/navigation';
 import { db } from '@/server/db';
@@ -28,6 +28,10 @@ export async function saveSllCopy(
     return { saved: false, message: 'Preencha todos os textos com até 600 caracteres.' };
   }
   await db.transaction(async (tx) => {
+    // O primeiro campo identifica o grupo; salvar, publicar e descartar usam o mesmo bloqueio.
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtext(${'sll-copy:' + group.fields[0]!.key}))`,
+    );
     for (const { key, value } of values) {
       const text = String(value).trim();
       await tx
@@ -58,11 +62,12 @@ async function publishCopyGroup(
   source: 'draft' | 'history',
 ): Promise<StructureActionState> {
   return db.transaction(async (tx) => {
-    const [drafts, history, live] = await Promise.all([
-      tx.query.learningTextDrafts.findMany(),
-      tx.query.learningTextHistory.findMany(),
-      tx.query.learningTexts.findMany(),
-    ]);
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtext(${'sll-copy:' + group.fields[0]!.key}))`,
+    );
+    const drafts = await tx.query.learningTextDrafts.findMany();
+    const history = await tx.query.learningTextHistory.findMany();
+    const live = await tx.query.learningTexts.findMany();
     const draftByKey = new Map(drafts.map((draft) => [draft.key, draft.value]));
     const historyByKey = new Map(history.map((item) => [item.key, item.value]));
     const liveByKey = new Map(live.map((item) => [item.key, item.value]));
@@ -129,6 +134,9 @@ export async function discardSllCopyDraft(form: FormData): Promise<StructureActi
   const group = copyGroup(form);
   if (!group) return noGroup;
   await db.transaction(async (tx) => {
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtext(${'sll-copy:' + group.fields[0]!.key}))`,
+    );
     for (const { key } of group.fields)
       await tx.delete(learningTextDrafts).where(eq(learningTextDrafts.key, key));
   });

@@ -7,6 +7,7 @@ import { hasAdminRole } from '@/features/admin/access';
 import { db } from '@/server/db';
 import { learningBanners } from '@/server/db/schema';
 import { storage } from '@/server/storage';
+import { hasTrustedOrigin } from '@/server/request/origin';
 import {
   getNodeDraft,
   getNodeDraftForUpdate,
@@ -58,8 +59,7 @@ export async function POST(
   { params }: { params: Promise<{ bannerId: string }> },
 ) {
   if (!(await isAdmin())) return error('Entre com uma conta administradora.', 401);
-  const origin = request.headers.get('origin');
-  if (!origin || origin !== new URL(request.url).origin) return error('Pedido inválido.', 403);
+  if (!hasTrustedOrigin(request)) return error('Pedido inválido.', 403);
   const { bannerId } = await params;
   const id = z.uuid().safeParse(bannerId);
   if (!id.success) return error('Este banner não está disponível.', 404);

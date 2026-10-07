@@ -41,7 +41,7 @@ type Screen =
   | { kind: 'result' };
 
 /** O que está acontecendo agora (trava os botões). */
-type Busy = 'creating' | 'uploading' | 'choosing' | null;
+type Busy = 'creating' | 'uploading' | 'choosing' | 'saving' | null;
 
 /** Onde o estúdio abre: no logo pronto, no resumo ou na primeira escolha que falta. */
 function openingScreen(studio: StudioView, renamed: boolean): Screen {
@@ -97,11 +97,8 @@ export function LogoStudio({
   const focusTitle = useRef(false);
   /** Guarda as escolhas do resumo para descartar uma edição cancelada. */
   const reviewEditSnapshot = useRef<LogoPicks | null>(null);
-  /**
-   * Guardando as escolhas: o Next roda uma action por vez, então vai uma de cada vez, e a próxima
-   * leva sempre as escolhas mais novas (sem fila de versões velhas atrasando a última).
-   */
-  const saving = useRef<{ busy: boolean; next: LogoPicks | null }>({ busy: false, next: null });
+  /** Trava também o clique duplo antes de o estado do botão chegar ao próximo desenho. */
+  const saving = useRef(false);
 
   // Tela nova: o foco vai pro título dela (o leitor de tela lê a pergunta da vez).
   useEffect(() => {
@@ -173,20 +170,22 @@ export function LogoStudio({
     }
   }
 
-  function save(next: LogoPicks) {
-    if (saving.current.busy) {
-      saving.current.next = next;
-      return;
+  async function saveAndGo(next: Screen) {
+    if (saving.current) return;
+    saving.current = true;
+    setBusy('saving');
+    setError(undefined);
+    try {
+      // Avançar antes da resposta deixava uma fila só no navegador, perdida ao recarregar.
+      await saveStudioPicks(picks);
+      reviewEditSnapshot.current = null;
+      go(next);
+    } catch {
+      setError('Não foi possível salvar suas escolhas. Confira a internet e tente de novo.');
+    } finally {
+      saving.current = false;
+      setBusy(null);
     }
-    saving.current.busy = true;
-    saveStudioPicks(next)
-      .catch(() => {})
-      .finally(() => {
-        saving.current.busy = false;
-        const queued = saving.current.next;
-        saving.current.next = null;
-        if (queued) save(queued);
-      });
   }
 
   function goOn(step: StudioStep) {
@@ -202,9 +201,7 @@ export function LogoStudio({
         return;
       }
       // Só salva quando a edição inteira está confirmada; Voltar ainda pode descartá-la.
-      save(picks);
-      reviewEditSnapshot.current = null;
-      go({ kind: 'review' });
+      void saveAndGo({ kind: 'review' });
       return;
     }
     const after = steps[steps.indexOf(step) + 1];
@@ -217,9 +214,7 @@ export function LogoStudio({
         return;
       }
     }
-    // Guarda sem esperar: ela sai e volta de onde parou (criar o logo guarda de novo).
-    save(picks);
-    go(after ? { kind: 'step', step: after, after: 'next' } : { kind: 'review' });
+    void saveAndGo(after ? { kind: 'step', step: after, after: 'next' } : { kind: 'review' });
   }
 
   function create() {
@@ -334,6 +329,7 @@ export function LogoStudio({
             error={error}
             errorId={errorId}
             disabled={Boolean(busy)}
+            saving={busy === 'saving'}
             onPick={pick}
             onPeek={setPeek}
             onUpload={upload}

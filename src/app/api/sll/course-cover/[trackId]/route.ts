@@ -9,6 +9,7 @@ import { getStudentProducts } from '@/features/products/server/access';
 import { db } from '@/server/db';
 import { learningTracks } from '@/server/db/schema';
 import { storage } from '@/server/storage';
+import { hasTrustedOrigin } from '@/server/request/origin';
 import {
   getNodeDraft,
   getNodeDraftForUpdate,
@@ -89,8 +90,7 @@ export async function GET(request: Request, context: Context) {
 
 export async function POST(request: Request, context: Context) {
   if (!(await access()).admin) return error('Entre com uma conta administradora.', 401);
-  if (request.headers.get('origin') !== new URL(request.url).origin)
-    return error('Pedido inválido.', 403);
+  if (!hasTrustedOrigin(request)) return error('Pedido inválido.', 403);
   const course = await courseFromParams(context);
   if (!course) return error('Este curso não está disponível.', 404);
   let form: FormData;
@@ -145,8 +145,7 @@ export async function POST(request: Request, context: Context) {
 
 export async function DELETE(request: Request, context: Context) {
   if (!(await access()).admin) return error('Entre com uma conta administradora.', 401);
-  if (request.headers.get('origin') !== new URL(request.url).origin)
-    return error('Pedido inválido.', 403);
+  if (!hasTrustedOrigin(request)) return error('Pedido inválido.', 403);
   const course = await courseFromParams(context);
   if (!course) return error('Este curso não está disponível.', 404);
   const oldKey = await replaceCover(course, { coverStorageKey: null, coverAlt: null });

@@ -199,6 +199,35 @@ test('não cochila com a aba escondida (o "Zzz" animaria sem ninguém ver)', asy
   expect(await zzzAnimations(page)).toEqual(['mascot-zzz', 'mascot-zzz', 'mascot-zzz']);
 });
 
+test('carregar em uma aba escondida só inicia o relógio do cochilo ao voltar', async ({ page }) => {
+  await page.clock.install();
+  await page.addInitScript(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+  });
+  await page.goto('/entrar');
+  // O primeiro desenho animado confirma que o efeito já iniciou com a aba escondida.
+  await expect
+    .poll(() =>
+      page
+        .locator('[data-slot="mascot-face"]')
+        .evaluate((face: HTMLElement) => face.style.getPropertyValue('--gx')),
+    )
+    .toMatch(/^-?\d+\.\d{3}$/);
+  await page.clock.fastForward('00:15');
+  await expect(mascot(page)).toHaveAttribute('data-expression', 'neutral');
+  expect(await zzzAnimations(page)).toEqual(['none', 'none', 'none']);
+
+  await setHidden(page, false);
+  await page.clock.fastForward('00:05');
+  await expect(mascot(page)).toHaveAttribute('data-expression', 'neutral');
+  await page.clock.fastForward('00:06');
+  await expect(mascot(page)).toHaveAttribute('data-expression', 'asleep');
+});
+
 test('pisca de tempos em tempos', async ({ page }) => {
   expect(await animationStarts(page.locator('[data-lid]').first(), 8_000)).toBe(true);
 });

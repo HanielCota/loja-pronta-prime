@@ -242,6 +242,7 @@ bun -e "console.log(crypto.randomUUID() + crypto.randomUUID())"
 | `bun run auth:schema`          | Regenerate the Better Auth tables schema                                                                                                                                                                      |
 | `bun run dev:aluna`            | Create a test student: `<email> <password> [--nao-confirmada] [--desativada] [--primeiro-acesso] [--so-sll \| --so-loja-pronta \| --sem-produto] [--fase=<1-7>]` (both products and store phase 1 by default) |
 | `bun run test`                 | Unit tests (Bun's built-in runner, `*.test.ts` under `src/`)                                                                                                                                                  |
+| `bun run test:integration`     | Database regression tests for concurrent publishing and lesson access in an isolated local database                                                                                                           |
 | `bun run test:e2e`             | End-to-end tests (`test:e2e:ui` for the visual runner)                                                                                                                                                        |
 
 ## 🧪 Testing
@@ -255,14 +256,17 @@ The end-to-end suite runs against the real app and database, on desktop Chrome a
 - **Layout** on phones, phones in landscape and 320px screens.
 - **Accessibility:** WCAG 2.2 AA checks with axe, keyboard order and focus visibility.
 
-Test students are created before each run and removed after it.
+The Stage 1 lesson scan evaluates the app and the video iframe's accessible title. Panda's embedded document is maintained externally and is excluded from that scan: its mobile seek control currently fails axe's `target-size` rule. This remains a provider accessibility limitation, not a passing audit of the embedded player.
+
+Each database test run creates a temporary database on the local Postgres and applies the migrations. End-to-end tests start their own app server on a free port; catalog scenarios run sequentially. Test students and uploaded files are removed after the run, then the temporary database is dropped. The normal development database and server are preserved. The Postgres account needs permission to create databases.
 
 Pure rules (like the conversation's answer validation) also have unit tests, which run in milliseconds and need no database: `bun run test`.
 
 ```bash
 bun x playwright install chromium   # first time only
 bun run db:up                       # the database must be running
-bun run test:e2e                    # starts `bun run dev` if it isn't running
+bun run test:integration            # database regressions, with no external services
+bun run test:e2e                    # starts an isolated app and database for this run
 ```
 
 > [!NOTE]
