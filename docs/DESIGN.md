@@ -223,6 +223,15 @@ o tema escuro e o alto contraste.
   "Ver a área das alunas" e a conta. O conteúdo vai até 1400px. No celular, volta a barra do topo
   e as seções abrem por "Seções do painel", acima do título. O que fica preso ao rolar usa
   `top-10`. A seção atual fica em `bg-primary-soft` com texto `text-link`.
+- No menu do admin, "Conteúdo das alunas" (o grupo mais longo) abre e fecha pelo título, com a
+  seta que gira, e lembra a escolha no aparelho; abre sozinho quando a página atual é dele.
+  "Online agora" mostra quantas pessoas estão online (ponto verde e número numa pílula
+  `bg-muted`), atualizado a cada 30s. Os cursos aparecem só como "Cursos" no menu, pra caber numa
+  linha. O email no pé mostra o endereço inteiro ao passar o mouse.
+- Nos menus laterais fixos (admin e SLL), a lista que não cabe na altura esmaece a borda que tem
+  itens escondidos (`ScrollFade`), do tamanho do que está escondido, até 2,5rem: avisa que tem
+  mais mesmo onde a barra de rolagem não aparece. As barras de rolagem do app são finas, na cor
+  `--track`, sem as setas do Windows.
 - `/admin` abre a **Visão geral**: seis cartões de número (contas, novas na semana, com SLL, com
   Loja Pronta, compras ativas, bloqueadas), cada um levando à tela que o detalha, com rótulo,
   ícone num círculo `bg-primary-soft` e o número grande (`text-title-lg`, `tabular-nums`).
