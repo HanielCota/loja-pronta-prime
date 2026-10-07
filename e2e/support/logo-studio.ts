@@ -18,6 +18,7 @@ export async function choose(page: Page, label: string) {
 /** "Continuar" (ou, na última escolha, "Ver o resumo"). */
 export async function goOn(page: Page) {
   await page.getByRole('button', { name: /^(Continuar|Ver o resumo)$/ }).click();
+  await expect(page.getByRole('button', { name: 'Salvando…', exact: true })).toHaveCount(0);
 }
 
 /** Escolhe uma opção por tela, na ordem, e vai pro resumo. */

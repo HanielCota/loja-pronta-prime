@@ -149,6 +149,7 @@ export function ChoiceStep({
   error,
   errorId,
   disabled,
+  saving,
   onPick,
   onPeek,
   onUpload,
@@ -169,6 +170,7 @@ export function ChoiceStep({
   error: string | undefined;
   errorId: string;
   disabled: boolean;
+  saving: boolean;
   /** Ela escolheu (`label`: o que escolheu, pro aviso do leitor de tela). */
   onPick: (change: LogoPicks, label: string) => void;
   onPeek: (change: LogoPicks | null) => void;
@@ -271,9 +273,11 @@ export function ChoiceStep({
         <Button
           type="button"
           className="flex-1"
-          disabled={disabled}
+          disabled={disabled && !saving}
           aria-describedby={error ? errorId : undefined}
           onClick={onNext}
+          loading={saving}
+          loadingText="Salvando…"
         >
           {confirmingChange ? 'Confirmar mudança' : number === total ? 'Ver o resumo' : 'Continuar'}
           {confirmingChange ? (

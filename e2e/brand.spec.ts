@@ -108,6 +108,29 @@ test('mantém no estúdio a fonte escolhida na conversa, no celular e no computa
   await expectSuggestedFont();
 });
 
+test('falha ao salvar escolhas mantém a pergunta e permite tentar novamente sem perder a escolha', async ({
+  page,
+}) => {
+  await signIn(page, studentEmail('marcapersistencia'), PASSWORD, '/loja-pronta/marca/logo');
+  await expect(page.getByRole('heading', { name: 'Como você imagina o logo?' })).toBeVisible();
+  await choose(page, 'Só o nome');
+  await page.route('**/loja-pronta/marca/logo', (route) =>
+    route.request().method() === 'POST' ? route.abort('failed') : route.continue(),
+  );
+  await goOn(page);
+  await expect(
+    page.getByText('Não foi possível salvar suas escolhas. Confira a internet e tente de novo.'),
+  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Como você imagina o logo?' })).toBeVisible();
+  await expect(page.getByRole('radio', { name: 'Só o nome', exact: true })).toBeChecked();
+  await page.unroute('**/loja-pronta/marca/logo');
+  await goOn(page);
+  await expect(page.getByRole('heading', { name: 'Quais cores?' })).toBeFocused();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Quais cores?' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Tipo: Só o nome. Mudar' })).toBeVisible();
+});
+
 test('marca completa: nome, estúdio do logo, texto, revisão com mudança e logo pra baixar', async ({
   page,
 }) => {
@@ -170,17 +193,12 @@ test('marca completa: nome, estúdio do logo, texto, revisão com mudança e log
   await expectNoA11yViolations(page);
   await goOn(page);
   await pickAll(page, ['Branco', 'Chapado']);
-  // O resumo, escolha por escolha; saiu e voltou, as escolhas continuam lá (elas são guardadas a
-  // cada "Continuar", sem a tela esperar: recarrega até a última chegar).
-  await expect(async () => {
-    await page.reload();
-    await expect(
-      page.getByRole('definition').filter({ hasText: '“letra de caneta, bem fina”' }),
-    ).toBeVisible({ timeout: 2000 });
-    await expect(page.getByRole('definition').filter({ hasText: 'Chapado' })).toBeVisible({
-      timeout: 2000,
-    });
-  }).toPass({ timeout: 15_000 });
+  // Chegar ao resumo confirma o salvamento: recarregar imediatamente preserva cada escolha.
+  await page.reload();
+  await expect(
+    page.getByRole('definition').filter({ hasText: '“letra de caneta, bem fina”' }),
+  ).toBeVisible();
+  await expect(page.getByRole('definition').filter({ hasText: 'Chapado' })).toBeVisible();
   await expect(page.getByText('Você ainda pode criar 4 logos.')).toBeVisible();
   await expectNoA11yViolations(page);
   // "Mudar" volta direto na escolha; confirmar retorna ao resumo sem repetir outras perguntas.
@@ -195,12 +213,8 @@ test('marca completa: nome, estúdio do logo, texto, revisão com mudança e log
   await choose(page, 'Azul e céu');
   await page.getByRole('button', { name: 'Voltar' }).click();
   await expect(page.getByRole('definition').filter({ hasText: 'Lilás e rosa' })).toBeVisible();
-  await expect(async () => {
-    await page.reload();
-    await expect(page.getByRole('definition').filter({ hasText: 'Lilás e rosa' })).toBeVisible({
-      timeout: 2_000,
-    });
-  }).toPass({ timeout: 15_000 });
+  await page.reload();
+  await expect(page.getByRole('definition').filter({ hasText: 'Lilás e rosa' })).toBeVisible();
 
   await createLogo(page, 1);
   await expect(
