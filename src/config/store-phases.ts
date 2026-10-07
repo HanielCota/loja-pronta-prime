@@ -58,13 +58,13 @@ export const STORE_STAGES = [
   {
     title: 'Conte sobre você e sua loja',
     detail:
-      'Você responde a perguntas rápidas sobre o que gosta e seus planos. Com isso, sugerimos nome, logo e descrição pra sua loja.',
+      'Você conta se já vende e escolhe como quer sua marca. Suas respostas ajudam a sugerir nome, logo e descrição pra sua loja.',
     phases: [1],
   },
   {
     title: 'Crie a marca da sua loja',
     detail:
-      'Você escolhe o nome, monta o logo no estúdio e define a descrição. Você vê tudo antes de salvar.',
+      'Você escolhe o nome, cria ou envia um logo e define a descrição. Você vê tudo antes de salvar.',
     phases: [2],
   },
   {
