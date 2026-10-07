@@ -19,26 +19,37 @@ for (const path of PAGES) {
   });
 }
 
-test('login com erros (campos e servidor) sem problemas de acessibilidade', async ({ page }) => {
-  await page.goto('/entrar');
-  await page.getByRole('button', { name: 'Entrar' }).click();
-  // Enviar vazio leva o foco pro primeiro campo com erro.
-  await expect(page.getByLabel('Email da compra')).toBeFocused();
-  await expectNoViolations(page);
+for (const theme of ['light', 'dark']) {
+  test(`login com erros (campos e servidor) sem problemas de acessibilidade: ${theme}`, async ({
+    page,
+  }) => {
+    await page.addInitScript((value) => localStorage.setItem('theme', value), theme);
+    await page.goto('/entrar');
+    await page.getByRole('button', { name: 'Entrar' }).click();
+    // Enviar vazio leva o foco pro primeiro campo com erro.
+    await expect(page.getByLabel('Email da compra')).toBeFocused();
+    await expectNoViolations(page);
 
-  await page.getByLabel('Email da compra').fill('ninguem-a11y@exemplo.com');
-  await page.getByLabel('Senha', { exact: true }).fill('senha-errada-a11y');
-  await page.getByRole('button', { name: 'Entrar' }).click();
-  const alert = page.locator('[data-error-code]');
-  await expect(alert).toBeVisible();
-  // O alerta entra com fade: mede o contraste depois da animação, com o texto já opaco.
-  await alert.evaluate((el) =>
-    Promise.all(el.getAnimations().map((animation) => animation.finished)),
-  );
-  // O formulário aponta pro alerta (aria-describedby com id que existe).
-  await expect(page.locator('form')).toHaveAccessibleDescription(/.+/);
-  await expectNoViolations(page);
-});
+    await page.getByLabel('Email da compra').fill('ninguem-a11y@exemplo.com');
+    await page.getByLabel('Senha', { exact: true }).fill('senha-errada-a11y');
+    await page.getByRole('button', { name: 'Entrar' }).click();
+    const alert = page.locator('[data-error-code]');
+    await expect(alert).toBeVisible();
+    // O alerta entra com fade: mede o contraste depois da animação, com o texto já opaco.
+    await alert.evaluate((el) =>
+      Promise.all(el.getAnimations().map((animation) => animation.finished)),
+    );
+    // O formulário aponta pro alerta (aria-describedby com id que existe).
+    await expect(page.locator('form')).toHaveAccessibleDescription(/.+/);
+    await expectNoViolations(page);
+    // O balão e sua ação também precisam caber com zoom de 400% e nos dois temas.
+    await page.setViewportSize({ width: 320, height: 640 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(
+      false,
+    );
+    await expectNoViolations(page);
+  });
+}
 
 test('a sugestão de email é anunciada por uma região que já existia antes dela', async ({
   page,

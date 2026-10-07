@@ -46,7 +46,11 @@ test.describe('sem JavaScript', () => {
     await page.goto('/entrar');
     await fillLogin(page, studentEmail('loginsemjs'), 'senha-errada-xx');
     await expect(alert(page)).toContainText('Email ou senha incorretos');
+    // Sem hidratação, a ação continua sendo um link nativo, inclusive pelo teclado.
+    await page.getByRole('link', { name: 'Redefinir minha senha' }).press('Enter');
+    await expect(page.getByRole('heading', { name: 'Criar uma senha nova' })).toBeVisible();
 
+    await page.goto('/entrar');
     await fillLogin(page, studentEmail('loginsemjs'), PASSWORD);
     await expect(page).toHaveURL(/\/$/);
   });

@@ -166,6 +166,7 @@ export function useMascot(
       faceTarget = toFaceState(EXPRESSIONS[current], eyeOverride());
 
       if (reducedMotion()) {
+        stopSway();
         Object.assign(gaze, gazeTarget);
         Object.assign(faceState, faceTarget);
         Object.assign(gazeVelocity, { x: 0, y: 0 });
@@ -179,6 +180,21 @@ export function useMascot(
         frame = requestAnimationFrame(step);
       }
     }
+
+    /** Uma pausa entre gestos deixa o movimento sutil; digitar não reinicia cada quadro. */
+    function startSway() {
+      if (disposed || !onScreen || document.hidden || reducedMotion() || current === 'asleep')
+        return;
+      if (!root.dataset.sway) root.dataset.sway = 'true';
+    }
+
+    function stopSway() {
+      delete root.dataset.sway;
+    }
+
+    const onSwayEnd = (event: AnimationEvent) => {
+      if (event.animationName === 'mascot-sway') stopSway();
+    };
 
     /**
      * Pra eventos frequentes (mouse, seleção, rolagem): recalcula uma vez por quadro, em vez de
@@ -231,6 +247,7 @@ export function useMascot(
     }
 
     function onSignal(signal: MascotSignal) {
+      startSway();
       switch (signal.type) {
         case 'celebrate':
           reasons.delete('error');
@@ -298,11 +315,13 @@ export function useMascot(
     // O foco só muda depois do focusout; espera o próximo ciclo pra ler o elemento ativo.
     const onFocusChange = (event: FocusEvent) => {
       onActivity();
+      if (event.type === 'focusin') startSway();
       if (event.type === 'focusout') clearReason('capsLock');
       requestUpdate();
     };
     const onInput = (event: Event) => {
       onActivity();
+      startSway();
       const target = event.target;
       if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) {
         return update();
@@ -324,6 +343,7 @@ export function useMascot(
     // Tocar no mascote: encolhe no toque e ri ao soltar em cima dele (arrastar pra fora desfaz).
     const onPress = (event: PointerEvent) => {
       if (!event.isPrimary || event.button !== 0) return;
+      startSway();
       pressAnimation?.cancel();
       pressed = true;
       pressAnimation = move(PRESS);
@@ -344,8 +364,10 @@ export function useMascot(
     // cochila. Sem isso, o "Zzz" animava escondido e ela voltava pra um mascote já dormindo, com
     // os "Z" parados. Ao voltar, o relógio recomeça (se já dormia antes, continua dormindo).
     const onVisibilityChange = () => {
-      if (document.hidden) window.clearTimeout(idleTimer);
-      else resetIdleTimer();
+      if (document.hidden) {
+        window.clearTimeout(idleTimer);
+        stopSway();
+      } else resetIdleTimer();
     };
 
     // O campo de senha troca de tipo ao "Mostrar senha": os olhos precisam acompanhar.
@@ -372,9 +394,12 @@ export function useMascot(
     root.addEventListener('pointerup', onRelease);
     root.addEventListener('pointerleave', onCancelPress);
     root.addEventListener('pointercancel', onCancelPress);
+    root.addEventListener('animationend', onSwayEnd);
+    root.addEventListener('animationcancel', onSwayEnd);
     blinkTimer = window.setTimeout(blink, 2000);
     resetIdleTimer();
     update();
+    startSway();
     updateRef.current = update;
     // Desligado no meio do cochilo: acorda na hora (sem pálpebra lenta) e não volta a dormir.
     resetSleepRef.current = () => {
@@ -385,11 +410,13 @@ export function useMascot(
     const visibility = new IntersectionObserver(([entry]) => {
       onScreen = entry?.isIntersecting ?? true;
       if (onScreen) update();
+      else stopSway();
     });
     visibility.observe(root);
 
     return () => {
       disposed = true;
+      stopSway();
       updateRef.current = undefined;
       resetSleepRef.current = undefined;
       cancelAnimationFrame(frame);
@@ -415,6 +442,8 @@ export function useMascot(
       root.removeEventListener('pointerup', onRelease);
       root.removeEventListener('pointerleave', onCancelPress);
       root.removeEventListener('pointercancel', onCancelPress);
+      root.removeEventListener('animationend', onSwayEnd);
+      root.removeEventListener('animationcancel', onSwayEnd);
     };
   }, [rootRef, faceRef]);
 }

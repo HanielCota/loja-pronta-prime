@@ -76,6 +76,76 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/entrar');
 });
 
+test('balança os dois braços, assenta com as mãos baixas e reage sem reiniciar a cada letra', async ({
+  page,
+}) => {
+  const arms = mascot(page).locator('[data-slot="mascot-arm"]');
+  const rotations = () =>
+    arms.evaluateAll((elements) => elements.map((arm) => parseFloat(getComputedStyle(arm).rotate)));
+  await expect(mascot(page)).toHaveAttribute('data-sway', 'true');
+  const initial = await rotations();
+  // Cada braço se articula de verdade; não basta girar a imagem inteira.
+  await expect
+    .poll(async () =>
+      (await rotations()).every((angle, index) => Math.abs(angle - initial[index]!) > 0.25),
+    )
+    .toBe(true);
+  await expect(mascot(page)).not.toHaveAttribute('data-sway', 'true', { timeout: 6_000 });
+  expect(await rotations()).toEqual([102, -102]);
+
+  const email = page.getByLabel('Email da compra');
+  await email.focus();
+  await expect(mascot(page)).toHaveAttribute('data-sway', 'true');
+  const sway = mascot(page).locator('[data-slot="mascot-sway"]');
+  // O navegador atribui startTime no primeiro quadro, depois de criar a animação.
+  await expect
+    .poll(() => sway.evaluate((element) => element.getAnimations()[0]?.startTime))
+    .toBeGreaterThan(0);
+  const started = await sway.evaluate((element) => element.getAnimations()[0]?.startTime);
+  await email.pressSequentially('maria', { delay: 50 });
+  expect(await sway.evaluate((element) => element.getAnimations()[0]?.startTime)).toBe(started);
+});
+
+test('para de balançar ao sair da tela e volta a reagir quando está visível', async ({ page }) => {
+  // Abaixo de 512px de altura a moldura esconde a marca; aqui conferimos rolagem de verdade.
+  await page.setViewportSize({ width: 390, height: 520 });
+  await expect(mascot(page)).toBeInViewport({ ratio: 1 });
+  await expect(mascot(page)).toHaveAttribute('data-sway', 'true');
+  await page.getByRole('button', { name: 'Entrar' }).scrollIntoViewIfNeeded();
+  await expect(mascot(page)).not.toBeInViewport();
+  await expect(mascot(page)).not.toHaveAttribute('data-sway', 'true');
+  await page.getByLabel('Email da compra').dispatchEvent('input');
+  await expect(mascot(page)).not.toHaveAttribute('data-sway', 'true');
+
+  await mascot(page).scrollIntoViewIfNeeded();
+  await expect(mascot(page)).toBeInViewport({ ratio: 1 });
+  // A interseção é entregue no quadro seguinte; o gesto vem da interação seguinte.
+  await nextFrames(page);
+  await page.getByLabel('Email da compra').dispatchEvent('input');
+  await expect(mascot(page)).toHaveAttribute('data-sway', 'true');
+});
+
+test('interrompe os braços com a aba escondida e ao reduzir movimento durante o gesto', async ({
+  page,
+}) => {
+  const arms = mascot(page).locator('[data-slot="mascot-arm"]');
+  const animationCount = () =>
+    arms.evaluateAll((elements) =>
+      elements.reduce((total, arm) => total + arm.getAnimations().length, 0),
+    );
+  await expect(mascot(page)).toHaveAttribute('data-sway', 'true');
+  await setHidden(page, true);
+  await expect(mascot(page)).not.toHaveAttribute('data-sway', 'true');
+  expect(await animationCount()).toBe(0);
+
+  await setHidden(page, false);
+  await page.getByLabel('Email da compra').focus();
+  await expect(mascot(page)).toHaveAttribute('data-sway', 'true');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(mascot(page)).not.toHaveAttribute('data-sway', 'true');
+  expect(await animationCount()).toBe(0);
+});
+
 test('olha o email sendo digitado, fica feliz e acena quando o email fica completo', async ({
   page,
 }) => {
@@ -239,6 +309,11 @@ test('com "Reduzir animações" do perfil: olhar sem mola e "Zzz" parado', async
   await page.getByLabel('Email da compra').focus();
   await page.getByLabel('Senha', { exact: true }).focus();
   await expect.poll(() => gazeX(page), { intervals: [50] }).toBe(-0.95);
+  expect(
+    await mascot(page)
+      .locator('[data-slot="mascot-arm"]')
+      .evaluateAll((arms) => arms.map((arm) => getComputedStyle(arm).animationName)),
+  ).toEqual(['none', 'none']);
   await page.locator('body').click({ position: { x: 5, y: 5 } });
   await page.clock.fastForward('00:11');
   await expect(mascot(page)).toHaveAttribute('data-expression', 'asleep');
@@ -252,6 +327,11 @@ test('com movimento reduzido, muda o olhar sem animar', async ({ page }) => {
   await page.getByLabel('Senha', { exact: true }).focus();
   // Sem mola: já está no destino no próximo instante, sem passar pelos valores intermediários.
   await expect.poll(() => gazeX(page), { intervals: [50] }).toBe(-0.95);
+  expect(
+    await mascot(page)
+      .locator('[data-slot="mascot-arm"]')
+      .evaluateAll((arms) => arms.map((arm) => getComputedStyle(arm).animationName)),
+  ).toEqual(['none', 'none']);
 });
 
 test('página que não existe mostra o mascote preocupado e o caminho de volta', async ({ page }) => {
@@ -286,9 +366,15 @@ test('a arte do mascote usa endereço com hash (mudou a arte, muda o endereço)'
 }) => {
   // Com nome fixo, caches antigos mostravam a arte velha por baixo (ex.: sobrancelha duplicada).
   const base = await mascot(page)
-    .locator('img')
+    .locator('[data-slot="mascot-body"]')
     .evaluate((img: HTMLImageElement) => decodeURIComponent(img.currentSrc));
-  expect(base).toMatch(/\/_next\/static\/media\/mascote-base\.[\w-]+\.png/);
+  expect(base).toMatch(/\/_next\/static\/media\/mascote-corpo\.[\w-]+\.png/);
+
+  const arms = await mascot(page)
+    .locator('[data-slot="mascot-arm"] > div')
+    .first()
+    .evaluate((arm: HTMLElement) => decodeURIComponent(arm.style.backgroundImage));
+  expect(arms).toMatch(/\/_next\/static\/media\/mascote-bracos\.[\w-]+\.png/);
 
   const lidSkin = await page
     .locator('[data-lid]')

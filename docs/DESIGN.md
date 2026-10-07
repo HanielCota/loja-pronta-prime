@@ -80,7 +80,14 @@ o tema escuro e o alto contraste.
   círculo no envio. Em Perfil, adicionar, trocar e remover ficam na linha "Foto de perfil", com o
   mesmo formulário expansível dos outros ajustes; o campo de arquivo tem rótulo e ajuda visíveis
   e funciona sem JavaScript.
-- Mascote (`components/brand/mascot`), `Logo`, `BrandCard`, `CardHeading`. O mascote cochila
+- Lupita é o mascote das duas áreas: arte laranja com pontas roxas, cílios, barriga clara,
+  etiqueta com estrela e duas estrelas ao lado. As cores são do desenho; a interface continua
+  usando os tokens da marca. As artes transparentes em `components/brand/mascot/assets`
+  compartilham a composição; `art.ts` registra as posições do rosto e os ombros. Corpo e braços
+  separados permitem deixar as mãos baixas e mover cada braço sem deformar o desenho. Os dois
+  braços caem pelas laterais, com a ponta roxa abaixo do ombro; o esquerdo usa a arte comprida
+  espelhada para ficar relaxado.
+- Mascote (`components/brand/mascot`), `Logo`, `BrandCard`, `CardHeading`. A Lupita cochila
   depois de 10s sem mexer (com "Zzz"; com a aba escondida, o relógio pausa), mas só nas telas de
   acesso: onde ele faz a pergunta (`MascotBubble`) ou acompanha a leitura (painel da loja), use
   `canSleep={false}`.
@@ -148,6 +155,12 @@ o tema escuro e o alto contraste.
 
 - **Uma decisão por tela.** Título grande com a pergunta ou o que fazer, uma linha de ajuda, as
   opções, e um botão principal. Nada de várias ações competindo.
+- No login, erros de acesso aparecem num balão da Lupita (`AuthErrorAlert` com `speech`),
+  dentro do formulário, com seu nome, o erro e o próximo passo. O balão reutiliza o `Alert`
+  e os tokens de erro, com uma ponta decorativa que some no alto contraste. Email ou senha
+  incorretos oferecem “Redefinir minha senha”, ação secundária que leva à recuperação real,
+  preservando o email no aparelho e o destino após entrar. A moldura e o mascote no topo ficam
+  no padrão de acesso. O alerta continua ligado ao formulário e anunciado por leitor de tela.
 - No estúdio do logo, a alternativa escrita fica visível abaixo das opções. O campo diz “Escreva do
   seu jeito”, inclui um exemplo no placeholder e um botão “Usar essa ideia”; não fica escondido atrás
   de um link. “Usar essa ideia” compartilha o azul de ação com “Continuar”, mas permanece compacto ao
@@ -281,6 +294,10 @@ o tema escuro e o alto contraste.
 
 - Uma curva só: `ease-fluid` (`cubic-bezier(0.22, 1, 0.36, 1)`), que sai rápido e assenta devagar,
   como uma mola sem balanço. Nada de quicar.
+- **Lupita:** a pedido do dono, braços relaxados balançam até 4° e o corpo até 0,8°, com
+  `ease-in-out`. O gesto dura 4,4s ao chegar, focar um campo, digitar, tocar ou receber um aviso;
+  novas letras não reiniciam o gesto em andamento. Depois, assenta. Não roda continuamente e
+  para fora da tela, com a aba escondida ou com movimento reduzido (perfil ou aparelho).
 - **Troca de página:** ao navegar dentro do app, o conteúdo da página nova (o `<main>`, pelo
   `PageMain`) entra subindo 0,5rem e esmaecendo em 0,45s; a barra do topo e os menus laterais
   ficam parados. No primeiro carregamento e sem JavaScript, a página já chega parada. Todas as
