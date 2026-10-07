@@ -83,6 +83,8 @@ Detalhes atuais e fluxo de convite planejado: `docs/INTEGRACAO-HOTMART.md`. Cont
 
 Administradores podem organizar e editar boas-vindas, método e cursos; enviar materiais, imagens e capas; conferir prévias; salvar rascunhos, publicar, arquivar e restaurar itens. Também editam banners, recursos e textos fixos do SLL.
 
+Em Contas, a admin busca qualquer conta por nome ou email e, na tela da conta, edita nome, apelido, email e função (aluna ou admin), pede uma senha nova no próximo acesso, libera ou remove produtos, desconecta a conta dos aparelhos e bloqueia ou desbloqueia o acesso com motivo. A própria conta não pode perder a função admin nem ser bloqueada por ela mesma. Apagar contas ainda não existe.
+
 O painel permite liberar ou remover um produto de uma conta existente com motivo e histórico, configurar dois códigos distintos de produtos Hotmart e o token, e consultar avisos de compras. Salvar a configuração não testa a conexão externa nem conclui o convite por email.
 
 Um painel de todas as lojas, histórico de montagem por loja, métricas comerciais e contagem de compradoras que entraram continuam fora da entrega atual.
