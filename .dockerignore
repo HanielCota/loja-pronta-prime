@@ -1,0 +1,17 @@
+# O build recebe fontes e dependências pelo lockfile, nunca arquivos locais ou secrets.
+.git
+**/node_modules
+.next
+build
+.env*
+video
+docs
+.data
+.playwright-cli
+test-results
+playwright-report
+blob-report
+coverage
+*.log
+*.tsbuildinfo
+.vscode
