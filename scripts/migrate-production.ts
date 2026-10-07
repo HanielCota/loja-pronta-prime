@@ -3,6 +3,8 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { Pool } from 'pg';
 import pandaCatalog from '../data/sll/panda-videos.json';
 import { importInitialSllContent } from '../src/features/sll/server/import-initial-content';
+import { importSllTools } from '../src/features/sll/tools/server/import-tools';
+import { publishToolMaterials } from '../src/features/sll/tools/server/publish-materials';
 
 async function applyMigrations(): Promise<void> {
   const url = process.env.DATABASE_URL;
@@ -17,6 +19,11 @@ async function applyMigrations(): Promise<void> {
     const imported = await importInitialSllContent(pool);
     console.log(
       `Conteúdo SLL importado: ${imported.tracks} trilhas, ${imported.lessons} aulas, ${imported.videos} vídeos e ${imported.resources} recursos.`,
+    );
+    await publishToolMaterials();
+    const tools = await importSllTools(pool);
+    console.log(
+      `Ferramentas SLL: ${tools.applied ? 'entrega aplicada' : 'entrega já aplicada'}, ${tools.resources} recursos e ${tools.links} ligações. Materiais conferidos no bucket.`,
     );
     // Só contagens: o log permite conferir a vinculação no deploy sem expor conteúdo de alunas.
     const videoIds = pandaCatalog.sections.flatMap((section) =>

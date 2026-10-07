@@ -1,0 +1,56 @@
+import { parseDecimalInput } from './number-input';
+import { MAX_PRICE_CENTS, type FeePolicy } from './fees';
+import type { SaleCosts } from './calculations';
+
+export type CalculatorKind = 'price' | 'discount' | 'ads';
+
+export function readCalculatorInput(form: FormData, kind: CalculatorKind) {
+  const values: Record<string, string> = {};
+  const errors: Record<string, string> = {};
+  function field(name: string) {
+    const value = form.get(name);
+    values[name] = typeof value === 'string' ? value.slice(0, 80) : '';
+    return values[name]!;
+  }
+  function number(name: string, max = MAX_PRICE_CENTS, optional = false, positive = false) {
+    const raw = field(name);
+    const parsed = optional && !raw.trim() ? 0 : parseDecimalInput(raw);
+    if (parsed === null || parsed > max || (positive && parsed === 0)) {
+      errors[name] = positive
+        ? 'Informe um valor maior que zero, com até duas casas decimais.'
+        : 'Informe um valor válido, com até duas casas decimais.';
+      return 0;
+    }
+    return parsed;
+  }
+  const selected = field('policy');
+  let policy: FeePolicy = { mode: 'shopee', seller: 'cnpj', moreThan450Orders: false };
+  if (selected === 'custom') {
+    policy = {
+      mode: 'custom',
+      commissionBps: number('commission', 10_000),
+      fixedCents: number('fixed'),
+    };
+  } else if (['cnpj', 'cpf', 'cpf-volume'].includes(selected)) {
+    policy = {
+      mode: 'shopee',
+      seller: selected === 'cnpj' ? 'cnpj' : 'cpf',
+      moreThan450Orders: selected === 'cpf-volume',
+    };
+  } else errors.policy = 'Escolha o tipo da sua conta.';
+  const costs: SaleCosts = {
+    policy,
+    productCents: number('product', MAX_PRICE_CENTS, false, true),
+    packagingCents: number('packaging', MAX_PRICE_CENTS, true),
+    shippingCents: number('shipping', MAX_PRICE_CENTS, true),
+    otherCents: number('other', MAX_PRICE_CENTS, true),
+    advertisingCents: kind === 'ads' ? 0 : number('advertising', MAX_PRICE_CENTS, true),
+    taxBps: number('tax', 10_000, true),
+    extraFeeBps: number('extraFee', 10_000, true),
+  };
+  const priceCents = kind === 'price' ? 0 : number('price', MAX_PRICE_CENTS, false, true);
+  const marginBps = kind === 'discount' ? 0 : number('margin', 9999);
+  const discountBps = kind === 'discount' ? number('discount', 9999, true) : 0;
+  const couponCents = kind === 'discount' ? number('coupon', MAX_PRICE_CENTS, true) : 0;
+  return { values, errors, costs, priceCents, marginBps, discountBps, couponCents };
+}
