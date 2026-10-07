@@ -7,7 +7,10 @@ import {
   learningStages,
   learningTracks,
 } from '@/server/db/schema';
-import { sllLibrarySourceNumber } from '@/features/sll/source-numbers';
+import {
+  sllLibrarySourceDurationMinutes,
+  sllLibrarySourceNumber,
+} from '@/features/sll/source-numbers';
 
 const categories = [
   {
@@ -185,6 +188,7 @@ await db.transaction(async (tx) => {
       if (sourceNumber === null) {
         throw new Error(`A numeração antiga da aula ${slug} ainda não foi conferida.`);
       }
+      const durationMinutes = sllLibrarySourceDurationMinutes(slug);
       await tx
         .insert(learningLessons)
         .values({
@@ -193,18 +197,29 @@ await db.transaction(async (tx) => {
           title,
           description,
           sourceNumber,
+          ...(durationMinutes === null ? {} : { durationMinutes }),
           countsTowardProgress: true,
           position,
         })
         .onConflictDoUpdate({
           target: [learningLessons.moduleId, learningLessons.slug],
-          set: { sourceNumber },
+          set: {
+            sourceNumber,
+            ...(durationMinutes === null ? {} : { durationMinutes }),
+          },
         });
     }
   }
 });
 
+const lessonCount = categories.reduce((count, category) => count + category.lessons.length, 0);
+const durationCount = categories.reduce(
+  (count, category) =>
+    count +
+    category.lessons.filter(([slug]) => sllLibrarySourceDurationMinutes(slug) !== null).length,
+  0,
+);
 console.info(
-  'As 19 aulas em 8 categorias foram importadas como rascunho; os oito itens não vistos não foram criados.',
+  `${lessonCount} aulas em ${categories.length} categorias conferidas; ${durationCount} durações confirmadas gravadas. Os oito itens não vistos não foram criados; estados de publicação existentes foram preservados.`,
 );
 process.exit(0);

@@ -18,5 +18,11 @@ describe('materiais de aula', () => {
     });
     expect(validateDownloadFile('foto.txt', new Uint8Array([0x00, 0x01]))).toBeNull();
     expect(validateDownloadFile('programa.exe', new Uint8Array([0x4d, 0x5a]))).toBeNull();
+    expect(
+      validateDownloadFile(
+        'erro.txt',
+        new TextEncoder().encode('<!doctype html><title>Erro</title>'),
+      ),
+    ).toBeNull();
   });
 });

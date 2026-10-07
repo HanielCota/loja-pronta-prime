@@ -24,34 +24,34 @@ arquivos envolvidos; implemente somente a tarefa pedida e pare ao concluí-la.
 
 ## Tarefas
 
-| Tarefa | Objetivo e conclusão esperada                                                                                                                                                                                        | Estado                                                                                             |
-| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| T01    | Inventariar “Comece aqui” e Etapa 1: sequência, títulos, textos e referências de vídeo.                                                                                                                              | Concluída                                                                                          |
-| T02    | Inventariar Etapas 2 e 3: dias, ações, aulas, categorias, busca e materiais.                                                                                                                                         | Concluída                                                                                          |
-| T03    | Inventariar cursos complementares, banners e destinos visíveis.                                                                                                                                                      | Concluída                                                                                          |
-| T04    | Proteger as rotas e ações de administração com verificação de permissão no servidor.                                                                                                                                 | Concluída                                                                                          |
-| T05    | Criar a estrutura de dados para trilhas, etapas, módulos, aulas e blocos ordenados.                                                                                                                                  | Concluída                                                                                          |
-| T06    | Importar o conteúdo piloto documentado sem criar textos ou materiais fictícios.                                                                                                                                      | Concluída                                                                                          |
-| T07    | Mostrar no admin a hierarquia existente e uma prévia de cada aula.                                                                                                                                                   | Concluída                                                                                          |
-| T08    | Editar título, descrição, textos e links de uma aula; adicionar textos e links e salvar com validação no servidor.                                                                                                   | Implementada; revisão visual pendente                                                              |
-| T09    | Editar e incluir vídeo, imagem e arquivo em aulas. Respeitar os provedores e o bucket existentes; mostrar erros reais de envio.                                                                                      | Implementada; revisão visual pendente                                                              |
-| T10    | Criar, editar, excluir com confirmação recuperável e reordenar trilhas, etapas, módulos e aulas. Preservar vínculos e materiais válidos.                                                                             | Implementada; revisão visual pendente                                                              |
-| T11    | Pré-visualizar conteúdo como aluna e publicar/despublicar com estados claros. Publicação deve respeitar os dados obrigatórios de cada tipo de bloco.                                                                 | Implementada; revisão visual pendente                                                              |
-| T12    | Salvar conclusão e progresso por aluna, trilha e aula. Retomar do ponto certo e atualizar as contagens usadas pelas telas antigas.                                                                                   | Concluída                                                                                          |
-| T13    | Aplicar o desbloqueio em sequência entre as etapas do Método SLL e explicar com clareza qual etapa falta concluir.                                                                                                   | Concluída                                                                                          |
-| T14    | Criar o visualizador reutilizável de aulas conforme a captura: player, lista lateral do grupo, aula atual, anterior/próxima e conclusão real. No celular, reorganizar a lista sem escondê-la.                        | Implementada; revisão visual pendente                                                              |
-| T15    | Reconstruir “Comece aqui” com as seis aulas, mensagem de abertura, lista/progresso e caminho para a Etapa 1 ao concluir.                                                                                             | Conteúdo inicial publicado; vídeos em branco até definição da hospedagem                           |
-| T16    | Reconstruir a página do Método SLL e Etapa 1: três etapas no resumo, ferramentas e os quatro passos com as 15 aulas inventariadas. Ligar cada aula ao visualizador.                                                  | Conteúdo inicial publicado; vídeos em branco até definição da hospedagem                           |
-| T17    | Reconstruir Etapa 2: seis prioridades em grupos expansíveis, sete ações complementares separadas e links para aulas completas. Só as seis prioridades contam no progresso.                                           | Conteúdo inicial publicado; vídeos em branco até definição da hospedagem                           |
-| T18    | Reconstruir Etapa 3: busca, oito categorias, 19 aulas inventariadas e materiais associados, mantendo o acesso condicionado à conclusão da etapa anterior.                                                            | Estrutura e aulas publicadas; migração de arquivos originais pendente                              |
-| T19    | Administrar cursos complementares: criar, editar e excluir cursos, aulas, textos, links, vídeos, arquivos e imagens; ordenar itens e definir publicação.                                                             | Implementada                                                                                       |
-| T20    | Reconstruir a biblioteca de cursos complementares Shopee e suas páginas de aula com a mesma navegação do antigo e o visualizador comum.                                                                              | Implementada; vídeos e capas aguardam migração                                                     |
-| T21    | Editar no admin os banners do painel: imagem, chamada, texto, destino e ordem; mostrar o carrossel real para a aluna.                                                                                                | Implementada; imagens originais pendentes                                                          |
-| T22    | Reconstruir Recursos/Ferramentas com os materiais conferidos. Deixar itens sem fórmula, arquivo ou destino validado como indisponíveis/em breve, sem simular funcionamento.                                          | Implementada                                                                                       |
-| T23    | Integrar “Minhas Lojas” aos dados reais disponíveis da Shopee. Status e lojas vêm do backend. Se a conexão depender de credenciais ou API ausente, registrar a dependência e mostrar “em breve”, sem botão fictício. | Implementada; depende da integração Shopee                                                         |
-| T24    | Permitir ao admin liberar ou remover SLL e Loja Pronta separadamente, com motivo registrado. Uma conta pode ter um produto ou os dois; remover um não remove o outro.                                                | Concluída                                                                                          |
-| T25    | Conferir a integração de compra e reembolso da Hotmart para os dois produtos. Compra libera somente o produto comprado; reembolso remove somente aquele acesso; eventos repetidos não duplicam liberações.           | Implementada e testada localmente; ativação real depende dos dados da Hotmart e do envio de email. |
-| T26    | Revisar o percurso completo, acessos duplos, perfil, senha, links, PDFs, navegação das aulas, etapas, temas, celular, teclado, leitor de tela e testes do projeto. Corrigir falhas encontradas.                      | Concluída; aulas ficam em rascunho até receberem vídeos                                            |
+| Tarefa | Objetivo e conclusão esperada                                                                                                                                                                                        | Estado                                                                                                      |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| T01    | Inventariar “Comece aqui” e Etapa 1: sequência, títulos, textos e referências de vídeo.                                                                                                                              | Concluída                                                                                                   |
+| T02    | Inventariar Etapas 2 e 3: dias, ações, aulas, categorias, busca e materiais.                                                                                                                                         | Concluída                                                                                                   |
+| T03    | Inventariar cursos complementares, banners e destinos visíveis.                                                                                                                                                      | Concluída                                                                                                   |
+| T04    | Proteger as rotas e ações de administração com verificação de permissão no servidor.                                                                                                                                 | Concluída                                                                                                   |
+| T05    | Criar a estrutura de dados para trilhas, etapas, módulos, aulas e blocos ordenados.                                                                                                                                  | Concluída                                                                                                   |
+| T06    | Importar o conteúdo piloto documentado sem criar textos ou materiais fictícios.                                                                                                                                      | Concluída                                                                                                   |
+| T07    | Mostrar no admin a hierarquia existente e uma prévia de cada aula.                                                                                                                                                   | Concluída                                                                                                   |
+| T08    | Editar título, descrição, textos e links de uma aula; adicionar textos e links e salvar com validação no servidor.                                                                                                   | Implementada; revisão visual pendente                                                                       |
+| T09    | Editar e incluir vídeo, imagem e arquivo em aulas. Respeitar os provedores e o bucket existentes; mostrar erros reais de envio.                                                                                      | Implementada; revisão visual pendente                                                                       |
+| T10    | Criar, editar, excluir com confirmação recuperável e reordenar trilhas, etapas, módulos e aulas. Preservar vínculos e materiais válidos.                                                                             | Implementada; revisão visual pendente                                                                       |
+| T11    | Pré-visualizar conteúdo como aluna e publicar/despublicar com estados claros. Publicação deve respeitar os dados obrigatórios de cada tipo de bloco.                                                                 | Concluída                                                                                                   |
+| T12    | Salvar conclusão e progresso por aluna, trilha e aula. Retomar do ponto certo e atualizar as contagens usadas pelas telas antigas.                                                                                   | Concluída                                                                                                   |
+| T13    | Aplicar o desbloqueio em sequência entre as etapas do Método SLL e explicar com clareza qual etapa falta concluir.                                                                                                   | Concluída                                                                                                   |
+| T14    | Criar o visualizador reutilizável de aulas conforme a captura: player, lista lateral do grupo, aula atual, anterior/próxima e conclusão real. No celular, reorganizar a lista sem escondê-la.                        | Implementada; revisão visual pendente                                                                       |
+| T15    | Reconstruir “Comece aqui” com as seis aulas, mensagem de abertura, lista/progresso e caminho para a Etapa 1 ao concluir.                                                                                             | Etapa 04: interface validada localmente; seis aulas importadas como rascunho; publicação e vídeos pendentes |
+| T16    | Reconstruir a página do Método SLL e Etapa 1: três etapas no resumo, ferramentas e os quatro passos com as 15 aulas inventariadas. Ligar cada aula ao visualizador.                                                  | Conteúdo inicial publicado; vídeos em branco até definição da hospedagem                                    |
+| T17    | Reconstruir Etapa 2: seis prioridades em grupos expansíveis, sete ações complementares separadas e links para aulas completas. Só as seis prioridades contam no progresso.                                           | Conteúdo inicial publicado; vídeos em branco até definição da hospedagem                                    |
+| T18    | Reconstruir Etapa 3: busca, oito categorias, 19 aulas inventariadas e materiais associados, mantendo o acesso condicionado à conclusão da etapa anterior.                                                            | Estrutura e aulas publicadas; migração de arquivos originais pendente                                       |
+| T19    | Administrar cursos complementares: criar, editar e excluir cursos, aulas, textos, links, vídeos, arquivos e imagens; ordenar itens e definir publicação.                                                             | Implementada                                                                                                |
+| T20    | Reconstruir a biblioteca de cursos complementares Shopee e suas páginas de aula com a mesma navegação do antigo e o visualizador comum.                                                                              | Implementada; vídeos e capas aguardam migração                                                              |
+| T21    | Editar no admin os banners do painel: imagem, chamada, texto, destino e ordem; mostrar o carrossel real para a aluna.                                                                                                | Implementada; imagens originais pendentes                                                                   |
+| T22    | Reconstruir Recursos/Ferramentas com os materiais conferidos. Deixar itens sem fórmula, arquivo ou destino validado como indisponíveis/em breve, sem simular funcionamento.                                          | Implementada                                                                                                |
+| T23    | Integrar “Minhas Lojas” aos dados reais disponíveis da Shopee. Status e lojas vêm do backend. Se a conexão depender de credenciais ou API ausente, registrar a dependência e mostrar “em breve”, sem botão fictício. | Implementada; depende da integração Shopee                                                                  |
+| T24    | Permitir ao admin liberar ou remover SLL e Loja Pronta separadamente, com motivo registrado. Uma conta pode ter um produto ou os dois; remover um não remove o outro.                                                | Concluída                                                                                                   |
+| T25    | Conferir a integração de compra e reembolso da Hotmart para os dois produtos. Compra libera somente o produto comprado; reembolso remove somente aquele acesso; eventos repetidos não duplicam liberações.           | Implementada e testada localmente; ativação real depende dos dados da Hotmart e do envio de email.          |
+| T26    | Revisar o percurso completo, acessos duplos, perfil, senha, links, PDFs, navegação das aulas, etapas, temas, celular, teclado, leitor de tela e testes do projeto. Corrigir falhas encontradas.                      | Concluída; aulas ficam em rascunho até receberem vídeos                                                     |
 
 ## Metas de revisão do editor e da área Aprender
 
@@ -146,15 +146,31 @@ novo site já atende a elas. Preservar o fluxo da aluna do site antigo e o visua
       uma ferramenta a aulas específicas quando fizer sentido, sem transformar toda ferramenta em
       anexo. Destino inválido ou ausente aparece como “Em breve”; não implementar a calculadora sem
       fórmula validada.
-- [ ] **R09 — Conferência final:** comparar cada caminho da aluna com o antigo e os inventários,
-      sem copiar bugs nem promoções indevidas. Validar admin e aluna em computador/celular, temas
-      claro/escuro, teclado, leitor de tela, typecheck, lint e testes.
+- [x] **R09 — Conferência final com limitações documentadas:** comparar cada caminho da aluna
+      com o antigo e os inventários, sem copiar bugs nem promoções indevidas. A revisão local
+      validou os caminhos da aluna em computador/celular simulados, temas claro/escuro, teclado,
+      typecheck, lint e testes; as limitações de leitor de tela manual, admin completo,
+      integrações e conteúdo real estão registradas em [SLL-T18-REVISAO.md](SLL-T18-REVISAO.md).
 
 **Revisão de 6 de outubro:** R00 e R02–R08 implementadas. R01 está parcial: a prévia reage às
 alterações e fica ao lado no computador; algumas telas do admin empilham editor e prévia no celular,
-em vez de oferecer a troca por abas prevista. R09 ainda exige conferência de acessibilidade completa
+em vez de oferecer a troca por abas prevista. Naquela data, R09 ainda exigia conferência de acessibilidade completa
 e comparação final de todos os caminhos. Typecheck, lint, testes e compilação passaram; as principais
 telas foram abertas em computador e celular, sem rolagem horizontal nas telas móveis verificadas.
+
+## Conferência da Etapa 18 — 7 de outubro de 2026
+
+O R09 foi conferido no checkout local e está registrado em
+[SLL-T18-REVISAO.md](SLL-T18-REVISAO.md). A revisão cobriu a experiência publicada da aluna,
+navegação, progresso, desbloqueios, recursos, cursos, Minhas Lojas, temas, teclado, estados
+indisponíveis e compatibilidade nas larguras disponíveis. `bun run typecheck`, `bun run lint`,
+`bun test src` e `git diff --check` passaram; os roteiros Playwright exercitados também passaram
+após repetição sequencial sem a colisão de artefatos de trace.
+
+O resultado não declara produção, integrações externas, reprodução de vídeos, downloads reais,
+publicação de banners/capas ou sessão manual com leitor de tela. Essas limitações e as
+pré-condições incompatíveis dos testes isolados estão separadas no registro da etapa. A Etapa 19
+não foi iniciada.
 
 ## Revisão visual
 
@@ -168,3 +184,129 @@ manuais pendentes ao chegar no limite informado.
 Use o identificador da tabela e execute apenas essa tarefa. Exemplo: “Execute somente a T14 do plano
 SLL”. Cada entrega deve informar o que mudou, como foi verificada, o que ainda depende de material
 ou integração externa e parar ao terminar.
+
+## Conferência da Etapa 04 — Comece aqui
+
+Execução em 6 de outubro de 2026 conforme a Etapa 4 do arquivo
+`SLL PROMPT DETALHADO - LUNA HIGH.txt`. Estado: **parcial**, com o código preparado para revisão
+e o conteúdo real ainda em rascunho. A fonte de conteúdo é o inventário T01; esta execução não
+confere novamente a conta da referência nem presume aprovação formal de etapas anteriores.
+
+### A. Identificação
+
+Etapa autorizada: **04 — Comece aqui**, entrega local. Interface e fluxo prontos para revisão;
+etapa **parcial** devido à publicação real pendente. A Etapa 02 consta como entregue para
+revisão; a Etapa 03 está em execução em outra conversa. Não foi presumida aprovação formal.
+
+### B. Resultado e limites
+
+- Reutilizados `SllShell`, `SllAreaShell`, `SllLessonViewer`, `Button`, `LiveRegion`,
+  `SllProgress`, `panelCard`, tokens e persistência existentes. Nenhuma outra moldura foi criada.
+- Os links de boas-vindas, inclusive os do painel, conservam a aula no endereço de Comece aqui.
+  A rota antiga de aula redireciona para a mesma aula; o login conserva o destino escolhido.
+- Conclusão e desmarcação são salvas por sessão/aluna e UUID da aula. A conclusão aparece por
+  texto e na lista. Trocar de aula não reaproveita o estado da anterior. O avanço é explícito.
+- O caminho para o Método fica junto das ações somente quando a trilha está concluída e há
+  Método publicado. O vídeo ausente usa aviso compacto, também quando não há bloco de vídeo.
+- Falha de gravação apresenta mensagem e conserva a conclusão anterior. A guarda de acesso
+  continua no servidor; redirecionamentos não são transformados em sucesso ou erro de banco.
+- O importador existente criou as seis aulas confirmadas como **rascunho**, sem sobrescrever
+  edições. Não foram publicados rascunhos reais nem alteradas conclusões de contas existentes.
+- A base real contém o Método em rascunho; os dois IDs do Passo 1 estão registrados e os demais
+  vídeos continuam sem identificador. A apresentação “Vídeo confirmado” sem host foi conferida;
+  reprodução, hospedagem e posição de um vídeo real não foram validadas.
+- Há trabalho simultâneo da Etapa 03 em `scripts/importar-etapa3-sll.ts`,
+  `src/features/sll/source-numbers.ts` e seu teste. Essas alterações foram preservadas e não
+  integram o escopo desta entrega.
+
+Arquivos desta etapa: as páginas `src/app/(member)/sll/page.tsx`,
+`src/app/(member)/sll/comece-aqui/page.tsx` e `src/app/(member)/sll/aula/[lessonId]/page.tsx`;
+`src/features/sll/components/sll-lesson-viewer.tsx`;
+`src/features/sll/server/lesson-viewer.ts` e `progress-actions.ts`;
+`src/features/sll/lesson-navigation.ts` e seu teste; `e2e/sll-welcome.spec.ts`;
+`playwright.sll-welcome.config.ts`; este registro e `docs/DESIGN.md`. O schema e os IDs existentes
+não foram alterados. O importador de boas-vindas foi reutilizado sem modificação.
+
+### C. Evidências e roteiro
+
+A conferência usa `playwright.sll-welcome.config.ts` e `e2e/sll-welcome.spec.ts`, com duas contas
+temporárias `e2e-welcome-…@teste.com` na base **localhost:5433/lojaprontaprime**. A configuração
+não executa o setup global que envia imagens ao bucket. Não há chamada paga nem escrita em
+serviço externo. As contas, trilhas, aulas e mecanismo de falha temporários são removidos ao
+terminar. O catálogo real continua em rascunho.
+
+As imagens em `.data/sll-stage04-screens/welcome-<largura>-<tema>.png` são capturas da aplicação
+real em `http://localhost:3001`, com catálogo temporário de teste contendo os títulos confirmados
+do T01. Elas não comprovam publicação do conteúdo real. São viewports simuladas, sem teste em
+aparelho físico. O player permanece indisponível.
+
+Rotas do roteiro: `/sll/comece-aqui`, `/sll/comece-aqui?aula=<UUID>` e a rota antiga
+`/sll/aula/<UUID>`. A sequência confere primeira, intermediária, última, ausência de vídeo,
+recarga, Voltar, rascunho pela URL, salvamento, desmarcação, isolamento e navegação por teclado.
+O caminho para `/sll/metodo` é oferecido apenas com o catálogo temporário publicado.
+
+Capturas adicionais: `welcome-completed-1440-light.png` (uma aula concluída),
+`welcome-track-completed-1440-light.png` (seis aulas e ação para o Método),
+`welcome-390-more-contrast-light.png`, `welcome-390-more-contrast-dark.png`,
+`welcome-390-forced-colors.png` e `welcome-unpublished-390-light.png` (estado que corresponde
+ao catálogo real sem publicação). Somente o indicador de desenvolvimento do Next é ocultado
+nas capturas; os componentes da aplicação permanecem visíveis.
+
+### D. Verificações
+
+| Verificação                      | Escopo                                                                   | Resultado                    | Evidência ou limitação                                                                                                                                |
+| -------------------------------- | ------------------------------------------------------------------------ | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Typecheck                        | Workspace atual                                                          | Aprovado                     | `bun run typecheck`                                                                                                                                   |
+| Lint                             | Workspace atual                                                          | Aprovado                     | `bun run lint`                                                                                                                                        |
+| Testes unitários                 | `src`                                                                    | Aprovado                     | 231 testes, 39 arquivos; inclui alterações simultâneas da Etapa 03                                                                                    |
+| Design-guard                     | Tokens, fontes e cores                                                   | Aprovado                     | Incluído em `bun test src`; teste não alterado                                                                                                        |
+| Diferenças                       | Escopo e espaços                                                         | Aprovado                     | `git diff --check`; trabalho da Etapa 03 identificado separadamente                                                                                   |
+| Navegador                        | Trilha, acesso direto, recarga, Voltar, estado indisponível e Método     | Aprovado                     | 6 cenários Playwright, 1,1 minuto, servidor local 3001                                                                                                |
+| Persistência e isolamento        | Duas contas temporárias                                                  | Aprovado                     | Conclusão/desmarcação após recarga; progresso de uma conta não aparece na outra; unicidade da gravação                                                |
+| Falha e recuperação              | Aula em rascunho e falha real de banco                                   | Aprovado                     | Guarda recusa envio adulterado; falha de escrita conserva dados e permite repetir                                                                     |
+| Sem JavaScript                   | Conclusão e navegação                                                    | Aprovado                     | Contexto com JavaScript desligado; formulário real e recarga                                                                                          |
+| Responsividade e axe             | 320, 390, 768, 1024, 1280 e 1440px; claro e escuro                       | Aprovado                     | 12 combinações; sem rolagem horizontal; lista ao lado a partir de 1280px                                                                              |
+| Preferências                     | Grande/Maior e Mais contraste nos dois temas, em 390px                   | Aprovado                     | Axe e ausência de rolagem horizontal; capturas de contraste aumentado                                                                                 |
+| Teclado                          | Navegar por Enter, foco de chegada, abrir menu, Escape e retorno de foco | Aprovado                     | Menu modal auditado pelo axe antes da simulação de forced-colors                                                                                      |
+| Alto contraste e menos movimento | Emulação Chromium, 390px                                                 | Aprovado no escopo conferido | Captura inspecionada; no forced-colors o axe lê cores originais do tema, então contraste é conferido visualmente e as demais regras permanecem ativas |
+| Console                          | Sequência principal                                                      | Aprovado                     | Nenhum `pageerror`; a falha de banco provocada no cenário próprio é esperada                                                                          |
+| Limpeza da conferência           | Contas, conteúdo e função de falha temporários                           | Aprovado                     | Removidos ao terminar; seis aulas reais continuam em rascunho                                                                                         |
+| Vídeo real                       | Reprodução e posição                                                     | Bloqueado                    | IDs do Passo 1 confirmados no inventário; host do player e reprodução ainda não validados                                                             |
+| Leitor de tela manual            | NVDA ou equivalente                                                      | Não executado                | Axe e teclado não substituem a leitura manual                                                                                                         |
+| Build de produção                | `.next` compartilhado                                                    | Não executado                | Servidor de outro trabalho utiliza esse diretório; verificação não exigida pelo AGENTS.md                                                             |
+| Conta da referência              | Inspeção atual                                                           | Não executado                | Aba pertence à outra conversa; títulos e ordem vieram do inventário T01 local                                                                         |
+
+### E. Rastreabilidade
+
+As anotações originais não têm IDs individuais publicados no repositório. O registro existente
+R06 é preservado; os números 4.x abaixo são requisitos da etapa, não IDs antigos inventados.
+
+| Registro      | Origem                                     | Classificação            | Estado e evidência                                                                                         |
+| ------------- | ------------------------------------------ | ------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| R06 / 4.3–4.5 | Plano existente e Etapa 4                  | Mudança desejada         | Visualizador comum, sequência lateral a partir de 1280px e sequência abaixo no celular; conferir capturas. |
+| 4.1–4.2       | Inventário T01                             | Confirmado no inventário | Seis títulos e ordem importados; publicação real pendente.                                                 |
+| 4.6–4.7       | Etapa 4 e anotação sobre destinos internos | Mudança desejada         | Links mantêm a trilha, recarga e Voltar; roteiro de navegação.                                             |
+| 4.8           | Etapa 4                                    | Dependência de conteúdo  | Aviso compacto implementado; reprodução de vídeo real não validada.                                        |
+| 4.9–4.11      | Etapa 4 e anotação sobre aula concluída    | Mudança desejada         | Persistência, anúncio, isolamento e desmarcação pelo fluxo existente; roteiro funcional.                   |
+| 4.12          | Anotação sobre rolagem desnecessária       | Mudança desejada         | Caminho para o Método junto das ações, sem diminuir fonte ou ocultar lista.                                |
+| 4.13          | Etapa 4                                    | Verificação requerida    | Roteiro inclui falha real de escrita, aula em rascunho e formulário sem JavaScript.                        |
+
+### F. Pendências
+
+1. **Conteúdo/publicação:** a administradora precisa revisar e publicar a trilha, seus grupos e
+   aulas pelo fluxo existente. A execução não troca o rascunho real por conteúdo de teste.
+2. **Integração externa:** falta a disponibilidade real dos seis vídeos e a hospedagem definida.
+3. **Decisão comercial:** nenhuma decisão nova necessária nesta etapa.
+4. **Decisão de design:** nenhuma mudança adicional proposta; confirmar o resultado dentro da
+   moldura existente. Não foi atribuída aprovação do dono por ausência de resposta.
+5. **Ambiente:** servidor existente em 3001 reaproveitado; o servidor de 3000 já estava em uso.
+   Nenhum dos servidores de outro trabalho foi encerrado.
+6. **Verificação adicional:** leitor de tela manual e reprodução de vídeo não executados. A
+   compilação de produção não foi executada sobre o `.next` usado pelo servidor de outro trabalho.
+
+### G. Revisão
+
+Conferir os títulos, seleção da aula, progresso, aviso de vídeo, conclusão e disposição móvel
+nas capturas e o catálogo importado em rascunho no admin. A próxima etapa obrigatória descrita no
+prompt é a **Etapa 05**; ela não foi iniciada. A Etapa 04 aguarda revisão, sem declarar o conteúdo
+real publicado ou os vídeos operacionais.

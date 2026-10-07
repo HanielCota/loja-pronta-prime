@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { getSessionState, needsFirstPassword } from '@/features/auth/server/session';
 import { hasAdminRole } from '@/features/admin/access';
+import { validateDownloadFile } from '@/features/admin/media-validation';
 import { getStudentProducts } from '@/features/products/server/access';
 import { getStageLockMessage } from '@/features/sll/server/stage-lock';
 import { db } from '@/server/db';
@@ -79,9 +80,15 @@ export async function GET(_request: Request, context: RouteContext) {
     return new Response(null, { status: 404, headers: { 'Cache-Control': 'no-store' } });
 
   const data = block.data as Record<string, unknown>;
-  if (typeof data.storageKey !== 'string') return new Response(null, { status: 404 });
-  const bytes = await storage().get(data.storageKey);
-  if (!bytes) return new Response(null, { status: 404 });
+  if (typeof data.storageKey !== 'string' || !data.storageKey.startsWith('sll/learning-content/'))
+    return new Response(null, { status: 404, headers: { 'Cache-Control': 'no-store' } });
+  let bytes: Uint8Array | null;
+  try {
+    bytes = await storage().get(data.storageKey);
+  } catch {
+    return new Response(null, { status: 503, headers: { 'Cache-Control': 'no-store' } });
+  }
+  if (!bytes) return new Response(null, { status: 404, headers: { 'Cache-Control': 'no-store' } });
 
   if (block.kind === 'image') {
     return new Response(bytes.buffer as ArrayBuffer, {
@@ -99,6 +106,15 @@ export async function GET(_request: Request, context: RouteContext) {
   const fileName = typeof data.fileName === 'string' ? data.fileName : 'material';
   const contentType =
     typeof data.contentType === 'string' ? data.contentType : 'application/octet-stream';
+  const expectedSize = typeof data.size === 'number' ? data.size : 0;
+  const validated = validateDownloadFile(fileName, bytes);
+  if (
+    !expectedSize ||
+    bytes.byteLength !== expectedSize ||
+    !validated ||
+    validated.contentType !== contentType
+  )
+    return new Response(null, { status: 404, headers: { 'Cache-Control': 'no-store' } });
   return new Response(bytes.buffer as ArrayBuffer, {
     headers: {
       'Content-Type': contentType,

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { LiveRegion } from '@/components/ui/live-region';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 import {
   archiveLearningNode,
   moveLearningNode,
@@ -371,8 +372,16 @@ export function LearningNodeControls({
   // A lista devolve o foco a este botão ao fechar o formulário (Salvar, Cancelar, Voltar).
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState<{ text: string; error: boolean }>({
+    text: '',
+    error: false,
+  });
   const published = node.status === 'published';
+
+  function showResult(result: { message: string; saved: boolean }) {
+    setMessage({ text: result.message, error: !result.saved });
+    if (result.saved) router.refresh();
+  }
 
   function run(
     action: typeof archiveLearningNode | typeof moveLearningNode,
@@ -383,8 +392,7 @@ export function LearningNodeControls({
     if (trackKind) data.set('trackKind', trackKind);
     startTransition(async () => {
       const result = await action(data);
-      setMessage(result.message);
-      if (result.saved) router.refresh();
+      showResult(result);
     });
   }
 
@@ -406,8 +414,7 @@ export function LearningNodeControls({
         published && node.hasDraft
           ? await publishNodeDraft(data)
           : await setLearningNodePublication(data);
-      setMessage(result.message);
-      if (result.saved) router.refresh();
+      showResult(result);
     });
   }
 
@@ -423,8 +430,7 @@ export function LearningNodeControls({
     data.set('nodeId', node.id);
     startTransition(async () => {
       const result = await discardNodeDraft(data);
-      setMessage(result.message);
-      if (result.saved) router.refresh();
+      showResult(result);
     });
   }
 
@@ -435,8 +441,7 @@ export function LearningNodeControls({
     data.set('nodeId', node.id);
     startTransition(async () => {
       const result = await restorePreviousNodeVersion(data);
-      setMessage(result.message);
-      if (result.saved) router.refresh();
+      showResult(result);
     });
   }
 
@@ -445,8 +450,7 @@ export function LearningNodeControls({
     data.set('nodeId', node.id);
     startTransition(async () => {
       const result = await setFeaturedCourse(data);
-      setMessage(result.message);
-      if (result.saved) router.refresh();
+      showResult(result);
     });
   }
 
@@ -577,9 +581,19 @@ export function LearningNodeControls({
           ) : null}
         </div>
       </details>
-      {message ? <span className="text-body text-muted-foreground">{message}</span> : null}
+      {message.text ? (
+        <span
+          className={cn(
+            'text-body',
+            message.error ? 'text-destructive' : 'text-muted-foreground',
+          )}
+          role={message.error ? 'alert' : undefined}
+        >
+          {message.text}
+        </span>
+      ) : null}
       {/* Sempre presente: regiões criadas junto com o texto costumam não ser anunciadas. */}
-      <LiveRegion>{message}</LiveRegion>
+      <LiveRegion>{message.text}</LiveRegion>
     </div>
   );
 }

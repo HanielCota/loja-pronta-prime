@@ -33,7 +33,8 @@ export function validateDownloadFile(fileName: string, bytes: Uint8Array) {
   } else {
     try {
       const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
-      if (text.includes('\0')) return null;
+      // Uma página HTML de erro pode responder 200 e parecer um TXT/CSV para o navegador.
+      if (text.includes('\0') || /^\s*(?:<!doctype\s+html|<html\b)/i.test(text)) return null;
     } catch {
       return null;
     }

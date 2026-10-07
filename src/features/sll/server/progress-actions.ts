@@ -2,6 +2,7 @@
 
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { redirect, unstable_rethrow } from 'next/navigation';
 import { requireProductAction } from '@/features/products/server/access';
 import { db } from '@/server/db';
 import { learningLessonProgress, learningLessons, learningTrackProgress } from '@/server/db/schema';
@@ -146,6 +147,15 @@ export async function setSllLessonCompletion(
   if (lockMessage) return { saved: false, message: lockMessage };
 
   const now = new Date();
+  const existingProgress = await db.query.learningLessonProgress.findFirst({
+    columns: { completedAt: true },
+    where: and(
+      eq(learningLessonProgress.userId, userId),
+      eq(learningLessonProgress.lessonId, location.lessonId),
+    ),
+  });
+  const wasCompleted =
+    existingProgress?.completedAt !== null && existingProgress?.completedAt !== undefined;
   if (!completed) {
     // Só o Método tranca etapas: nas outras trilhas, desfazer nunca fecha nada.
     const before =
@@ -161,6 +171,8 @@ export async function setSllLessonCompletion(
       );
     const after = before ? await getTrackStageAccess(userId, location.trackId) : null;
     revalidatePath('/sll');
+    revalidatePath('/sll/metodo');
+    revalidatePath(`/sll/metodo/etapa/${lesson.stageId}`);
     return {
       saved: true,
       message: undoCompletionMessage(before?.stages ?? [], after?.stages ?? []),
@@ -201,12 +213,35 @@ export async function setSllLessonCompletion(
       });
   });
   revalidatePath('/sll');
+  revalidatePath('/sll/metodo');
+  revalidatePath(`/sll/metodo/etapa/${lesson.stageId}`);
+
+  if (!wasCompleted && lesson.trackKind === 'method') {
+    const access = await getTrackStageAccess(userId, location.trackId);
+    const currentStageIndex =
+      access?.stages.findIndex((stage) => stage.stageId === lesson.stageId) ?? -1;
+    const currentStage = currentStageIndex >= 0 ? access?.stages[currentStageIndex] : undefined;
+    const nextStage = currentStageIndex >= 0 ? access?.stages[currentStageIndex + 1] : undefined;
+    if (currentStage?.isComplete) {
+      if (nextStage?.isUnlocked && nextStage.totalCount > 0) {
+        revalidatePath(`/sll/metodo/etapa/${nextStage.stageId}`);
+        redirect(`/sll/metodo/etapa/${nextStage.stageId}`);
+      }
+      return {
+        saved: true,
+        message:
+          'A aula foi marcada como concluída. A etapa foi concluída. A próxima etapa ainda está em preparação.',
+        completed: true,
+      };
+    }
+  }
+
   return { saved: true, message: 'A aula foi marcada como concluída.', completed: true };
 }
 
 /** Define se a aula está concluída e informa o resultado à aluna. */
 export async function setSllLessonCompletionForm(
-  _previous: SllProgressActionResult,
+  previous: SllProgressActionResult,
   formData: FormData,
 ): Promise<SllProgressActionResult> {
   const trackId = formData.get('trackId');
@@ -219,5 +254,23 @@ export async function setSllLessonCompletionForm(
   ) {
     return { saved: false, message: 'Não foi possível identificar esta aula.' };
   }
-  return setSllLessonCompletion(trackId, lessonId, completedValue === 'true');
+  try {
+    const result = await setSllLessonCompletion(trackId, lessonId, completedValue === 'true');
+    // Uma falha não deve apagar a conclusão que já estava visível antes do envio.
+    return result.saved
+      ? result
+      : {
+          ...result,
+          ...(previous.completed !== undefined ? { completed: previous.completed } : {}),
+        };
+  } catch (error) {
+    // Redirecionamentos de acesso continuam valendo; só falhas operacionais viram mensagem.
+    unstable_rethrow(error);
+    console.error('[sll] falha ao salvar conclusão');
+    return {
+      saved: false,
+      message: 'Não foi possível salvar a conclusão. Tente novamente.',
+      ...(previous.completed !== undefined ? { completed: previous.completed } : {}),
+    };
+  }
 }

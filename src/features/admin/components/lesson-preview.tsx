@@ -19,6 +19,7 @@ export function LessonPreview({
     description: string | null;
     durationMinutes: number | null;
     status: 'draft' | 'published';
+    hasDraft: boolean;
     module: {
       title: string;
       stage: { title: string; track: { title: string } };
@@ -27,6 +28,7 @@ export function LessonPreview({
         title: string;
         number: number;
         status: 'draft' | 'published';
+        hasDraft: boolean;
         current: boolean;
       }>;
     };
@@ -47,13 +49,7 @@ export function LessonPreview({
             {lesson.module.stage.track.title} · {lesson.module.stage.title} · {lesson.module.title}
           </p>
           {lesson.blocks.some((block) => block.kind === 'video') ? (
-            <div className="mt-5 flex min-h-56 flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-muted p-5 text-center sm:min-h-72 forced-colors:border forced-colors:border-[CanvasText]">
-              <Film aria-hidden="true" className="size-8 text-muted-foreground" />
-              <p className="text-body font-semibold text-foreground">Prévia do vídeo</p>
-              <p className="max-w-[55ch] text-base text-muted-foreground">
-                O vídeo desta aula ainda não está disponível.
-              </p>
-            </div>
+            <VideoPreview block={lesson.blocks.find((block) => block.kind === 'video')!} />
           ) : null}
           <p className="mt-5 text-base text-muted-foreground">
             Aula {lesson.module.lessons.find((item) => item.current)?.number} de{' '}
@@ -66,7 +62,12 @@ export function LessonPreview({
             {lesson.title}
           </h2>
           <p className="mt-2 text-base text-muted-foreground">
-            Prévia como aluna · {lesson.status === 'published' ? 'Publicado' : 'Rascunho'}
+            Prévia como aluna ·{' '}
+            {lesson.status === 'published'
+              ? lesson.hasDraft
+                ? 'Publicado · alterações em rascunho'
+                : 'Publicado'
+              : 'Rascunho'}
             {lesson.durationMinutes ? ` · ${lesson.durationMinutes} min` : ''}
           </p>
           {lesson.description ? (
@@ -114,11 +115,12 @@ export function LessonPreview({
                     <a
                       className="inline-flex min-h-11 items-center gap-2 text-body font-medium text-link underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                       href={block.data.url}
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       target="_blank"
                     >
                       <ExternalLink aria-hidden="true" className="size-5" />
                       {block.data.label || block.data.url}
+                      <span className="sr-only"> (abre em outra aba)</span>
                     </a>
                     {block.data.note ? (
                       <p className="text-body whitespace-pre-wrap text-foreground">
@@ -201,7 +203,9 @@ export function LessonPreview({
                   </span>
                   <span className="min-w-0 flex-1">{item.title}</span>
                   {item.status === 'draft' ? (
-                    <span className="shrink-0 text-muted-foreground">Prévia</span>
+                    <span className="shrink-0 text-muted-foreground">Rascunho</span>
+                  ) : item.hasDraft ? (
+                    <span className="shrink-0 text-muted-foreground">Alterações em rascunho</span>
                   ) : null}
                 </Link>
               </li>
@@ -210,5 +214,42 @@ export function LessonPreview({
         </aside>
       </div>
     </div>
+  );
+}
+
+function VideoPreview({ block }: { block: PreviewBlock }) {
+  const embedUrl = block.data.embedUrl;
+  const hasConfirmedVideo = Boolean(block.data.videoId);
+
+  return embedUrl ? (
+    <section className="mt-5 flex flex-col gap-3" aria-label="Vídeo da aula">
+      <div className="relative aspect-video overflow-hidden rounded-card border border-border bg-muted forced-colors:border forced-colors:border-[CanvasText]">
+        <iframe
+          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+          allowFullScreen
+          className="absolute inset-0 size-full border-0"
+          sandbox="allow-forms allow-presentation allow-scripts"
+          src={embedUrl}
+          title="Vídeo da aula"
+        />
+      </div>
+    </section>
+  ) : (
+    <section
+      className="mt-5 flex min-h-56 items-start gap-3 rounded-card border border-border bg-muted p-5 sm:min-h-72 forced-colors:border forced-colors:border-[CanvasText]"
+      aria-label="Vídeo da aula"
+    >
+      <Film aria-hidden="true" className="mt-1 size-8 shrink-0 text-muted-foreground" />
+      <div className="flex min-w-0 flex-col gap-1">
+        <p className="text-body font-semibold text-foreground">
+          {hasConfirmedVideo ? 'Vídeo confirmado' : 'Vídeo em breve'}
+        </p>
+        <p className="max-w-[55ch] text-base text-muted-foreground">
+          {hasConfirmedVideo
+            ? 'O player aguarda a configuração da hospedagem desta conta.'
+            : 'O vídeo desta aula ainda não está disponível.'}
+        </p>
+      </div>
+    </section>
   );
 }

@@ -67,7 +67,7 @@ O texto completo “Sobre a aula” e, em várias páginas, uma lista de passos 
 
 ### Números de aula e materiais observados nas páginas
 
-Os títulos abaixo são os números exibidos dentro das páginas individuais. O link de cada material estava visível; não fiz download, então a disponibilidade e integridade do arquivo não foram testadas.
+Os títulos abaixo são os números exibidos dentro das páginas individuais. A conferência desta etapa fez uma leitura real de cada destino, além da verificação inicial de cabeçalhos. Os nove destinos responderam `200 text/html; charset=utf-8`, com 26.427 bytes, e o corpo foi a página de login da área antiga — não um PDF, ZIP ou XLSX. Portanto, nenhum deles pode ser tratado como arquivo válido ou migrado para a área nova.
 
 | Número exibido | Aula                                          | Material visível                                                                                                                                                         |
 | -------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -83,12 +83,26 @@ Os títulos abaixo são os números exibidos dentro das páginas individuais. O 
 
 Nas demais páginas individuais não encontrei uma seção “Ativos da aula” com arquivo para baixar. As páginas têm o vídeo incorporado, texto explicativo e, em alguns casos, passos e recursos da aula.
 
+### Resultado da validação de downloads
+
+| Verificação | Resultado |
+| --- | --- |
+| Resposta HTTP dos nove destinos antigos | `200`, mas `Content-Type: text/html; charset=utf-8` |
+| Leitura real do corpo | Página de login da Escala Shop; não começa com `%PDF-` nem com assinatura ZIP |
+| PDF da aula 35 | Indisponível; o destino não entregou PDF |
+| Planilha da aula 40 | Indisponível; o destino não entregou XLSX |
+| Material da aula 33 | Indisponível; o destino não entregou ZIP |
+| Blocos `file` atualmente publicados na Prime | Nenhum; nenhum botão de download falso foi criado |
+| Dependência para concluir a migração | Arquivos originais válidos ou acesso autorizado à origem, mais bucket S3 configurado |
+
+Na Prime, as aulas que têm material confirmado no inventário exibem o nome e o formato esperado como indisponíveis, sem link acionável. A validação do servidor também recusa HTML mascarado por extensão de documento e só entrega arquivos publicados quando tamanho, assinatura, tipo e permissão conferem.
+
 ### Divergências e pendências registradas
 
 - **“7 dias” versus 6 ações:** o título e a descrição dizem “plano de 7 dias”, mas a tela mostra seis ações, uma por dia, e progresso de 0 a 6. Ações complementares são opcionais e não contam para esse progresso. Não encontrei uma sétima ação principal.
 - **27 versus 19 aulas:** o texto introdutório diz 27; a lista, a contagem abaixo da busca e o progresso dizem 19 aulas em 8 categorias. Não encontrei as outras oito na biblioteca visível.
-- **Aula 35 e PDF:** a página individual de “Chat de Ouro, Avaliações e Reputação” se identifica como Aula 35 e mostra o link para o PDF dos scripts. A anotação antiga relata falha no download; essa falha permanece **não verificada**, pois o arquivo não foi baixado.
-- **Aula 40 e PDF:** a página individual chamada “Desempenho da Conta” se identifica como Aula 40 e mostra uma planilha XLSX, não um PDF. A página de “Decoração da Loja”, cujo card está na categoria Loja, chama-se Aula 42 e mostra um PDF de especificações. A anotação “Aula 40 PDF bugado” não permite saber qual desses materiais pretendia indicar; não atribuir o erro por suposição.
+- **Aula 35 e PDF:** a página individual de “Chat de Ouro, Avaliações e Reputação” se identifica como Aula 35 e mostra o link para o PDF dos scripts. A leitura real do destino entregou a página de login (`text/html`), não o PDF.
+- **Aula 40 e planilha:** a página individual chamada “Desempenho da Conta” se identifica como Aula 40 e mostra uma planilha XLSX, não um PDF. A leitura real do destino entregou a página de login (`text/html`), não o XLSX. A página de “Decoração da Loja”, cujo card está na categoria Loja, chama-se Aula 42 e mostra um PDF de especificações. A anotação “Aula 40 PDF bugado” não permite saber qual desses materiais pretendia indicar; não atribuir o erro por suposição.
 - **Aula 41 — dependência ainda sem causa confirmada:** é confirmado na leitura que a lista e as páginas visíveis passam da Aula 40 para a Aula 42; “Configurações da Loja” aparece com identificador interno de card `aula-msl-41-titulo`, mas sua página individual mostra **Aula 43**. Isso é um indício de numeração interna divergente, não prova de que existia uma Aula 41. A causa (aula não publicada, falha de importação ou erro de numeração) depende da fonte original ou do histórico de importação; não criar uma aula para preencher o número.
 - **Catálogo novo:** gravar o número antigo em campo separado do UUID e da posição de apresentação. A ordem das aulas continua vindo das posições e categorias confirmadas; a lacuna 41 e as demais lacunas da fonte permanecem visíveis.
 - **Navegação das aulas:** nas páginas individuais verificadas, os botões “Aula anterior” e “Próxima aula” aparecem desabilitados, e o texto de próximos passos diz que aquela é a primeira e a última aula. O caminho “Voltar para a Etapa 3” funciona como destino visível, mas não substitui os controles de aula.

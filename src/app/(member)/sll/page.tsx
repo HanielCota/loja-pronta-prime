@@ -8,6 +8,7 @@ import {
 } from '@/features/sll/server/catalog';
 import { requireProduct } from '@/features/products/server/access';
 import { getSllCopy } from '@/features/sll/server/copy';
+import { sllLessonHref } from '@/features/sll/lesson-navigation';
 
 export const metadata: Metadata = {
   title: PRODUCTS['sll'].title,
@@ -24,7 +25,9 @@ export default async function Page() {
       getSllPublishedBanners(),
       getSllCopy(),
     ]);
-  const welcomeHref = welcome?.resumeLessonId ? `/sll/aula/${welcome.resumeLessonId}` : null;
+  const welcomeHref = welcome?.resumeLessonId
+    ? sllLessonHref('welcome', welcome.resumeLessonId)
+    : null;
   const methodHref = method ? '/sll/metodo' : null;
   const coursesHref = courses.length ? '/sll/cursos' : null;
   return (

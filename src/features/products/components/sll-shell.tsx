@@ -50,7 +50,7 @@ export function SllShell({
       <main
         id="sll-content"
         tabIndex={-1}
-        className="grid w-full flex-1 grid-cols-1 items-start gap-6 px-4 pt-6 pb-12 sm:px-6 sm:pt-8 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-x-[clamp(3rem,10vw,12.5rem)] lg:px-8"
+        className="grid w-full flex-1 grid-cols-1 items-start gap-6 px-4 pt-6 pb-12 sm:px-6 sm:pt-8 lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-x-[clamp(3rem,10vw,12.5rem)] lg:px-8"
       >
         <SllNavigation stageLinks={stageLinks} currentSection={currentSection} />
         <div className="flex max-w-[1040px] min-w-0 flex-col gap-8">

@@ -8,6 +8,7 @@ import {
   LayoutDashboardIcon,
   LibraryBigIcon,
   MenuIcon,
+  PlusIcon,
   RouteIcon,
   StoreIcon,
   XIcon,
@@ -121,10 +122,18 @@ function NavigationList({
         <NavLink
           href="/sll/minhas-lojas"
           label="Minhas Lojas"
-          active={pathname.startsWith('/sll/minhas-lojas')}
-          current={pathname.startsWith('/sll/minhas-lojas')}
+          active={pathname === '/sll/minhas-lojas'}
+          current={pathname === '/sll/minhas-lojas'}
           mobile={mobile}
           icon={StoreIcon}
+        />
+        <NavLink
+          href="/sll/minhas-lojas/adicionar"
+          label="Adicionar ou conectar loja"
+          active={pathname === '/sll/minhas-lojas/adicionar'}
+          current={pathname === '/sll/minhas-lojas/adicionar'}
+          mobile={mobile}
+          icon={PlusIcon}
         />
       </NavGroup>
 
@@ -146,7 +155,7 @@ function NavigationList({
           icon={RouteIcon}
         >
           {stageLinks.length ? (
-            <ol className="ml-5 flex flex-col gap-1 border-l border-border pl-2">
+            <ol className="ml-5 flex flex-col gap-2 pl-2">
               {stageLinks.map(({ stage, href, label }) => (
                 <NavLink
                   key={stage}
@@ -209,7 +218,7 @@ function NavGroup({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section aria-label={title} className="flex flex-col gap-2">
       <h2 className="px-3 text-sm font-semibold text-muted-foreground">{title}</h2>
-      <ul className="flex flex-col gap-1">{children}</ul>
+      <ul className="flex flex-col gap-2">{children}</ul>
     </section>
   );
 }
@@ -241,7 +250,7 @@ function NavLink({
       aria-current={current ? currentType : undefined}
       className={cn(
         LINK_CLASS,
-        active && 'bg-primary-soft font-semibold text-link hover:bg-primary-soft',
+        active && 'bg-muted font-semibold text-foreground hover:bg-muted',
         active && 'forced-colors:border forced-colors:border-[Highlight]',
         stage && 'gap-2 pl-2',
       )}

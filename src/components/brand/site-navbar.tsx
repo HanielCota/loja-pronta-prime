@@ -45,7 +45,7 @@ export function SiteNavbar({
           className="-ml-1 flex min-h-11 items-center gap-2 rounded-full py-1 pr-3 pl-1 text-body font-semibold text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid"
         >
           <Image src={mascotStill} alt="" width={32} height={32} className="size-8" />
-          Loja Pronta Prime
+          <span className="max-[360px]:sr-only">Loja Pronta Prime</span>
         </Link>
         {children ? (
           <div

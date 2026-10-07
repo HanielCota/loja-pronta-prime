@@ -90,7 +90,7 @@ export default async function ComplementaryCoursesPage() {
                   {/* Igual aos cartões da lista: sem aula publicada, diz que vem aí em vez de
                     sumir com o botão sem explicar. */}
                   {featured.lessonCount ? (
-                    <Button asChild className="mt-2 sm:w-auto" variant="soft">
+                    <Button asChild className="mt-2 sm:w-auto" variant="default">
                       <Link href={`/sll/cursos/${featured.course.slug}`}>
                         Abrir curso <ArrowRight aria-hidden="true" />
                       </Link>
@@ -151,7 +151,7 @@ export default async function ComplementaryCoursesPage() {
                     </div>
                   ) : null}
                   {lessonCount ? (
-                    <Button asChild variant="soft">
+                    <Button asChild variant="default">
                       <Link href={`/sll/cursos/${course.slug}`}>
                         {completedCount === lessonCount
                           ? 'Revisar curso'

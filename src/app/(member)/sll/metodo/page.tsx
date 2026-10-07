@@ -8,6 +8,7 @@ import { getFirstSllPublishedTrack } from '@/features/sll/server/catalog';
 import { requireProduct } from '@/features/products/server/access';
 import { getSllCopy } from '@/features/sll/server/copy';
 import { SllProgress } from '@/features/sll/components/sll-progress';
+import { getSllStageCardState } from '@/features/sll/stage-card-state';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Método SLL' };
@@ -39,17 +40,30 @@ export default async function MethodPage() {
               {track.stages.map((stage, index) => {
                 const completedCount = stage.access?.completedCount ?? 0;
                 const totalCount = stage.access?.totalCount ?? 0;
-                const unlocked = stage.access?.isUnlocked ?? false;
+                const publishedLessonCount = stage.modules.reduce(
+                  (count, module) => count + module.lessons.length,
+                  0,
+                );
+                const state = getSllStageCardState({
+                  completedCount,
+                  totalCount,
+                  publishedLessonCount,
+                  isComplete: stage.access?.isComplete ?? false,
+                  isUnlocked: stage.access?.isUnlocked ?? false,
+                  lockMessage: stage.access?.lockMessage ?? null,
+                });
                 return (
                   <article className={cn(panelCard, 'gap-3 p-5 sm:p-5')} key={stage.id}>
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-semibold text-link">ETAPA {index + 1}</p>
-                      {stage.access?.isComplete ? (
+                      {state.kind === 'complete' ? (
                         <CircleCheck aria-hidden="true" className="size-6 text-progress-text" />
-                      ) : unlocked ? (
+                      ) : state.kind === 'available' ? (
                         <CirclePlay aria-hidden="true" className="size-6 text-link" />
-                      ) : (
+                      ) : state.kind === 'locked' ? (
                         <LockKeyhole aria-hidden="true" className="size-6 text-muted-foreground" />
+                      ) : (
+                        <BookOpen aria-hidden="true" className="size-6 text-muted-foreground" />
                       )}
                     </div>
                     <h3 className="text-xl leading-snug font-semibold text-balance text-foreground">
@@ -60,25 +74,18 @@ export default async function MethodPage() {
                         {stage.description}
                       </p>
                     ) : null}
-                    <p className="text-sm text-muted-foreground">
-                      {unlocked
-                        ? `${completedCount} de ${totalCount} ações concluídas`
-                        : (stage.access?.lockMessage ??
-                          'Conclua a etapa anterior para abrir esta etapa.')}
-                    </p>
-                    <SllProgress
-                      label={`Progresso da Etapa ${index + 1}`}
-                      completed={completedCount}
-                      total={totalCount}
-                    />
-                    {unlocked ? (
+                    <p className="text-body text-pretty text-muted-foreground">{state.message}</p>
+                    {state.showProgress ? (
+                      <SllProgress
+                        label={`Progresso da Etapa ${index + 1}`}
+                        completed={completedCount}
+                        total={totalCount}
+                      />
+                    ) : null}
+                    {state.actionLabel ? (
                       <Button asChild variant="soft">
                         <Link href={`/sll/metodo/etapa/${stage.id}`}>
-                          {stage.access?.isComplete
-                            ? 'Revisar etapa'
-                            : completedCount
-                              ? 'Continuar etapa'
-                              : 'Começar etapa'}
+                          {state.actionLabel}
                           <ArrowRight aria-hidden="true" />
                         </Link>
                       </Button>
@@ -86,30 +93,34 @@ export default async function MethodPage() {
                   </article>
                 );
               })}
-            </div>
-          </section>
-
-          <section className={cn(panelCard, 'p-5 sm:p-5')} aria-labelledby="method-tools-title">
-            <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex min-w-0 flex-1 items-start gap-3">
-                <BookOpen aria-hidden="true" className="mt-1 size-5 text-link" />
-                <div>
-                  <h2 id="method-tools-title" className="text-body font-semibold text-foreground">
-                    {copy.methodToolsTitle}
-                  </h2>
-                  <p className="mt-1 text-body text-muted-foreground">{copy.methodToolsDetail}</p>
+              <section
+                className={cn(panelCard, 'gap-3 p-5 sm:p-5')}
+                aria-labelledby="method-tools-title"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-link">FERRAMENTAS</p>
+                  <BookOpen aria-hidden="true" className="size-6 text-link" />
                 </div>
-              </div>
-              <Button asChild className="w-full shrink-0 sm:w-auto" variant="soft">
-                <Link href="/sll/recursos">{copy.methodToolsButton}</Link>
-              </Button>
+                <h3
+                  id="method-tools-title"
+                  className="text-xl leading-snug font-semibold text-foreground"
+                >
+                  {copy.methodToolsTitle}
+                </h3>
+                <p className="text-body text-pretty text-muted-foreground">
+                  {copy.methodToolsDetail}
+                </p>
+                <Button asChild className="w-full" variant="soft">
+                  <Link href="/sll/recursos">{copy.methodToolsButton}</Link>
+                </Button>
+              </section>
             </div>
           </section>
         </div>
       ) : (
         <section className={panelCard}>
-          <p className="text-body text-muted-foreground">
-            O conteúdo do método ainda não está disponível.
+          <p className="text-body text-pretty text-muted-foreground">
+            O Método ainda está em preparação. As etapas aparecerão aqui quando forem publicadas.
           </p>
         </section>
       )}

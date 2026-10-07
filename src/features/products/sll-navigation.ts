@@ -19,7 +19,7 @@ export type SllPage = {
 const PAGES: Record<string, SllPage> = {
   'minhas-lojas': {
     title: 'Minhas Lojas',
-    description: 'A conexão e o cadastro de lojas ainda não estão disponíveis no SLL.',
+    description: 'Veja suas lojas e escolha como adicionar uma nova.',
     availability: 'stores',
   },
   'comece-aqui': {

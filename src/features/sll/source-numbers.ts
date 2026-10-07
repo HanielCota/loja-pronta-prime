@@ -21,6 +21,25 @@ export const SLL_LIBRARY_SOURCE_NUMBERS: Record<string, number> = {
   'gestao-de-contestacao': 44,
 };
 
+/** Durações observadas nas páginas ligadas ao plano da Etapa 2 (inventário T02). */
+export const SLL_LIBRARY_SOURCE_DURATION_MINUTES: Record<string, number> = {
+  'como-gerar-etiqueta': 8,
+  desconto: 8,
+  'oferta-relampago-da-loja': 4,
+  cupons: 8,
+  'duplicando-anuncios-do-jeito-certo': 3,
+  'videos-shopee-videos': 6,
+  'primeiras-avaliacoes': 13,
+  'chat-de-ouro-avaliacoes-reputacao': 6,
+  'informacoes-gerenciais': 9,
+};
+
 export function sllLibrarySourceNumber(slug: string): number | null {
-  return SLL_LIBRARY_SOURCE_NUMBERS[slug] ?? null;
+  return Object.hasOwn(SLL_LIBRARY_SOURCE_NUMBERS, slug) ? SLL_LIBRARY_SOURCE_NUMBERS[slug]! : null;
+}
+
+export function sllLibrarySourceDurationMinutes(slug: string): number | null {
+  return Object.hasOwn(SLL_LIBRARY_SOURCE_DURATION_MINUTES, slug)
+    ? SLL_LIBRARY_SOURCE_DURATION_MINUTES[slug]!
+    : null;
 }

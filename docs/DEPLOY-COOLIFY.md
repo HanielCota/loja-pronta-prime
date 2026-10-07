@@ -75,12 +75,13 @@ Para gerar o secret, rode em um terminal seguro e copie diretamente para o Cooli
 openssl rand -base64 32
 ```
 
-| Opcional              | Quando preencher                                                                                                                   |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `OPENAI_API_KEY`      | Para criar logos por IA e transcrever voz; projeto OpenAI com acesso a `gpt-image-1-mini` e `gpt-transcribe`, com saldo disponível |
-| `S3_ENDPOINT`         | Endpoint exato de um provedor compatível com S3; omita para AWS S3                                                                 |
-| `S3_REGION`           | Região real do bucket; padrão do código: `us-east-1`                                                                               |
-| `S3_FORCE_PATH_STYLE` | `true` se o provedor exigir acesso por caminho; padrão do código: `false`                                                          |
+| Opcional                  | Quando preencher                                                                                                                   |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `OPENAI_API_KEY`          | Para criar logos por IA e transcrever voz; projeto OpenAI com acesso a `gpt-image-1-mini` e `gpt-transcribe`, com saldo disponível |
+| `S3_ENDPOINT`             | Endpoint exato de um provedor compatível com S3; omita para AWS S3                                                                 |
+| `S3_REGION`               | Região real do bucket; padrão do código: `us-east-1`                                                                               |
+| `S3_FORCE_PATH_STYLE`     | `true` se o provedor exigir acesso por caminho; padrão do código: `false`                                                          |
+| `PANDA_VIDEO_PLAYER_HOST` | Host HTTPS do player copiado do embed real do Panda Video; sem ele os vídeos permanecem pendentes                                  |
 
 Região, endpoint e estilo de acesso são opcionais na validação, mas precisam corresponder ao
 provedor escolhido. Se não usar uma variável opcional, **omita**, em vez de deixar vazia.

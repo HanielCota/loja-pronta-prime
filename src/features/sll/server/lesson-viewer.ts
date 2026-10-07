@@ -1,4 +1,5 @@
 import { and, asc, eq, isNull } from 'drizzle-orm';
+import { env } from '@/config/env';
 import { requireProduct } from '@/features/products/server/access';
 import { contentPreviewData } from '@/features/admin/content-preview';
 import { db } from '@/server/db';
@@ -9,11 +10,17 @@ import {
   learningResources,
 } from '@/server/db/schema';
 import { isProgressId } from '../progress-rules';
+import { getAdjacentSllLessons } from '../lesson-navigation';
+import { getSllExpectedMaterial } from '../material-catalog';
+import { pandaVideoEmbedUrl } from '../panda-video';
 import { getSllTrackProgress } from './progress';
 
 /** Entrega à aula só os materiais publicados e os dados visíveis para a aluna. */
 export async function getSllLessonViewer(lessonId: string) {
-  const { session, products } = await requireProduct('sll');
+  const { session, products } = await requireProduct(
+    'sll',
+    `/sll/aula/${encodeURIComponent(lessonId)}`,
+  );
   if (!isProgressId(lessonId)) return null;
 
   const lesson = await db.query.learningLessons.findFirst({
@@ -21,6 +28,7 @@ export async function getSllLessonViewer(lessonId: string) {
       id: true,
       title: true,
       description: true,
+      sourceNumber: true,
       durationMinutes: true,
       status: true,
     },
@@ -31,7 +39,7 @@ export async function getSllLessonViewer(lessonId: string) {
     ),
     with: {
       module: {
-        columns: { id: true, title: true, status: true, archivedAt: true },
+        columns: { id: true, title: true, position: true, status: true, archivedAt: true },
         with: {
           stage: {
             columns: { id: true, title: true, status: true, archivedAt: true },
@@ -71,6 +79,21 @@ export async function getSllLessonViewer(lessonId: string) {
   const stageLessons = stage.modules.flatMap((item) => item.lessons);
   const currentProgress = stageLessons.find((item) => item.id === lesson.id);
 
+  const orderedStageLessons = stage.modules.flatMap((item) =>
+    item.lessons.map((stageLesson) => ({
+      id: stageLesson.id,
+      moduleId: item.id,
+      moduleTitle: item.title,
+    })),
+  );
+  const adjacent = getAdjacentSllLessons(orderedStageLessons, lesson.id);
+  const nextStageIndex = track.stages.findIndex((item) => item.id === stage.id) + 1;
+  const nextStage = track.kind === 'method' ? track.stages[nextStageIndex] : undefined;
+  const nextStageHref =
+    stage.access.isComplete && nextStage?.access?.isUnlocked && nextStage.access.totalCount > 0
+      ? `/sll/metodo/etapa/${nextStage.id}`
+      : null;
+
   const currentIndex = lesson.module.lessons.findIndex((item) => item.id === lesson.id);
   if (currentIndex < 0) return null;
 
@@ -81,6 +104,7 @@ export async function getSllLessonViewer(lessonId: string) {
         .select({
           id: learningResources.id,
           title: learningResources.title,
+          description: learningResources.description,
           buttonLabel: learningResources.buttonLabel,
           destination: learningResources.destination,
         })
@@ -100,16 +124,29 @@ export async function getSllLessonViewer(lessonId: string) {
     track: { id: track.id, slug: track.slug, title: track.title, kind: track.kind },
     progress: { completedCount: track.completedCount, totalCount: track.totalCount },
     stage: { id: stage.id, title: stage.title, access: stage.access },
-    module: { id: lesson.module.id, title: lesson.module.title },
+    module: {
+      id: lesson.module.id,
+      title: lesson.module.title,
+      number: stage.modules.findIndex((item) => item.id === lesson.module.id) + 1,
+    },
     lesson: {
       id: lesson.id,
       title: lesson.title,
       description: lesson.description,
+      sourceNumber: lesson.sourceNumber,
+      unavailableMaterial:
+        lesson.blocks.some((block) => block.kind === 'file')
+          ? null
+          : getSllExpectedMaterial(lesson.sourceNumber),
       durationMinutes: lesson.durationMinutes,
       completed:
         currentProgress?.completedAt !== null && currentProgress?.completedAt !== undefined,
-      previousId: lesson.module.lessons[currentIndex - 1]?.id ?? null,
-      nextId: lesson.module.lessons[currentIndex + 1]?.id ?? null,
+      previousId: adjacent.previous?.id ?? null,
+      previousModuleId: adjacent.previous?.moduleId ?? null,
+      previousIsStepBoundary: adjacent.previous?.crossesModule ?? false,
+      nextId: adjacent.next?.id ?? null,
+      nextModuleId: adjacent.next?.moduleId ?? null,
+      nextIsStepBoundary: adjacent.next?.crossesModule ?? false,
       number: currentIndex + 1,
       total: lesson.module.lessons.length,
     },
@@ -125,11 +162,19 @@ export async function getSllLessonViewer(lessonId: string) {
       };
     }),
     // Etapa fechada não manda o conteúdo pro navegador: a tela só mostra o aviso.
-    blocks: (stage.access.isUnlocked ? lesson.blocks : []).map((block) => ({
-      id: block.id,
-      kind: block.kind,
-      data: contentPreviewData(block.kind, block.data),
-    })),
+    blocks: (stage.access.isUnlocked ? lesson.blocks : []).map((block) => {
+      const data = contentPreviewData(block.kind, block.data);
+      const embedUrl =
+        block.kind === 'video'
+          ? pandaVideoEmbedUrl(data.videoId ?? '', env.PANDA_VIDEO_PLAYER_HOST)
+          : null;
+      return {
+        id: block.id,
+        kind: block.kind,
+        data: embedUrl ? { ...data, embedUrl } : data,
+      };
+    }),
     resources: linkedResources,
+    nextStage: nextStage ? { href: nextStageHref, title: nextStage.title } : null,
   };
 }

@@ -17,6 +17,13 @@ import {
 } from 'drizzle-orm/pg-core';
 import { user } from './auth';
 
+/** Resposta da pergunta de entrada da Etapa 2; o limite exato ainda depende de decisão de produto. */
+export const sllPlanStoreAge = pgEnum('sll_plan_store_age', [
+  'under_7_days',
+  'exactly_7_days',
+  'over_7_days',
+]);
+
 /** Tipos de trilha necessários para o SLL: boas-vindas, método e cursos extras. */
 export const learningTrackKind = pgEnum('learning_track_kind', [
   'welcome',
@@ -313,6 +320,23 @@ export const learningTrackProgress = pgTable(
     primaryKey({ columns: [table.userId, table.trackId] }),
     index('learning_track_progress_user_accessed_idx').on(table.userId, table.lastAccessedAt),
   ],
+);
+
+/** Guarda a resposta da entrada do plano sem misturá-la ao progresso das aulas. */
+export const sllPlanIntake = pgTable(
+  'sll_plan_intake',
+  {
+    userId: text('user_id')
+      .primaryKey()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    storeAge: sllPlanStoreAge('store_age').notNull(),
+    answeredAt: timestamp('answered_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at')
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [index('sll_plan_intake_store_age_idx').on(table.storeAge)],
 );
 
 export const learningTracksRelations = relations(learningTracks, ({ many }) => ({

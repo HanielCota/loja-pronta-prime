@@ -3,6 +3,7 @@ import { requireProduct } from '@/features/products/server/access';
 import { db } from '@/server/db';
 import {
   learningLessonProgress,
+  learningContentBlocks,
   learningLessons,
   learningModules,
   learningStages,
@@ -62,6 +63,12 @@ export async function getSllTrackProgress(trackId: string) {
                   isNull(learningLessons.archivedAt),
                 ),
                 orderBy: [asc(learningLessons.position), asc(learningLessons.id)],
+                with: {
+                  blocks: {
+                    columns: { kind: true, data: true },
+                    orderBy: [asc(learningContentBlocks.position), asc(learningContentBlocks.id)],
+                  },
+                },
               },
             },
           },

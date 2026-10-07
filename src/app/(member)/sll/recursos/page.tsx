@@ -1,12 +1,16 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowUpRight, Calculator, Lightbulb, Store } from 'lucide-react';
+import { ArrowRight, Calculator, ExternalLink, Lightbulb, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { panelCard } from '@/features/member/components/area-shell';
 import { SllAreaShell } from '@/features/sll/sll-area-shell';
 import { getSllPublishedResources } from '@/features/sll/server/catalog';
 import { getSllCopy } from '@/features/sll/server/copy';
 import { requireProduct } from '@/features/products/server/access';
+import {
+  isChatGptDestination,
+  isInternalSllDestination,
+} from '@/features/sll/resource-destination';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Recursos · SLL' };
@@ -43,7 +47,12 @@ export default async function SllResourcesPage() {
           const Icon = ICONS[group.key as keyof typeof ICONS] ?? Lightbulb;
           const isCalculator = group.key === 'calculadora';
           return (
-            <section key={group.key} aria-labelledby={`resource-group-${group.key}`}>
+            <section
+              id={isCalculator ? 'calculadora' : undefined}
+              key={group.key}
+              aria-labelledby={`resource-group-${group.key}`}
+              className="scroll-mt-6"
+            >
               <div className="mb-4 flex items-center gap-3">
                 <Icon aria-hidden="true" className="size-6 shrink-0 text-link" />
                 <h2
@@ -59,7 +68,13 @@ export default async function SllResourcesPage() {
                 }
               >
                 {group.items.map((resource) => {
-                  const buttonLabel = resource.buttonLabel ?? 'Abrir recurso';
+                  const buttonLabel = resource.buttonLabel ?? `Abrir ${resource.title}`;
+                  const destination =
+                    resource.destination ??
+                    (resource.slug === 'calculadora-preco-shopee'
+                      ? '/sll/recursos/calculadora-shopee'
+                      : null);
+                  const isInternal = destination ? isInternalSllDestination(destination) : false;
                   return (
                     <li
                       key={resource.id}
@@ -81,27 +96,40 @@ export default async function SllResourcesPage() {
                         <p className="mt-1 text-body text-pretty text-muted-foreground">
                           {resource.description}
                         </p>
+                        {resource.destination ? (
+                          <p className="mt-2 text-sm text-muted-foreground">
+                            {isInternal
+                              ? 'Abre nesta área.'
+                              : isChatGptDestination(resource.destination)
+                                ? 'Abre no ChatGPT em outra aba.'
+                                : 'Site externo; abre em outra aba.'}
+                          </p>
+                        ) : isCalculator ? (
+                          <p className="mt-2 text-sm text-muted-foreground">
+                            As taxas e os custos ainda precisam ser confirmados.
+                          </p>
+                        ) : null}
                       </div>
-                      {resource.destination ? (
+                      {destination ? (
                         <Button
                           asChild
                           className={isCalculator ? 'sm:w-auto' : undefined}
-                          variant="soft"
+                          variant="default"
                         >
-                          {resource.destination.startsWith('/') ? (
-                            <Link href={resource.destination}>
-                              {buttonLabel} <ArrowUpRight aria-hidden="true" />
+                          {isInternal ? (
+                            <Link href={destination}>
+                              {buttonLabel} <ArrowRight aria-hidden="true" />
                             </Link>
                           ) : (
-                            <a href={resource.destination} rel="noreferrer" target="_blank">
-                              {buttonLabel} <ArrowUpRight aria-hidden="true" />
+                            <a href={destination} rel="noopener noreferrer" target="_blank">
+                              {buttonLabel} <ExternalLink aria-hidden="true" />
                               <span className="sr-only"> (abre em outra aba)</span>
                             </a>
                           )}
                         </Button>
                       ) : (
                         <span className="w-fit rounded-full border border-border bg-muted px-4 py-2 text-sm font-semibold text-muted-foreground">
-                          Em breve
+                          Em preparação
                         </span>
                       )}
                     </li>

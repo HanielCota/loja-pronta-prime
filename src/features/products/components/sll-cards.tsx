@@ -95,7 +95,7 @@ export function SllToolsCard({ copy }: { copy: SllCopy }) {
         <BookOpen aria-hidden="true" className="size-5 shrink-0 text-link" />
         <p className="flex-1 text-body text-muted-foreground">{copy.dashboardToolsDetail}</p>
       </div>
-      <Button asChild className="mt-2" variant="soft">
+      <Button asChild className="mt-2" variant="default">
         <Link href="/sll/recursos">
           {copy.dashboardToolsButton} <ArrowRight aria-hidden="true" />
         </Link>
@@ -126,7 +126,7 @@ export function SllStoreStatusCard() {
           mostra dados da sua loja nem métricas de venda.
         </p>
       </div>
-      <Button asChild className="w-full sm:w-auto sm:max-w-52" variant="soft">
+      <Button asChild className="w-full sm:w-auto sm:max-w-52" variant="default">
         <Link href="/sll/minhas-lojas">
           Ver situação das lojas <ArrowRight aria-hidden="true" />
         </Link>
@@ -147,7 +147,7 @@ export function SllNextPathCard({ hasStoreAccess }: { hasStoreAccess: boolean })
       <p className="text-body text-pretty text-muted-foreground">
         Acesse a área da Loja Pronta para montar sua loja na Shopee, passo a passo, pela plataforma.
       </p>
-      <Button asChild variant="soft" className="w-full sm:w-fit">
+      <Button asChild variant="default" className="w-full sm:w-fit">
         <Link href="/loja-pronta">
           Acessar Loja Pronta <ArrowRight aria-hidden="true" />
         </Link>

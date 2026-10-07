@@ -20,7 +20,9 @@ const steps = [
         description:
           'A aula de abertura da Etapa 1. A Pri dá as boas-vindas, mostra como a jornada está organizada e explica por onde começar pra não se perder. É o ponto de partida antes de mexer em qualquer configuração da loja.',
         duration: 8,
-        video: '',
+        // ID conferido no inventário T01; o host do player continua sendo uma dependência da
+        // hospedagem escolhida e não é inventado aqui.
+        video: '44408d11-f282-4a43-9949-8b3c44b94ee4',
       },
       {
         slug: 'credenciamento-shopee-vinculacao-escala-shop',
@@ -28,7 +30,7 @@ const steps = [
         description:
           'O primeiro passo prático: fazer o cadastro e o credenciamento da sua conta de vendedora na Shopee e vincular à Escala Shop. A aula acompanha o processo do início ao fim pra deixar a base pronta antes de escolher fornecedor e produtos.',
         duration: 11,
-        video: '',
+        video: '0b7a6732-eb05-417b-9882-5f82fd0d1a58',
       },
     ],
   },
@@ -236,7 +238,7 @@ await db.transaction(async (tx) => {
       if (!lesson) throw new Error(`Não foi possível carregar a aula ${item.title}.`);
 
       const video = await tx.query.learningContentBlocks.findFirst({
-        columns: { id: true },
+        columns: { id: true, data: true },
         where: and(
           eq(learningContentBlocks.lessonId, lesson.id),
           eq(learningContentBlocks.kind, 'video'),
@@ -249,6 +251,13 @@ await db.transaction(async (tx) => {
           data: { provider: 'pandavideo', videoId: item.video },
           position: 0,
         });
+      } else if (item.video && 'videoId' in video.data && video.data.videoId === '') {
+        // Completa apenas o placeholder vazio importado antes da confirmação; uma edição feita
+        // no admin continua prevalecendo quando já houver outro ID salvo.
+        await tx
+          .update(learningContentBlocks)
+          .set({ data: { provider: 'pandavideo', videoId: item.video } })
+          .where(eq(learningContentBlocks.id, video.id));
       }
     }
   }

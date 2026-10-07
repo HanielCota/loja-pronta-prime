@@ -125,7 +125,7 @@ export function SllResourceEditor({
         <FloatingLabelInput
           defaultValue={initial.buttonLabel}
           id={`resource-button-${resource?.id ?? 'new'}`}
-          label="Texto do botão (opcional)"
+          label="Texto do botão (obrigatório se houver destino)"
           maxLength={80}
           name="buttonLabel"
         />
@@ -324,7 +324,7 @@ export function SllResourceEditor({
               {preview.destination ? (
                 <>
                   <ExternalLink aria-hidden="true" className="mr-2 inline size-5" />
-                  {preview.buttonLabel || 'Abrir recurso'}
+                  {preview.buttonLabel || `Abrir ${preview.title || 'recurso'}`}
                 </>
               ) : (
                 'Em breve'

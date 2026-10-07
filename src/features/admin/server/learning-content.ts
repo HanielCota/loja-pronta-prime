@@ -1,6 +1,8 @@
 import { asc, eq, isNotNull, isNull } from 'drizzle-orm';
+import { env } from '@/config/env';
 import { db } from '@/server/db';
 import { contentPreviewData } from '../content-preview';
+import { pandaVideoEmbedUrl } from '@/features/sll/panda-video';
 import {
   learningContentBlocks,
   learningLessons,
@@ -197,6 +199,7 @@ export async function getAdminLessonPreview(id: string) {
         title: draftsById.get(item.id)?.title ?? item.title,
         position: item.position,
         status: item.status,
+        hasDraft: Boolean(draftsById.get(item.id)),
         current: item.id === lesson.id,
         number: index + 1,
       })),
@@ -204,7 +207,14 @@ export async function getAdminLessonPreview(id: string) {
     blocks: (draft?.blocks ?? lesson.blocks).map((block) => ({
       id: block.id,
       kind: block.kind,
-      data: contentPreviewData(block.kind, block.data),
+      data: (() => {
+        const preview = contentPreviewData(block.kind, block.data);
+        const embedUrl =
+          block.kind === 'video'
+            ? pandaVideoEmbedUrl(preview.videoId ?? '', env.PANDA_VIDEO_PLAYER_HOST)
+            : null;
+        return embedUrl ? { ...preview, embedUrl } : preview;
+      })(),
     })),
   };
 }
