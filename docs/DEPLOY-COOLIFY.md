@@ -71,8 +71,11 @@ Não ative `RAILPACK_PRUNE_DEPS=true` nem use `bun install --production` no buil
 
 A migração `0039_sll-panda-video-links.sql` também vincula os vídeos Panda às aulas SLL já existentes.
 Não substitui vídeos editados nem rascunhos pendentes e não muda publicação, acesso ou progresso.
-Se a estrutura de aulas ainda não existir nesse banco, importe-a antes de conferir os 71 vínculos;
-veja `docs/SLL-VIDEOS-PANDA.md`. A migração e os IDs seguem na imagem, sem depender de arquivos locais.
+Depois das migrações, o inicializador importa e publica o inventário conferido nas trilhas ausentes:
+84 aulas e ações, 71 vídeos e 8 recursos. Trilhas já existentes (também rascunhos e arquivados),
+recursos editados e progresso não são alterados. Toda a importação é transacional e repetível.
+Os logs mostram o que foi criado e o total de aulas vinculadas. Veja `docs/SLL-VIDEOS-PANDA.md`.
+O inventário, a migração e os IDs seguem na imagem, sem depender de arquivos ou do banco local.
 
 Faça um deploy por vez. Antes de migrar um banco existente, tenha backup e confira as migrações
 pendentes: há migrações históricas que removem estruturas antigas do logo. Voltar a imagem não

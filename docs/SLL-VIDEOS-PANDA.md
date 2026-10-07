@@ -10,8 +10,20 @@ As URLs foram lidas do atributo `src` dos players incorporados. Os IDs alimentam
 
 A migração `0039_sll-panda-video-links.sql` vincula os vídeos às aulas existentes durante o deploy,
 antes de o servidor iniciar. Ela usa o histórico normal do Drizzle e preserva rascunhos pendentes,
-vídeos escolhidos no admin, materiais, publicação e progresso. Bancos sem a estrutura do SLL
-continuam sem aulas inventadas; aulas importadas depois podem receber os vídeos pelo comando abaixo.
+vídeos escolhidos no admin, materiais, publicação e progresso.
+
+Depois das migrações, o servidor importa o inventário conferido de `data/sll/initial-content.json`
+e os IDs deste catálogo quando uma das cinco trilhas ainda não existe. São 84 aulas e ações,
+71 blocos de vídeo, 12 referências da Etapa 2 e 8 recursos. As novas trilhas são publicadas juntas,
+em uma transação. Uma trilha já cadastrada, inclusive em rascunho ou arquivada, não é alterada.
+Recursos existentes também são preservados. O processo pode ser repetido sem duplicar conteúdo;
+não copia IDs, contas, progresso, capas ou arquivos do banco local. Banners sem imagem continuam
+pendentes, e recursos sem destino continuam como “em breve”.
+
+Em **7 de outubro de 2026**, a conferência do primeiro deploy encontrou o site saudável, mas
+sem trilhas cadastradas no admin e com zero aulas vinculadas. O importador automático corrige
+essa diferença entre o inventário local e o banco online. O log de início informa as quantidades
+importadas e o total de aulas com vídeo para verificar o resultado.
 
 Para conferir ou repetir a vinculação depois de importar a estrutura do SLL, execute:
 
