@@ -159,7 +159,10 @@ test('retirar a Loja Pronta bloqueia a rota e a action com a sessão ainda abert
     [email],
   );
   // O formulário já aberto chama a action: o servidor precisa conferir o acesso de novo.
-  await page.getByText('Nunca vendi', { exact: true }).click();
+  await page
+    .locator('label')
+    .filter({ has: page.getByRole('radio', { name: /^Nunca vendi/ }) })
+    .click();
   await page.getByRole('button', { name: 'Continuar' }).click();
   await expect(page).toHaveURL(/\/sll$/);
   const answers = await database().query(
