@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ChevronRight, Search } from 'lucide-react';
+import { ChevronRight, Search, UserPlus } from 'lucide-react';
 import { panelCard } from '@/features/member/components/area-shell';
 import { AdminShell } from '@/features/admin/components/admin-shell';
 import { Button } from '@/components/ui/button';
@@ -60,6 +60,14 @@ export default async function AdminAccountsPage({
       current="accounts"
       title="Contas"
       intro="Abra uma conta para editar os dados, liberar produtos ou bloquear o acesso."
+      actions={
+        <Button asChild className="sm:w-auto">
+          <Link href="/admin/contas/nova">
+            <UserPlus aria-hidden="true" />
+            Criar conta
+          </Link>
+        </Button>
+      }
     >
       <section aria-labelledby="accounts-list" className={cn(panelCard, 'gap-5 !p-5 sm:!p-6')}>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
