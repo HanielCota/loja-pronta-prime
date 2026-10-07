@@ -23,6 +23,31 @@ test('mostra a tela de login sem cadastro público', async ({ page }) => {
   await expect(page.getByText(/criar conta/i)).toHaveCount(0);
 });
 
+test('não restaura o email antigo quando a aluna já começou a preencher o campo', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem('lojaprontaprime:auth-email', 'email-antigo@teste.com');
+    // Foco antes de hidratar: reproduz quem toca no campo enquanto a página ainda carrega.
+    const observer = new MutationObserver(() => {
+      const input = document.querySelector<HTMLInputElement>('input[type="email"]');
+      if (!input) return;
+      input.focus();
+      observer.disconnect();
+    });
+    observer.observe(document, { childList: true, subtree: true });
+  });
+  await page.goto('/entrar');
+  const email = page.getByLabel('Email da compra');
+  await expect
+    .poll(() => page.evaluate(() => sessionStorage.getItem('lojaprontaprime:auth-email')))
+    .toBe('');
+  await expect(email).toBeFocused();
+  await expect(email).toHaveValue('');
+  await email.fill('novo-email@teste.com');
+  await expect(email).toHaveValue('novo-email@teste.com');
+});
+
 test('valida no navegador e foca o primeiro campo com erro', async ({ page }) => {
   await page.getByRole('button', { name: 'Entrar' }).click();
   await expect(page.getByText('Digite o email que você usou na compra')).toBeVisible();
