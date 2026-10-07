@@ -41,10 +41,7 @@ type Student = {
 /** Respostas de exemplo da conversa, pras alunas que já começam na fase da marca. */
 const SENT_ANSWERS = {
   vendas: 'Nunca vendi',
-  motivacao: ['Renda extra'],
-  dificuldade: 'Escolher bons produtos',
   categorias: ['Pets'],
-  tempo: 'Até 3 horas',
   nome: 'Patinhas da Ana',
   estilo: 'Divertido',
   cor: 'Verde',

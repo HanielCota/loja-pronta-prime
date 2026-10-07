@@ -77,14 +77,14 @@ export function previousPath(step: Step, { editing = false } = {}): string {
   return previous ? stepPath(previous) : '/loja-pronta';
 }
 
-/** Número da pergunta (1 a 10), pra "Pergunta 3 de 10". */
+/** Número da pergunta (1 a 7), pra "Pergunta 3 de 7". */
 function questionNumber(step: Step): number {
   return QUESTION_IDS.findIndex((id) => id === step) + 1;
 }
 
 export const QUESTION_COUNT = QUESTION_IDS.length;
 
-/** Nome da etapa, pro título da aba: "Pergunta 3 de 10", "Revisão", "Último passo". */
+/** Nome da etapa, pro título da aba: "Pergunta 3 de 7", "Revisão", "Último passo". */
 export function stepTitle(step: Step): string {
   if (step === REVIEW_STEP) return 'Revisão';
   if (step === WHATSAPP_STEP) return 'Último passo';
@@ -93,8 +93,8 @@ export function stepTitle(step: Step): string {
 }
 
 /**
- * O topo de cada etapa: o que está escrito ("Pergunta 3 de 10"), quantos tracinhos da barra já
- * estão cheios (contando a etapa atual). Sem nome de parte e sem número solto: "8 de 10" não diz
+ * O topo de cada etapa: o que está escrito ("Pergunta 3 de 7"), quantos tracinhos da barra já
+ * estão cheios (contando a etapa atual). Sem nome de parte e sem número solto: "5 de 7" não diz
  * 8 de quê, e "Sua marca" se confundia com a fase da marca.
  */
 export function stepHeader(step: Step): StepHeader {

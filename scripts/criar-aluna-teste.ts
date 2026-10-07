@@ -77,10 +77,7 @@ if (products.includes('loja-pronta')) {
       userId: user.id,
       answers: {
         vendas: 'Nunca vendi',
-        motivacao: ['Renda extra'],
-        dificuldade: 'Escolher bons produtos',
         categorias: ['Beleza', 'Casa e decoração'],
-        tempo: 'Até 3 horas',
         nome: 'Bella Flor',
         estilo: 'Delicado',
         cor: 'Rosa',

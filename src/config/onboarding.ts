@@ -9,6 +9,8 @@
  * - `label`: nome curto da pergunta na revisão ("Motivação").
  *
  * As respostas guardam o texto da opção escolhida (as sugestões da marca leem daqui).
+ * Só entra pergunta cuja resposta a plataforma usa: motivação, maior preocupação e tempo por
+ * semana saíram por não servirem pra nada (respostas antigas delas são ignoradas, cleanAnswers).
  */
 
 export const ONBOARDING_BLOCKS = {
@@ -71,38 +73,6 @@ export const ONBOARDING_QUESTIONS = [
     ],
   },
   {
-    id: 'motivacao',
-    block: 'voce',
-    kind: 'multi',
-    layout: 'list',
-    max: 5,
-    ask: 'O que te trouxe até aqui?',
-    help: 'Pode marcar mais de uma.',
-    label: 'Motivação',
-    options: [
-      { label: 'Renda extra' },
-      { label: 'Não depender de chefe' },
-      { label: 'Trabalhar no meu horário' },
-      { label: 'Sair do trabalho fixo' },
-      { label: 'Ter o meu próprio negócio' },
-    ],
-  },
-  {
-    id: 'dificuldade',
-    block: 'voce',
-    kind: 'single',
-    ask: 'O que mais preocupa você hoje?',
-    label: 'Maior preocupação',
-    options: [
-      { label: 'Escolher bons produtos', description: 'Não sei o que vale a pena vender' },
-      { label: 'Configurar a Shopee', description: 'Tenho receio da parte técnica da loja' },
-      { label: 'Criar bons anúncios', description: 'Título, fotos, descrição e preço' },
-      { label: 'Medo de errar', description: 'Quero evitar perder tempo ou dinheiro' },
-      { label: 'Falta de tempo', description: 'Preciso de um caminho mais direto' },
-      { label: 'Não sei por onde começar', description: 'Quero um passo a passo claro' },
-    ],
-  },
-  {
     id: 'categorias',
     block: 'voce',
     kind: 'multi',
@@ -123,19 +93,6 @@ export const ONBOARDING_QUESTIONS = [
       { label: 'Papelaria' },
       { label: 'Tecnologia' },
       { label: 'Outros' },
-    ],
-  },
-  {
-    id: 'tempo',
-    block: 'voce',
-    kind: 'single',
-    ask: 'Quanto tempo por semana você tem pra loja?',
-    label: 'Tempo por semana',
-    options: [
-      { label: 'Até 3 horas', description: 'Um pouquinho por semana' },
-      { label: 'De 3 a 7 horas', description: 'Uma hora por dia, mais ou menos' },
-      { label: 'De 7 a 14 horas', description: 'Umas duas horas por dia' },
-      { label: 'Mais de 14 horas', description: 'Vou me dedicar bastante' },
     ],
   },
   {

@@ -52,7 +52,7 @@ A plataforma não confirma hoje que uma loja foi publicada na Shopee. A aluna co
 
 Uma pergunta por tela, com o mascote e salvamento de cada resposta:
 
-- Experiência com vendas, motivação, preocupação, categorias de interesse e tempo disponível.
+- Experiência com vendas e categorias de interesse.
 - Nome da loja ou “Ainda não decidi”, estilo, cor, sentimentos e toque pessoal opcional.
 - Revisão das respostas e salvamento do WhatsApp.
 
