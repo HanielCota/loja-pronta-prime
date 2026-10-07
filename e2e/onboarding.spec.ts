@@ -7,16 +7,19 @@ const step = (id: string) => new RegExp(`/loja-pronta/conversa/${id}(\\?.*)?$`);
 /** Responde as perguntas de "Sobre você" (as 5 primeiras), tocando nas opções. */
 async function answerAboutYou(page: Page) {
   await page.getByText('Já vendi, mas parei').click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
   await expect(page).toHaveURL(step('motivacao'));
   await page.getByText('Renda extra').click();
   await page.getByRole('button', { name: 'Continuar' }).click();
   await expect(page).toHaveURL(step('dificuldade'));
   await page.getByText('Medo de errar').click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
   await expect(page).toHaveURL(step('categorias'));
   await page.getByText('Beleza').click();
   await page.getByRole('button', { name: 'Continuar' }).click();
   await expect(page).toHaveURL(step('tempo'));
   await page.getByText('De 3 a 7 horas').click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
   await expect(page).toHaveURL(step('sua-marca'));
   await page.getByRole('link', { name: 'Bora começar' }).click();
   await expect(page).toHaveURL(step('nome'));
@@ -33,7 +36,7 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
   await expectNoA11yViolations(page);
   await page.getByRole('link', { name: 'Começar a conversa' }).click();
 
-  // Pergunta 1: o título da página é a pergunta, e tocar numa opção já avança.
+  // Pergunta 1: escolher uma opção só avança ao confirmar no botão.
   await expect(page).toHaveURL(step('vendas'));
   await expect(page).toHaveTitle(/Pergunta 1 de 10/);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Você já vendeu pela internet?');
@@ -42,6 +45,7 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
   );
   await expectNoA11yViolations(page);
   await page.getByText('Já vendi, mas parei').click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
 
   // Várias opções: sem nenhuma, avisa na hora (sem ir ao servidor).
   await expect(page).toHaveURL(step('motivacao'));
@@ -56,6 +60,7 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
 
   await expect(page).toHaveURL(step('dificuldade'));
   await page.getByText('Medo de errar').click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
 
   // Até 3: na terceira, as outras travam e o contador explica.
   await expect(page).toHaveURL(step('categorias'));
@@ -67,6 +72,7 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
 
   await expect(page).toHaveURL(step('tempo'));
   await page.getByText('De 3 a 7 horas').click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
 
   // A passagem pra marca: o que já foi, o que vem agora (sem contar como pergunta).
   await expect(page).toHaveURL(step('sua-marca'));
@@ -83,9 +89,11 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
   await page.getByRole('button', { name: 'Continuar' }).click();
   await expect(page).toHaveURL(step('estilo'));
   await page.getByText('Delicado').click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
   await expect(page).toHaveURL(step('cor'));
   await expectNoA11yViolations(page);
   await page.getByText('Lilás').click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
   await expect(page).toHaveURL(step('sentimento'));
   await page.getByText('Acolhimento').click();
   await page.getByRole('button', { name: 'Continuar' }).click();
@@ -108,6 +116,7 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
   await expect(page).toHaveURL(/\/conversa\/cor\?editar=1$/);
   await expect(page.getByRole('radio', { name: 'Lilás' })).toBeChecked();
   await page.getByText('Verde').click();
+  await page.getByRole('button', { name: 'Salvar e voltar' }).click();
   await expect(page).toHaveURL(step('revisao'));
   await expect(page.getByText('Verde', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Está tudo certo' }).click();
@@ -126,7 +135,7 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
   await expect(whatsapp).toHaveValue('(11) 98765-4321');
   // O texto aparece embaixo do campo (e, escondido, no aviso pro leitor de tela).
   await expect(page.getByText('Número completo').first()).toBeVisible();
-  await expect(page.getByText('Vamos avisar você no (11) 98765-4321')).toBeVisible();
+  await expect(page.getByText('Confira seu número: (11) 98765-4321')).toBeVisible();
   await expectNoA11yViolations(page);
   await page.getByRole('button', { name: 'Enviar respostas' }).click();
 
@@ -162,6 +171,7 @@ test('continua de onde parou e não deixa pular perguntas', async ({ page }) => 
   await signIn(page, studentEmail('conversaretoma'), PASSWORD, '/loja-pronta/conversa');
   await expect(page).toHaveURL(step('vendas'));
   await page.getByText('Nunca vendi').click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
   await expect(page).toHaveURL(step('motivacao'));
 
   // "Terminar depois" volta pra área, que oferece continuar.
@@ -209,7 +219,6 @@ test('pelo teclado, trocar a opção com as setas não avança sozinho', async (
 
   // Nome: "Ainda não sei" desativa o campo e conta como resposta.
   await page.goto('/loja-pronta/conversa/vendas');
-  await page.getByRole('button', { name: 'Continuar' }).click();
   await answerAboutYou(page);
   await page.getByText('Ainda não decidi', { exact: true }).click();
   await expect(page.getByRole('checkbox', { name: 'Ainda não decidi' })).toBeChecked();
@@ -227,7 +236,10 @@ test('clique duplo numa opção não avança até tocar em Continuar', async ({ 
     if (request.method() === 'POST' && request.url().includes('/loja-pronta/conversa/')) posts += 1;
   });
 
-  await page.getByRole('radio', { name: 'Nunca vendi' }).dblclick();
+  await page
+    .locator('label')
+    .filter({ has: page.getByRole('radio', { name: 'Nunca vendi' }) })
+    .dblclick();
   await expect(page.getByRole('radio', { name: 'Nunca vendi' })).toBeChecked();
   await expect(page).toHaveURL(step('vendas'));
   expect(posts).toBe(0);
@@ -313,10 +325,11 @@ test('"Outra cor": abre o seletor, não segue sozinha e guarda a cor escolhida',
   await page.getByLabel('Nome da loja').fill('Loja da Cor');
   await page.getByRole('button', { name: 'Continuar' }).click();
   await page.getByText('Natural').click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
   await expect(page).toHaveURL(step('cor'));
 
   await page.getByText('Outra cor', { exact: true }).click();
-  const picker = page.getByLabel('Toque no quadrado pra escolher a sua cor:');
+  const picker = page.getByRole('textbox', { name: 'Escolha a sua cor:' });
   await expect(picker).toBeVisible();
   // Espera mais que o avanço automático das outras cores: continua aqui.
   await page.waitForTimeout(600);
@@ -328,6 +341,9 @@ test('"Outra cor": abre o seletor, não segue sozinha e guarda a cor escolhida',
 
   // Voltou: a cor dela continua marcada, no seletor.
   await page.getByRole('link', { name: 'Voltar' }).click();
-  await expect(page.getByRole('radio', { name: 'Outra cor' })).toBeChecked();
+  await expect(page.getByRole('button', { name: 'Outra cor' })).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  );
   await expect(picker).toHaveValue('#e0218a');
 });

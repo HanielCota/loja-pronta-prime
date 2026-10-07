@@ -104,7 +104,7 @@ test('depois de criada a senha, o formulário do primeiro acesso não troca mais
 
   await second.getByLabel('Senha nova').fill('outra senha que nao vale');
   await second.getByRole('button', { name: 'Salvar e entrar' }).click();
-  await expect(second).toHaveURL(new RegExp(`${DESTINATION}$`));
+  await expect(second.locator('[data-error-code="first_password_already_set"]')).toBeVisible();
   await context.close();
 
   // Vale a primeira senha criada, não a da segunda aba.

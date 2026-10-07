@@ -15,6 +15,7 @@ test('conversa enviada: ela revê e muda uma resposta, sem voltar de fase', asyn
   await page.getByRole('link', { name: 'Editar cor principal' }).click();
   await expect(page.getByRole('radio', { name: 'Verde' })).toBeChecked();
   await page.getByText('Lilás').click();
+  await page.getByRole('button', { name: 'Salvar e voltar' }).click();
   await expect(page).toHaveURL(/\/conversa\/revisao$/);
   await expect(page.getByText('Lilás', { exact: true })).toBeVisible();
 
@@ -44,7 +45,7 @@ test('marca confirmada: ela muda o nome e volta pro painel na mesma fase', async
   await expect(page.getByRole('heading', { name: 'Sua marca' }).first()).toBeVisible();
   await expectNoA11yViolations(page);
   await page.getByRole('link', { name: 'Mudar o nome' }).click();
-  await page.getByLabel('Nome da loja').fill('Patinhas & Cia');
+  await page.getByRole('textbox', { name: 'Nome da loja', exact: true }).fill('Patinhas & Cia');
   await page.getByRole('button', { name: 'Continuar com “Patinhas & Cia”' }).click();
   // O logo traz o nome antigo: o estúdio avisa; ela pode seguir com ele, voltando pra revisão.
   await expect(page).toHaveURL(/\/marca\/logo\?editar=1&antigo=Patinhas/);

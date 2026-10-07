@@ -5,6 +5,8 @@ import { defineConfig, devices } from '@playwright/test';
 if (existsSync('.env.local')) process.loadEnvFile('.env.local');
 
 const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
+const catalogTests =
+  /sll-(method-overview|stage07|stage1|stage10-library|stage2-pilot|welcome)\.spec\.ts/;
 
 export default defineConfig({
   testDir: './e2e',
@@ -21,7 +23,19 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   projects: [
-    { name: 'desktop', use: { ...devices['Desktop Chrome'] }, testIgnore: /layout\.spec\.ts/ },
+    {
+      name: 'desktop',
+      use: { ...devices['Desktop Chrome'] },
+      testIgnore: [/layout\.spec\.ts/, catalogTests],
+    },
+    {
+      // Estes cenários publicam o catálogo global: cada arquivo precisa terminar antes do próximo.
+      name: 'sll',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: catalogTests,
+      fullyParallel: false,
+      workers: 1,
+    },
     {
       name: 'mobile',
       use: { ...devices['Pixel 7'] },
@@ -31,7 +45,7 @@ export default defineConfig({
   webServer: {
     command: 'bun run dev',
     url: `${baseURL}/entrar`,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 120_000,
   },
 });

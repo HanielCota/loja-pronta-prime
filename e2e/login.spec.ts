@@ -1,8 +1,10 @@
 import { createHash } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
 import { database, PASSWORD, studentEmail } from './support/students';
+import { studentIp } from './support/auth';
 
 async function login(page: Page, email: string, password: string) {
+  await page.setExtraHTTPHeaders({ 'x-forwarded-for': studentIp(email) });
   await page.getByLabel('Email da compra').fill(email);
   await page.getByLabel('Senha', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Entrar' }).click();
@@ -117,8 +119,10 @@ test('bloqueia depois de 5 tentativas em 1 minuto', async ({ page }) => {
   await expect(alert(page)).toContainText('Aguarde 1 minuto pra tentar novamente');
 
   // A contagem fica no Postgres (vale entre reinícios e vários servidores), não só em memória.
-  // A chave é o hash do email (o email em si nunca vai pro banco).
-  const key = `auth:loginPerEmail:${createHash('sha256').update(email).digest('base64url')}`;
+  // O limite de 5 tentativas usa o par email/IP (o email em si nunca vai pro banco).
+  const key = `auth:loginPerEmailAndIp:${createHash('sha256')
+    .update(`${email} ${studentIp(email)}`)
+    .digest('base64url')}`;
   const { rows } = await database().query<{ blocked: number }>(
     `select count(*)::int as blocked from rate_limits
       where key = $1 and points >= 6 and expire > now()`,

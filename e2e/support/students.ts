@@ -22,6 +22,8 @@ export type StudentKind =
   | 'lojafase3'
   | 'voltaarea'
   | 'doisprodutos'
+  | 'doisprodutosmontagem'
+  | 'doisprodutosrota'
   | 'primeiroacessoescolha'
   | 'conversa'
   | 'conversaretoma'
@@ -73,6 +75,13 @@ let pool: Pool | undefined;
 export function database(): Pool {
   pool ??= new Pool({ connectionString: process.env.DATABASE_URL });
   return pool;
+}
+
+/** Um worker pode executar outro arquivo depois do afterAll: o próximo uso precisa de um pool novo. */
+export async function closeDatabase(): Promise<void> {
+  const current = pool;
+  pool = undefined;
+  await current?.end();
 }
 
 /** Token do link de redefinição mais recente da aluna (o "email" que ainda não é enviado). */

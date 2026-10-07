@@ -51,7 +51,7 @@ test('quem já tem loja na Shopee pula a criação da conta ao confirmar a marca
   await expect(page).toHaveURL(/\/marca\/revisao$/);
   await page.getByRole('button', { name: 'Está tudo certo' }).click();
   await expect(page).toHaveURL(/\/marca\/pronta$/);
-  await expect(page.getByText('Próximo passo: conectar a sua Shopee')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Conexão com a Shopee em breve' })).toBeVisible();
   await page.getByRole('link', { name: 'Ver como funciona a conexão' }).click();
   await expect(page).toHaveURL(/\/loja-pronta\/shopee\/conectar$/);
 });

@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 import { auth } from '@/server/auth/auth';
 import { assertTestDatabase } from './support/cleanup';
-import { database } from './support/students';
+import { closeDatabase, database } from './support/students';
 import { expectNoA11yViolations, signIn } from './support/auth';
 
 const password = 'senha-teste-123';
@@ -89,7 +89,7 @@ test.afterAll(async () => {
   assertTestDatabase();
   await database().query('delete from learning_tracks where id=$1', [trackId]);
   await database().query('delete from "user" where id=any($1::text[])', [userIds]);
-  await database().end();
+  await closeDatabase();
 });
 
 test('navega entre passos e libera a Etapa 2 somente após concluir as aulas obrigatórias', async ({
@@ -101,13 +101,15 @@ test('navega entre passos e libera a Etapa 2 somente após concluir as aulas obr
   await expect(page.locator('#lesson-title')).toHaveText('Primeira aula de teste');
 
   await page.getByRole('button', { name: 'Marcar como concluída', exact: true }).click();
-  await expect(page.getByText('Aula concluída', { exact: true }).first()).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Desmarcar como concluída', exact: true }),
+  ).toBeVisible();
   await page.getByRole('link', { name: 'Próxima aula', exact: true }).click();
   await expect(page.locator('#lesson-title')).toHaveText('Segunda aula de teste');
 
   await page.getByRole('button', { name: 'Marcar como concluída', exact: true }).click();
-  await expect(page.getByRole('link', { name: 'Próximo passo', exact: true })).toBeVisible();
-  await page.getByRole('link', { name: 'Próximo passo', exact: true }).click();
+  await expect(page.getByRole('link', { name: 'Próxima aula', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Próxima aula', exact: true }).click();
   await expect(page.locator('#lesson-title')).toHaveText('Última aula da Etapa 1');
 
   await page.getByRole('button', { name: 'Marcar como concluída', exact: true }).click();
@@ -138,7 +140,7 @@ test('mantém a aluna no contexto quando a próxima etapa está em preparação'
   await page.getByRole('button', { name: 'Marcar como concluída', exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/sll/aula/${lessons.third}$`));
   await expect(page.locator('[aria-live="polite"]')).toHaveText(
-    'A aula foi marcada como concluída. A etapa foi concluída. A próxima etapa ainda está em preparação.',
+    'A aula foi marcada como concluída. Você concluiu a última etapa do Método SLL.',
   );
 });
 

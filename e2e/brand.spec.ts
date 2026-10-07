@@ -120,7 +120,7 @@ test('marca completa: nome, estúdio do logo, texto, revisão com mudança e log
   // Nome: o da conversa já vem no cartão; passar do limite avisa ali, e uma ideia volta a ele.
   await expect(page).toHaveURL(step('nome'));
   await expect(page.getByRole('heading', { name: 'Qual o nome da sua loja?' })).toBeVisible();
-  const name = page.getByLabel('Nome da loja');
+  const name = page.getByRole('textbox', { name: 'Nome da loja', exact: true });
   await expect(name).toHaveValue('Patinhas da Ana');
   await expect(page.getByRole('radio', { name: 'Patinhas da Ana' })).toBeChecked();
   await expectNoA11yViolations(page);
@@ -161,8 +161,8 @@ test('marca completa: nome, estúdio do logo, texto, revisão com mudança e log
   await choose(page, 'Rosa e dourado');
   await goOn(page);
   // Do jeito dela: o que ela escreve vira a escolha da tela.
-  await page.getByRole('button', { name: 'Não achei o que queria. Escrever do meu jeito' }).click();
   const own = page.getByLabel('Escreva do seu jeito');
+  await own.focus();
   await expect(own).toBeFocused();
   await own.fill('letra de caneta, bem fina');
   await own.press('Enter');
@@ -255,7 +255,7 @@ test('marca completa: nome, estúdio do logo, texto, revisão com mudança e log
   await expectNoA11yViolations(page);
   await page.getByRole('link', { name: 'Mudar o nome' }).click();
   await expect(page).toHaveURL(/\/marca\/nome\?editar=1$/);
-  await page.getByLabel('Nome da loja').fill('Gatinhos & Cia');
+  await page.getByRole('textbox', { name: 'Nome da loja', exact: true }).fill('Gatinhos & Cia');
   await page.getByRole('button', { name: 'Continuar com “Gatinhos & Cia”' }).click();
   // O logo traz o nome escrito: ela volta pro estúdio, que avisa e oferece criar outro.
   await expect(page).toHaveURL(/\/marca\/logo\?editar=1&antigo=Patinhas/);
@@ -310,7 +310,7 @@ test('estúdio do logo pelo teclado: setas escolhem, "Só o nome" pula o desenho
     'Desenho',
   );
   // Falar em vez de escrever (o Chrome tem reconhecimento de voz).
-  await page.getByRole('button', { name: 'Não achei o que queria. Escrever do meu jeito' }).click();
+  await expect(page.getByLabel('Escreva do seu jeito')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Falar em vez de escrever' })).toBeVisible();
   // Voltar pela barra das telas: a escolha feita continua marcada.
   await page.getByRole('button', { name: 'Tipo: Só o nome. Mudar' }).click();

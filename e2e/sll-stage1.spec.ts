@@ -3,7 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { auth } from '@/server/auth/auth';
 import { assertTestDatabase } from './support/cleanup';
-import { database, PASSWORD } from './support/students';
+import { closeDatabase, database, PASSWORD } from './support/students';
 import { expectNoA11yViolations, signIn } from './support/auth';
 
 const run = randomUUID();
@@ -100,7 +100,7 @@ test.afterAll(async () => {
   assertTestDatabase();
   await database().query('delete from learning_tracks where id=$1', [trackId]);
   await database().query('delete from "user" where id=$1 and email=$2', [userId, email]);
-  await database().end();
+  await closeDatabase();
 });
 
 test('Etapa 1 abre o Passo 1 e mantém aula, ordem e progresso reais', async ({ page }) => {
@@ -110,12 +110,19 @@ test('Etapa 1 abre o Passo 1 e mantém aula, ordem e progresso reais', async ({ 
   await expect(page.getByRole('heading', { name: 'Sua loja no ar em 7 dias' })).toBeVisible();
   await expect(page.getByText('PASSO 1', { exact: true })).toBeVisible();
   await expect(page.getByText('Passo não publicado', { exact: true })).toHaveCount(0);
-  await expect(page.locator('details').first()).toHaveAttribute('open', '');
-  await expect(page.locator('details').first().locator('li')).toHaveCount(2);
-  await expect(page.locator('details').first()).toContainText('0 de 2 aulas concluídas');
+  await expect(
+    page.getByRole('region', { name: 'Passos da etapa' }).locator('details').first(),
+  ).toHaveAttribute('open', '');
+  await expect(
+    page.getByRole('region', { name: 'Passos da etapa' }).locator('details').first().locator('li'),
+  ).toHaveCount(2);
+  await expect(
+    page.getByRole('region', { name: 'Passos da etapa' }).locator('details').first(),
+  ).toContainText('0 de 2 aulas concluídas');
   await expectNoA11yViolations(page);
 
   await page
+    .getByRole('region', { name: 'Passos da etapa' })
     .locator('details')
     .first()
     .getByRole('link', { name: /Comece por aqui/ })
@@ -124,9 +131,14 @@ test('Etapa 1 abre o Passo 1 e mantém aula, ordem e progresso reais', async ({ 
   await expect(
     page.locator('p').filter({ hasText: 'Sua loja no ar em 7 dias' }).first(),
   ).toBeVisible();
-  await expect(page.getByText('Passo 1', { exact: false }).first()).toBeVisible();
+  await expect(page.getByRole('complementary', { name: 'Aulas deste módulo' })).toContainText(
+    'Ativando Sua Conta de Vendedora em 10 minutos',
+  );
   await expect(page.locator('#lesson-title')).toHaveText(lessonTitles[0]!);
-  await expect(page.getByRole('heading', { name: 'Vídeo confirmado' })).toBeVisible();
+  await expect(page.getByTitle(`Vídeo da aula: ${lessonTitles[0]}`)).toHaveAttribute(
+    'src',
+    new RegExp(videoIds[0]),
+  );
   await expect(page.getByRole('link', { name: 'Aula anterior', exact: true })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Próxima aula', exact: true })).toBeVisible();
   await expect(page.getByRole('complementary', { name: 'Aulas deste módulo' })).toContainText(
@@ -134,7 +146,9 @@ test('Etapa 1 abre o Passo 1 e mantém aula, ordem e progresso reais', async ({ 
   );
 
   await page.getByRole('button', { name: 'Marcar como concluída', exact: true }).click();
-  await expect(page.getByText('Aula concluída', { exact: true }).first()).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Desmarcar como concluída', exact: true }),
+  ).toBeVisible();
   await expect(page.getByRole('complementary', { name: 'Aulas deste módulo' })).toContainText(
     '1 de 2 aulas concluídas',
   );
@@ -180,7 +194,9 @@ test('a conclusão do Passo 1 funciona sem JavaScript', async ({ browser }) => {
       page.getByRole('button', { name: 'Marcar como concluída', exact: true }),
     ).toBeVisible();
     await page.getByRole('button', { name: 'Marcar como concluída', exact: true }).click();
-    await expect(page.getByText('Aula concluída', { exact: true }).first()).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Desmarcar como concluída', exact: true }),
+    ).toBeVisible();
   } finally {
     await context.close();
   }
