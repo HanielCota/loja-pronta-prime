@@ -69,6 +69,13 @@ o tema escuro e o alto contraste.
   `icon`. Tem `loading` com texto ("Salvando…").
 - `FloatingLabelInput`, `PasswordInput`, `Field`/`FieldError`, `Switch`, `Avatar`, `Spinner`,
   `LiveRegion` (`components/ui`).
+- Nada com a cara padrão do navegador. Lista de escolha: `Select` (o `<select>` nativo com a
+  borda, o fundo e o foco dos campos e a seta do lucide). Texto longo: `Textarea` (mesmo visual,
+  cresce com o texto, sem o puxador onde o navegador permite). Arquivo: `FileField` (botão `soft`
+  "Escolher arquivo" e o nome e o tamanho embaixo; sem JavaScript, o campo do navegador). Caixa de
+  marcar, rádio, número, busca e `<summary>` já têm estilo global no `globals.css`: borda dos
+  campos, azul quando marcados, sem setinhas, sem o "x" da busca e sem o triângulo das seções.
+  No alto contraste do Windows, caixa, rádio e a seta do `Select` voltam a ser os do sistema.
 - `Avatar` mostra a foto privada do perfil, com as iniciais de reserva. A foto é ajustada para o
   círculo no envio. Em Perfil, adicionar, trocar e remover ficam na linha "Foto de perfil", com o
   mesmo formulário expansível dos outros ajustes; o campo de arquivo tem rótulo e ajuda visíveis

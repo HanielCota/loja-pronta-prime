@@ -10,6 +10,7 @@ import { panelCard } from '@/features/member/components/area-shell';
 import { SLL_COPY, SLL_COPY_GROUPS, type SllCopy } from '@/features/sll/copy';
 import { EditorActionMessage, useEditorActions } from './editor-actions';
 import { runSllCopyActionForm, saveSllCopyForm } from '../server/actions';
+import { Textarea } from '@/components/ui/textarea';
 
 const initialState = { saved: false, message: '' };
 
@@ -81,8 +82,8 @@ function CopyGroup({
               SLL_COPY[key].length > 110 ? (
                 <div className="flex flex-col gap-2" key={key}>
                   <Label htmlFor={`copy-${key}`}>{label}</Label>
-                  <textarea
-                    className="min-h-24 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                  <Textarea
+                    className="min-h-24"
                     defaultValue={copy[key]}
                     id={`copy-${key}`}
                     maxLength={600}

@@ -7,6 +7,8 @@ import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
 import { changeStudentProductAccess } from '../server/actions';
 import type { ProductAccessState } from '../server/actions';
+import { Select } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 const initialState: ProductAccessState = { message: '', saved: false };
 
@@ -33,32 +35,22 @@ export function ProductAccessManager({ email }: { email?: string } = {}) {
       />
       <div className="flex flex-col gap-2">
         <Label htmlFor="access-product">Produto</Label>
-        <select
-          className="min-h-12 rounded-field border border-input bg-background px-4 text-body text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-          defaultValue="sll"
-          id="access-product"
-          name="product"
-        >
+        <Select defaultValue="sll" id="access-product" name="product">
           <option value="sll">SLL — Sistema Loja Lucrativa</option>
           <option value="loja-pronta">Loja Pronta</option>
-        </select>
+        </Select>
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="access-action">O que deseja fazer?</Label>
-        <select
-          className="min-h-12 rounded-field border border-input bg-background px-4 text-body text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-          defaultValue="granted"
-          id="access-action"
-          name="action"
-        >
+        <Select defaultValue="granted" id="access-action" name="action">
           <option value="granted">Liberar acesso</option>
           <option value="revoked">Remover acesso</option>
-        </select>
+        </Select>
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="access-reason">Motivo da alteração</Label>
-        <textarea
-          className="min-h-24 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+        <Textarea
+          className="min-h-24"
           id="access-reason"
           maxLength={500}
           minLength={3}

@@ -48,6 +48,9 @@ import { panelCard } from '@/features/member/components/area-shell';
 import { LessonDraftPreview, type DraftPreviewBlock } from './lesson-draft-preview';
 import { removeLessonBlock, reorderLessonBlocks, saveLearningLesson } from '../server/actions';
 import type { LessonEditState } from '../server/actions';
+import { Select } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { FileField } from '@/components/ui/file-field';
 
 const initialLessonEditState: LessonEditState = { message: '', saved: false };
 
@@ -332,8 +335,8 @@ export function LessonEditor({
           />
           <div className="flex flex-col gap-2">
             <Label htmlFor="lesson-description">Descrição da aula</Label>
-            <textarea
-              className="min-h-28 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            <Textarea
+              className="min-h-28"
               defaultValue={lesson.description ?? ''}
               id="lesson-description"
               maxLength={1200}
@@ -376,8 +379,8 @@ export function LessonEditor({
                     {block.kind === 'text' ? (
                       <div className="flex flex-col gap-2">
                         <Label htmlFor={`block-${block.id}-text`}>Texto da aula</Label>
-                        <textarea
-                          className="min-h-36 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                        <Textarea
+                          className="min-h-36"
                           defaultValue={block.data.text ?? ''}
                           id={`block-${block.id}-text`}
                           maxLength={12000}
@@ -405,8 +408,8 @@ export function LessonEditor({
                         />
                         <div className="flex flex-col gap-2">
                           <Label htmlFor={`block-${block.id}-note`}>Anotação para este link</Label>
-                          <textarea
-                            className="min-h-24 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                          <Textarea
+                            className="min-h-24"
                             defaultValue={block.data.note ?? ''}
                             id={`block-${block.id}-note`}
                             maxLength={3000}
@@ -430,8 +433,8 @@ export function LessonEditor({
                         </p>
                         <div className="flex flex-col gap-2">
                           <Label htmlFor={`block-${block.id}-note`}>Anotação para este vídeo</Label>
-                          <textarea
-                            className="min-h-24 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                          <Textarea
+                            className="min-h-24"
                             defaultValue={block.data.note ?? ''}
                             id={`block-${block.id}-note`}
                             maxLength={3000}
@@ -568,8 +571,8 @@ export function LessonEditor({
               {block.kind === 'text' ? (
                 <div className="flex flex-col gap-2">
                   <Label htmlFor={`new-block-${block.key}-text`}>Texto da aula</Label>
-                  <textarea
-                    className="min-h-36 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                  <Textarea
+                    className="min-h-36"
                     id={`new-block-${block.key}-text`}
                     maxLength={12000}
                     name={`newBlock:${newContentIndex(index)}:text`}
@@ -594,8 +597,8 @@ export function LessonEditor({
                   />
                   <div className="flex flex-col gap-2">
                     <Label htmlFor={`new-block-${block.key}-note`}>Anotação para este link</Label>
-                    <textarea
-                      className="min-h-24 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                    <Textarea
+                      className="min-h-24"
                       id={`new-block-${block.key}-note`}
                       maxLength={3000}
                       name={`newBlock:${newContentIndex(index)}:note`}
@@ -617,8 +620,8 @@ export function LessonEditor({
                   </p>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor={`new-block-${block.key}-note`}>Anotação para este vídeo</Label>
-                    <textarea
-                      className="min-h-24 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                    <Textarea
+                      className="min-h-24"
                       id={`new-block-${block.key}-note`}
                       maxLength={3000}
                       name={`newBlock:${newContentIndex(index)}:note`}
@@ -711,8 +714,7 @@ function AttachmentSelect({
   return (
     <div className="flex flex-col gap-2">
       <Label htmlFor={id}>Este arquivo acompanha</Label>
-      <select
-        className="min-h-12 w-full rounded-field border border-input bg-background px-4 text-body text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      <Select
         defaultValue={defaultValue}
         id={id}
         name={name}
@@ -726,7 +728,7 @@ function AttachmentSelect({
               : `Vídeo ${index + 1}`}
           </option>
         ))}
-      </select>
+      </Select>
     </div>
   );
 }
@@ -820,30 +822,27 @@ function MediaUpload({
           onChange={setAttachToBlockId}
         />
       ) : null}
-      <div className="flex flex-col gap-2">
-        <Label htmlFor={inputId}>{kind === 'image' ? 'Imagem' : 'Arquivo'}</Label>
-        <input
-          accept={
-            kind === 'image'
-              ? 'image/png,image/jpeg,image/webp'
-              : '.pdf,.zip,.docx,.xlsx,.pptx,.txt,.csv'
-          }
-          className="min-h-12 w-full rounded-field border border-input bg-background px-3 py-2 text-body text-foreground file:mr-3 file:min-h-10 file:rounded-full file:border-0 file:bg-primary-soft file:px-4 file:font-semibold file:text-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-          id={inputId}
-          onChange={(event) => {
-            setFile(event.currentTarget.files?.[0] ?? null);
-            setMessage('');
-          }}
-          ref={inputRef}
-          type="file"
-        />
-        <p className="text-body text-muted-foreground">
-          {kind === 'image'
+      <FileField
+        accept={
+          kind === 'image'
+            ? 'image/png,image/jpeg,image/webp'
+            : '.pdf,.zip,.docx,.xlsx,.pptx,.txt,.csv'
+        }
+        buttonLabel={kind === 'image' ? 'Escolher imagem' : 'Escolher arquivo'}
+        file={file}
+        hint={
+          kind === 'image'
             ? 'PNG, JPG ou WebP. Até 20 MB.'
-            : 'PDF, ZIP, DOCX, XLSX, PPTX, TXT ou CSV. Até 20 MB.'}
-        </p>
-      </div>
-      {file ? <p className="text-body text-foreground">Escolhido: {file.name}</p> : null}
+            : 'PDF, ZIP, DOCX, XLSX, PPTX, TXT ou CSV. Até 20 MB.'
+        }
+        id={inputId}
+        inputRef={inputRef}
+        label={kind === 'image' ? 'Imagem' : 'Arquivo'}
+        onFile={(chosen) => {
+          setFile(chosen);
+          setMessage('');
+        }}
+      />
       {message ? <p className="text-body text-foreground">{message}</p> : null}
       <LiveRegion>{message}</LiveRegion>
       <Button

@@ -10,6 +10,8 @@ import { Label } from '@/components/ui/label';
 import { panelCard } from '@/features/member/components/area-shell';
 import { saveSllBannerForm } from '../server/actions';
 import type { BannerActionState } from '../structure-types';
+import { Textarea } from '@/components/ui/textarea';
+import { FileField } from '@/components/ui/file-field';
 
 type Banner = {
   id: string;
@@ -180,8 +182,8 @@ export function SllBannerEditor({
         />
         <div className="flex flex-col gap-2">
           <Label htmlFor={`banner-description-${bannerId || 'new'}`}>Texto do banner</Label>
-          <textarea
-            className="min-h-24 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+          <Textarea
+            className="min-h-24"
             defaultValue={initial.description}
             id={`banner-description-${bannerId || 'new'}`}
             maxLength={600}
@@ -215,17 +217,16 @@ export function SllBannerEditor({
           // Com imagem, a descrição é obrigatória: o banner não pode ser publicado sem ela.
           required={hasImage || Boolean(file)}
         />
-        <div className="flex flex-col gap-2 border-t border-border pt-4">
-          <Label htmlFor={`banner-file-${bannerId || 'new'}`}>Imagem do banner</Label>
-          <input
-            accept="image/png,image/jpeg,image/webp"
-            className="min-h-11 w-full rounded-field text-body text-foreground outline-none file:mr-3 file:min-h-11 file:rounded-full file:border-0 file:bg-primary-soft file:px-4 file:text-body file:font-medium file:text-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-            id={`banner-file-${bannerId || 'new'}`}
-            onChange={(event) => setFile(event.currentTarget.files?.[0] ?? null)}
-            type="file"
-          />
-          <p className="text-body text-muted-foreground">PNG, JPG ou WebP. Até 20 MB.</p>
-        </div>
+        <FileField
+          accept="image/png,image/jpeg,image/webp"
+          buttonLabel="Escolher imagem"
+          className="border-t border-border pt-4"
+          file={file}
+          hint="PNG, JPG ou WebP. Até 20 MB."
+          id={`banner-file-${bannerId || 'new'}`}
+          label="Imagem do banner"
+          onFile={setFile}
+        />
         {state.message ? (
           <p
             className={state.saved ? 'text-body text-foreground' : 'text-body text-destructive'}

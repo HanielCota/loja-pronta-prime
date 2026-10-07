@@ -25,6 +25,9 @@ import type {
   LearningNodeKind,
   StructureActionState,
 } from '../structure-types';
+import { Select } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { FileField } from '@/components/ui/file-field';
 
 const initialState: StructureActionState = { message: '', saved: false };
 
@@ -120,8 +123,7 @@ export function ContentNodeForm({
         ) : kind === 'track' ? (
           <div className="flex flex-col gap-2">
             <Label htmlFor="learning-track-kind">Tipo da trilha</Label>
-            <select
-              className="min-h-12 w-full rounded-field border border-input bg-background px-4 text-body text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            <Select
               defaultValue={initial?.trackKind ?? defaultTrackKind ?? 'method'}
               id="learning-track-kind"
               name="trackKind"
@@ -129,7 +131,7 @@ export function ContentNodeForm({
               <option value="welcome">Boas-vindas</option>
               <option value="method">Método SLL</option>
               <option value="complementary_course">Curso complementar</option>
-            </select>
+            </Select>
           </div>
         ) : null}
         <FloatingLabelInput
@@ -143,8 +145,8 @@ export function ContentNodeForm({
         />
         <div className="flex flex-col gap-2">
           <Label htmlFor="learning-node-description">Descrição (opcional)</Label>
-          <textarea
-            className="min-h-24 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          <Textarea
+            className="min-h-24"
             defaultValue={initial?.description ?? ''}
             id="learning-node-description"
             maxLength={1200}
@@ -160,8 +162,7 @@ export function ContentNodeForm({
             {defaultTrackKind === 'method' || lessonChoices.length ? (
               <div className="flex flex-col gap-2">
                 <Label htmlFor="related-lesson">Aula relacionada (opcional)</Label>
-                <select
-                  className="min-h-12 w-full rounded-field border border-input bg-background px-4 text-body text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                <Select
                   defaultValue={initial?.relatedLessonId ?? ''}
                   id="related-lesson"
                   name="relatedLessonId"
@@ -173,7 +174,7 @@ export function ContentNodeForm({
                       {choice.title}
                     </option>
                   ))}
-                </select>
+                </Select>
                 <p className="text-body text-muted-foreground">
                   Se esta ação tiver uma aula completa, escolha qual abrir para a aluna.
                 </p>
@@ -304,16 +305,14 @@ function CourseCoverUpload({ course }: { course: EditableLearningNode }) {
       ) : (
         <p className="text-body text-muted-foreground">Este curso ainda não tem capa.</p>
       )}
-      <div className="flex flex-col gap-2">
-        <Label htmlFor={`course-cover-${course.id}`}>Escolher imagem da capa</Label>
-        <input
-          accept="image/png,image/jpeg,image/webp"
-          className="min-h-12 w-full rounded-field border border-input bg-background px-3 py-2 text-body text-foreground file:mr-3 file:min-h-10 file:rounded-full file:border-0 file:bg-primary-soft file:px-4 file:text-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-          id={`course-cover-${course.id}`}
-          onChange={(event) => setFile(event.currentTarget.files?.[0] ?? null)}
-          type="file"
-        />
-      </div>
+      <FileField
+        accept="image/png,image/jpeg,image/webp"
+        buttonLabel="Escolher imagem"
+        file={file}
+        id={`course-cover-${course.id}`}
+        label="Imagem da capa"
+        onFile={setFile}
+      />
       <FloatingLabelInput
         id={`course-cover-alt-${course.id}`}
         label="Descrição da capa"

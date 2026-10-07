@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { panelCard } from '@/features/member/components/area-shell';
 import { saveSllResourceForm } from '../server/actions';
 import type { ResourceActionState } from '../structure-types';
+import { Select } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 type ResourceDraft = {
   groupTitle?: string;
   title?: string;
@@ -113,8 +115,8 @@ export function SllResourceEditor({
         />
         <div className="flex flex-col gap-2">
           <Label htmlFor={`resource-description-${resource?.id ?? 'new'}`}>Descrição</Label>
-          <textarea
-            className="min-h-24 w-full rounded-field border border-input bg-background px-4 py-3 text-body text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+          <Textarea
+            className="min-h-24"
             defaultValue={initial.description}
             id={`resource-description-${resource?.id ?? 'new'}`}
             maxLength={600}
@@ -170,8 +172,7 @@ export function SllResourceEditor({
             </ul>
           ) : null}
           <Label htmlFor={`resource-track-${resource?.id ?? 'new'}`}>Escolher curso</Label>
-          <select
-            className="min-h-12 w-full rounded-field border border-input bg-background px-4 text-body text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+          <Select
             id={`resource-track-${resource?.id ?? 'new'}`}
             onChange={(event) => {
               setTrackChoice(event.currentTarget.value);
@@ -185,10 +186,9 @@ export function SllResourceEditor({
                 {title}
               </option>
             ))}
-          </select>
+          </Select>
           <Label htmlFor={`resource-lesson-${resource?.id ?? 'new'}`}>Escolher aula</Label>
-          <select
-            className="min-h-12 w-full rounded-field border border-input bg-background px-4 text-body text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+          <Select
             disabled={!trackChoice}
             id={`resource-lesson-${resource?.id ?? 'new'}`}
             onChange={(event) => setLessonChoice(event.currentTarget.value)}
@@ -202,7 +202,7 @@ export function SllResourceEditor({
                   {item.title}
                 </option>
               ))}
-          </select>
+          </Select>
           <Button
             disabled={!lessonChoice}
             onClick={() => {
