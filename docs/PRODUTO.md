@@ -46,6 +46,8 @@ A própria aluna monta sua marca e prepara a conta. A interface tem uma decisão
 | 6    | Publica a marca e os produtos pela plataforma             | Em breve; depende da Shopee                       |
 | 7    | Confere a finalização e as vendas                         | Consulta de vendas em breve                       |
 
+O nome, o logo e o texto ficam salvos antes da conexão para a futura publicação automática. Baixar o logo é opcional, para guardar uma cópia; aplicar a marca manualmente na Shopee não é uma etapa obrigatória da Loja Pronta. A conta de vendedora continua sendo criada pela aluna no site da Shopee. O guia de cadastro tem um espaço de vídeo (`conta-na-shopee`, enviado com `bun run dev:video`), que só aparece depois do envio de um arquivo real e não bloqueia o passo a passo escrito.
+
 A plataforma não confirma hoje que uma loja foi publicada na Shopee. A aluna confere a loja e as vendas na Central do Vendedor. Fases pendentes não têm botões que simulam essas operações.
 
 #### Conversa inicial

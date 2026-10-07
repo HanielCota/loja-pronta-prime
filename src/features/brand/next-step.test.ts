@@ -5,6 +5,7 @@ import { SHOPEE_CONNECT_PATH, SHOPEE_PATH } from '@/config/shopee';
 describe('destino depois da marca', () => {
   test('oferece a conta apenas na fase 3 e a explicação da conexão na fase 4', () => {
     expect(nextStepAfterBrand(3).href).toBe(SHOPEE_PATH);
+    expect(nextStepAfterBrand(3).text).toContain('publicação pela plataforma, que está em breve');
     expect(nextStepAfterBrand(4).href).toBe(SHOPEE_CONNECT_PATH);
     expect(nextStepAfterBrand(4).text).toContain('em preparação');
   });

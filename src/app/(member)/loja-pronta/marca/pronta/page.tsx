@@ -66,6 +66,10 @@ export default async function BrandDonePage() {
             Baixar meu logo
           </a>
         </Button>
+        <p className="text-body text-pretty text-muted-foreground">
+          Baixar o logo é opcional, para guardar uma cópia. Você não precisa enviar o arquivo de
+          volta para continuar aqui.
+        </p>
       </div>
       <section aria-labelledby="proximo-passo" className={cn(panelCard, 'gap-3')}>
         <h2 id="proximo-passo" className={sectionTitleClass}>
