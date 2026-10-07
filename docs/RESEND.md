@@ -4,6 +4,13 @@ Domínio de envio: **mail.lojaprontaprime.com**. Remetente: **Loja Pronta Prime
 &lt;acesso@mail.lojaprontaprime.com&gt;**. Região: São Paulo (`sa-east-1`). Rastreamento
 de abertura e cliques desligado para preservar os links de acesso.
 
+**Configuração em 7 de outubro de 2026:** os quatro registros abaixo foram publicados
+na Cloudflare e confirmados pela Resend como **Verified**. A chave de envio, limitada
+a este domínio, e o remetente estão configurados no `.env.local` e nas variáveis de
+runtime da aplicação de produção no Coolify. A ativação no site depende de integrar
+e publicar o [PR #101](https://github.com/HanielCota/loja-pronta-prime/pull/101).
+Nenhum email real foi enviado durante essa configuração.
+
 ## DNS da Cloudflare
 
 Na zona `lojaprontaprime.com`, adicione estes registros retornados pela Resend em
