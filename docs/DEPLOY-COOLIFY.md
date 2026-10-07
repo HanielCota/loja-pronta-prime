@@ -184,6 +184,25 @@ o início autenticado. O migrador e o Drizzle Kit foram alternados em bancos nov
 o histórico permaneceu com 39 registros, sem reaplicar SQL. Sem `DATABASE_URL`, o migrador
 terminou com erro, impedindo o início do servidor.
 
+O primeiro deploy dessa configuração em `contabo-prod-01` foi concluído em 6 de outubro de
+2026, às 21h28 (Brasília), com o container saudável e migrações concluídas. Comparação com o
+deploy anterior, na mesma VPS:
+
+| Medida                           | Antes    | Depois  |
+| -------------------------------- | -------- | ------- |
+| Deploy completo                  | 10min28s | 4min50s |
+| Imagem no Docker                 | 3,06 GB  | 772 MB  |
+| Build da aplicação               | 102,6s   | 61,7s   |
+| Cópia da aplicação para a imagem | 33,5s    | 1,1s    |
+| Exportação e carga da imagem     | 211,4s   | 64,5s   |
+| Espera inicial de saúde          | 60s      | 10s     |
+
+Deploys comparados: `sbl4os94wd6e8um7wpmc50vp` (antes) e `ql6mtmoxwelw6oftuwht7mqi` (depois),
+com a correção do PR #87 (`3478a8c`). A primeira construção ainda instalou as dependências
+na nova camada de cache; construções seguintes podem reutilizá-la quando `package.json` e
+`bun.lock` não mudam. Os tempos também dependem de CPU, disco e rede da VPS.
+Saúde, login, seis fontes e redimensionamento de imagem responderam HTTP `200` no domínio real.
+
 Esta preparação foi validada em Windows e em um container Linux com Node 24.21.0, Bun 1.4.2 e
 limite de 4 vCPU / 4 GB de RAM. O container Linux recebeu somente arquivos versionados, sem
 `.env.local`, e fez instalação limpa, typecheck, lint, 153 testes e build de produção sem
