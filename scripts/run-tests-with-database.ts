@@ -59,6 +59,9 @@ try {
         PORT: String(port),
         // Simula um proxy local para testar também os limites por IP com endereços distintos.
         TRUSTED_PROXY_HOPS: '1',
+        // Os testes usam emails inventados: nada de enviar de verdade, mesmo com o Resend no
+        // .env.local. O link fica só no terminal (e o token, no banco, onde os testes leem).
+        EMAIL_DELIVERY: 'log',
       },
     },
   );
