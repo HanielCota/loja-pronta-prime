@@ -12,3 +12,4 @@ export * from './learning-resources';
 export * from './learning-texts';
 export * from './product-access-events';
 export * from './hotmart';
+export * from './presence';

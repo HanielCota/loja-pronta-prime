@@ -38,7 +38,7 @@ export function LessonPreview({
   return (
     <div className="flex flex-col gap-6">
       <Button asChild className="w-fit" variant="ghost">
-        <Link href="/admin">
+        <Link href="/admin?area=welcome">
           <ArrowLeft aria-hidden="true" />
           Voltar ao conteúdo
         </Link>

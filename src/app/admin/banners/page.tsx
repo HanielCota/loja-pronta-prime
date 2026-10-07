@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { asc, eq, isNull } from 'drizzle-orm';
-import { AreaShell } from '@/features/member/components/area-shell';
-import { AdminSidebar } from '@/features/admin/components/admin-sidebar';
+import { AdminShell } from '@/features/admin/components/admin-shell';
 import { SllBannerList } from '@/features/admin/components/sll-banner-list';
 import { requireAdmin } from '@/features/admin/server/access';
 import { db } from '@/server/db';
@@ -35,10 +34,9 @@ export default async function AdminBannersPage() {
   const historyIds = new Set(history.map((item) => item.nodeId));
 
   return (
-    <AreaShell
+    <AdminShell
       account={session.user}
-      hasChoice={false}
-      sidebar={<AdminSidebar current="banners" />}
+      current="banners"
       title="Banners do painel"
       intro="Edite os avisos grandes que aparecem no início do SLL. Um banner precisa de imagem e publicação para aparecer às alunas."
     >
@@ -52,6 +50,6 @@ export default async function AdminBannersPage() {
           }))}
         />
       </section>
-    </AreaShell>
+    </AdminShell>
   );
 }

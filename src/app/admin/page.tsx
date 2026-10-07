@@ -1,8 +1,12 @@
 import type { Metadata } from 'next';
-import { AreaShell } from '@/features/member/components/area-shell';
 import { requireAdmin } from '@/features/admin/server/access';
 import { LearningContentTree } from '@/features/admin/components/learning-content-tree';
-import { AdminSidebar, type AdminSection } from '@/features/admin/components/admin-sidebar';
+import { AdminShell } from '@/features/admin/components/admin-shell';
+import { AdminOverview } from '@/features/admin/components/admin-overview';
+import { AutoRefresh } from '@/features/admin/components/auto-refresh';
+import type { AdminSection } from '@/features/admin/components/admin-sidebar';
+import { getOnlineStudents } from '@/features/admin/server/online';
+import { getAdminOverview } from '@/features/admin/server/overview';
 import {
   getAdminLearningContent,
   getArchivedLearningContent,
@@ -12,7 +16,10 @@ export const metadata: Metadata = {
   title: 'Painel administrativo',
 };
 
-/** Mostra a estrutura do conteúdo e o estado de publicação para administradoras. */
+/**
+ * Sem `area`, a visão geral do painel (números e o que mudou por último). Com `area`, a estrutura
+ * do conteúdo daquela área e o estado de publicação.
+ */
 export default async function AdminPage({
   searchParams,
 }: {
@@ -20,7 +27,25 @@ export default async function AdminPage({
 }) {
   const session = await requireAdmin();
   const { area } = await searchParams;
-  const section: AdminSection = area === 'method' || area === 'courses' ? area : 'welcome';
+  if (area !== 'welcome' && area !== 'method' && area !== 'courses') {
+    const [overview, { now, rows: online }] = await Promise.all([
+      getAdminOverview(),
+      getOnlineStudents(),
+    ]);
+    return (
+      <AdminShell
+        account={session.user}
+        current="overview"
+        title="Visão geral"
+        intro="Os números da plataforma e o que mudou por último."
+      >
+        {/* Mantém o "Online agora" e os números em dia sem recarregar. */}
+        <AutoRefresh everyMs={30_000} />
+        <AdminOverview now={now} online={online} overview={overview} />
+      </AdminShell>
+    );
+  }
+  const section: AdminSection = area;
   const [tracks, archived] = await Promise.all([
     getAdminLearningContent(),
     getArchivedLearningContent(),
@@ -35,10 +60,9 @@ export default async function AdminPage({
         ? 'Método SLL'
         : 'Cursos complementares';
   return (
-    <AreaShell
+    <AdminShell
       account={session.user}
-      hasChoice={false}
-      sidebar={<AdminSidebar current={section} />}
+      current={section}
       title={title}
       intro="Abra um item para organizar as aulas. Edite ou arraste para mudar a ordem."
     >
@@ -52,6 +76,6 @@ export default async function AdminPage({
           tracks={tracks.filter((track) => track.kind === kind)}
         />
       </section>
-    </AreaShell>
+    </AdminShell>
   );
 }

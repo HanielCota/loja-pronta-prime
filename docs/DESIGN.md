@@ -80,10 +80,10 @@ o tema escuro e o alto contraste.
 - Molduras de tela:
   - `PageShell` + `BrandCard`: telas de acesso (entrar, senha), cartão centralizado com o mascote
     no topo.
-  - `AreaShell`: a Loja Pronta, o perfil e o admin. Largura 1040px (perfil, 688px); com menu
-    lateral (`sidebar`, como no admin), 1440px, com o menu de 240px à esquerda
-    (`src/lib/member-layout.ts`).
+  - `AreaShell`: a Loja Pronta e o perfil. Largura 1040px (perfil, 688px); com menu lateral
+    (`sidebar`), 1440px, com o menu de 240px à esquerda (`src/lib/member-layout.ts`).
   - `SllAreaShell`: o SLL, separado da Loja Pronta, como um painel (dashboard). Ver "Área SLL".
+  - `AdminShell`: o admin, também como painel (dashboard). Ver "Painel admin".
   - `CenteredMemberPage`: telas de dentro com o conteúdo no meio (fim da conversa, marca pronta,
     Shopee).
   - `ConversationLayout`: os passo a passo (conversa, marca), com "Voltar", "Terminar depois" e a
@@ -115,8 +115,7 @@ o tema escuro e o alto contraste.
   ícone, depois de uma linha vertical curta que as separa da marca. A da vez fica em
   `text-foreground`, com o ícone `text-link` e um traço `bg-primary` de 3px, de pontas redondas,
   por cima da linha da barra; as outras em `text-muted-foreground`. No celular e no tablet
-  (abaixo de 1024px), as abas descem pra uma segunda linha da barra. Com o menu lateral do admin,
-  elas se alinham com o conteúdo (sem a linha vertical). Nada de seletor segmentado acima do
+  (abaixo de 1024px), as abas descem pra uma segunda linha da barra. Nada de seletor segmentado acima do
   título. Fora das áreas (perfil), a trilha continua levando à escolha. No SLL, no computador, a
   troca fica no pé do menu lateral ("Ir pra Minha loja"); no celular e no tablet, são as mesmas
   abas.
@@ -124,8 +123,8 @@ o tema escuro e o alto contraste.
 - Nas áreas (`AreaShell`), do tablet pra cima, a barra fica **presa no topo** ao rolar, com fundo
   `bg-background/80` desfocado; com "Mais contraste" ou menos transparência no aparelho, o fundo
   fica sólido (variante `opaque:`). No celular ela rola junto. O que também fica preso nessas
-  telas (o menu do admin, a prévia da aula) usa `top-22`, logo abaixo dela, e o
-  `scroll-padding-top` evita foco escondido atrás da barra.
+  telas usa `top-22`, logo abaixo dela, e o `scroll-padding-top` evita foco escondido atrás da
+  barra.
 - O tema padrão é o **claro**, com o "Automático" desligado, mesmo com o aparelho no escuro. O
   escuro e o automático só valem quando ela escolhe (no perfil ou no botão do cabeçalho).
 - Perfil, Aparência, depois do tema: **Tamanho do texto** (Normal, Grande, Maior, num controle
@@ -208,6 +207,29 @@ o tema escuro e o alto contraste.
 - Em Recursos, a calculadora sem fórmula validada aparece como aviso compacto “Em breve”. As
   ferramentas externas dizem o que fazem e mostram uma ação específica, com cartões de altura
   determinada pelo conteúdo.
+
+### Painel admin
+
+- Moldura própria (`AdminShell`), com a mesma composição do SLL: no computador, **sem barra no
+  topo**, menu lateral fixo de 288px de ponta a ponta (`bg-card` com linha à direita), com a marca
+  e o tema no alto, as seções no meio (Painel, Contas e compras, Conteúdo das alunas) e, no pé,
+  "Ver a área das alunas" e a conta. O conteúdo vai até 1400px. No celular, volta a barra do topo
+  e as seções abrem por "Seções do painel", acima do título. O que fica preso ao rolar usa
+  `top-10`. A seção atual fica em `bg-primary-soft` com texto `text-link`.
+- `/admin` abre a **Visão geral**: seis cartões de número (contas, novas na semana, com SLL, com
+  Loja Pronta, compras ativas, bloqueadas), cada um levando à tela que o detalha, com rótulo,
+  ícone num círculo `bg-primary-soft` e o número grande (`text-title-lg`, `tabular-nums`).
+  Embaixo, três listas curtas (contas novas, acessos alterados, avisos da Hotmart) com "Ver ..."
+  no canto. Sem gráficos por enquanto. Entre os números e as listas, "Online agora" ocupa a
+  largura toda: quem está com a plataforma aberta, a área (etiqueta) e a página em palavras (na
+  aula, o título). A Visão geral se atualiza sozinha a cada 30s.
+- Online agora (`/admin/online`): a lista completa, em tabela (aluna, área, onde está, último
+  sinal), atualizada a cada 15s. A tela de uma conta mostra o "Último acesso" no resumo.
+- Contas: tabela no computador (nome e email, produtos, situação, data), com a linha toda
+  clicável e etiquetas `rounded-full` (produto em `bg-primary-soft`, bloqueada em
+  `bg-destructive-soft`, o resto em `bg-muted`); no celular, a mesma informação em lista. A
+  busca fica no cabeçalho do cartão. A tela de uma conta tem os formulários à esquerda e o
+  resumo e o acesso à plataforma numa coluna de 400px à direita, presa ao rolar.
 - No painel admin, cada nível de conteúdo abre o próximo, com “Voltar” para retornar. As ações
   frequentes ficam visíveis; publicação e arquivo ficam em “Mais opções”. Listas de conteúdo,
   materiais, banners e recursos podem ser ordenadas por arraste ou pelo teclado. O marcador tem

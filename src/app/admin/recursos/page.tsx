@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import { Plus } from 'lucide-react';
 import { asc, eq, isNull } from 'drizzle-orm';
-import { AreaShell } from '@/features/member/components/area-shell';
-import { AdminSidebar } from '@/features/admin/components/admin-sidebar';
+import { AdminShell } from '@/features/admin/components/admin-shell';
 import { SllResourceEditor } from '@/features/admin/components/sll-resource-editor';
 import { SllResourceList } from '@/features/admin/components/sll-resource-list';
 import { requireAdmin } from '@/features/admin/server/access';
@@ -111,12 +110,7 @@ export default async function AdminResourcesPage() {
   }, []);
 
   return (
-    <AreaShell
-      account={session.user}
-      hasChoice={false}
-      sidebar={<AdminSidebar current="resources" />}
-      title="Recursos do SLL"
-    >
+    <AdminShell account={session.user} current="resources" title="Recursos do SLL">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
         <p className="text-body text-muted-foreground">
           Edite ferramentas, parceiros e links. Sem destino, a aluna verá “Em breve”.
@@ -151,6 +145,6 @@ export default async function AdminResourcesPage() {
           </details>
         </section>
       </div>
-    </AreaShell>
+    </AdminShell>
   );
 }
