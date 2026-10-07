@@ -10,7 +10,7 @@ import { Mascot } from '@/components/brand/mascot';
 import { Button } from '@/components/ui/button';
 import { STORE_PHASES, STORE_STAGES } from '@/config/store-phases';
 import { TEAM_WHATSAPP } from '@/config/support';
-import { SHOPEE_BRAND_PATH, SHOPEE_PATH } from '@/config/shopee';
+import { SHOPEE_CONNECT_PATH, SHOPEE_PATH } from '@/config/shopee';
 import { BRAND_PATH, brandStepPath } from '@/features/brand/steps';
 import { AreaShell, panelCard } from '@/features/member/components/area-shell';
 import { greetingName } from '@/features/products/names';
@@ -133,14 +133,13 @@ function heroFor(
       action: { href: SHOPEE_PATH, label: 'Abrir minha conta na Shopee' },
     };
   }
-  // A conexão está em breve: enquanto isso, o que dá pra fazer é colocar a marca na loja à mão.
   if (phase === 4) {
     return {
-      eyebrow: stageEyebrow(3),
-      title: 'Coloque sua marca na Shopee',
-      text: 'Coloque seu logo e o texto da loja no perfil da sua loja na Shopee. A gente mostra como, passo a passo.',
-      action: { href: SHOPEE_BRAND_PATH, label: 'Ver o passo a passo' },
-      note: 'A conexão automática com a Shopee está em breve.',
+      eyebrow: stageEyebrow(3, 'Em breve'),
+      title: current?.title ?? '',
+      text: current?.detail ?? '',
+      action: { href: SHOPEE_CONNECT_PATH, label: 'Ver como funciona a conexão' },
+      note: 'A conexão com a Shopee está em breve. Por enquanto, você pode conferir como ela vai funcionar.',
     };
   }
   if (phase >= STORE_PHASES.length) {
@@ -326,7 +325,7 @@ function Stage({ stage, reviewHref }: { stage: StageView; reviewHref?: string | 
         </span>
       </span>
       <span className="text-body text-pretty text-muted-foreground">{stage.detail}</span>
-      {/* Na atual com várias fases, em que passo ela está: "Passo 2 de 5: Sua marca na Shopee". */}
+      {/* Na atual com várias fases, em que passo ela está: "Passo 2 de 5: Conexão com a Shopee". */}
       {status === 'current' && stage.step ? (
         <span className="text-sm font-semibold text-pretty text-progress-text">{stage.step}</span>
       ) : null}

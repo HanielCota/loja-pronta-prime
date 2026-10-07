@@ -80,8 +80,9 @@ export default async function ShopeeConnectPage() {
         <p className="flex gap-3 rounded-2xl bg-primary-soft px-4 py-3 text-body text-pretty text-foreground">
           <BellIcon aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-link" />
           <span>
-            A conexão depende da liberação da Shopee. Por enquanto, a plataforma não publica sua
-            marca nem seus produtos por lá.
+            A conexão depende da liberação da Shopee. Seu nome, logo e texto ficam salvos aqui
+            para a publicação automática, que também está em breve. Por enquanto, a plataforma
+            não publica sua marca nem seus produtos por lá.
           </span>
         </p>
         <Button asChild variant="soft">

@@ -31,31 +31,17 @@ test('conta na Shopee: passo a passo, "falta terminar" e, liberada, a tela da co
   await expectNoA11yViolations(page);
   await page.getByRole('link', { name: 'Já terminei' }).click();
 
-  // Liberada: a conexão ainda está em breve, então ela coloca a marca na loja à mão.
+  // Liberada: a loja vai pra conexão, que explica o que vai acontecer (e abre em breve).
   await page.getByRole('button', { name: 'Sim, já entro no painel de vendedora' }).click();
-  await expect(page).toHaveURL(/\/loja-pronta\/shopee\/marca$/);
-  await expect(page.getByRole('heading', { name: 'Coloque sua marca na Shopee' })).toBeVisible();
-  await expect(page.getByRole('list').filter({ hasText: 'Abra o Perfil da Loja.' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Baixar meu logo' })).toHaveAttribute(
-    'href',
-    /logo\.png\?baixar=1$/,
-  );
-  await expect(page.getByLabel('O texto da sua loja')).not.toBeEmpty();
-  await expect(page.getByRole('button', { name: 'Copiar o texto' })).toBeVisible();
-  await expectNoA11yViolations(page);
-
-  // A conexão continua explicada, pra quem quer saber como vai ser.
-  await page.getByRole('link', { name: 'Como vai funcionar a conexão automática' }).click();
   await expect(page).toHaveURL(/\/loja-pronta\/shopee\/conectar$/);
   await expect(page.getByRole('heading', { name: 'Conexão com a Shopee em breve' })).toBeVisible();
   await expect(page.getByText(/A conexão depende da liberação da Shopee/)).toBeVisible();
   await expectNoA11yViolations(page);
 
-  // A conta já foi: a página dela leva pro painel, que oferece o passo a passo da marca.
+  // A conta já foi: a página dela leva pro painel, que mostra a conexão.
   await page.goto('/loja-pronta/shopee');
   await expect(page).toHaveURL(/\/loja-pronta$/);
-  await expect(page.getByRole('heading', { name: 'Coloque sua marca na Shopee' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Ver o passo a passo' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Ver como funciona a conexão' })).toBeVisible();
 });
 
 test('quem já tem loja na Shopee pula a criação da conta ao confirmar a marca', async ({
@@ -65,9 +51,9 @@ test('quem já tem loja na Shopee pula a criação da conta ao confirmar a marca
   await expect(page).toHaveURL(/\/marca\/revisao$/);
   await page.getByRole('button', { name: 'Está tudo certo' }).click();
   await expect(page).toHaveURL(/\/marca\/pronta$/);
-  await expect(
-    page.getByRole('heading', { name: 'Próximo passo: sua marca na Shopee' }),
-  ).toBeVisible();
-  await page.getByRole('link', { name: 'Colocar minha marca na Shopee' }).click();
-  await expect(page).toHaveURL(/\/loja-pronta\/shopee\/marca$/);
+  await expect(page.getByText(/Baixar o logo é opcional/)).toBeVisible();
+  await expect(page.getByText(/publicação automática ainda estão em preparação/)).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Conexão com a Shopee em breve' })).toBeVisible();
+  await page.getByRole('link', { name: 'Ver como funciona a conexão' }).click();
+  await expect(page).toHaveURL(/\/loja-pronta\/shopee\/conectar$/);
 });

@@ -2,7 +2,7 @@
 
 import { and, eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
-import { SHOPEE_BRAND_PATH } from '@/config/shopee';
+import { SHOPEE_CONNECT_PATH } from '@/config/shopee';
 import { getStorePhase } from '@/features/loja-pronta/server/store';
 import { requireProductAction } from '@/features/products/server/access';
 import { db } from '@/server/db';
@@ -13,8 +13,7 @@ const ACCOUNT_PHASE = 3;
 
 /**
  * "A Shopee liberou a minha conta": a loja passa pra conexão (fase 4). Só quem está na fase da
- * conta avança (outra aba, ou a action chamada direto, não pula nem volta fase). Com a conta
- * pronta, o próximo passo é colocar a marca nela (a conexão ainda está em breve).
+ * conta avança (outra aba, ou a action chamada direto, não pula nem volta fase).
  */
 export async function confirmShopeeAccount(): Promise<void> {
   const { userId } = await requireProductAction('loja-pronta');
@@ -23,5 +22,5 @@ export async function confirmShopeeAccount(): Promise<void> {
     .update(stores)
     .set({ phase: ACCOUNT_PHASE + 1 })
     .where(and(eq(stores.userId, userId), eq(stores.phase, ACCOUNT_PHASE)));
-  redirect(SHOPEE_BRAND_PATH);
+  redirect(SHOPEE_CONNECT_PATH);
 }

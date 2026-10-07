@@ -18,12 +18,6 @@ export const VIDEOS = {
     // Ela assiste junto do passo a passo escrito: nada fica travado esperando o vídeo.
     minWatch: 0,
   },
-  'marca-na-shopee': {
-    title: 'Como colocar sua marca na Shopee',
-    where: 'No passo a passo de colocar o logo e o texto na loja da Shopee',
-    // Ela assiste junto do passo a passo escrito: nada fica travado esperando o vídeo.
-    minWatch: 0,
-  },
 } as const;
 
 export type VideoSlot = keyof typeof VIDEOS;
