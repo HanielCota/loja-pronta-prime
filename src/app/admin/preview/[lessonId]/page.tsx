@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { AreaShell } from '@/features/member/components/area-shell';
+import { AdminShell } from '@/features/admin/components/admin-shell';
 import { LessonPreview } from '@/features/admin/components/lesson-preview';
 import { requireAdmin } from '@/features/admin/server/access';
 import { getAdminLessonPreview } from '@/features/admin/server/learning-content';
@@ -19,13 +19,12 @@ export default async function AdminLessonPreviewPage({ params }: PageProps) {
   if (!lesson) notFound();
 
   return (
-    <AreaShell
+    <AdminShell
       account={session.user}
-      hasChoice={false}
       title="Prévia da aula"
       intro="Confira como o conteúdo cadastrado será apresentado à aluna."
     >
       <LessonPreview lesson={lesson} />
-    </AreaShell>
+    </AdminShell>
   );
 }

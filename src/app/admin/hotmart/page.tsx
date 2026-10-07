@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { env } from '@/config/env';
-import { AreaShell, panelCard } from '@/features/member/components/area-shell';
-import { AdminSidebar } from '@/features/admin/components/admin-sidebar';
+import { panelCard } from '@/features/member/components/area-shell';
+import { AdminShell } from '@/features/admin/components/admin-shell';
 import { requireAdmin } from '@/features/admin/server/access';
 import { HotmartSettingsForm } from '@/features/hotmart/components/settings-form';
 import { getHotmartAdminState } from '@/features/hotmart/server/actions';
@@ -13,12 +13,7 @@ export default async function HotmartAdminPage() {
   const state = await getHotmartAdminState();
   const url = new URL('/api/hotmart/webhook', env.BETTER_AUTH_URL).toString();
   return (
-    <AreaShell
-      account={session.user}
-      hasChoice={false}
-      sidebar={<AdminSidebar current="hotmart" />}
-      title="Compras da Hotmart"
-    >
+    <AdminShell account={session.user} current="hotmart" title="Compras da Hotmart">
       <section className={`${panelCard} gap-5`} aria-labelledby="hotmart-config">
         <div>
           <h2 id="hotmart-config" className="text-title font-semibold">
@@ -66,6 +61,6 @@ export default async function HotmartAdminPage() {
           <p className="text-body text-muted-foreground">Nenhum aviso recebido.</p>
         )}
       </section>
-    </AreaShell>
+    </AdminShell>
   );
 }

@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { asc, isNotNull } from 'drizzle-orm';
 import { Button } from '@/components/ui/button';
-import { AreaShell, panelCard } from '@/features/member/components/area-shell';
-import { AdminSidebar } from '@/features/admin/components/admin-sidebar';
+import { panelCard } from '@/features/member/components/area-shell';
+import { AdminShell } from '@/features/admin/components/admin-shell';
 import { ArchivedLearningContent } from '@/features/admin/components/structure-controls';
 import { requireAdmin } from '@/features/admin/server/access';
 import { getArchivedLearningContent } from '@/features/admin/server/learning-content';
@@ -28,10 +28,9 @@ export default async function ArchivedContentPage() {
     }),
   ]);
   return (
-    <AreaShell
+    <AdminShell
       account={session.user}
-      hasChoice={false}
-      sidebar={<AdminSidebar current="archived" />}
+      current="archived"
       title="Itens arquivados"
       intro="O conteúdo fica guardado aqui. Restaure um item para voltar a editá-lo."
     >
@@ -86,6 +85,6 @@ export default async function ArchivedContentPage() {
           )}
         </section>
       </div>
-    </AreaShell>
+    </AdminShell>
   );
 }

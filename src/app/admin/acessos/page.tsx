@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { AreaShell, panelCard } from '@/features/member/components/area-shell';
-import { AdminSidebar } from '@/features/admin/components/admin-sidebar';
+import { panelCard } from '@/features/member/components/area-shell';
+import { AdminShell } from '@/features/admin/components/admin-shell';
 import { ProductAccessManager } from '@/features/admin/components/product-access-manager';
 import { getRecentProductAccessEvents } from '@/features/admin/server/actions';
 import { requireAdmin } from '@/features/admin/server/access';
@@ -12,12 +12,7 @@ export default async function AdminProductAccessPage() {
   const events = await getRecentProductAccessEvents();
 
   return (
-    <AreaShell
-      account={session.user}
-      hasChoice={false}
-      sidebar={<AdminSidebar current="access" />}
-      title="Acessos das alunas"
-    >
+    <AdminShell account={session.user} current="access" title="Acessos das alunas">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
         <p className="text-body text-muted-foreground">
           Cada produto é controlado separadamente. Remover um não altera o outro.
@@ -62,6 +57,6 @@ export default async function AdminProductAccessPage() {
           <p className="text-body text-muted-foreground">Nenhuma alteração registrada ainda.</p>
         )}
       </section>
-    </AreaShell>
+    </AdminShell>
   );
 }
