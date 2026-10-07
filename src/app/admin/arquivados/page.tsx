@@ -1,3 +1,4 @@
+import { RotateCcw } from 'lucide-react';
 import type { Metadata } from 'next';
 import { asc, isNotNull } from 'drizzle-orm';
 import { Button } from '@/components/ui/button';
@@ -51,6 +52,7 @@ export default async function ArchivedContentPage() {
                   <form action={restoreSllBannerForm}>
                     <input name="id" type="hidden" value={banner.id} />
                     <Button size="inline" type="submit" variant="soft">
+                      <RotateCcw aria-hidden="true" data-icon="inline-start" />
                       Restaurar como rascunho
                     </Button>
                   </form>
@@ -74,6 +76,7 @@ export default async function ArchivedContentPage() {
                   <form action={restoreSllResourceForm}>
                     <input name="id" type="hidden" value={resource.id} />
                     <Button size="inline" type="submit" variant="soft">
+                      <RotateCcw aria-hidden="true" data-icon="inline-start" />
                       Restaurar como rascunho
                     </Button>
                   </form>

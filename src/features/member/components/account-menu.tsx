@@ -2,8 +2,8 @@
 
 import { ChevronDownIcon, LogOutIcon, UserRoundIcon } from 'lucide-react';
 import Link from 'next/link';
-import { DropdownMenu } from 'radix-ui';
-import { useRef } from 'react';
+import { DropdownMenu, Tooltip } from 'radix-ui';
+import { useRef, type ReactNode } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Avatar } from '@/components/ui/avatar';
 import { Spinner } from '@/components/ui/spinner';
@@ -22,54 +22,67 @@ type AccountMenuProps = {
    * espaço, e ela confere a conta sem abrir), e o menu abre pra cima.
    */
   variant?: 'avatar' | 'sidebar';
+  /** No admin, o email completo usa a mesma superfície dos menus. */
+  styledEmailTooltip?: boolean;
 };
 
 /**
  * A conta, no canto do topo: o círculo com as iniciais abre o perfil e o sair. Fica num menu (e não
  * solto na barra) porque são coisas raras: o que ela veio fazer continua sendo o destaque da tela.
  */
-export function AccountMenu({ name, email, image, variant = 'avatar' }: AccountMenuProps) {
+export function AccountMenu({
+  name,
+  email,
+  image,
+  variant = 'avatar',
+  styledEmailTooltip = false,
+}: AccountMenuProps) {
   const signOutForm = useRef<HTMLFormElement>(null);
   const inSidebar = variant === 'sidebar';
 
   return (
     <DropdownMenu.Root modal={false}>
-      <DropdownMenu.Trigger
-        // No menu lateral, o nome vem do texto visível (o nome e o email, WCAG 2.5.3) mais o
-        // "Sua conta" escondido; no topo, só a foto aparece, então o rótulo diz o que é.
-        aria-label={inSidebar ? undefined : 'Sua conta'}
-        className={cn(
-          'group flex min-h-11 items-center outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid motion-safe:transition-colors motion-safe:duration-150',
-          inSidebar
-            ? 'w-full gap-3 rounded-2xl p-2 text-left hover:bg-muted data-[state=open]:bg-muted'
-            : '-mr-1 gap-1 rounded-full p-1 pr-2 hover:bg-card data-[state=open]:bg-card',
-        )}
-      >
-        <Avatar name={name} image={image} />
-        {inSidebar ? (
-          <span className="flex min-w-0 flex-1 flex-col">
-            <span className="text-sm font-semibold wrap-anywhere text-foreground">
-              {name || 'Sua conta'}
-            </span>
-            {/* Email comprido: corta com reticências aqui; o mouse em cima e o menu aberto mostram
-                ele inteiro. */}
-            <span className="truncate text-sm text-muted-foreground" title={email}>
-              {email}
-            </span>
-            <span className="sr-only">Sua conta</span>
-          </span>
-        ) : null}
-        <ChevronDownIcon
-          aria-hidden="true"
+      <EmailTooltip email={email} enabled={inSidebar && styledEmailTooltip}>
+        <DropdownMenu.Trigger
+          // No menu lateral, o nome vem do texto visível (o nome e o email, WCAG 2.5.3) mais o
+          // "Sua conta" escondido; no topo, só a foto aparece, então o rótulo diz o que é.
+          aria-label={inSidebar ? undefined : 'Sua conta'}
           className={cn(
-            'size-4 shrink-0 text-muted-foreground motion-safe:transition-transform motion-safe:duration-150',
-            // Abrindo pra cima, a seta aponta pra cima quando o menu está aberto.
+            'group flex min-h-11 items-center outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid motion-safe:transition-colors motion-safe:duration-150',
             inSidebar
-              ? 'rotate-180 group-data-[state=open]:rotate-0'
-              : 'group-data-[state=open]:rotate-180',
+              ? 'w-full gap-3 rounded-2xl p-2 text-left hover:bg-muted data-[state=open]:bg-muted'
+              : '-mr-1 gap-1 rounded-full p-1 pr-2 hover:bg-card data-[state=open]:bg-card',
           )}
-        />
-      </DropdownMenu.Trigger>
+        >
+          <Avatar name={name} image={image} />
+          {inSidebar ? (
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="text-sm font-semibold wrap-anywhere text-foreground">
+                {name || 'Sua conta'}
+              </span>
+              {/* Email comprido: corta com reticências aqui; o mouse em cima e o menu aberto mostram
+                ele inteiro. */}
+              <span
+                className="truncate text-sm text-muted-foreground"
+                title={styledEmailTooltip ? undefined : email}
+              >
+                {email}
+              </span>
+              <span className="sr-only">Sua conta</span>
+            </span>
+          ) : null}
+          <ChevronDownIcon
+            aria-hidden="true"
+            className={cn(
+              'size-4 shrink-0 text-muted-foreground motion-safe:transition-transform motion-safe:duration-150',
+              // Abrindo pra cima, a seta aponta pra cima quando o menu está aberto.
+              inSidebar
+                ? 'rotate-180 group-data-[state=open]:rotate-0'
+                : 'group-data-[state=open]:rotate-180',
+            )}
+          />
+        </DropdownMenu.Trigger>
+      </EmailTooltip>
 
       <DropdownMenu.Portal>
         <DropdownMenu.Content
@@ -108,6 +121,35 @@ export function AccountMenu({ name, email, image, variant = 'avatar' }: AccountM
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>
+  );
+}
+
+function EmailTooltip({
+  email,
+  enabled,
+  children,
+}: {
+  email: string;
+  enabled: boolean;
+  children: ReactNode;
+}) {
+  if (!enabled) return children;
+  return (
+    <Tooltip.Provider delayDuration={500}>
+      <Tooltip.Root>
+        <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content
+            side="top"
+            sideOffset={8}
+            collisionPadding={16}
+            className="z-50 max-w-[calc(100vw-2rem)] rounded-field border border-border bg-card px-4 py-3 text-sm wrap-anywhere text-foreground shadow-card forced-colors:border-[CanvasText]"
+          >
+            {email}
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    </Tooltip.Provider>
   );
 }
 

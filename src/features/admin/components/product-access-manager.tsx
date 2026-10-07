@@ -1,5 +1,7 @@
 'use client';
 
+import { Save } from 'lucide-react';
+
 import { useActionState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -7,7 +9,7 @@ import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
 import { changeStudentProductAccess } from '../server/actions';
 import type { ProductAccessState } from '../server/actions';
-import { Select } from '@/components/ui/select';
+import { AdminSelect as Select } from './admin-select';
 import { Textarea } from '@/components/ui/textarea';
 
 const initialState: ProductAccessState = { message: '', saved: false };
@@ -22,7 +24,7 @@ export function ProductAccessManager({ email }: { email?: string } = {}) {
   }, [router, state.saved]);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form noValidate action={formAction} className="flex flex-col gap-4">
       <FloatingLabelInput
         autoComplete="email"
         defaultValue={email}
@@ -59,6 +61,7 @@ export function ProductAccessManager({ email }: { email?: string } = {}) {
         />
       </div>
       <Button disabled={pending} loading={pending} type="submit">
+        <Save aria-hidden="true" data-icon="inline-start" />
         Salvar alteração
       </Button>
       <output aria-live="polite" className="min-h-6 text-body text-muted-foreground">

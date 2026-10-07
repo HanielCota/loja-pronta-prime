@@ -1,13 +1,13 @@
 'use client';
 
-import { useActionState } from 'react';
-import { MailIcon, KeyRoundIcon } from 'lucide-react';
+import { useActionState, useEffect, useRef } from 'react';
+import { KeyRoundIcon, MailIcon, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError } from '@/components/ui/field';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
 import { PasswordInput } from '@/components/ui/password-input';
-import { Select } from '@/components/ui/select';
+import { AdminSelect as Select } from './admin-select';
 import { PASSWORD_MIN_LENGTH } from '@/config/auth';
 import { PRODUCTS } from '@/features/products/catalog';
 import { PRODUCT_IDS } from '@/config/products';
@@ -28,10 +28,21 @@ export function NewAccountForm() {
   const [state, formAction, pending] = useActionState(createAccountForm, initialState);
   const values = state.values;
   const errors = state.errors ?? {};
+  const formRef = useRef<HTMLFormElement>(null);
+  useEffect(() => {
+    // Os erros vêm do servidor; sem o balão nativo, o teclado chega ao primeiro campo inválido.
+    if (state.errors) formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+  }, [state]);
 
   return (
     // A chave recomeça o formulário a cada resposta, com o que foi digitado como valor inicial.
-    <form action={formAction} className="flex flex-col gap-6" key={state.attempt}>
+    <form
+      noValidate
+      action={formAction}
+      className="flex flex-col gap-6"
+      key={state.attempt}
+      ref={formRef}
+    >
       <div className="flex flex-col gap-4">
         <Field>
           <FloatingLabelInput
@@ -115,7 +126,7 @@ export function NewAccountForm() {
           <KeyRoundIcon aria-hidden="true" className="size-5 shrink-0 text-link" />
           <span>Definir uma senha temporária agora</span>
         </label>
-        <Field className="hidden group-has-[#access-password:checked]/access:flex">
+        <Field className="hidden group-has-[[name=access][value=password]:checked]/access:flex">
           <PasswordInput
             aria-describedby={['new-password-hint', errors.password && 'new-password-error']
               .filter(Boolean)
@@ -136,6 +147,7 @@ export function NewAccountForm() {
 
       <FieldError>{errors.form}</FieldError>
       <Button disabled={pending} loading={pending} type="submit">
+        <UserPlus aria-hidden="true" data-icon="inline-start" />
         Criar conta
       </Button>
     </form>

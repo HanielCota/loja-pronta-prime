@@ -1,5 +1,7 @@
 'use client';
 
+import { LockKeyhole, LockKeyholeOpen, LogOut, Save } from 'lucide-react';
+
 import { useActionState, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
@@ -10,7 +12,7 @@ import {
   setAccountBlockedForm as setAccountBlocked,
   type AccountActionState,
 } from '../server/actions';
-import { Select } from '@/components/ui/select';
+import { AdminSelect as Select } from './admin-select';
 import { Textarea } from '@/components/ui/textarea';
 
 const initialState: AccountActionState = { message: '', saved: false };
@@ -46,7 +48,7 @@ export function AccountDetailsForm(account: AccountDetailsProps) {
   const [fields, setFields] = useState(account);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form noValidate action={formAction} className="flex flex-col gap-4">
       <input name="id" type="hidden" value={account.id} />
       <FloatingLabelInput
         value={fields.name}
@@ -111,6 +113,7 @@ export function AccountDetailsForm(account: AccountDetailsProps) {
         </Select>
       </div>
       <Button disabled={pending} loading={pending} type="submit">
+        <Save aria-hidden="true" data-icon="inline-start" />
         Salvar alterações
       </Button>
       <Result state={state} />
@@ -122,7 +125,7 @@ export function AccountBlockForm({ id, blocked }: { id: string; blocked: boolean
   const [state, formAction, pending] = useActionState(setAccountBlocked, initialState);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form noValidate action={formAction} className="flex flex-col gap-4">
       <input name="id" type="hidden" value={id} />
       <input name="blocked" type="hidden" value={blocked ? 'no' : 'yes'} />
       {blocked ? null : (
@@ -139,6 +142,11 @@ export function AccountBlockForm({ id, blocked }: { id: string; blocked: boolean
         </div>
       )}
       <Button disabled={pending} loading={pending} type="submit" variant="soft">
+        {blocked ? (
+          <LockKeyholeOpen aria-hidden="true" data-icon="inline-start" />
+        ) : (
+          <LockKeyhole aria-hidden="true" data-icon="inline-start" />
+        )}
         {blocked ? 'Desbloquear conta' : 'Bloquear conta'}
       </Button>
       <Result state={state} />
@@ -150,9 +158,10 @@ export function AccountSessionsForm({ id }: { id: string }) {
   const [state, formAction, pending] = useActionState(endAccountSessions, initialState);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form noValidate action={formAction} className="flex flex-col gap-4">
       <input name="id" type="hidden" value={id} />
       <Button disabled={pending} loading={pending} type="submit" variant="soft">
+        <LogOut aria-hidden="true" data-icon="inline-start" />
         Desconectar de todos os aparelhos
       </Button>
       <Result state={state} />

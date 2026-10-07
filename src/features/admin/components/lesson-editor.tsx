@@ -10,17 +10,21 @@ import {
   type ReactNode,
 } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAdminConfirmation } from './admin-confirmation';
 import {
+  Eye,
   FilePlus2,
   Film,
   GripVertical,
   ImagePlus,
   Link2,
+  Pencil,
   Plus,
   Save,
   Trash2,
   Type,
   Upload,
+  X,
 } from 'lucide-react';
 import {
   DndContext,
@@ -48,7 +52,7 @@ import { panelCard } from '@/features/member/components/area-shell';
 import { LessonDraftPreview, type DraftPreviewBlock } from './lesson-draft-preview';
 import { removeLessonBlock, reorderLessonBlocks, saveLearningLesson } from '../server/actions';
 import type { LessonEditState } from '../server/actions';
-import { Select } from '@/components/ui/select';
+import { AdminSelect as Select } from './admin-select';
 import { Textarea } from '@/components/ui/textarea';
 import { FileField } from '@/components/ui/file-field';
 
@@ -216,11 +220,14 @@ export function LessonEditor({
       else setBlockOrder(previous);
     });
   }
-  function removeBlock(block: EditableBlock) {
+  const confirmation = useAdminConfirmation();
+  async function removeBlock(block: EditableBlock) {
     if (
-      !window.confirm(
-        `Remover ${block.kind === 'file' ? 'este arquivo' : 'este material'} da aula?`,
-      )
+      !(await confirmation.ask({
+        title: `Remover ${block.kind === 'file' ? 'arquivo' : 'material'} da aula?`,
+        description: 'Este item será removido do rascunho da aula.',
+        confirmLabel: 'Remover',
+      }))
     )
       return;
     const data = new FormData();
@@ -288,6 +295,7 @@ export function LessonEditor({
   // link e vídeo entram no formulário, numerados na ordem em que o servidor vai ler.
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]">
+      {confirmation.dialog}
       <fieldset className="grid grid-cols-2 gap-2 xl:hidden">
         <legend className="sr-only">Editar ou ver prévia</legend>
         <Button
@@ -296,6 +304,7 @@ export function LessonEditor({
           type="button"
           variant={!showPreview ? 'default' : 'soft'}
         >
+          <Pencil aria-hidden="true" data-icon="inline-start" />
           Editar
         </Button>
         <Button
@@ -304,10 +313,12 @@ export function LessonEditor({
           type="button"
           variant={showPreview ? 'default' : 'soft'}
         >
+          <Eye aria-hidden="true" data-icon="inline-start" />
           Prévia
         </Button>
       </fieldset>
       <form
+        noValidate
         action={formAction}
         onInput={(event) => updatePreview(event.currentTarget)}
         onChange={(event) => updatePreview(event.currentTarget)}
@@ -679,6 +690,7 @@ export function LessonEditor({
               Salvar alterações
             </Button>
             <Button onClick={onCancel} type="button" variant="soft">
+              <X aria-hidden="true" data-icon="inline-start" />
               Cancelar
             </Button>
           </div>
