@@ -5,6 +5,46 @@ import { PASSWORD, studentEmail } from './support/students';
 
 const step = (name: string) => new RegExp(`/loja-pronta/marca/${name}(\\?.*)?$`);
 
+test('falha na criação volta ao resumo e conserva as escolhas para conferir antes de repetir', async ({
+  page,
+}) => {
+  test.slow();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await signIn(page, studentEmail('marcafalha'), PASSWORD, '/loja-pronta/marca/logo');
+  await expect(page).toHaveURL(step('logo'));
+  await pickAll(page, ['Só o nome', 'Rosa e dourado', 'Simples', 'Branco', 'Chapado']);
+  await page.route('**/loja-pronta/marca/logo', (route) =>
+    route.request().method() === 'POST' ? route.abort('failed') : route.continue(),
+  );
+  await page.getByRole('button', { name: 'Criar meu logo', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Confira e crie o seu logo' })).toBeVisible();
+  await expect(page.getByRole('main').getByRole('alert')).toContainText(
+    'Recarregue a página para conferir o que ficou salvo antes de tentar de novo.',
+  );
+  await expect(page.getByRole('button', { name: 'Criar meu logo', exact: true })).toBeEnabled();
+  // A mensagem e o resumo continuam legíveis nos quatro formatos usados pelas alunas.
+  for (const viewport of [
+    { width: 1440, height: 1000 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    for (const theme of ['claro', 'escuro']) {
+      const toggle = page.getByRole('button', { name: `Ativar tema ${theme}` });
+      if (await toggle.count()) await toggle.click();
+      await expectNoA11yViolations(page);
+      await page.screenshot({
+        path: `output/playwright/logo-error-${viewport.width}-${theme}.png`,
+        fullPage: true,
+      });
+    }
+  }
+  await page.unroute('**/loja-pronta/marca/logo');
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Confira e crie o seu logo' })).toBeVisible();
+  await expect(page.getByText(/Você ainda pode criar 4 logos\./)).toBeVisible();
+  await expectNoA11yViolations(page);
+});
+
 /**
  * Tudo de verdade: o logo é desenhado pela OpenAI e guardado no bucket. Os testes que criam logo
  * esperam a IA (minutos) e custam centavos.
