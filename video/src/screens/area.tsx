@@ -6,8 +6,7 @@ import {
   MessagesSquareIcon,
   StoreIcon,
 } from 'lucide-react';
-import { Img, useCurrentFrame } from 'remotion';
-import mascotStill from '@/components/brand/mascot/assets/mascote-rosto.png';
+import { useCurrentFrame } from 'remotion';
 import { STORE_PHASES } from '@/config/store-phases';
 import { storeStages } from '@/features/loja-pronta/stages';
 import { cn } from '@/lib/utils';
@@ -15,7 +14,7 @@ import { useAnchors } from '../anchors';
 import { DraftLogo } from '../components/draft-logo';
 import { Mascot } from '../components/mascot';
 import { Pointer } from '../components/pointer';
-import { AppButton, panelCard } from '../components/ui';
+import { AppButton, AppNavbar, panelCard } from '../components/ui';
 import { lerp, pop, ramp } from '../motion';
 import { Sfx } from '../sfx';
 import { BAR, BEAT } from '../timeline';
@@ -43,24 +42,7 @@ export function AreaScreen({ mobile }: { mobile: boolean }) {
   const scroll =
     (ramp(frame, BEAT * 7, BEAT * 10) - ramp(frame, BEAT * 13, BEAT * 15)) * (mobile ? 420 : 150);
 
-  const navbar = (
-    <header className="border-b-2 border-border bg-background">
-      <div
-        className={cn(
-          'mx-auto flex min-h-16 w-full max-w-[1040px] items-center justify-between gap-4',
-          mobile ? 'px-4' : 'px-6',
-        )}
-      >
-        <span className="flex items-center gap-2 text-body font-semibold text-foreground">
-          <Img src={mascotStill} className="size-8" />
-          Loja Pronta Prime
-        </span>
-        <span className="grid size-10 place-items-center rounded-full bg-primary-soft text-body font-semibold text-link">
-          A
-        </span>
-      </div>
-    </header>
-  );
+  const navbar = <AppNavbar mobile={mobile} />;
 
   const switcher = (
     <ul className="inline-flex max-w-full gap-1 self-start rounded-full bg-segment p-1">
@@ -214,17 +196,17 @@ export function AreaScreen({ mobile }: { mobile: boolean }) {
       detail: 'Cada etapa abre quando você conclui a anterior.',
       open: false,
     },
-    { title: 'Minicursos', detail: 'Temas extras depois do método.', open: false },
+    { title: 'Cursos complementares', detail: 'Aulas extras para sua loja.', open: true },
   ];
   const sll = (
     <>
       <div className="flex flex-col gap-2">
         {switcher}
         <h1 className={cn('font-semibold text-balance', mobile ? 'text-title' : 'text-title-lg')}>
-          As aulas abrem em breve
+          Comece pelas boas-vindas
         </h1>
         <p className="max-w-[60ch] text-body text-muted-foreground">
-          O curso começa pela trilha de boas-vindas. Você recebe um aviso quando ela abrir.
+          Assista às aulas e siga o método. Seu progresso fica salvo para continuar depois.
         </p>
       </div>
       <div
@@ -252,7 +234,7 @@ export function AreaScreen({ mobile }: { mobile: boolean }) {
                         : 'bg-muted text-muted-foreground ring-1 ring-border',
                     )}
                   >
-                    {row.open ? '1' : <LockIcon className="size-4" aria-hidden="true" />}
+                    {row.open ? index + 1 : <LockIcon className="size-4" aria-hidden="true" />}
                   </span>
                   <span className="flex flex-col">
                     <span className="text-body font-semibold">{row.title}</span>
@@ -268,12 +250,12 @@ export function AreaScreen({ mobile }: { mobile: boolean }) {
           <ul className="flex flex-col divide-y divide-border">
             {[
               { label: 'Calculadora de preço da Shopee', Icon: CalculatorIcon },
-              { label: 'Assistentes de IA', Icon: MessagesSquareIcon },
+              { label: 'Guias dos assistentes de IA', Icon: MessagesSquareIcon },
             ].map(({ label, Icon }) => (
               <li key={label} className="flex items-center gap-3 py-3.5">
                 <Icon className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
                 <span className="flex-1 text-body">{label}</span>
-                <span className="text-sm text-muted-foreground">Em breve</span>
+                <span className="text-sm text-muted-foreground">Disponível</span>
               </li>
             ))}
           </ul>

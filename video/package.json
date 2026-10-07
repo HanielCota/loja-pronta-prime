@@ -9,11 +9,14 @@
     "voice": "bun scripts/make-voice.ts",
     "srt": "bun scripts/make-srt.ts",
     "stills": "bun scripts/stills.ts",
+    "test": "bun test scripts src",
     "render:16x9": "remotion render Apresentacao16x9 out/loja-pronta-prime-16x9.mp4 --codec=h264 --crf=16 --audio-bitrate=320k",
     "render:9x16": "remotion render Apresentacao9x16 out/loja-pronta-prime-9x16.mp4 --codec=h264 --crf=16 --audio-bitrate=320k",
-    "render": "bun run audio && bun run render:16x9 && bun run render:9x16 && bun run srt",
+    "render:celular": "remotion render Celular30s out/loja-pronta-prime-celular-30s.mp4 --codec=h264 --crf=16 --audio-bitrate=320k",
+    "render": "bun run audio && bun run render:16x9 && bun run render:9x16 && bun run render:celular && bun run srt",
     "docker:build": "docker build -t lpp-video .",
     "docker": "docker run --rm -v \"$(pwd)/..:/repo\" -v lpp-video-modules:/repo/video/node_modules lpp-video sh -c \"bun install --frozen-lockfile && bun run render\"",
+    "docker:celular": "docker run --rm -v \"$(pwd)/..:/repo\" -v lpp-video-modules:/repo/video/node_modules lpp-video sh -c \"bun install --frozen-lockfile && bun run audio && bun run render:celular\"",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
