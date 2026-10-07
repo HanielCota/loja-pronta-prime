@@ -28,7 +28,7 @@ export const PRODUCTS: Record<ProductId, Product> = {
     path: '/sll',
     summary: 'O curso com ferramentas pra você aprender e vender na Shopee por conta própria.',
     tag: 'Você aprende e vende por conta própria',
-    pitch: 'Acesse o método completo, aulas e recursos pra escalar a sua operação.',
+    pitch: 'Assista às aulas e use as ferramentas para vender na Shopee.',
   },
   'loja-pronta': {
     name: 'Loja Pronta',
@@ -36,8 +36,9 @@ export const PRODUCTS: Record<ProductId, Product> = {
     title: 'Loja Pronta',
     welcome: 'Boas-vindas à Loja Pronta',
     path: '/loja-pronta',
-    summary: 'Você monta sua loja na Shopee passo a passo, com tudo já preparado.',
+    summary:
+      'Crie sua marca e prepare sua conta. A conexão e a publicação na Shopee estão em breve.',
     tag: 'Sua loja na Shopee, passo a passo',
-    pitch: 'Monte sua loja na Shopee com tudo já preparado pra você.',
+    pitch: 'Crie sua marca e prepare sua conta. A conexão e a publicação na Shopee estão em breve.',
   },
 };

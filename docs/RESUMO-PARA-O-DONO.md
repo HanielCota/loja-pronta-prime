@@ -49,7 +49,8 @@ A jornada tem 7 fases. A aluna sempre vê em que fase está.
 Como funciona hoje:
 
 - **Conversa inicial:** uma pergunta por tela, cerca de 5 minutos. Cada resposta fica salva, então
-  ela pode parar e voltar depois. No fim, ela revisa tudo e deixa o WhatsApp para receber avisos.
+  ela pode parar e voltar depois. No fim, ela revisa tudo e salva o WhatsApp. Os avisos automáticos
+  ainda estão em breve.
 - **Vídeo de orientação:** aparece depois da conversa, quando houver um vídeo enviado (ainda não
   há).
 - **Nome da loja:** a plataforma sugere nomes a partir das respostas dela, ou ela escreve o próprio.

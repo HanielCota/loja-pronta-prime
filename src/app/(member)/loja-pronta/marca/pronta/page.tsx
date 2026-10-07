@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { CardHeading } from '@/components/brand/card-heading';
 import { Button } from '@/components/ui/button';
-import { SHOPEE_CONNECT_PATH, SHOPEE_PATH } from '@/config/shopee';
+import { nextStepAfterBrand } from '@/features/brand/next-step';
 import { getBrand } from '@/features/brand/server/brand';
 import {
   BRAND_DONE_PATH,
@@ -35,21 +35,7 @@ export default async function BrandDonePage() {
   ]);
   if (!brand.completedAt || !brand.logoImage || !brand.name) redirect(BRAND_PATH);
   const name = greetingName(session.user);
-  // Quem já tinha loja na Shopee pula a criação da conta e vai direto pra conexão (fase 4).
-  const next =
-    phase === 4
-      ? {
-          title: 'Próximo passo: conectar a sua Shopee',
-          text: 'Como você já tem loja na Shopee, falta só ligar ela aqui pra gente publicar a sua marca e os produtos.',
-          href: SHOPEE_CONNECT_PATH,
-          label: 'Ver como funciona a conexão',
-        }
-      : {
-          title: 'Próximo passo: sua conta na Shopee',
-          text: 'Você abre sua conta de vendedora na Shopee, com um passo a passo bem explicado. Leva uns 15 minutos.',
-          href: SHOPEE_PATH,
-          label: 'Abrir minha conta na Shopee',
-        };
+  const next = nextStepAfterBrand(phase);
 
   return (
     <CenteredMemberPage

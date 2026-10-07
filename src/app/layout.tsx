@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inconsolata, Manrope } from 'next/font/google';
+import Script from 'next/script';
 import type { ReactNode } from 'react';
 import { DISPLAY_SCRIPT } from '@/features/theme/display';
 import { THEME_COLORS } from '@/features/theme/theme';
@@ -40,7 +41,11 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
       <head>
         {/* Tamanho do texto, movimento e contraste escolhidos no perfil, antes da página aparecer
             (sem o texto mudar de tamanho depois). */}
-        <script dangerouslySetInnerHTML={{ __html: DISPLAY_SCRIPT }} />
+        <Script
+          id="display-preferences"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: DISPLAY_SCRIPT }}
+        />
       </head>
       <body>
         {/* Barra do navegador no celular na cor do fundo. Fora do `viewport` do Next de propósito: a

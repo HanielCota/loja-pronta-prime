@@ -3,7 +3,7 @@
  * o banco guarda o número da fase (1 a 7) e a tela mostra o nome e o que acontece nela.
  * Tudo é automático, sem equipe: a aluna faz cada fase pela plataforma, passo a passo.
  * `needsStudent`: a fase tem tela pra ela fazer agora. As fases ainda sem tela ficam como "em
- * breve" (o painel avisa que ela recebe um aviso no WhatsApp quando abrir).
+ * breve", sem prometer publicação ou avisos automáticos antes da integração.
  */
 export const STORE_PHASES = [
   {
@@ -26,22 +26,23 @@ export const STORE_PHASES = [
   },
   {
     title: 'Conexão com a Shopee',
-    detail: 'Ligue sua conta da Shopee à plataforma, com um toque.',
+    detail: 'Em breve: autorize a conexão da sua conta no site da Shopee.',
     needsStudent: false,
   },
   {
     title: 'Produtos',
-    detail: 'Escolha os produtos da loja, com o preço já calculado.',
+    detail: 'Em breve: escolha os produtos da loja, com o preço já calculado.',
     needsStudent: false,
   },
   {
     title: 'Publicação',
-    detail: 'Sua marca e seus produtos vão pra Shopee, sem você precisar cadastrar nada.',
+    detail: 'Em breve: publique sua marca e seus produtos na Shopee pela plataforma.',
     needsStudent: false,
   },
   {
-    title: 'Loja no ar',
-    detail: 'Sua loja abre, e você acompanha as vendas aqui.',
+    title: 'Finalização da loja',
+    detail:
+      'A consulta de vendas está em breve. Confira sua loja na Central do Vendedor da Shopee.',
     needsStudent: false,
   },
 ] as const;

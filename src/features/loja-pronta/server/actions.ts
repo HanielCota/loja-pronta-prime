@@ -58,8 +58,7 @@ export async function saveAnswer(_state: StepResult, formData: FormData): Promis
 
 /**
  * Última etapa: confirma o WhatsApp e envia a conversa. A loja passa pra fase 2: ela já pode
- * criar a marca. Revendo (conversa já enviada), só troca o número: é o único canal dos avisos, e
- * um número errado a deixaria sem nenhum.
+ * criar a marca. Revendo (conversa já enviada), só troca o número de contato salvo.
  */
 export async function finishConversation(
   _state: StepResult,

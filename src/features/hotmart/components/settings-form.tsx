@@ -3,6 +3,7 @@
 import { useActionState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
+import { LiveRegion } from '@/components/ui/live-region';
 import { saveHotmartSettings } from '../server/actions';
 
 export function HotmartSettingsForm({
@@ -14,11 +15,14 @@ export function HotmartSettingsForm({
   store: string;
   configured: boolean;
 }) {
-  const [state, action, pending] = useActionState(saveHotmartSettings, { message: '' });
+  const [state, action, pending] = useActionState(saveHotmartSettings, {
+    message: '',
+    saved: false,
+  });
   return (
     <form action={action} className="flex flex-col gap-4">
       <p className="text-body text-muted-foreground">
-        Copie o token de verificação e o código único de cada produto na Hotmart. A senha já salva
+        Copie o token de verificação e o código único de cada produto na Hotmart. O token já salvo
         nunca aparece aqui.
       </p>
       <FloatingLabelInput
@@ -52,9 +56,15 @@ export function HotmartSettingsForm({
       <Button type="submit" loading={pending} disabled={pending}>
         Salvar integração
       </Button>
-      <output aria-live="polite" className="text-body text-muted-foreground">
-        {state.message}
-      </output>
+      {state.message ? (
+        <p
+          role={state.saved ? undefined : 'alert'}
+          className={state.saved ? 'text-body text-progress-text' : 'text-body text-destructive'}
+        >
+          {state.message}
+        </p>
+      ) : null}
+      <LiveRegion>{state.saved ? state.message : null}</LiveRegion>
     </form>
   );
 }

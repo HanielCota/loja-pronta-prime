@@ -92,7 +92,7 @@ function Guide() {
       <CardHeading
         className="mb-0"
         title="Abra sua conta de vendedora na Shopee"
-        description="É lá que a sua loja vai ficar. A conta é sua, no seu nome. Leva uns 15 minutos."
+        description="É lá que a sua loja vai ficar. A conta é sua, no seu nome. Siga as instruções da Shopee e volte aqui depois."
       />
       <section aria-labelledby="precisa" className={cn(panelCard, 'gap-3')}>
         <h2 id="precisa" className={sectionTitleClass}>
@@ -172,11 +172,11 @@ function Pending() {
       <CardHeading
         className="mb-0"
         title="Falta terminar seu cadastro na Shopee"
-        description="A Shopee precisa que você complete uns dados no site dela antes da gente continuar. É rapidinho."
+        description="Confira no site da Shopee quais dados faltam para liberar sua conta."
       />
       <p className={cn(panelCard, 'text-body text-pretty')}>
-        Abra o site da Shopee, complete o que estiver faltando e volte aqui. Se a Shopee pediu uma
-        foto do documento, a liberação pode levar até 1 dia.
+        Abra o site da Shopee, complete o que estiver faltando e volte aqui. Se houver uma análise
+        de documentos, acompanhe o prazo e o resultado no site da Shopee.
       </p>
       <div className="flex flex-col gap-2">
         <SellerLink>Abrir o site da Shopee</SellerLink>

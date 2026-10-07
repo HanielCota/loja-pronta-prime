@@ -9,10 +9,22 @@ describe('chooserHeadline', () => {
     });
   });
 
-  test('fase ainda fechada: sem destaque, avisa que chega um aviso', () => {
-    const headline = chooserHeadline({ store: { waitsOnStudent: false }, lastArea: 'loja-pronta' });
+  test('fase ainda fechada: permite estudar sem prometer avisos automáticos', () => {
+    const headline = chooserHeadline({
+      store: { waitsOnStudent: false },
+      lastArea: 'loja-pronta',
+      hasSllAccess: true,
+    });
     expect(headline.primary).toBeUndefined();
-    expect(headline.description).toMatch(/aviso no WhatsApp/);
+    expect(headline.description).toContain('em preparação');
+    expect(headline.description).toContain('aulas do SLL');
+    expect(headline.description).not.toContain('WhatsApp');
+  });
+
+  test('sem SLL, uma fase fechada não recomenda um produto que a conta não tem', () => {
+    const headline = chooserHeadline({ store: { waitsOnStudent: false } });
+    expect(headline.description).not.toContain('SLL');
+    expect(headline.description).toContain('rever');
   });
 
   test('sem loja: continua de onde parou, ou escolhe por onde começar', () => {

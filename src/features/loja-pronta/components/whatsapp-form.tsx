@@ -37,7 +37,7 @@ function caretAfterDigits(formatted: string, count: number): number {
 }
 
 /**
- * Última etapa: o WhatsApp dos avisos de cada fase. Feito pra quem tem pouca prática:
+ * Última etapa: salva o WhatsApp de contato. Feito pra quem tem pouca prática:
  * - o +55 já vem no campo (ninguém digita o código do país);
  * - o número se organiza enquanto ela digita, "(11) 98765-4321", sem travar: aceita colar em
  *   qualquer formato, apagar no meio, e o cursor fica onde ela estava;
@@ -169,7 +169,7 @@ export function WhatsappForm({ helpId, initial }: { helpId: string; initial: str
 
       {complete ? (
         <p className="mt-2 rounded-2xl bg-card px-4 py-3 text-center text-body text-pretty shadow-sm">
-          Vamos avisar você no <strong className="font-semibold whitespace-nowrap">{value}</strong>
+          Confira seu número: <strong className="font-semibold whitespace-nowrap">{value}</strong>
         </p>
       ) : null}
 

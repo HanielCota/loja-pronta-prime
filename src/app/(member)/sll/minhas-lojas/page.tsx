@@ -82,12 +82,14 @@ export default async function SllStoresPage() {
         </p>
         {hasLoadFailure ? (
           <Button asChild className="w-full sm:w-fit" variant="soft">
-            <Link href="/sll/minhas-lojas">Tentar novamente</Link>
+            {/* Uma falha de leitura precisa de outra requisição, mesmo estando nesta página. */}
+            {/* oxlint-disable-next-line next/no-html-link-for-pages */}
+            <a href="/sll/minhas-lojas">Tentar novamente</a>
           </Button>
         ) : (
           <Button asChild className="w-full sm:w-fit">
             <Link href="/sll/minhas-lojas/adicionar">
-              Adicionar ou conectar loja <ArrowRightIcon aria-hidden="true" />
+              Ver opções para minha loja <ArrowRightIcon aria-hidden="true" />
             </Link>
           </Button>
         )}

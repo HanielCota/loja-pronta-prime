@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { expectNoA11yViolations, signIn } from './support/auth';
 import { PASSWORD, studentEmail } from './support/students';
 
@@ -6,20 +6,13 @@ test('adicionar ou conectar loja usa um fluxo único e reaproveita a montagem', 
   await signIn(page, studentEmail('doisprodutos'), PASSWORD, '/sll');
   await expect(page).toHaveURL(/\/sll$/);
 
-  const mobileMenu = page.getByRole('button', { name: 'Abrir navegação do SLL' });
-  let navigationLink: Locator;
-  if (await mobileMenu.count()) {
-    await mobileMenu.click();
-    navigationLink = page
-      .getByRole('dialog')
-      .getByRole('link', { name: 'Adicionar ou conectar loja' });
-  } else {
-    navigationLink = page
-      .getByRole('region', { name: 'Minha operação' })
-      .getByRole('link', { name: 'Adicionar ou conectar loja' });
-  }
-  await expect(navigationLink).toHaveAttribute('href', '/sll/minhas-lojas/adicionar');
-  await navigationLink.click();
+  const mobileMenu = page.getByRole('button', { name: /Seções do SLL/ });
+  if (await mobileMenu.isVisible()) await mobileMenu.click();
+  await page
+    .getByRole('link', { name: 'Minhas Lojas', exact: true })
+    .filter({ visible: true })
+    .click();
+  await page.getByRole('link', { name: 'Ver opções para minha loja', exact: true }).click();
   await expect(page).toHaveURL(/\/sll\/minhas-lojas\/adicionar$/);
   await expect(page.getByRole('heading', { name: 'Onde está sua loja?' })).toBeVisible();
   await expect(page.getByText('TikTok Shop')).toBeVisible();
@@ -28,7 +21,7 @@ test('adicionar ou conectar loja usa um fluxo único e reaproveita a montagem', 
   await page.goto('/sll/minhas-lojas');
   await page
     .getByRole('main')
-    .getByRole('link', { name: 'Adicionar ou conectar loja', exact: true })
+    .getByRole('link', { name: 'Ver opções para minha loja', exact: true })
     .last()
     .click();
   await expect(page).toHaveURL(/\/sll\/minhas-lojas\/adicionar$/);

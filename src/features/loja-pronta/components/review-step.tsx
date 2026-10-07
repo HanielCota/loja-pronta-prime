@@ -84,7 +84,7 @@ export function ReviewStep({
       {revising && whatsapp ? (
         <section aria-labelledby="grupo-avisos" className={cn(panelCard, 'gap-1')}>
           <h2 id="grupo-avisos" className={sectionTitleClass}>
-            Avisos
+            Contato
           </h2>
           <dl className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-0.5 py-3">
             <dt className="col-start-1 text-sm text-muted-foreground">WhatsApp</dt>

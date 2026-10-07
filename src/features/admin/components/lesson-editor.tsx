@@ -425,7 +425,8 @@ export function LessonEditor({
                           spellCheck={false}
                         />
                         <p className="text-body text-muted-foreground">
-                          Cole o link do player Panda. Deixe vazio para mostrar “Vídeo em breve”.
+                          Cole o link do player Panda ou o ID do vídeo. Deixe vazio para mostrar
+                          “Vídeo em breve”.
                         </p>
                         <div className="flex flex-col gap-2">
                           <Label htmlFor={`block-${block.id}-note`}>Anotação para este vídeo</Label>
@@ -611,7 +612,8 @@ export function LessonEditor({
                     spellCheck={false}
                   />
                   <p className="text-body text-muted-foreground">
-                    Cole o link do player Panda. Deixe vazio para mostrar “Vídeo em breve”.
+                    Cole o link do player Panda ou o ID do vídeo. Deixe vazio para mostrar “Vídeo em
+                    breve”.
                   </p>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor={`new-block-${block.key}-note`}>Anotação para este vídeo</Label>

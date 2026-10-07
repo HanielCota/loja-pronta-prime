@@ -13,9 +13,10 @@ O token é criptografado no banco com chave derivada de `BETTER_AUTH_SECRET`; tr
 
 A área de membros **não tem cadastro público**. Toda conta de aluna nasce de uma compra feita na Hotmart.
 
-Sem essa integração, **ninguém consegue entrar no sistema**, porque não existe outra forma de criar conta.
+A entrada automática de novas compradoras depende dessa integração e do envio do link para
+criar a senha. Contas já criadas ou liberadas manualmente podem entrar normalmente.
 
-A tela de login entregue na primeira etapa já parte desse princípio: ela **assume que a conta já existe** e, por enquanto, orienta a aluna a usar o email da compra e a senha temporária recebida por email. Com a integração, a senha temporária dá lugar a um link de primeiro acesso (ver [4.1](#41-primeiro-acesso-por-link-sem-senha-temporária)). O login já funciona de verdade (Better Auth + Postgres), mas enquanto a integração não existir só entram contas de teste criadas com `bun run dev:aluna`.
+A tela de login assume que a conta já existe e orienta a aluna a usar o email da compra. Quem ainda não tem senha pode pedir um link em “Esqueceu ou não recebeu a senha?”. O recebimento de compras já cria a conta com uma senha aleatória que não é enviada; o convite automático de primeiro acesso continua pendente (ver [4.1](#41-primeiro-acesso-por-link-sem-senha-temporária)). A recuperação depende do serviço de email configurado. Contas de desenvolvimento usam `bun run dev:aluna`; a opção `--primeiro-acesso` exige trocar a senha temporária antes de abrir os produtos.
 
 ---
 
