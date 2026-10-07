@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { collectDevice } from '../collect-device';
 import { HEARTBEAT_MS } from '../presence';
-import { reportPresence } from '../server/actions';
 
 /**
  * Avisa o servidor da página aberta e do aparelho: ao chegar, ao trocar de página e a cada 30s,
@@ -19,7 +18,15 @@ export function PresenceHeartbeat() {
       // Falhar aqui não pode atrapalhar a aluna: o próximo aviso tenta de novo.
       collectDevice()
         .catch(() => undefined)
-        .then((device) => reportPresence(pathname, device))
+        .then((device) =>
+          fetch('/api/presence', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: pathname, device }),
+            // Continua mesmo se ela fechar a aba logo depois.
+            keepalive: true,
+          }),
+        )
         .catch(() => undefined);
     };
     report();
