@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { expectNoA11yViolations, signIn } from './support/auth';
-import { PASSWORD, studentEmail } from './support/students';
+import { database, PASSWORD, studentEmail } from './support/students';
 
 // O título do painel do SLL é a saudação ("Boas-vindas, Ana!" na primeira visita, depois "Olá").
 const SLL = /^(Boas-vindas|Olá)/;
@@ -109,6 +109,7 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
 });
 
 test('com um produto só: entra direto nele, sem tela de escolha', async ({ page }) => {
+  test.slow();
   await signIn(page, studentEmail('sosll'), PASSWORD);
   await expect(page).toHaveURL(/\/sll$/);
   await expect(page.getByRole('heading', { level: 1, name: SLL })).toBeVisible();
@@ -121,8 +122,52 @@ test('com um produto só: entra direto nele, sem tela de escolha', async ({ page
     page.getByRole('navigation', { name: 'Você está em' }).getByRole('link', { name: 'Início' }),
   ).toHaveCount(0);
   await expect(page.getByRole('navigation', { name: 'Suas áreas' })).toHaveCount(0);
+  await expect(
+    page.getByRole('link', { name: /Acessar Loja Pronta|Ir pra Minha loja/ }),
+  ).toHaveCount(0);
+  await page.goto('/sll/minhas-lojas');
+  await expect(
+    page.getByRole('link', { name: /Continuar montagem|Começar na Loja Pronta/ }),
+  ).toHaveCount(0);
 
   // A área do produto que ela não tem leva de volta (e o início manda pro produto dela).
+  for (const path of [
+    '/loja-pronta',
+    '/loja-pronta/conversa',
+    '/loja-pronta/conversa/vendas',
+    '/loja-pronta/marca/nome',
+    '/loja-pronta/marca/logo',
+    '/loja-pronta/shopee',
+    '/loja-pronta/shopee/conectar',
+  ]) {
+    await page.goto(path);
+    await expect(page).toHaveURL(/\/sll$/);
+  }
+  const logo = await page.request.get('/loja-pronta/marca/logo.png?baixar=1');
+  expect(logo.status()).toBe(404);
+});
+
+test('retirar a Loja Pronta bloqueia a rota e a action com a sessão ainda aberta', async ({
+  page,
+}) => {
+  const email = studentEmail('doisprodutosrota');
+  await signIn(page, email, PASSWORD, '/loja-pronta/conversa/vendas');
+  await expect(page).toHaveURL(/\/conversa\/vendas$/);
+  await database().query(
+    `delete from student_products where user_id = (select id from "user" where email = $1)
+     and product = 'loja-pronta'`,
+    [email],
+  );
+  // O formulário já aberto chama a action: o servidor precisa conferir o acesso de novo.
+  await page.getByText('Nunca vendi', { exact: true }).click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
+  await expect(page).toHaveURL(/\/sll$/);
+  const answers = await database().query(
+    `select answers from store_onboarding where user_id = (select id from "user" where email = $1)`,
+    [email],
+  );
+  expect(answers.rows).toHaveLength(0);
+  await expect(page.getByRole('navigation', { name: 'Suas áreas' })).toHaveCount(0);
   await page.goto('/loja-pronta');
   await expect(page).toHaveURL(/\/sll$/);
 });
@@ -161,6 +206,8 @@ test('sem nenhum produto: avisa que o acesso ainda não foi liberado', async ({ 
 });
 
 test('Loja Pronta mostra o que fazer agora e o caminho em 3 etapas', async ({ page }) => {
+  test.slow();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await signIn(page, studentEmail('lojafase3'), PASSWORD);
   await expect(page).toHaveURL(/\/loja-pronta$/);
   // Sem marca ainda: o título chama pra montar a loja. Com um produto só, esta é a primeira tela
@@ -183,6 +230,21 @@ test('Loja Pronta mostra o que fazer agora e o caminho em 3 etapas', async ({ pa
     '/loja-pronta/shopee',
   );
   await expectNoA11yViolations(page);
+  for (const viewport of [
+    { width: 1440, height: 1000 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    for (const theme of ['claro', 'escuro']) {
+      const toggle = page.getByRole('button', { name: `Ativar tema ${theme}` });
+      if (await toggle.count()) await toggle.click();
+      await expectNoA11yViolations(page);
+      await page.screenshot({
+        path: `output/playwright/store-path-${viewport.width}-${theme}.png`,
+        fullPage: true,
+      });
+    }
+  }
 });
 
 test('área sem login vai pro login e volta pra área depois de entrar', async ({ page }) => {
