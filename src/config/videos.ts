@@ -12,6 +12,12 @@ export const VIDEOS = {
     where: 'No fim da conversa inicial, antes da marca',
     minWatch: 0.75,
   },
+  'conta-na-shopee': {
+    title: 'Como abrir sua conta de vendedora na Shopee',
+    where: 'No passo a passo de abrir a conta na Shopee',
+    // Ela assiste junto do passo a passo escrito: nada fica travado esperando o vídeo.
+    minWatch: 0,
+  },
   'marca-na-shopee': {
     title: 'Como colocar sua marca na Shopee',
     where: 'No passo a passo de colocar o logo e o texto na loja da Shopee',

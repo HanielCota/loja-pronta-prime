@@ -17,6 +17,7 @@ import {
 } from '@/features/member/components/area-shell';
 import { requireProduct } from '@/features/products/server/access';
 import { confirmShopeeAccount } from '@/features/shopee/server/actions';
+import { GuideVideo } from '@/features/videos/server/guide-video';
 import { getParam, type SearchParams } from '@/lib/search-params';
 import { cn } from '@/lib/utils';
 
@@ -94,6 +95,8 @@ function Guide() {
         title="Abra sua conta de vendedora na Shopee"
         description="É lá que a sua loja vai ficar. A conta é sua, no seu nome. Siga as instruções da Shopee e volte aqui depois."
       />
+      {/* O vídeo do cadastro, quando enviado pro espaço "conta-na-shopee". */}
+      <GuideVideo slot="conta-na-shopee" />
       <section aria-labelledby="precisa" className={cn(panelCard, 'gap-3')}>
         <h2 id="precisa" className={sectionTitleClass}>
           Tenha à mão

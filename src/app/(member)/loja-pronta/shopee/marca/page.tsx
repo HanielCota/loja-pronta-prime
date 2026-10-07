@@ -6,7 +6,6 @@ import { CardHeading } from '@/components/brand/card-heading';
 import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
 import { SHOPEE_BRAND_PATH, SHOPEE_CONNECT_PATH, SHOPEE_SELLER_URL } from '@/config/shopee';
-import { VIDEOS } from '@/config/videos';
 import { getBrand } from '@/features/brand/server/brand';
 import { brandLogoSrc, LOGO_DOWNLOAD_PATH } from '@/features/brand/steps';
 import { getStorePhase } from '@/features/loja-pronta/server/store';
@@ -17,15 +16,13 @@ import {
 } from '@/features/member/components/area-shell';
 import { requireProduct } from '@/features/products/server/access';
 import { CopyText } from '@/features/shopee/components/copy-text';
-import { getVideo } from '@/features/videos/server/videos';
+import { GuideVideo } from '@/features/videos/server/guide-video';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Sua marca na Shopee' };
 
 /** Da conexão em diante (fase 4): ela já tem a conta na Shopee, onde colocar a marca. */
 const FIRST_PHASE = 4;
-
-const SLOT = 'marca-na-shopee';
 
 /**
  * Enquanto a plataforma não publica a marca sozinha (fase 6, em breve), ela coloca o logo e o
@@ -35,11 +32,7 @@ const SLOT = 'marca-na-shopee';
 export default async function ShopeeBrandPage() {
   const { session } = await requireProduct('loja-pronta', SHOPEE_BRAND_PATH);
   const userId = session.user.id;
-  const [phase, brand, video] = await Promise.all([
-    getStorePhase(userId),
-    getBrand(userId),
-    getVideo(SLOT),
-  ]);
+  const [phase, brand] = await Promise.all([getStorePhase(userId), getBrand(userId)]);
   // Sem a conta na Shopee ainda, ou sem a marca completa (o painel diz o que falta).
   if (phase < FIRST_PHASE || !brand.completedAt || !brand.logoImage || !brand.name) {
     redirect('/loja-pronta');
@@ -70,28 +63,7 @@ export default async function ShopeeBrandPage() {
           title="Coloque sua marca na Shopee"
           description="A plataforma ainda não publica sua marca sozinha. Por enquanto, você coloca o logo e o texto na sua loja. É rápido: siga os passos abaixo."
         />
-        {video ? (
-          // A legenda vem junto quando foi enviada (o <track> abaixo); a regra não enxerga o "se".
-          // eslint-disable-next-line jsx-a11y/media-has-caption
-          <video
-            src={`/loja-pronta/videos/${SLOT}?v=${video.updatedAt.getTime()}`}
-            title={VIDEOS[SLOT].title}
-            controls
-            playsInline
-            preload="metadata"
-            className="aspect-video w-full rounded-3xl shadow-card"
-          >
-            {video.captionsKey ? (
-              <track
-                kind="captions"
-                src={`/loja-pronta/videos/${SLOT}?legenda=1&v=${video.updatedAt.getTime()}`}
-                srcLang="pt-BR"
-                label="Português"
-                default
-              />
-            ) : null}
-          </video>
-        ) : null}
+        <GuideVideo slot="marca-na-shopee" />
         <section aria-labelledby="como" className={cn(panelCard, 'gap-3')}>
           <h2 id="como" className={sectionTitleClass}>
             Como fazer
