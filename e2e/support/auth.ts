@@ -13,6 +13,25 @@ export function studentIp(email: string): string {
 
 /** Página sem problemas de acessibilidade (lista o que falhou e onde, se houver). */
 export async function expectNoA11yViolations(page: Page, externalFrameSelectors: string[] = []) {
+  // Espera as entradas de página e as aberturas terminarem: no meio do esmaecido, o texto ainda
+  // está semitransparente e o axe mediria um contraste que a pessoa não vê parado. As animações
+  // infinitas (girando enquanto carrega) e as pausadas ficam de fora: nunca terminam. O limite de
+  // 2s evita que uma animação inesperada trave o teste.
+  await page.evaluate(() =>
+    Promise.race([
+      Promise.all(
+        document
+          .getAnimations()
+          .filter(
+            (animation) =>
+              animation.playState === 'running' &&
+              animation.effect?.getComputedTiming().iterations !== Infinity,
+          )
+          .map((animation) => animation.finished.catch(() => undefined)),
+      ),
+      new Promise((resolve) => setTimeout(resolve, 2000)),
+    ]),
+  );
   const scan = new AxeBuilder({ page }).withTags(A11Y_TAGS);
   // Exclui apenas o documento externo indicado: o elemento iframe e seu título continuam avaliados.
   for (const selector of externalFrameSelectors) scan.exclude([selector, 'body']);

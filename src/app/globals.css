@@ -264,6 +264,65 @@
   }
 }
 
+/*
+ * Movimento: uma curva só pro app todo, que desacelera como uma mola sem balanço (sai rápido e
+ * assenta devagar, no estilo dos apps da Apple). Use `ease-fluid` nas transições e as animações
+ * abaixo; com "Reduzir animações" (perfil ou aparelho), a entrada vira só um esmaecido curto.
+ */
+@theme {
+  --ease-fluid: cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-page-enter: page-enter 0.45s var(--ease-fluid) backwards;
+  --animate-page-fade: page-fade 0.2s ease-out backwards;
+}
+
+/* O conteúdo de uma página nova chega subindo um pouco, enquanto as molduras ficam paradas.
+   `backwards`, não `both`: no fim, o transform some de vez. Um transform que ficasse faria do
+   <main> a referência dos itens `fixed` (o botão preso embaixo no celular). */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+
+@keyframes page-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/*
+ * Seções recolhíveis (<details>) abrem e fecham deslizando, em vez de pular. Só onde o navegador
+ * sabe animar até a altura do conteúdo; nos outros, abrem na hora, como antes.
+ */
+@supports (interpolate-size: allow-keywords) {
+  @media (prefers-reduced-motion: no-preference) {
+    :root:not([data-motion='reduce']) {
+      interpolate-size: allow-keywords;
+    }
+    :root:not([data-motion='reduce']) details::details-content {
+      block-size: 0;
+      overflow-y: clip;
+      opacity: 0;
+      transition:
+        block-size 0.35s var(--ease-fluid),
+        opacity 0.25s ease-out,
+        content-visibility 0.35s allow-discrete;
+    }
+    :root:not([data-motion='reduce']) details[open]::details-content {
+      block-size: auto;
+      opacity: 1;
+    }
+  }
+}
+
+/* Troca de tema: a tela inteira esmaece do claro pro escuro, sem piscar (ver use-theme.tsx). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.3s;
+  animation-timing-function: ease-out;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -311,6 +370,16 @@
   button:not(:disabled),
   [role='button']:not(:disabled) {
     cursor: pointer;
+  }
+  /* Realce do mouse e do toque mudando de cor suave, em vez de trocar de uma vez. O que já tem
+     transição própria (classes transition-*) continua com a sua. */
+  a,
+  button,
+  summary,
+  [role='button'] {
+    transition-property: color, background-color, border-color, box-shadow, opacity;
+    transition-duration: 150ms;
+    transition-timing-function: var(--ease-fluid);
   }
 
   /* Seleção de texto e cursor de digitação na cor da marca, como nos apps da Apple. */

@@ -69,7 +69,7 @@ function StatTile({
     <Link
       className={cn(
         panelCard,
-        'gap-3 !p-5 outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-safe:transition-colors motion-safe:duration-150',
+        'gap-3 !p-5 outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-safe:transition-[background-color,transform] motion-safe:duration-150 motion-safe:ease-fluid motion-safe:active:scale-[0.98]',
       )}
       href={href}
     >

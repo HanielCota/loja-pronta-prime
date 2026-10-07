@@ -1,7 +1,9 @@
 'use client';
 
 import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme } from 'next-themes';
-import { useEffect, useSyncExternalStore, type ReactNode } from 'react';
+import { useCallback, useEffect, useSyncExternalStore, type ReactNode } from 'react';
+import { flushSync } from 'react-dom';
+import { prefersReducedMotion } from '@/lib/reduced-motion';
 import { parsePreference, THEME_COLORS, THEME_STORAGE_KEY, type Theme } from './theme';
 import { DisplaySync } from './use-display';
 
@@ -54,9 +56,21 @@ export function useTheme() {
     () => false,
   );
   const shown: Theme = hydrated && resolvedTheme === 'dark' ? 'dark' : 'light';
+  // A tela inteira esmaece de um tema pro outro (uma "foto" antes e outra depois), em vez de
+  // piscar. Sem o recurso no navegador ou com "Reduzir animações", troca na hora, como antes.
+  const setPreference = useCallback(
+    (value: string) => {
+      if (!document.startViewTransition || prefersReducedMotion()) {
+        setTheme(value);
+        return;
+      }
+      document.startViewTransition(() => flushSync(() => setTheme(value)));
+    },
+    [setTheme],
+  );
   return {
     preference: hydrated ? parsePreference(theme) : 'light',
     theme: shown,
-    setPreference: setTheme,
+    setPreference,
   };
 }
