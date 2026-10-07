@@ -8,7 +8,12 @@ As URLs foram lidas do atributo `src` dos players incorporados. Os IDs alimentam
 
 ## Vincular os vídeos ao banco
 
-Depois de importar a estrutura das aulas do SLL, execute no banco do ambiente desejado:
+A migração `0039_sll-panda-video-links.sql` vincula os vídeos às aulas existentes durante o deploy,
+antes de o servidor iniciar. Ela usa o histórico normal do Drizzle e preserva rascunhos pendentes,
+vídeos escolhidos no admin, materiais, publicação e progresso. Bancos sem a estrutura do SLL
+continuam sem aulas inventadas; aulas importadas depois podem receber os vídeos pelo comando abaixo.
+
+Para conferir ou repetir a vinculação depois de importar a estrutura do SLL, execute:
 
 ```bash
 bun run db:import-sll-videos --check # informa o que será preenchido

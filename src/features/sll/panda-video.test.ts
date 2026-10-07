@@ -27,6 +27,27 @@ describe('vídeos Panda do SLL', () => {
     }
   });
 
+  it('leva os mesmos 71 caminhos e IDs para a migração de produção', async () => {
+    const migration = await Bun.file(
+      new URL('../../../drizzle/0039_sll-panda-video-links.sql', import.meta.url),
+    ).text();
+    const rows = [
+      ...migration.matchAll(/\('([^']*)', '([^']*)', '([^']*)', '([^']*)', '([^']*)'\)/g),
+    ].map((row) => row.slice(1));
+    const expected = catalog.sections.flatMap((section) =>
+      section.groups.flatMap((group) =>
+        group.lessons.map((lesson) => [
+          group.project.trackSlug,
+          group.project.stageSlug,
+          group.project.moduleSlug,
+          lesson.projectLessonSlug,
+          lesson.videoId,
+        ]),
+      ),
+    );
+    expect(rows).toEqual(expected);
+  });
+
   it('não cria player para espaço vazio, outro provedor ou ID inválido', () => {
     for (const data of [
       {},

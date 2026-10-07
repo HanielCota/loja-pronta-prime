@@ -1,6 +1,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { Pool } from 'pg';
+import pandaCatalog from '../data/sll/panda-videos.json';
 
 async function applyMigrations(): Promise<void> {
   const url = process.env.DATABASE_URL;
@@ -11,6 +12,24 @@ async function applyMigrations(): Promise<void> {
     // Mantém a tabela drizzle.__drizzle_migrations usada pelo CLI e só aplica SQL pendente.
     await migrate(drizzle(pool), { migrationsFolder: './drizzle' });
     console.log('Migrações aplicadas com sucesso.');
+    // Só contagens: o log permite conferir a vinculação no deploy sem expor conteúdo de alunas.
+    const videoIds = pandaCatalog.sections.flatMap((section) =>
+      section.groups.flatMap((group) => group.lessons.map((lesson) => lesson.videoId)),
+    );
+    const videos = await pool.query<{ lessons: number }>(
+      `SELECT count(DISTINCT lesson.id)::integer AS lessons
+       FROM learning_content_blocks AS block
+       JOIN learning_lessons AS lesson ON lesson.id = block.lesson_id
+       JOIN learning_modules AS module ON module.id = lesson.module_id
+       JOIN learning_stages AS stage ON stage.id = module.stage_id
+       JOIN learning_tracks AS track ON track.id = stage.track_id
+       WHERE block.kind = 'video' AND block.data->>'provider' = 'pandavideo'
+         AND block.data->>'videoId' = ANY($1::text[])
+         AND lesson.archived_at IS NULL AND module.archived_at IS NULL
+         AND stage.archived_at IS NULL AND track.archived_at IS NULL`,
+      [videoIds],
+    );
+    console.log(`Vídeos Panda vinculados a ${videos.rows[0]!.lessons} aulas SLL existentes.`);
   } finally {
     await pool.end();
   }
