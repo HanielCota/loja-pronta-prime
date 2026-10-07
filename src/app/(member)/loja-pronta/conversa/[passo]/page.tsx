@@ -30,8 +30,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return { title: isStep(passo) ? `${stepTitle(passo)}, conversa inicial` : 'Conversa inicial' };
 }
 
-/** Perguntas que saíram da conversa (motivação, preocupação, tempo): o link antigo continua. */
-const OLD_STEPS = new Set(['motivacao', 'dificuldade', 'tempo']);
+/**
+ * Perguntas que saíram da conversa (motivação, preocupação, tempo e o nome, que ela escolhe na
+ * marca): o link antigo continua.
+ */
+const OLD_STEPS = new Set(['motivacao', 'dificuldade', 'tempo', 'nome']);
 
 /**
  * Uma etapa da conversa inicial: uma pergunta, a passagem pra marca, a revisão das respostas ou o

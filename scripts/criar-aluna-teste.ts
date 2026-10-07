@@ -78,7 +78,6 @@ if (products.includes('loja-pronta')) {
       answers: {
         vendas: 'Nunca vendi',
         categorias: ['Beleza', 'Casa e decoração'],
-        nome: 'Bella Flor',
         estilo: 'Delicado',
         cor: 'Rosa',
         sentimento: ['Acolhimento', 'Sofisticação'],

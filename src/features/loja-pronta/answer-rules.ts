@@ -1,8 +1,7 @@
 import { PERSONAL_TOUCH_MAX, type OnboardingQuestion } from '@/config/onboarding';
-import { UNKNOWN_NAME } from './answers';
 
 /** O que ela marcou ou escreveu na pergunta, antes de enviar. */
-export type Draft = { selected: string[]; unknownName: boolean; text: string };
+export type Draft = { selected: string[]; text: string };
 
 /** Pergunta incompleta: o aviso a mostrar. Respondida (ou opcional): nada. */
 export function missingAnswer(question: OnboardingQuestion, draft: Draft): string | undefined {
@@ -12,10 +11,6 @@ export function missingAnswer(question: OnboardingQuestion, draft: Draft): strin
       return draft.selected.length ? undefined : 'Escolha uma opção.';
     case 'multi':
       return draft.selected.length ? undefined : 'Escolha pelo menos uma opção.';
-    case 'name':
-      return draft.unknownName || draft.text.trim()
-        ? undefined
-        : `Escreva o nome da loja ou marque "${UNKNOWN_NAME}".`;
     case 'longtext':
       return undefined;
   }

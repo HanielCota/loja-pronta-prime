@@ -49,6 +49,10 @@ test('quem já tem loja na Shopee pula a criação da conta ao confirmar a marca
 }) => {
   await signIn(page, studentEmail('shopeeloja'), PASSWORD, '/loja-pronta/marca/revisao');
   await expect(page).toHaveURL(/\/marca\/revisao$/);
+  // Ela já tem loja na Shopee: o passo do nome lembra de usar o mesmo nome.
+  await page.goto('/loja-pronta/marca/nome?editar=1');
+  await expect(page.getByText('Já tem loja na Shopee? Use o mesmo nome dela.')).toBeVisible();
+  await page.goto('/loja-pronta/marca/revisao');
   await page.getByRole('button', { name: 'Está tudo certo' }).click();
   await expect(page).toHaveURL(/\/marca\/pronta$/);
   await expect(page.getByRole('heading', { name: 'Conexão com a Shopee em breve' })).toBeVisible();

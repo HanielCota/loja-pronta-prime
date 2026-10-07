@@ -11,7 +11,7 @@ import {
 } from './answer-rules';
 import { question } from './test-fixtures';
 
-const EMPTY: Draft = { selected: [], unknownName: false, text: '' };
+const EMPTY: Draft = { selected: [], text: '' };
 
 describe('missingAnswer', () => {
   test('escolhas sem nada marcado avisam; com algo, não', () => {
@@ -20,9 +20,7 @@ describe('missingAnswer', () => {
     expect(missingAnswer(question('cor'), { ...EMPTY, selected: ['Rosa'] })).toBeUndefined();
   });
 
-  test('nome: texto ou "ainda não decidi"; toque pessoal é opcional', () => {
-    expect(missingAnswer(question('nome'), { ...EMPTY, text: '  ' })).toMatch(/nome da loja/);
-    expect(missingAnswer(question('nome'), { ...EMPTY, unknownName: true })).toBeUndefined();
+  test('toque pessoal é opcional', () => {
     expect(missingAnswer(question('toque'), EMPTY)).toBeUndefined();
   });
 });

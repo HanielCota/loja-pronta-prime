@@ -20,7 +20,6 @@ export function question(id: string) {
 export const ALL_ANSWERED: OnboardingAnswers = {
   vendas: 'Nunca vendi',
   categorias: ['Beleza'],
-  nome: 'Ateliê',
   estilo: 'Delicado',
   cor: 'Rosa',
   sentimento: ['Diversão'],

@@ -140,9 +140,11 @@ test('marca completa: nome, estúdio do logo, texto, revisão com mudança e log
   await expect(page.getByRole('heading', { name: 'Crie a marca da sua loja' })).toBeVisible();
   await page.getByRole('link', { name: /Criar minha marca/ }).click();
 
-  // Nome: o da conversa já vem no cartão; passar do limite avisa ali, e uma ideia volta a ele.
+  // Nome: o da conversa antiga já vem no cartão; passar do limite avisa ali, e uma ideia volta a
+  // ele. Sem loja na Shopee, nada de "use o mesmo nome".
   await expect(page).toHaveURL(step('nome'));
   await expect(page.getByRole('heading', { name: 'Qual o nome da sua loja?' })).toBeVisible();
+  await expect(page.getByText('Já tem loja na Shopee?')).toHaveCount(0);
   const name = page.getByRole('textbox', { name: 'Nome da loja', exact: true });
   await expect(name).toHaveValue('Patinhas da Ana');
   await expect(page.getByRole('radio', { name: 'Patinhas da Ana' })).toBeChecked();

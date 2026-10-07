@@ -4,13 +4,13 @@
  *
  * - `single`: uma opção (botões de rádio); `multi`: até `max` opções (caixas de seleção), em
  *   lista ou em `chips` quando as opções são curtas.
- * - `name`: texto curto, com "Ainda não sei" (a plataforma sugere nomes na fase da marca);
- *   `color`: uma cor ou "Escolho depois"; `longtext`: texto livre e opcional.
+ * - `color`: uma cor ou "Escolho depois"; `longtext`: texto livre e opcional.
  * - `label`: nome curto da pergunta na revisão ("Motivação").
  *
  * As respostas guardam o texto da opção escolhida (as sugestões da marca leem daqui).
  * Só entra pergunta cuja resposta a plataforma usa: motivação, maior preocupação e tempo por
  * semana saíram por não servirem pra nada (respostas antigas delas são ignoradas, cleanAnswers).
+ * O nome da loja também saiu: ela escolhe na marca, com sugestões (ver legacyStoreName).
  */
 
 export const ONBOARDING_BLOCKS = {
@@ -40,7 +40,6 @@ type QuestionDefinition =
       max: number;
       layout: 'list' | 'chips';
     })
-  | (BaseQuestion & { kind: 'name' })
   | (BaseQuestion & { kind: 'color'; options: readonly Option[] })
   | (BaseQuestion & { kind: 'longtext' });
 
@@ -94,14 +93,6 @@ export const ONBOARDING_QUESTIONS = [
       { label: 'Tecnologia' },
       { label: 'Outros' },
     ],
-  },
-  {
-    id: 'nome',
-    block: 'marca',
-    kind: 'name',
-    ask: 'Como vai se chamar sua loja?',
-    help: 'Se ainda não decidiu, a gente sugere nomes pra você escolher.',
-    label: 'Nome da loja',
   },
   {
     id: 'estilo',
@@ -174,15 +165,11 @@ export type OnboardingQuestionId = (typeof ONBOARDING_QUESTIONS)[number]['id'];
 /** Uma pergunta da conversa, com o `id` restrito às perguntas que existem. */
 export type OnboardingQuestion = QuestionDefinition & { id: OnboardingQuestionId };
 
-/**
- * Uma resposta guardada: o texto da opção (uma ou várias); no nome, `null` = "ainda não decidi";
- * no toque pessoal, texto vazio = pulou.
- */
-export type AnswerValue = string | string[] | null;
+/** Uma resposta guardada: o texto da opção (uma ou várias); no toque pessoal, vazio = pulou. */
+export type AnswerValue = string | string[];
 
 /** Respostas guardadas, por pergunta. Pergunta sem chave = ainda não respondida. */
 export type OnboardingAnswers = Partial<Record<OnboardingQuestionId, AnswerValue>>;
 
-/** Tamanhos máximos dos textos livres. */
-export const STORE_NAME_MAX = 60;
+/** Tamanho máximo do toque pessoal. */
 export const PERSONAL_TOUCH_MAX = 300;

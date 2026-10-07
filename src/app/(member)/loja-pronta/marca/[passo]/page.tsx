@@ -41,7 +41,9 @@ export default async function BrandStepPage({ params, searchParams }: PageProps)
   if (OLD_LOGO_STEPS.has(passo)) redirect(brandStepPath('logo'));
   if (!isBrandStep(passo)) notFound();
 
-  const { student, answers, brand, revising } = await requireBrandStudio(brandStepPath(passo));
+  const { student, answers, conversationName, brand, revising } = await requireBrandStudio(
+    brandStepPath(passo),
+  );
   if (!canOpenBrandStep(passo, brand)) redirect(brandStepPath(resumeBrandStep(brand)));
   // Revendo a marca confirmada, todo passo é edição: salvar volta pra revisão.
   const editing = passo !== 'revisao' && (revising || getParam(query.editar) === '1');
@@ -66,6 +68,7 @@ export default async function BrandStepPage({ params, searchParams }: PageProps)
       {passo === 'nome' ? (
         <NameStep
           answers={answers}
+          conversationName={conversationName}
           studentName={student.session.user.name}
           saved={brand.name}
           editing={editing}

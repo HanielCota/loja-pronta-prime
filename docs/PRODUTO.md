@@ -53,7 +53,7 @@ A plataforma não confirma hoje que uma loja foi publicada na Shopee. A aluna co
 Uma pergunta por tela, com o mascote e salvamento de cada resposta:
 
 - Experiência com vendas e categorias de interesse.
-- Nome da loja ou “Ainda não decidi”, estilo, cor, sentimentos e toque pessoal opcional.
+- Estilo, cor, sentimentos e toque pessoal opcional. O nome da loja é escolhido na marca, com sugestões.
 - Revisão das respostas e salvamento do WhatsApp.
 
 Ao enviar, a loja passa para a fase da marca. O WhatsApp fica salvo como contato; **o envio automático de avisos ainda não existe**. O vídeo de orientação só aparece quando um arquivo real for enviado para esse espaço; sem arquivo, a jornada segue para as respostas enviadas.

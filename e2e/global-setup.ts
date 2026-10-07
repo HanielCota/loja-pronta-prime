@@ -38,11 +38,14 @@ type Student = {
   brandDoneWithoutLogo?: boolean;
 };
 
-/** Respostas de exemplo da conversa, pras alunas que já começam na fase da marca. */
+/**
+ * Respostas de exemplo da conversa, pras alunas que já começam na fase da marca. O `nome` é de
+ * quando a conversa ainda perguntava: o passo do nome da marca tem que começar com ele.
+ */
 const SENT_ANSWERS = {
   vendas: 'Nunca vendi',
-  categorias: ['Pets'],
   nome: 'Patinhas da Ana',
+  categorias: ['Pets'],
   estilo: 'Divertido',
   cor: 'Verde',
   sentimento: ['Acolhimento'],

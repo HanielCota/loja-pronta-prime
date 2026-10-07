@@ -1,5 +1,5 @@
 import { BRAND_NAME_MAX } from '@/config/brand';
-import type { OnboardingAnswers } from '@/config/onboarding';
+import { SHOPEE_STORE, type OnboardingAnswers } from '@/config/onboarding';
 import { FocusOnArrival } from '@/features/loja-pronta/components/focus-on-arrival';
 import { MascotBubble } from '@/features/loja-pronta/components/mascot-bubble';
 import { parseBrandName } from '../fields';
@@ -11,6 +11,7 @@ import { BrandForm } from './brand-form';
 import { NamePicker } from './name-picker';
 
 const TITLE_ID = 'nome-titulo';
+const HELP_ID = 'nome-ajuda';
 const FIELD_ID = 'nome-da-loja';
 
 /** Ideias guardadas pro "Mais ideias" (3 trocas de 6). */
@@ -18,6 +19,8 @@ const IDEAS = 18;
 
 type NameStepProps = {
   answers: OnboardingAnswers;
+  /** O nome que ela escreveu na conversa, quando a conversa ainda perguntava. */
+  conversationName: string | null;
   studentName: string;
   saved: string | null;
   editing: boolean;
@@ -28,8 +31,16 @@ type NameStepProps = {
  * que é o próprio campo; embaixo, ideias que escrevem no cartão, e um botão só pra seguir. Os
  * nomes aparecem na letra do estilo dela, como no logo.
  */
-export function NameStep({ answers, studentName, saved, editing }: NameStepProps) {
-  const fromConversation = typeof answers.nome === 'string' ? answers.nome : undefined;
+export function NameStep({
+  answers,
+  conversationName,
+  studentName,
+  saved,
+  editing,
+}: NameStepProps) {
+  const fromConversation = conversationName ?? undefined;
+  // Quem já tem loja na Shopee já tem um nome: o mesmo evita duas marcas pra mesma loja.
+  const hasShopeeStore = answers.vendas === SHOPEE_STORE;
   // O nome da conversa só vira ideia se a Shopee aceitar; senão, fica só no cartão, pra ela ajustar.
   const usable =
     fromConversation && parseBrandName(fromConversation).ok ? fromConversation : undefined;
@@ -41,7 +52,13 @@ export function NameStep({ answers, studentName, saved, editing }: NameStepProps
     <>
       {/* A letra do logo, servida pela rota das fontes da marca (o navegador guarda de vez). */}
       <style>{`@font-face{font-family:'Letra da marca';src:url('${BRAND_PATH}/fontes/${font}') format('woff');font-display:swap}`}</style>
-      <MascotBubble compact title="Qual o nome da sua loja?" titleId={TITLE_ID} />
+      <MascotBubble
+        compact
+        title="Qual o nome da sua loja?"
+        help={hasShopeeStore ? 'Já tem loja na Shopee? Use o mesmo nome dela.' : undefined}
+        titleId={TITLE_ID}
+        helpId={hasShopeeStore ? HELP_ID : undefined}
+      />
       <FocusOnArrival targetId={TITLE_ID} />
       <BrandForm action={saveBrandName} editing={editing}>
         <NamePicker
