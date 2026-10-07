@@ -84,7 +84,9 @@ o tema escuro e o alto contraste.
   etiqueta com estrela e duas estrelas ao lado. As cores são do desenho; a interface continua
   usando os tokens da marca. As artes transparentes em `components/brand/mascot/assets`
   compartilham a composição; `art.ts` registra as posições do rosto e os ombros. Corpo e braços
-  separados permitem deixar as mãos baixas e mover cada braço sem deformar o desenho.
+  separados permitem deixar as mãos baixas e mover cada braço sem deformar o desenho. Os dois
+  braços caem pelas laterais, com a ponta roxa abaixo do ombro; o esquerdo usa a arte comprida
+  espelhada para ficar relaxado.
 - Mascote (`components/brand/mascot`), `Logo`, `BrandCard`, `CardHeading`. A Lupita cochila
   depois de 10s sem mexer (com "Zzz"; com a aba escondida, o relógio pausa), mas só nas telas de
   acesso: onde ele faz a pergunta (`MascotBubble`) ou acompanha a leitura (painel da loja), use

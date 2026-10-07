@@ -283,6 +283,7 @@ function MascotArm({ side, image }: { side: keyof typeof ARMS; image: string }) 
       style={
         {
           transformOrigin: arm.origin,
+          translate: arm.offset,
           '--arm-rest': arm.rest,
           '--arm-direction': arm.direction,
         } as React.CSSProperties
@@ -290,7 +291,11 @@ function MascotArm({ side, image }: { side: keyof typeof ARMS; image: string }) 
     >
       <div
         className="absolute inset-0 bg-size-[100%_100%] bg-no-repeat"
-        style={{ backgroundImage: image, clipPath: arm.clip }}
+        style={{
+          backgroundImage: image,
+          clipPath: arm.clip,
+          transform: arm.mirror ? 'scaleX(-1)' : undefined,
+        }}
       />
     </div>
   );

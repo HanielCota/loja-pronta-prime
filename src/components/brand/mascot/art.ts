@@ -59,16 +59,20 @@ export const INK = '#38171d';
 /** Braços separados da arte: ombro e posição relaxada, com a mão original preservada. */
 export const ARMS = {
   left: {
-    origin: '34.8% 63%',
-    rest: '-48deg',
+    origin: '32% 58%',
+    rest: '-102deg',
     direction: -1,
-    // A imagem tem os dois braços; cada metade mostra só a articulação correspondente.
-    clip: 'inset(0 50% 0 0)',
+    offset: '-1% 4%',
+    mirror: true,
+    // O braço comprido, espelhado, deixa a ponta roxa cair pela lateral em vez de apontar pra frente.
+    clip: 'inset(0 0 0 50%)',
   },
   right: {
     origin: '68% 58%',
     rest: '102deg',
     direction: 1,
+    offset: '0 0',
+    mirror: false,
     // Este braço nasce atrás da lateral do corpo e da alça.
     clip: 'inset(0 0 0 50%)',
   },

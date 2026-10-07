@@ -12,7 +12,8 @@ As artes foram preparadas com a ferramenta integrada de imagem do Codex, em 7 de
 - `mascote-base.png`: olhos brancos e cílios, sem pupilas, sobrancelhas ou boca.
 - `mascote-corpo.png`: mesma base sem os braços, para receber as articulações por cima.
 - `mascote-bracos.png`: só os dois braços, com a ligação do ombro arredondada e transparente
-  ao redor. Cada metade é posicionada no próprio ombro; a mão da frente fica sobre o corpo.
+  ao redor. A pose relaxada usa a metade direita (braço comprido) nos dois lados, espelhada para
+  o esquerdo. A ponta roxa fica abaixo do ombro, junto à lateral; o braço esquerdo fica sobre o corpo.
 - `mascote-olhos-fechados.png`: pele nas regiões dos olhos, para cobrir olhos e cílios.
 
 O rosto animado usa as medidas de `art.ts`, com pupilas, brilhos, boca e sobrancelhas por cima

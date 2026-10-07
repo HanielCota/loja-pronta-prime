@@ -91,7 +91,7 @@ test('balança os dois braços, assenta com as mãos baixas e reage sem reinicia
     )
     .toBe(true);
   await expect(mascot(page)).not.toHaveAttribute('data-sway', 'true', { timeout: 6_000 });
-  expect(await rotations()).toEqual([102, -48]);
+  expect(await rotations()).toEqual([102, -102]);
 
   const email = page.getByLabel('Email da compra');
   await email.focus();
