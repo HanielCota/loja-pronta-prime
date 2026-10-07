@@ -2,6 +2,7 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { Pool } from 'pg';
 import pandaCatalog from '../data/sll/panda-videos.json';
+import { importInitialSllContent } from '../src/features/sll/server/import-initial-content';
 
 async function applyMigrations(): Promise<void> {
   const url = process.env.DATABASE_URL;
@@ -12,6 +13,11 @@ async function applyMigrations(): Promise<void> {
     // Mantém a tabela drizzle.__drizzle_migrations usada pelo CLI e só aplica SQL pendente.
     await migrate(drizzle(pool), { migrationsFolder: './drizzle' });
     console.log('Migrações aplicadas com sucesso.');
+    // O banco online não recebe os importadores locais; leva o conteúdo conferido na própria imagem.
+    const imported = await importInitialSllContent(pool);
+    console.log(
+      `Conteúdo SLL importado: ${imported.tracks} trilhas, ${imported.lessons} aulas, ${imported.videos} vídeos e ${imported.resources} recursos.`,
+    );
     // Só contagens: o log permite conferir a vinculação no deploy sem expor conteúdo de alunas.
     const videoIds = pandaCatalog.sections.flatMap((section) =>
       section.groups.flatMap((group) => group.lessons.map((lesson) => lesson.videoId)),
