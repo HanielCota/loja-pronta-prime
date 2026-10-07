@@ -20,8 +20,7 @@ const steps = [
         description:
           'A aula de abertura da Etapa 1. A Pri dá as boas-vindas, mostra como a jornada está organizada e explica por onde começar pra não se perder. É o ponto de partida antes de mexer em qualquer configuração da loja.',
         duration: 8,
-        // ID conferido no inventário T01; o host do player continua sendo uma dependência da
-        // hospedagem escolhida e não é inventado aqui.
+        // ID conferido no inventário T01 e usado pelo player Panda validado.
         video: '44408d11-f282-4a43-9949-8b3c44b94ee4',
       },
       {

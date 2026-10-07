@@ -1,7 +1,60 @@
 import { describe, expect, test } from 'bun:test';
-import { parseHotmartEvent, purchaseEffect, shouldApplyEvent, transactionMismatch } from './event';
+import {
+  cleanBuyerName,
+  parseHotmartEvent,
+  purchaseEffect,
+  shouldApplyEvent,
+  transactionMismatch,
+} from './event';
 
 describe('avisos da Hotmart', () => {
+  const validEvent = {
+    id: 'evento-1',
+    event: 'PURCHASE_APPROVED',
+    creation_date: new Date('2026-10-06T12:00:00Z').getTime(),
+    version: '2.0.0',
+    data: {
+      product: { ucode: 'curso-1' },
+      buyer: { email: 'ana@exemplo.com', name: 'Ana' },
+      purchase: { transaction: 'HP123' },
+    },
+  };
+
+  test('aceita aviso válido e ignora campos extras do provedor', () => {
+    const parsed = parseHotmartEvent({ ...validEvent, extra: 'não guardar' });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data).toEqual(validEvent);
+  });
+
+  test('recusa datas não representáveis e campos excessivos antes de chegar ao banco', () => {
+    for (const creation_date of [Infinity, NaN, 1.5, 0, 253_402_300_800_000])
+      expect(parseHotmartEvent({ ...validEvent, creation_date }).success).toBe(false);
+    expect(parseHotmartEvent({ ...validEvent, id: 'x'.repeat(201) }).success).toBe(false);
+    expect(parseHotmartEvent({ ...validEvent, id: 'evento\0' }).success).toBe(false);
+    expect(
+      parseHotmartEvent({
+        ...validEvent,
+        data: { ...validEvent.data, buyer: { email: 'ana@exemplo.com', name: 'x'.repeat(2001) } },
+      }).success,
+    ).toBe(false);
+  });
+
+  test('nome com quebra de linha ou comprido demais é limpo, sem recusar a compra', () => {
+    const parsed = parseHotmartEvent({
+      ...validEvent,
+      data: {
+        ...validEvent.data,
+        buyer: { email: 'ana@exemplo.com', name: '  Ana\n\tSilva\u0000 ' + 'x'.repeat(300) },
+      },
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      const name = parsed.data.data.buyer.name ?? '';
+      expect(name.startsWith('Ana Silva x')).toBe(true);
+      expect(name.length).toBeLessThanOrEqual(200);
+    }
+    expect(cleanBuyerName('\u0007')).toBe('');
+  });
   test('somente pagamento confirmado libera e reembolso retira', () => {
     expect(purchaseEffect('PURCHASE_APPROVED')).toBe('grant');
     expect(purchaseEffect('PURCHASE_REFUNDED')).toBe('revoke');

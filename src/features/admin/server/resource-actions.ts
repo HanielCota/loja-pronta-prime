@@ -1,6 +1,6 @@
 'use server';
 
-import { and, asc, eq, isNotNull, isNull } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { unstable_rethrow } from 'next/navigation';
 import { z } from 'zod';
@@ -16,6 +16,7 @@ import {
 import { parseEditorIntent } from '../editor-intent';
 import { learningSlugFromTitle, swapWithNeighbor } from '../structure-rules';
 import { requireAdmin } from './access';
+import { isSafeContentDestination } from '@/lib/urls';
 import {
   getNodeDraftForUpdate,
   saveNodeDraft,
@@ -35,13 +36,7 @@ function field(form: FormData, key: string) {
 }
 
 function safeDestination(value: string) {
-  if (!value) return true;
-  if (value.startsWith('/') && !value.startsWith('//') && !value.includes('\\')) return true;
-  try {
-    return ['http:', 'https:'].includes(new URL(value).protocol);
-  } catch {
-    return false;
-  }
+  return !value || isSafeContentDestination(value);
 }
 
 export async function saveSllResource(
@@ -52,6 +47,7 @@ export async function saveSllResource(
   const rawId = field(form, 'id');
   const lessonIds = form.getAll('relatedLessonId');
   if (
+    lessonIds.length > 100 ||
     lessonIds.some((value) => typeof value !== 'string' || !z.uuid().safeParse(value).success) ||
     new Set(lessonIds).size !== lessonIds.length
   )
@@ -60,7 +56,7 @@ export async function saveSllResource(
   if (relatedLessonIds.length) {
     const lessons = await db.query.learningLessons.findMany({
       columns: { id: true },
-      where: isNull(learningLessons.archivedAt),
+      where: and(isNull(learningLessons.archivedAt), inArray(learningLessons.id, relatedLessonIds)),
     });
     const available = new Set(lessons.map((lesson) => lesson.id));
     if (relatedLessonIds.some((id) => !available.has(id)))

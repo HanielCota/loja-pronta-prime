@@ -1,16 +1,40 @@
 import { z } from 'zod';
+import { hasControlCharacters } from '@/lib/text';
+
+const identifier = z
+  .string()
+  .min(1)
+  .max(200)
+  .refine((value) => !hasControlCharacters(value));
 
 const purchaseEvent = z.object({
-  id: z.string().min(1),
-  event: z.string().min(1),
-  creation_date: z.number().int().positive(),
-  version: z.string().startsWith('2.'),
+  id: identifier,
+  event: z
+    .string()
+    .min(1)
+    .max(100)
+    .regex(/^[A-Z_]+$/),
+  creation_date: z.number().int().positive().max(253_402_300_799_999),
+  version: z.string().startsWith('2.').max(20),
   data: z.object({
-    product: z.object({ ucode: z.string().min(1) }),
-    buyer: z.object({ email: z.email(), name: z.string().optional() }),
-    purchase: z.object({ transaction: z.string().min(1) }),
+    product: z.object({ ucode: identifier }),
+    buyer: z.object({
+      email: z.email().max(254),
+      // O nome vem do que a compradora digitou no checkout: uma quebra de linha colada ali não
+      // pode recusar o aviso (a Hotmart reenviaria pra sempre e ela ficaria sem acesso). Então
+      // ele é limpo, não recusado: controles viram espaço e o excesso é cortado. O teto bruto
+      // continua barrando corpo gigante.
+      name: z.string().max(2000).transform(cleanBuyerName).optional(),
+    }),
+    purchase: z.object({ transaction: identifier }),
   }),
 });
+
+/** Tira caracteres de controle, junta espaços repetidos e corta em 200 caracteres. */
+export function cleanBuyerName(value: string): string {
+  const spaced = Array.from(value, (char) => (hasControlCharacters(char) ? ' ' : char)).join('');
+  return spaced.replace(/\s+/g, ' ').trim().slice(0, 200).trim();
+}
 
 export type HotmartPurchaseEvent = z.infer<typeof purchaseEvent>;
 

@@ -130,6 +130,6 @@ await db.transaction(async (tx) => {
     .onConflictDoNothing();
 });
 console.info(
-  'Recursos conferidos importados. O Fotógrafo Profissional foi ligado à aula 33; a calculadora e o Envio Velox continuam em preparação.',
+  'Recursos conferidos importados. O Fotógrafo Profissional foi ligado à aula 33. As calculadoras são publicadas pela importação de ferramentas; o Envio Velox continua em preparação.',
 );
 process.exit(0);

@@ -27,7 +27,7 @@ Curso em vídeo com ferramentas, para a aluna aprender e vender por conta própr
 - Minicursos complementares.
 - Marcação de aulas concluídas e acompanhamento do progresso.
 - Painel de métricas da loja Shopee, depois que a aluna conecta a loja dela.
-- Ferramentas: calculadora de preço da Shopee e assistentes de IA prontos para uso.
+- Ferramentas: calculadoras de preço, descontos e anúncios, guia e planilha de custos e quatro assistentes de IA com instruções de uso. Detalhes e pendências em `docs/SLL-FERRAMENTAS.md`.
 
 ### Loja Pronta
 

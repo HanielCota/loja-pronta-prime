@@ -1,6 +1,8 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  // A imagem leva só os arquivos usados pelo servidor, sem as ferramentas de desenvolvimento.
+  output: 'standalone',
   reactStrictMode: true,
   // Sem o cabeçalho "X-Powered-By: Next.js" (não conta pra ninguém com o que o site é feito).
   poweredByHeader: false,
@@ -32,7 +34,7 @@ const nextConfig: NextConfig = {
           // Ninguém embute as telas em outro site (protege o login contra clickjacking).
           {
             key: 'Content-Security-Policy',
-            value: "frame-ancestors 'none'; frame-src 'self' https://*.tv.pandavideo.com.br",
+            value: "frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'",
           },
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },

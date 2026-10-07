@@ -11,7 +11,7 @@ export const SLL_COPY = {
   dashboardCoursesTitle: 'Minicursos',
   dashboardCoursesDetail: 'Acesse os cursos complementares.',
   dashboardToolsTitle: 'Ferramentas',
-  dashboardToolsDetail: 'Assistentes e parceiros recomendados. Calculadora em breve.',
+  dashboardToolsDetail: 'Calculadoras, materiais, assistentes e parceiros recomendados.',
   dashboardToolsButton: 'Acessar Recursos',
   dashboardStoresTitle: 'Avisos da sua conta',
   dashboardStoresDetail:

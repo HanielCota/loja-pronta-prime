@@ -15,34 +15,7 @@ import { SllStage2Pilot } from '@/features/sll/components/sll-stage2-pilot';
 import { getSllStageCardState } from '@/features/sll/stage-card-state';
 import { sllLessonHref } from '@/features/sll/lesson-navigation';
 import { getSllPlanIntake } from '@/features/sll/server/plan';
-
-function libraryMaterialLabel(
-  blocks: Array<{ kind: string; data: unknown }> | undefined,
-): string | null {
-  if (!blocks?.length) return null;
-  if (
-    blocks.some(
-      ({ kind, data }) =>
-        kind === 'file' && typeof data === 'object' && data !== null && 'fileName' in data,
-    )
-  ) {
-    return 'Material da aula';
-  }
-  if (
-    blocks.some(
-      ({ kind, data }) =>
-        kind === 'link' && typeof data === 'object' && data !== null && 'label' in data,
-    )
-  ) {
-    return 'Link da aula';
-  }
-  if (
-    blocks.some(({ kind, data }) => kind === 'image' && typeof data === 'object' && data !== null)
-  ) {
-    return 'Imagem da aula';
-  }
-  return null;
-}
+import { libraryMaterialLabel } from '@/features/sll/material-format';
 
 export const metadata: Metadata = { title: 'Etapa do Método SLL' };
 
@@ -84,7 +57,7 @@ export default async function MethodStagePage({
   const lessonsById = new Map(
     track.stages
       .flatMap((item) => item.modules.flatMap((module) => module.lessons))
-      .map((lesson) => [lesson.id, lesson]),
+      .map((lesson) => [lesson.id, { id: lesson.id, title: lesson.title }]),
   );
   const planIntake = stage.slug === 'etapa-2' ? await getSllPlanIntake(session.user.id) : null;
   const requiredModules = stage.modules
@@ -189,8 +162,7 @@ export default async function MethodStagePage({
               <>
                 {planIntake.storeAge === 'exactly_7_days' ? (
                   <p className="text-body text-pretty text-muted-foreground">
-                    A regra para uma loja com exatamente 7 dias ainda está em definição. Este plano
-                    mostra apenas as ações confirmadas e não coloca sua loja em outra categoria.
+                    Sua loja está aberta há 7 dias. Siga as ações no seu ritmo.
                   </p>
                 ) : null}
                 <SllStage2Pilot

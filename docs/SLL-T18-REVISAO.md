@@ -1,5 +1,9 @@
 # SLL — Etapa 18: revisão completa e compatibilidade
 
+> Registro da revisão local anterior à publicação dos vídeos e das ferramentas. A conciliação
+> do PR #84 mantém a moldura `SllAreaShell`, os 71 players e as calculadoras já publicadas.
+> O estado online atual está em `docs/SLL-VIDEOS-PANDA.md` e `docs/SLL-FERRAMENTAS.md`.
+
 **Data:** 7 de outubro de 2026
 **Estado:** conferência executada com limitações documentadas
 **Escopo:** área SLL da aluna, rotas de conteúdo, navegação, progresso, recursos, cursos,
@@ -51,17 +55,17 @@ revisão. A entrega documental desta etapa é este registro e a atualização do
 
 As rotas abaixo foram abertas ou exercitadas em `http://localhost:3000`:
 
-| Área | Rota ou fluxo | Resultado |
-| --- | --- | --- |
-| Painel | `/sll` | Abre o caminho de aprendizagem, o estado da loja e as ferramentas sem métricas fictícias. |
-| Método | `/sll/metodo` | Mostra a trilha e o estado de progresso da conta. |
-| Etapas | `/sll/metodo/etapa/<stageId>` | Estados publicados, bloqueados e preparação exibem o motivo correspondente. |
-| Aula | `/sll/aula/<lessonId>` | Redirecionamento legado para a trilha de boas-vindas quando aplicável. |
-| Aula | `/sll/aula/<lessonId>` e aula pelo caminho atual | Visualizador, vídeo indisponível, progresso e navegação anterior/próxima. |
-| Biblioteca | `/sll/recursos` | Busca, grupos, links internos e links externos com aviso de nova aba. |
-| Cursos | `/sll/cursos` e curso complementar | Catálogo, contagem, capa indisponível e acesso à aula. |
-| Lojas | `/sll/minhas-lojas` | Estado atual sem integração Shopee simulada e plataformas futuras explícitas. |
-| Adicionar loja | `/sll/minhas-lojas/adicionar` e `?plataforma=shopee` | Escolha de plataforma, conexão em preparação e montagem separada. |
+| Área           | Rota ou fluxo                                        | Resultado                                                                                 |
+| -------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Painel         | `/sll`                                               | Abre o caminho de aprendizagem, o estado da loja e as ferramentas sem métricas fictícias. |
+| Método         | `/sll/metodo`                                        | Mostra a trilha e o estado de progresso da conta.                                         |
+| Etapas         | `/sll/metodo/etapa/<stageId>`                        | Estados publicados, bloqueados e preparação exibem o motivo correspondente.               |
+| Aula           | `/sll/aula/<lessonId>`                               | Redirecionamento legado para a trilha de boas-vindas quando aplicável.                    |
+| Aula           | `/sll/aula/<lessonId>` e aula pelo caminho atual     | Visualizador, vídeo indisponível, progresso e navegação anterior/próxima.                 |
+| Biblioteca     | `/sll/recursos`                                      | Busca, grupos, links internos e links externos com aviso de nova aba.                     |
+| Cursos         | `/sll/cursos` e curso complementar                   | Catálogo, contagem, capa indisponível e acesso à aula.                                    |
+| Lojas          | `/sll/minhas-lojas`                                  | Estado atual sem integração Shopee simulada e plataformas futuras explícitas.             |
+| Adicionar loja | `/sll/minhas-lojas/adicionar` e `?plataforma=shopee` | Escolha de plataforma, conexão em preparação e montagem separada.                         |
 
 Também foi feita leitura somente de uma aba da área antiga de referência para comparação de
 organização. Nenhum dado pessoal, loja, promoção ou estado daquela conta foi copiado para a
@@ -88,30 +92,30 @@ etapa ficam nos arquivos `playwright.sll-*.config.ts` e `e2e/sll-*.spec.ts` já 
 
 ## D. Verificações
 
-| Verificação | Escopo | Resultado | Evidência ou limitação |
-| --- | --- | --- | --- |
-| Typecheck | Workspace atual | Aprovado | `bun run typecheck` retornou código 0. |
-| Lint | Workspace atual | Aprovado | `bun run lint` retornou código 0. |
-| Testes unitários | `src` | Aprovado | 256 testes em 45 arquivos; 793 asserções, sem falhas. |
-| Design guard | Tokens, fonte e cores | Aprovado | `src/design-guard.test.ts` incluído nos testes e aprovado. |
-| Espaços e conflitos | Diferenças locais | Aprovado | `git diff --check` aprovado; conflitos não resolvidos não encontrados. |
-| Etapa 1 | Desbloqueio, visualizador e sem JavaScript | Aprovado | 2/2 testes Playwright. |
-| Etapa 2 | Entrada do plano e persistência do Dia 1 | Aprovado | 2/2 testes Playwright. |
-| Desbloqueio | Etapa 2 após obrigatórias, estado fechado e responsivo | Aprovado | 4/4 testes Playwright. |
-| Biblioteca | Busca, endereço, retorno, tema e celular | Aprovado | 3/3 testes Playwright. |
-| Minhas Lojas | Fluxo Shopee, preparação, montagem e conta com dois produtos | Aprovado | 2/2 testes Playwright. |
-| Navegador atual | Painel, Método, Etapa 3, recursos, lojas, cursos e aula | Aprovado | Rotas abertas em `localhost:3000`; console sem erro ou aviso novo. |
-| Temas | Claro e escuro | Aprovado no escopo observado | Tema claro e grafite conferidos no navegador e nas capturas existentes. |
-| Teclado e foco | Menus, controles expansíveis, formulários e avanço | Aprovado nos roteiros | A validação automatizada não substitui leitor de tela manual. |
-| Leitor de tela | NVDA ou equivalente | Não executado | Axe e teclado foram usados onde previstos, mas não houve sessão manual com leitor de tela. |
-| Compatibilidade física | Aparelho móvel real e navegador fora do Chromium | Não executado | Foram usadas larguras simuladas e o navegador local disponível. |
-| Boas-vindas isolado | Configuração que exige catálogo vazio | Limitado | O teste não iniciou porque a base atual já possui boas-vindas e Método publicados; o conteúdo não foi despublicado para satisfazer a pré-condição. |
-| Método overview isolado | Configuração que exige Método vazio | Limitado | Mesmo conflito de pré-condição da base publicada atual. |
-| Regressão ampla | Setup global com envio ao S3 | Não executado | O setup depende de credencial/serviço externo; não foi iniciado fluxo com efeito externo nesta etapa. |
-| Conteúdo de vídeo | Reprodução e posição de vídeos reais | Não validado | Os blocos publicados apontam para disponibilidade em breve; host Panda e reprodução real não foram confirmados. |
-| Downloads | Arquivos materiais | Não validado por ausência de arquivos | A rota de download possui guarda de acesso, publicação, chave e tipo; não há bloco de arquivo publicado para exercitar um download real. |
-| Admin | Editor e publicação | Parcial | Código, estados, catálogo e plano foram auditados; não foi repetida uma matriz completa do admin no navegador nesta etapa. |
-| Produção | Deploy, domínio e serviços reais | Fora do escopo | Nenhum deploy, migração de produção ou publicação foi executado. |
+| Verificação             | Escopo                                                       | Resultado                             | Evidência ou limitação                                                                                                                             |
+| ----------------------- | ------------------------------------------------------------ | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Typecheck               | Workspace atual                                              | Aprovado                              | `bun run typecheck` retornou código 0.                                                                                                             |
+| Lint                    | Workspace atual                                              | Aprovado                              | `bun run lint` retornou código 0.                                                                                                                  |
+| Testes unitários        | `src`                                                        | Aprovado                              | 256 testes em 45 arquivos; 793 asserções, sem falhas.                                                                                              |
+| Design guard            | Tokens, fonte e cores                                        | Aprovado                              | `src/design-guard.test.ts` incluído nos testes e aprovado.                                                                                         |
+| Espaços e conflitos     | Diferenças locais                                            | Aprovado                              | `git diff --check` aprovado; conflitos não resolvidos não encontrados.                                                                             |
+| Etapa 1                 | Desbloqueio, visualizador e sem JavaScript                   | Aprovado                              | 2/2 testes Playwright.                                                                                                                             |
+| Etapa 2                 | Entrada do plano e persistência do Dia 1                     | Aprovado                              | 2/2 testes Playwright.                                                                                                                             |
+| Desbloqueio             | Etapa 2 após obrigatórias, estado fechado e responsivo       | Aprovado                              | 4/4 testes Playwright.                                                                                                                             |
+| Biblioteca              | Busca, endereço, retorno, tema e celular                     | Aprovado                              | 3/3 testes Playwright.                                                                                                                             |
+| Minhas Lojas            | Fluxo Shopee, preparação, montagem e conta com dois produtos | Aprovado                              | 2/2 testes Playwright.                                                                                                                             |
+| Navegador atual         | Painel, Método, Etapa 3, recursos, lojas, cursos e aula      | Aprovado                              | Rotas abertas em `localhost:3000`; console sem erro ou aviso novo.                                                                                 |
+| Temas                   | Claro e escuro                                               | Aprovado no escopo observado          | Tema claro e grafite conferidos no navegador e nas capturas existentes.                                                                            |
+| Teclado e foco          | Menus, controles expansíveis, formulários e avanço           | Aprovado nos roteiros                 | A validação automatizada não substitui leitor de tela manual.                                                                                      |
+| Leitor de tela          | NVDA ou equivalente                                          | Não executado                         | Axe e teclado foram usados onde previstos, mas não houve sessão manual com leitor de tela.                                                         |
+| Compatibilidade física  | Aparelho móvel real e navegador fora do Chromium             | Não executado                         | Foram usadas larguras simuladas e o navegador local disponível.                                                                                    |
+| Boas-vindas isolado     | Configuração que exige catálogo vazio                        | Limitado                              | O teste não iniciou porque a base atual já possui boas-vindas e Método publicados; o conteúdo não foi despublicado para satisfazer a pré-condição. |
+| Método overview isolado | Configuração que exige Método vazio                          | Limitado                              | Mesmo conflito de pré-condição da base publicada atual.                                                                                            |
+| Regressão ampla         | Setup global com envio ao S3                                 | Não executado                         | O setup depende de credencial/serviço externo; não foi iniciado fluxo com efeito externo nesta etapa.                                              |
+| Conteúdo de vídeo       | Reprodução e posição de vídeos reais                         | Não validado                          | Os blocos publicados apontam para disponibilidade em breve; host Panda e reprodução real não foram confirmados.                                    |
+| Downloads               | Arquivos materiais                                           | Não validado por ausência de arquivos | A rota de download possui guarda de acesso, publicação, chave e tipo; não há bloco de arquivo publicado para exercitar um download real.           |
+| Admin                   | Editor e publicação                                          | Parcial                               | Código, estados, catálogo e plano foram auditados; não foi repetida uma matriz completa do admin no navegador nesta etapa.                         |
+| Produção                | Deploy, domínio e serviços reais                             | Fora do escopo                        | Nenhum deploy, migração de produção ou publicação foi executado.                                                                                   |
 
 As execuções paralelas iniciais de alguns roteiros apresentaram colisão de artefatos de trace do
 runner. As repetições sequenciais com `--trace=off` foram as execuções consideradas para o
@@ -119,15 +123,15 @@ resultado acima; a falha era do artefato compartilhado, não da aplicação.
 
 ## E. Rastreabilidade
 
-| Referência | Estado na revisão |
-| --- | --- |
-| R09 do plano | Conferido com limitações documentadas neste arquivo. |
-| T01 — boas-vindas e Método | Ordem, títulos, rotas legadas, progresso e ausência de vídeo real confrontados; publicação e host continuam dependentes do conteúdo real. |
-| T02 — etapas e biblioteca | Quantidades, obrigatoriedade/opcionalidade, bloqueios, busca e ausência de arquivos confrontados. |
-| T03 — cursos, recursos e lojas | Catálogo, contagens, destinos, estados de integração e separação Loja Pronta/SLL confrontados. |
-| 17.1–17.15 | Fluxo de Minhas Lojas e montagem exercitado pelos testes Stage 17. |
-| 4.x / R06 | Visualizador, lista, sequência, retorno, indisponibilidade, conclusão e responsividade mantidos e reexercitados quando cobertos pelos roteiros atuais. |
-| Fonte de materiais 20, 30, 33, 34, 35, 39, 40, 42 e 44 | Aulas existem, mas não há blocos de arquivo publicados; nenhum arquivo foi fabricado ou prometido como disponível. |
+| Referência                                             | Estado na revisão                                                                                                                                      |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| R09 do plano                                           | Conferido com limitações documentadas neste arquivo.                                                                                                   |
+| T01 — boas-vindas e Método                             | Ordem, títulos, rotas legadas, progresso e ausência de vídeo real confrontados; publicação e host continuam dependentes do conteúdo real.              |
+| T02 — etapas e biblioteca                              | Quantidades, obrigatoriedade/opcionalidade, bloqueios, busca e ausência de arquivos confrontados.                                                      |
+| T03 — cursos, recursos e lojas                         | Catálogo, contagens, destinos, estados de integração e separação Loja Pronta/SLL confrontados.                                                         |
+| 17.1–17.15                                             | Fluxo de Minhas Lojas e montagem exercitado pelos testes Stage 17.                                                                                     |
+| 4.x / R06                                              | Visualizador, lista, sequência, retorno, indisponibilidade, conclusão e responsividade mantidos e reexercitados quando cobertos pelos roteiros atuais. |
+| Fonte de materiais 20, 30, 33, 34, 35, 39, 40, 42 e 44 | Aulas existem, mas não há blocos de arquivo publicados; nenhum arquivo foi fabricado ou prometido como disponível.                                     |
 
 Rotas legadas do Método sem mapeamento estável confirmado não receberam redirecionamento
 inventado. A falta desse mapeamento permanece registrada como pendência, em vez de tratar uma

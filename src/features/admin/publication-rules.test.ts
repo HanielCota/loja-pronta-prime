@@ -48,6 +48,8 @@ describe('publicação de aulas', () => {
     { kind: 'text', data: { text: ' ' } },
     { kind: 'video', data: { provider: 'outro', videoId: 'x' } },
     { kind: 'link', data: { label: 'Acessar', url: 'javascript:alert(1)' } },
+    { kind: 'link', data: { label: 'Acessar', url: 'https://example.com\n' } },
+    { kind: 'link', data: { label: 'Acessar', url: 'https://user:pass@example.com' } },
     { kind: 'file', data: { fileName: 'guia.pdf' } },
     { kind: 'image', data: { alt: 'Exemplo' } },
   ] satisfies PublicationBlock[])('recusa dados incompletos no bloco $kind', (block) => {

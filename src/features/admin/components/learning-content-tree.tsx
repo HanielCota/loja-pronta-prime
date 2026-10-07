@@ -140,7 +140,7 @@ function LessonBlock({
     const videoId = readText(block.data, 'videoId');
     return (
       <p className="text-body text-muted-foreground">
-        {provider === 'pandavideo' ? 'Espaço do vídeo' : 'Vídeo'}
+        {provider === 'pandavideo' ? 'Vídeo Panda' : 'Vídeo'}
         {videoId ? ` · ID ${videoId}` : ''}
       </p>
     );
@@ -859,7 +859,10 @@ function LessonScreen({
       ) : null}
       {draftMessage.text ? (
         <p
-          className={cn('mt-2 text-body', draftMessage.error ? 'text-destructive' : 'text-muted-foreground')}
+          className={cn(
+            'mt-2 text-body',
+            draftMessage.error ? 'text-destructive' : 'text-muted-foreground',
+          )}
           role={draftMessage.error ? 'alert' : undefined}
         >
           {draftMessage.text}

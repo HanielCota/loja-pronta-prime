@@ -67,8 +67,7 @@ export function SllStage2Pilot({
         </div>
 
         <p className="text-body text-pretty text-muted-foreground">
-          O conteúdo confirmado mostra seis ações principais, uma por dia. “Plano de 7 dias” é o
-          nome observado na referência; não há um sétimo dia confirmado.
+          Faça as ações em ordem. Seu progresso fica salvo para continuar no seu ritmo.
         </p>
 
         <div className="flex flex-col gap-3">
@@ -87,8 +86,8 @@ export function SllStage2Pilot({
         </div>
 
         <p className="text-body text-muted-foreground">
-          {completeRequiredDays} de {requiredModules.length} dias com ação publicada concluídos. O
-          progresso do plano considera apenas as {totalCount} ações obrigatórias publicadas.
+          {completeRequiredDays} de {requiredModules.length} dias concluídos. O progresso do plano
+          considera apenas as {totalCount} ações obrigatórias.
         </p>
       </section>
 

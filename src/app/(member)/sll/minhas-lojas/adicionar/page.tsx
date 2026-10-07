@@ -93,7 +93,7 @@ function PlatformStep() {
               href={SHOPEE_QUERY}
               className="group flex min-h-20 items-center gap-4 rounded-2xl border border-primary bg-primary-soft p-4 text-foreground transition-[background-color,transform] duration-100 outline-none hover:bg-primary/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100 forced-colors:border-[Highlight]"
             >
-              <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-card text-link shadow-sm">
+              <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-card text-link shadow-card">
                 <StoreIcon aria-hidden="true" className="size-5" />
               </span>
               <span className="min-w-0 flex-1">

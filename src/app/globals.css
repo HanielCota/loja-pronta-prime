@@ -28,6 +28,17 @@
   }
 }
 
+/* Fundo sólido no lugar do translúcido (a barra do topo presa): o pedido do aparelho por menos
+   transparência ou a chave "Mais contraste" do perfil. */
+@custom-variant opaque {
+  @media (prefers-reduced-transparency: reduce) {
+    @slot;
+  }
+  &:where([data-contrast='more'], [data-contrast='more'] *) {
+    @slot;
+  }
+}
+
 /*
  * Tokens de design Loja Pronta Prime, estilo Apple, no formato do shadcn/ui.
  * Use pelas classes geradas: bg-primary, text-muted-foreground, rounded-card, text-body...
@@ -57,8 +68,6 @@
   /* Pelo menos 4,9:1 sobre o branco, o cinza do fundo e o rosa dos alertas. */
   --destructive: #d70015;
   --destructive-soft: #fff1f0;
-  /* Identificação visual de PDF; não representa erro nem estado de falha. */
-  --pdf: #b42318;
   --warning: #b25000;
 
   --border: #d2d2d7;
@@ -112,8 +121,6 @@
   /* 5,9:1 no cartão, 4,9:1 no realce e 6,1:1 no fundo dos alertas. */
   --destructive: #ff8077;
   --destructive-soft: #3f1d1c;
-  /* Identificação visual de PDF; não representa erro nem estado de falha. */
-  --pdf: #ff9b92;
   --warning: #ff9f0a;
 
   --border: #48484d;
@@ -207,7 +214,6 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-soft: var(--destructive-soft);
-  --color-pdf: var(--pdf);
   --color-warning: var(--warning);
   --color-border: var(--border);
   --color-input: var(--input);
@@ -271,6 +277,13 @@
   @media (width < 40rem) {
     html {
       scroll-padding-bottom: 7rem;
+    }
+  }
+  /* Com a barra do topo presa (as áreas, do tablet pra cima), o que recebe foco ou o "Pular para o
+     conteúdo" para abaixo dela, em vez de escondido atrás (WCAG 2.4.11). */
+  @media (width >= 40rem) {
+    html:has(header[data-sticky]) {
+      scroll-padding-top: 6rem;
     }
   }
   /* Tamanho do texto (perfil, Aparência): muda a base do rem, então texto, botões e espaços

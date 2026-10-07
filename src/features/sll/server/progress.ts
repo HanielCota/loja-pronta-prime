@@ -1,4 +1,5 @@
 import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
+import { cache } from 'react';
 import { requireProduct } from '@/features/products/server/access';
 import { db } from '@/server/db';
 import {
@@ -17,7 +18,8 @@ import {
 } from '../progress-rules';
 
 /** Carrega só aulas publicadas da trilha que a aluna pode acessar. */
-export async function getSllTrackProgress(trackId: string) {
+// Só nesta renderização: deduplica consultas sem compartilhar progresso entre alunas.
+export const getSllTrackProgress = cache(async (trackId: string) => {
   const { session } = await requireProduct('sll');
   if (!isProgressId(trackId)) return null;
   const track = await db.query.learningTracks.findFirst({
@@ -158,4 +160,4 @@ export async function getSllTrackProgress(trackId: string) {
     currentLessonId: trackProgress?.currentLessonId ?? null,
     lastAccessedAt: trackProgress?.lastAccessedAt ?? null,
   };
-}
+});

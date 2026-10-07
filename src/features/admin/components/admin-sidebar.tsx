@@ -106,7 +106,8 @@ export function AdminSidebar({ current }: { current: AdminSection }) {
           <Navigation current={current} />
         </div>
       </details>
-      <aside className="hidden self-start rounded-card bg-card p-4 shadow-card lg:sticky lg:top-6 lg:block forced-colors:border forced-colors:border-[CanvasText]">
+      {/* Preso logo abaixo da barra do topo (top-22: a barra de 4rem e um respiro). */}
+      <aside className="hidden self-start rounded-card bg-card p-4 shadow-card lg:sticky lg:top-22 lg:block forced-colors:border forced-colors:border-[CanvasText]">
         <Navigation current={current} />
       </aside>
     </>

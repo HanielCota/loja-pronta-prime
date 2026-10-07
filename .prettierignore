@@ -3,6 +3,8 @@ node_modules
 out
 build
 coverage
+.playwright-cli
+.data
 bun.lock
 next-env.d.ts
 *.tsbuildinfo

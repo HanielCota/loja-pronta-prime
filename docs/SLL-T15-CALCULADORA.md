@@ -1,5 +1,9 @@
 # SLL — Etapa 15: calculadora de preço
 
+> Registro histórico de 6 de outubro. A entrega de 7 de outubro liberou as três calculadoras,
+> com taxas conferidas e opção personalizada. A rota usa a implementação atual de
+> `docs/SLL-FERRAMENTAS.md`; a página antiga de preparação foi substituída.
+
 **Implementação:** 6 de outubro de 2026
 **Estado:** estrutura entregue; cálculo bloqueado até a regra ser validada
 

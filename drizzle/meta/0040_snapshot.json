@@ -1,6 +1,6 @@
 {
-  "id": "a8b37b48-b552-4157-8098-272e2f57e8e1",
-  "prevId": "9cc72ba0-1cab-4d8d-a0ce-3951412ee804",
+  "id": "22da0209-de44-434a-9f59-e78dd502e61b",
+  "prevId": "4384b600-0758-46b0-bb23-1da656366c6e",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -618,6 +618,32 @@
       },
       "isRLSEnabled": false
     },
+    "public.learning_content_imports": {
+      "name": "learning_content_imports",
+      "schema": "",
+      "columns": {
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "applied_at": {
+          "name": "applied_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.learning_lesson_progress": {
       "name": "learning_lesson_progress",
       "schema": "",
@@ -773,12 +799,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "source_number": {
-          "name": "source_number",
-          "type": "smallint",
-          "primaryKey": false,
-          "notNull": false
-        },
         "duration_minutes": {
           "name": "duration_minutes",
           "type": "smallint",
@@ -917,10 +937,6 @@
         "learning_lessons_position_check": {
           "name": "learning_lessons_position_check",
           "value": "\"learning_lessons\".\"position\" >= 0"
-        },
-        "learning_lessons_source_number_check": {
-          "name": "learning_lessons_source_number_check",
-          "value": "\"learning_lessons\".\"source_number\" is null or \"learning_lessons\".\"source_number\" > 0"
         },
         "learning_lessons_duration_check": {
           "name": "learning_lessons_duration_check",
@@ -2294,76 +2310,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.sll_plan_intake": {
-      "name": "sll_plan_intake",
-      "schema": "",
-      "columns": {
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "store_age": {
-          "name": "store_age",
-          "type": "sll_plan_store_age",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "answered_at": {
-          "name": "answered_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "sll_plan_intake_store_age_idx": {
-          "name": "sll_plan_intake_store_age_idx",
-          "columns": [
-            {
-              "expression": "store_age",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "sll_plan_intake_user_id_user_id_fk": {
-          "name": "sll_plan_intake_user_id_user_id_fk",
-          "tableFrom": "sll_plan_intake",
-          "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.store_brand": {
       "name": "store_brand",
       "schema": "",
@@ -2898,15 +2844,6 @@
         "welcome",
         "method",
         "complementary_course"
-      ]
-    },
-    "public.sll_plan_store_age": {
-      "name": "sll_plan_store_age",
-      "schema": "public",
-      "values": [
-        "under_7_days",
-        "exactly_7_days",
-        "over_7_days"
       ]
     }
   },

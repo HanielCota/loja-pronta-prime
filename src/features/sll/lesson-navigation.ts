@@ -1,11 +1,22 @@
+import { isSafeContentDestination } from '@/lib/urls';
+
 export type SllLessonKind = 'welcome' | 'method' | 'complementary_course';
+
+/** O retorno só aponta para páginas do SLL, sem aceitar outros sites ou caminhos adulterados. */
+export function safeSllReturnHref(value: string | string[] | undefined): string | null {
+  if (typeof value !== 'string' || !value.startsWith('/sll/') || !isSafeContentDestination(value))
+    return null;
+  // O navegador normaliza segmentos ".." antes de navegar.
+  return new URL(value, 'https://sll.example').pathname.startsWith('/sll/') ? value : null;
+}
 
 /** Mantém as boas-vindas na própria trilha; as outras aulas conservam a rota existente. */
 export function sllLessonHref(kind: SllLessonKind, lessonId: string, returnTo?: string) {
   const id = encodeURIComponent(lessonId);
   const path = kind === 'welcome' ? `/sll/comece-aqui?aula=${id}` : `/sll/aula/${id}`;
-  if (!returnTo || !returnTo.startsWith('/') || returnTo.startsWith('//')) return path;
-  return `${path}${path.includes('?') ? '&' : '?'}voltar=${encodeURIComponent(returnTo)}`;
+  const safeReturn = safeSllReturnHref(returnTo);
+  if (!safeReturn) return path;
+  return `${path}${path.includes('?') ? '&' : '?'}voltar=${encodeURIComponent(safeReturn)}`;
 }
 
 /** Retorna à mesma categoria e ao cartão aberto na Biblioteca, sem perder a busca confirmada. */

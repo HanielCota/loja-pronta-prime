@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "steps": {
+    "install": {
+      "deployOutputs": []
+    },
+    "build": {
+      "deployOutputs": []
+    }
+  },
+  "deploy": {
+    "inputs": [
+      {
+        "step": "packages:mise",
+        "include": [
+          "/mise/shims",
+          "/mise/installs",
+          "/usr/local/bin/mise",
+          "/etc/mise/config.toml",
+          "/root/.local/state/mise"
+        ]
+      },
+      {
+        "step": "build",
+        "include": ["build/runtime"]
+      }
+    ],
+    "startCommand": "cd /app/build/runtime && node migrate.cjs && HOSTNAME=0.0.0.0 exec node server.js"
+  }
+}

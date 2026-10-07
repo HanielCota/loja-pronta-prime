@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test';
 import {
   getAdjacentSllLessons,
+  safeSllReturnHref,
   sllLessonHref,
   sllLibraryLessonHref,
   sllLibraryReturnHref,
@@ -8,6 +9,26 @@ import {
 
 test('boas-vindas conservam a aula selecionada no endereço da trilha', () => {
   expect(sllLessonHref('welcome', 'aula-3')).toBe('/sll/comece-aqui?aula=aula-3');
+});
+
+test('o retorno preserva a busca e o cartão do SLL, recusando destinos externos e controles', () => {
+  const valid = '/sll/metodo/etapa/etapa-3?q=avaliações#library-lesson-categoria-1-aula-3';
+  expect(safeSllReturnHref(valid)).toBe(valid);
+  for (const invalid of [
+    undefined,
+    ['a', 'b'],
+    '//example.com',
+    '/\\example.com',
+    '/sll/\\example.com',
+    '/sll/\n',
+    'https://example.com',
+    '/perfil',
+    '/sll/../perfil',
+    '/sll/%2e%2e/perfil',
+  ]) {
+    expect(safeSllReturnHref(invalid)).toBeNull();
+  }
+  expect(sllLessonHref('method', 'aula-3', '//example.com')).toBe('/sll/aula/aula-3');
 });
 
 test('método e cursos conservam as rotas de aula existentes', () => {

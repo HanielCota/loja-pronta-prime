@@ -1,5 +1,5 @@
 /** Importa as 19 aulas visíveis da Biblioteca, sem inventar as oito aulas citadas só no texto. */
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
 import {
   learningLessons,
@@ -204,8 +204,13 @@ await db.transaction(async (tx) => {
         .onConflictDoUpdate({
           target: [learningLessons.moduleId, learningLessons.slug],
           set: {
-            sourceNumber,
-            ...(durationMinutes === null ? {} : { durationMinutes }),
+            // Uma edição já salva no admin prevalece sobre nova importação.
+            sourceNumber: sql`coalesce(${learningLessons.sourceNumber}, ${sourceNumber})`,
+            ...(durationMinutes === null
+              ? {}
+              : {
+                  durationMinutes: sql`coalesce(${learningLessons.durationMinutes}, ${durationMinutes})`,
+                }),
           },
         });
     }

@@ -1,5 +1,7 @@
 # SLL — Inventário T03: cursos complementares e recursos
 
+**URLs completas dos players:** [catálogo de vídeos Panda](SLL-VIDEOS-PANDA.md), conferido em 7 de outubro de 2026, incluindo as 31 aulas dos três cursos complementares.
+
 **Leitura feita em:** 5 de outubro de 2026
 **Fonte:** área de membros antiga, biblioteca Shopee, páginas dos três minicursos, Recursos, Calculadora de preço, Minhas Lojas e Painel.
 **Escopo:** registrar cursos Shopee, aulas, materiais visíveis, banners, ferramentas, calculadora, lojas e destinos. Não abri as abas de TikTok Shop ou Mercado Livre. Não adicionei/removi lojas, reproduzi vídeos, baixei arquivos nem preenchi a calculadora.

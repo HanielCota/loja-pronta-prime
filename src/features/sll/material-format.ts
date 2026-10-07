@@ -6,6 +6,20 @@ export type SllMaterialFormat = {
   label: string;
 };
 
+/** Arquivos têm prioridade quando a aula também inclui links ou imagens. */
+export function libraryMaterialLabel(
+  blocks: Array<{ kind: string; data: unknown }> | undefined,
+): string | null {
+  if (!blocks?.length) return null;
+  const valid = blocks.filter(({ data }) => typeof data === 'object' && data !== null);
+  if (valid.some(({ kind, data }) => kind === 'file' && 'fileName' in (data as object)))
+    return 'Material da aula';
+  if (valid.some(({ kind, data }) => kind === 'link' && 'label' in (data as object)))
+    return 'Link da aula';
+  if (valid.some(({ kind }) => kind === 'image')) return 'Imagem da aula';
+  return null;
+}
+
 /** Identifica o formato pelo nome e pelo tipo guardado, sem confiar só no texto da interface. */
 export function describeSllMaterial(
   fileName: string,

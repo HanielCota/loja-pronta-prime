@@ -98,7 +98,7 @@ const ACTIONS = [
     tap: BEAT * 11,
     peeks: [{ value: 'moderna', at: BEAT * 9.5 }],
   },
-  { step: 'background', value: 'claro', tap: BEAT * 13.5, peeks: [] },
+  { step: 'background', value: 'branco', tap: BEAT * 13.5, peeks: [] },
 ] as const;
 const ADVANCE = 10;
 /** Os toques da tela (a câmera acompanha cada um). */

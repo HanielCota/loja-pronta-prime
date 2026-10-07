@@ -1,5 +1,7 @@
 # SLL — Inventário T02: Etapas 2 e 3
 
+**URLs completas dos players:** [catálogo de vídeos Panda](SLL-VIDEOS-PANDA.md), conferido em 7 de outubro de 2026, incluindo os vínculos da Etapa 2 e as 19 aulas da Biblioteca.
+
 **Leitura feita em:** 5 de outubro de 2026
 **Fonte:** área de membros antiga, páginas Etapa 2 e Etapa 3 e páginas de aula ligadas a elas.
 **Escopo:** registrar textos, ordem, categorias, ações, destinos e materiais que estavam visíveis. Navegação somente de leitura; não marquei ações ou aulas como concluídas nem baixei materiais.
@@ -85,15 +87,15 @@ Nas demais páginas individuais não encontrei uma seção “Ativos da aula” 
 
 ### Resultado da validação de downloads
 
-| Verificação | Resultado |
-| --- | --- |
-| Resposta HTTP dos nove destinos antigos | `200`, mas `Content-Type: text/html; charset=utf-8` |
-| Leitura real do corpo | Página de login da Escala Shop; não começa com `%PDF-` nem com assinatura ZIP |
-| PDF da aula 35 | Indisponível; o destino não entregou PDF |
-| Planilha da aula 40 | Indisponível; o destino não entregou XLSX |
-| Material da aula 33 | Indisponível; o destino não entregou ZIP |
-| Blocos `file` atualmente publicados na Prime | Nenhum; nenhum botão de download falso foi criado |
-| Dependência para concluir a migração | Arquivos originais válidos ou acesso autorizado à origem, mais bucket S3 configurado |
+| Verificação                                  | Resultado                                                                            |
+| -------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Resposta HTTP dos nove destinos antigos      | `200`, mas `Content-Type: text/html; charset=utf-8`                                  |
+| Leitura real do corpo                        | Página de login da Escala Shop; não começa com `%PDF-` nem com assinatura ZIP        |
+| PDF da aula 35                               | Indisponível; o destino não entregou PDF                                             |
+| Planilha da aula 40                          | Indisponível; o destino não entregou XLSX                                            |
+| Material da aula 33                          | Indisponível; o destino não entregou ZIP                                             |
+| Blocos `file` atualmente publicados na Prime | Nenhum; nenhum botão de download falso foi criado                                    |
+| Dependência para concluir a migração         | Arquivos originais válidos ou acesso autorizado à origem, mais bucket S3 configurado |
 
 Na Prime, as aulas que têm material confirmado no inventário exibem o nome e o formato esperado como indisponíveis, sem link acionável. A validação do servidor também recusa HTML mascarado por extensão de documento e só entrega arquivos publicados quando tamanho, assinatura, tipo e permissão conferem.
 

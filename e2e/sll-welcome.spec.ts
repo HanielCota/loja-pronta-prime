@@ -129,9 +129,10 @@ test('link direto preserva a aula escolhida durante o login', async ({ page }) =
   await viewSaved;
   await page.goto('/sll');
   const path = page.getByRole('region', { name: 'Seu caminho no curso' });
-  await expect(
-    path.getByRole('link', { name: /Trilha de boas-vindas/ }),
-  ).toHaveAttribute('href', lessonUrl(2));
+  await expect(path.getByRole('link', { name: /Trilha de boas-vindas/ })).toHaveAttribute(
+    'href',
+    lessonUrl(2),
+  );
 });
 
 test('sequência, link antigo, recarga, Voltar, conclusão e avanço explícito', async ({ page }) => {
@@ -143,9 +144,7 @@ test('sequência, link antigo, recarga, Voltar, conclusão e avanço explícito'
   await expect(page).toHaveURL(/\/sll$/);
   const dashboardPath = page.getByRole('region', { name: 'Seu caminho no curso' });
   const firstViewSaved = waitForLessonView(page);
-  await dashboardPath
-    .getByRole('link', { name: /Trilha de boas-vindas/ })
-    .click();
+  await dashboardPath.getByRole('link', { name: /Trilha de boas-vindas/ }).click();
   await expect(page).toHaveURL(lessonUrl(0));
   await firstViewSaved;
   const sequence = page.getByRole('complementary', { name: 'Aulas da trilha de boas-vindas' });

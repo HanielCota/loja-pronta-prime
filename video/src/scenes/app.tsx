@@ -167,7 +167,7 @@ export function AppInUse() {
 }
 
 /** A troca de tela: a nova entra pela direita por cima, a de baixo recua um pouco e escurece. */
-function Pushed({
+export function Pushed({
   index,
   push,
   length,

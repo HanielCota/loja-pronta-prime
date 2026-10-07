@@ -15,6 +15,7 @@ import { parseEditorIntent } from '../editor-intent';
 import { learningSlugFromTitle, swapWithNeighbor } from '../structure-rules';
 import { requireAdmin } from './access';
 import { getNodeDraftForUpdate, saveNodeDraft, withNodeDraftLock } from './node-drafts';
+import { isSafeContentDestination } from '@/lib/urls';
 
 import type {
   BannerActionState,
@@ -39,13 +40,7 @@ function textField(formData: FormData, key: string) {
 }
 
 function validDestination(value: string) {
-  if (value.startsWith('/') && !value.startsWith('//') && !value.includes('\\')) return true;
-  try {
-    const url = new URL(value);
-    return url.protocol === 'https:' || url.protocol === 'http:';
-  } catch {
-    return false;
-  }
+  return isSafeContentDestination(value);
 }
 
 export async function saveSllBanner(

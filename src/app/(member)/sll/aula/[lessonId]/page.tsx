@@ -3,7 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { SllAreaShell } from '@/features/sll/sll-area-shell';
 import { SllLessonViewer } from '@/features/sll/components/sll-lesson-viewer';
 import { getSllLessonViewer } from '@/features/sll/server/lesson-viewer';
-import { sllLessonHref } from '@/features/sll/lesson-navigation';
+import { safeSllReturnHref, sllLessonHref } from '@/features/sll/lesson-navigation';
 
 export const metadata: Metadata = { title: 'Aula do SLL' };
 
@@ -17,10 +17,7 @@ export default async function SllLessonPage({
 }) {
   const { lessonId } = await params;
   const { voltar } = await searchParams;
-  const returnHref =
-    typeof voltar === 'string' && voltar.startsWith('/') && !voltar.startsWith('//')
-      ? voltar
-      : null;
+  const returnHref = safeSllReturnHref(voltar);
   const data = await getSllLessonViewer(lessonId);
   if (!data) notFound();
   // Links antigos continuam abrindo a mesma aula, agora dentro da trilha de boas-vindas.

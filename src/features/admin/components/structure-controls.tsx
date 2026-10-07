@@ -583,10 +583,7 @@ export function LearningNodeControls({
       </details>
       {message.text ? (
         <span
-          className={cn(
-            'text-body',
-            message.error ? 'text-destructive' : 'text-muted-foreground',
-          )}
+          className={cn('text-body', message.error ? 'text-destructive' : 'text-muted-foreground')}
           role={message.error ? 'alert' : undefined}
         >
           {message.text}

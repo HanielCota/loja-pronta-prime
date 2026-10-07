@@ -128,7 +128,7 @@ Frames are written straight to CSS variables and SVG attributes, so the animatio
 | Layer         | Technology                                                                  |
 | ------------- | --------------------------------------------------------------------------- |
 | Framework     | Next.js 16 (App Router, Server Actions, Turbopack) · React 19               |
-| Runtime       | Bun 1.4, used as both runtime and package manager                           |
+| Runtime       | Node.js 24 LTS for Next.js · Bun 1.4 for packages, scripts and tests        |
 | Auth          | Better Auth (email and password, cookie sessions, admin plugin)             |
 | Database      | PostgreSQL 17 · Drizzle ORM                                                 |
 | Forms         | Conform + Zod 4, with the same schema in the browser and on the server      |
@@ -195,21 +195,20 @@ bun run dev                         # http://localhost:3000
 
 Only infrastructure settings live here. Business settings (Hotmart, emails, copy) will be managed from the admin panel.
 
-| Variable                  | Description                                                                  |
-| ------------------------- | ---------------------------------------------------------------------------- |
-| `DATABASE_URL`            | Postgres connection string                                                   |
-| `BETTER_AUTH_SECRET`      | Session secret, at least 32 characters                                       |
-| `BETTER_AUTH_URL`         | Public URL of the app; HTTPS in production                                   |
-| `TRUSTED_PROXY_HOPS`      | Actual number of trusted proxies; required in production                     |
-| `S3_BUCKET`               | Private bucket for logos, videos and captions                                |
-| `S3_ACCESS_KEY_ID`        | Storage access key                                                           |
-| `S3_SECRET_ACCESS_KEY`    | Storage secret key                                                           |
-| `S3_ENDPOINT`             | Optional endpoint for S3-compatible providers                                |
-| `S3_REGION`               | Actual bucket region; defaults to `us-east-1`                                |
-| `S3_FORCE_PATH_STYLE`     | Whether the provider requires path-style access; defaults to `false`         |
-| `OPENAI_API_KEY`          | Optional at startup; required for AI logo generation and voice transcription |
-| `PANDA_VIDEO_PLAYER_HOST` | Optional Panda Video player host copied from the account's real embed code   |
-| `PORT`                    | Internal server port; defaults to `3000`                                     |
+| Variable               | Description                                                                  |
+| ---------------------- | ---------------------------------------------------------------------------- |
+| `DATABASE_URL`         | Postgres connection string                                                   |
+| `BETTER_AUTH_SECRET`   | Session secret, at least 32 characters                                       |
+| `BETTER_AUTH_URL`      | Public URL of the app; HTTPS in production                                   |
+| `TRUSTED_PROXY_HOPS`   | Actual number of trusted proxies; required in production                     |
+| `S3_BUCKET`            | Private bucket for logos, videos and captions                                |
+| `S3_ACCESS_KEY_ID`     | Storage access key                                                           |
+| `S3_SECRET_ACCESS_KEY` | Storage secret key                                                           |
+| `S3_ENDPOINT`          | Optional endpoint for S3-compatible providers                                |
+| `S3_REGION`            | Actual bucket region; defaults to `us-east-1`                                |
+| `S3_FORCE_PATH_STYLE`  | Whether the provider requires path-style access; defaults to `false`         |
+| `OPENAI_API_KEY`       | Optional at startup; required for AI logo generation and voice transcription |
+| `PORT`                 | Internal server port; defaults to `3000`                                     |
 
 There are no `NEXT_PUBLIC_*` variables. Runtime secrets are not needed for `next build`.
 For production settings, migrations, persistence and current feature limitations, follow
@@ -227,22 +226,23 @@ bun -e "console.log(crypto.randomUUID() + crypto.randomUUID())"
 
 ## 📜 Scripts
 
-| Script                | What it does                                                                                                                                                                                                  |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `bun run dev`         | Development server                                                                                                                                                                                            |
-| `bun run build`       | Production build                                                                                                                                                                                              |
-| `bun run start`       | Production server                                                                                                                                                                                             |
-| `bun run lint`        | Oxlint (`lint:fix` to fix automatically)                                                                                                                                                                      |
-| `bun run format`      | Prettier                                                                                                                                                                                                      |
-| `bun run typecheck`   | `tsc --noEmit`                                                                                                                                                                                                |
-| `bun run db:up`       | Start the development Postgres (`db:down` to stop it)                                                                                                                                                         |
-| `bun run db:generate` | Generate a migration from the Drizzle schema                                                                                                                                                                  |
-| `bun run db:migrate`  | Apply migrations                                                                                                                                                                                              |
-| `bun run db:studio`   | Open Drizzle Studio                                                                                                                                                                                           |
-| `bun run auth:schema` | Regenerate the Better Auth tables schema                                                                                                                                                                      |
-| `bun run dev:aluna`   | Create a test student: `<email> <password> [--nao-confirmada] [--desativada] [--primeiro-acesso] [--so-sll \| --so-loja-pronta \| --sem-produto] [--fase=<1-7>]` (both products and store phase 1 by default) |
-| `bun run test`        | Unit tests (Bun's built-in runner, `*.test.ts` under `src/`)                                                                                                                                                  |
-| `bun run test:e2e`    | End-to-end tests (`test:e2e:ui` for the visual runner)                                                                                                                                                        |
+| Script                         | What it does                                                                                                                                                                                                  |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bun run dev`                  | Development server                                                                                                                                                                                            |
+| `bun run build`                | Production build                                                                                                                                                                                              |
+| `bun run start`                | Production server                                                                                                                                                                                             |
+| `bun run lint`                 | Oxlint (`lint:fix` to fix automatically)                                                                                                                                                                      |
+| `bun run format`               | Prettier                                                                                                                                                                                                      |
+| `bun run typecheck`            | `tsc --noEmit`                                                                                                                                                                                                |
+| `bun run db:up`                | Start the development Postgres (`db:down` to stop it)                                                                                                                                                         |
+| `bun run db:generate`          | Generate a migration from the Drizzle schema                                                                                                                                                                  |
+| `bun run db:migrate`           | Apply migrations                                                                                                                                                                                              |
+| `bun run db:studio`            | Open Drizzle Studio                                                                                                                                                                                           |
+| `bun run db:import-sll-videos` | Link the 71 catalogued Panda videos to existing SLL lessons; use `--check` to preview changes (see [the import guide](docs/SLL-VIDEOS-PANDA.md))                                                              |
+| `bun run auth:schema`          | Regenerate the Better Auth tables schema                                                                                                                                                                      |
+| `bun run dev:aluna`            | Create a test student: `<email> <password> [--nao-confirmada] [--desativada] [--primeiro-acesso] [--so-sll \| --so-loja-pronta \| --sem-produto] [--fase=<1-7>]` (both products and store phase 1 by default) |
+| `bun run test`                 | Unit tests (Bun's built-in runner, `*.test.ts` under `src/`)                                                                                                                                                  |
+| `bun run test:e2e`             | End-to-end tests (`test:e2e:ui` for the visual runner)                                                                                                                                                        |
 
 ## 🧪 Testing
 
@@ -266,7 +266,7 @@ bun run test:e2e                    # starts `bun run dev` if it isn't running
 ```
 
 > [!NOTE]
-> The Playwright runner uses **Node.js**, not Bun: its CLI starts with `#!/usr/bin/env node` and `bun run` respects that, since Playwright doesn't officially support the Bun runtime. The app under test still runs on Bun.
+> The Playwright runner and Next.js use **Node.js**. Bun manages packages and runs the project scripts and unit tests. Production runs the standalone server configured in [`railpack.json`](railpack.json); the complete Coolify setup is in [`docs/DEPLOY-COOLIFY.md`](docs/DEPLOY-COOLIFY.md).
 
 ## 🛡️ Security
 
@@ -319,6 +319,7 @@ src/
 ## 📚 Documentation
 
 - [Product overview](docs/PRODUTO.md) (Portuguese)
+- [SLL Panda video catalog and import guide](docs/SLL-VIDEOS-PANDA.md) (Portuguese): all 71 lesson players, database import instructions and their project mappings in [`data/sll/panda-videos.json`](data/sll/panda-videos.json).
 - [Hotmart integration](docs/INTEGRACAO-HOTMART.md) (Portuguese): vision, decisions and next steps.
 - [Coolify deployment](docs/DEPLOY-COOLIFY.md) (Portuguese): fields, environment variables and validation.
 

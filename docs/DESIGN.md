@@ -29,15 +29,12 @@ o tema escuro e o alto contraste.
 | `text-link`                                | Links e ações de texto                          | `#0066cc`          | `#5aabff`                        |
 | `bg-muted`                                 | Realce, hover                                   | `#f5f5f7`          | `#36363b`                        |
 | `text-destructive` / `bg-destructive-soft` | Erros                                           | `#d70015`          | `#ff8077`                        |
-| `text-pdf`                                 | Identificação semântica de um arquivo PDF       | `#b42318`          | `#ff9b92`                        |
 | `bg-progress` / `text-progress-text`       | Progresso, feito, "Sugestão"                    | verde              | verde                            |
 | `border-border` / `border-input`           | Linhas / borda de campo                         |                    |                                  |
 | `outline-ring`                             | Anel de foco                                    | azul               | azul claro                       |
 | `bg-segment` / `bg-segment-thumb`          | Controle segmentado (abas tipo iOS)             |                    |                                  |
 
 - **Um azul só**, pra ação. Nada de roxo, gradiente ou segunda cor de destaque.
-- `text-pdf` é uma exceção semântica restrita à identificação de arquivos PDF nos materiais do
-  SLL. Não comunica erro, não deve ser usado em botões ou alertas e tem valores nos dois temas.
 - Todo contraste confere WCAG AA nos dois temas (os comentários do `globals.css` dizem os valores).
   Cor nova só com contraste conferido, e entra como token nos dois temas.
 - Exceções com motivo (desenhos, não a interface): o mascote, as amostras de cor, o rascunho do
@@ -83,9 +80,10 @@ o tema escuro e o alto contraste.
 - Molduras de tela:
   - `PageShell` + `BrandCard`: telas de acesso (entrar, senha), cartão centralizado com o mascote
     no topo.
-  - `AreaShell`: moldura das áreas que a usam, largura 1040px (perfil, 688px). O SLL usa
-    `SllShell`, com barra de membro em largura total, navegação lateral de 18rem no computador e
-    conteúdo de até 1040px; no celular, a navegação abre em um menu pela esquerda.
+  - `AreaShell`: a Loja Pronta, o perfil e o admin. Largura 1040px (perfil, 688px); com menu
+    lateral (`sidebar`, como no admin), 1440px, com o menu de 240px à esquerda
+    (`src/lib/member-layout.ts`).
+  - `SllAreaShell`: o SLL, separado da Loja Pronta, como um painel (dashboard). Ver "Área SLL".
   - `CenteredMemberPage`: telas de dentro com o conteúdo no meio (fim da conversa, marca pronta,
     Shopee).
   - `ConversationLayout`: os passo a passo (conversa, marca), com "Voltar", "Terminar depois" e a
@@ -95,6 +93,9 @@ o tema escuro e o alto contraste.
 - Opções de escolha: `optionFocus` / `optionChecked` (`question/option-styles.ts`).
 - No estúdio do logo, a barra acompanha a numeração: a etapa atual e as anteriores ficam azuis;
   avançar não apaga o progresso já mostrado. Sugestões nas etapas futuras não antecipam a barra.
+- A prévia do logo pronto inclui uma imagem ilustrativa do kit de envio (caixa, adesivo e sacola),
+  com o logo sobreposto e identificado como exemplo. As proporções acompanham a largura do cartão.
+  A fonte sugerida na conversa entra no estúdio apenas quando ainda não existe uma escolha salva.
 - Na pergunta de cor, a seleção é indicada por um aro azul fino e um check na amostra, sem contornar
   o cartão. Ao abrir “Outra cor”, a opção anterior é desmarcada e o mesmo aro aparece na amostra
   redonda, indicando o seletor aberto; a resposta é marcada só depois da escolha, quando a amostra
@@ -109,6 +110,22 @@ o tema escuro e o alto contraste.
   escuro e o sol acompanha o claro; tocar alterna para o outro tema. Ele usa a mesma preferência
   local dos ajustes em Perfil; a pessoa ainda pode escolher "Automático" ou ajustar o tema escuro
   por lá.
+- Quem tem os dois produtos troca de área pelas **abas da barra do topo** (navbar tradicional):
+  “Minha loja” e “Curso SLL” (o campo `tab` do catálogo, pra não repetir a marca ao lado), com
+  ícone, depois de uma linha vertical curta que as separa da marca. A da vez fica em
+  `text-foreground`, com o ícone `text-link` e um traço `bg-primary` de 3px, de pontas redondas,
+  por cima da linha da barra; as outras em `text-muted-foreground`. No celular e no tablet
+  (abaixo de 1024px), as abas descem pra uma segunda linha da barra. Com o menu lateral do admin,
+  elas se alinham com o conteúdo (sem a linha vertical). Nada de seletor segmentado acima do
+  título. Fora das áreas (perfil), a trilha continua levando à escolha. No SLL, no computador, a
+  troca fica no pé do menu lateral ("Ir pra Minha loja"); no celular e no tablet, são as mesmas
+  abas.
+- A linha de baixo da barra do topo é fina (1px, `border-border`).
+- Nas áreas (`AreaShell`), do tablet pra cima, a barra fica **presa no topo** ao rolar, com fundo
+  `bg-background/80` desfocado; com "Mais contraste" ou menos transparência no aparelho, o fundo
+  fica sólido (variante `opaque:`). No celular ela rola junto. O que também fica preso nessas
+  telas (o menu do admin, a prévia da aula) usa `top-22`, logo abaixo dela, e o
+  `scroll-padding-top` evita foco escondido atrás da barra.
 - O tema padrão é o **claro**, com o "Automático" desligado, mesmo com o aparelho no escuro. O
   escuro e o automático só valem quando ela escolhe (no perfil ou no botão do cabeçalho).
 - Perfil, Aparência, depois do tema: **Tamanho do texto** (Normal, Grande, Maior, num controle
@@ -127,9 +144,6 @@ o tema escuro e o alto contraste.
   lado do campo; fica desativado enquanto estiver vazio.
 - No estúdio do logo, os botões “Voltar” das etapas de escolha e do resumo usam formato de pílula,
   contorno `border-border` e texto `text-link`.
-- No resultado do logo, os ajustes rápidos usam o botão azul padrão, com texto branco, em formato de
-  pílula. A prévia mostra uma cena do kit de envio (caixa, adesivo solto e sacola), mantendo a
-  proporção da imagem e os objetos inteiros dentro do quadro, inclusive em telas estreitas.
 - O botão principal fica embaixo, largura toda no celular (`StickyAction` nos passo a passo).
 - Lista longa (a revisão das respostas): uma seta redonda (`ScrollHint`) embaixo, no centro, avisa
   que tem mais. Pula 3 vezes e para; some perto do fim; tocar rola um pedaço. Fica fora do Tab e do
@@ -137,39 +151,34 @@ o tema escuro e o alto contraste.
 - Toque: resposta no instante (`active:scale-[0.97]`, 100 a 150ms). Escolher uma opção só marca a
   resposta; a pessoa confirma no botão principal, também pelo teclado.
 - Larguras: acesso 480 a 640px; passo a passo 560 a 680px (mais largo no estúdio do logo); áreas
-  1040px; no SLL, conteúdo de até 1040px ao lado da navegação lateral de 18rem.
+  1040px; SLL: menu lateral de 288px e conteúdo até 1200px.
 
 ### Área SLL
 
 - A referência visual conferida em 6 de outubro de 2026 está em
   `docs/SLL-REFERENCIA-VISUAL.md`. A composição vem do SLL anterior; cores, letras, moldura e
   componentes continuam sendo os da Loja Pronta Prime. Esta adaptação se limita ao SLL.
-- O SLL segue a navegação do site anterior: no computador, seções à esquerda e conteúdo à direita;
-  no celular, a mesma lista abre pelo controle “Seções do SLL”. O conteúdo usa os tokens, a fonte,
-  os cartões e os botões deste projeto. A moldura da Loja Pronta não muda.
+- O SLL tem moldura própria (`SllAreaShell`), separada da Loja Pronta: um painel (dashboard). No
+  computador, **sem barra no topo**: um menu lateral fixo de 288px, de ponta a ponta na altura da
+  tela (`bg-card` com linha à direita), com a marca e o tema no topo, as seções no meio e, no pé,
+  "Ir pra Minha loja" (quem tem os dois produtos) e a conta (foto, nome e email; o menu abre pra
+  cima). O conteúdo começa no alto, à direita, até 1200px. No celular, volta a barra do topo de
+  sempre (com as abas das áreas) e as seções abrem pelo controle “Seções do SLL”, acima do título.
+  O conteúdo usa os tokens, a fonte, os cartões e os botões deste projeto.
 - O menu mostra Painel, Minhas Lojas, Comece aqui, Método, etapas publicadas, Recursos e Cursos
   complementares. A seção atual fica identificada; etapas em rascunho não viram links para alunas.
-- A seção selecionada usa `bg-muted` e `text-foreground`, com separação visível entre os itens;
-  o hover permanece neutro. Os ícones Lucide são distintos por área,
-  alinhados em uma caixa de 20px com traço 1.8. Grupos de links usam listas sem marcadores visíveis.
-- No computador, o cartão da navegação lateral se estende até o final do conteúdo, sem impor
-  uma altura mínima que alongue páginas curtas. O menu acompanha a rolagem dentro desse cartão.
-  As etapas aparecem quando a aluna está no Método; listas longas rolam dentro
-  do menu. Rótulos de 16px e alvos de 44px deixam os destinos à vista em telas comuns.
+- No computador, o menu lateral fica parado enquanto o conteúdo rola. As etapas aparecem quando
+  a aluna está no Método; se as seções não couberem na altura, só a lista do meio rola. Rótulos de 16px e alvos de 44px deixam os destinos à vista em telas comuns.
   No celular, o controle mostra a seção atual e volta fechado ao navegar, para deixar
   o conteúdo à vista.
 - A aula usa vídeo em proporção 16:9 à esquerda e sequência à direita a partir de 1280px;
-  em larguras menores, as colunas se empilham para manter a leitura. O player confirmado usa
-  a mesma proporção 16:9; sem o host real do Panda, a aula informa “Vídeo confirmado” e mantém
-  o aviso compacto, sem inventar um domínio. A aula atual fica numerada
+  em larguras menores, as colunas se empilham para manter a leitura. A aula atual fica numerada
   em azul e visível na lista, que acompanha a rolagem no computador. Anterior/próxima ficam acima do botão
   de conclusão, que ocupa a largura do cartão. Sem vídeo disponível, um aviso compacto diz
   “Vídeo em breve”, sem reservar uma área vazia de player.
-- Em Comece aqui, os links de aula conservam a seleção em `/sll/comece-aqui?aula=<id>`.
-  Links antigos de boas-vindas em `/sll/aula/<id>` levam à mesma aula nessa trilha. Concluir
-  mostra “Aula concluída” e atualiza a sequência sem avançar sozinho. Quando todas as aulas
-  estão concluídas e o Método está publicado, “Ver etapas do método” fica junto das ações
-  da aula, antes da sequência no celular. A desmarcação já existente continua disponível.
+- O vídeo usa o player Panda da conta conferida, com início apenas ao tocar em reproduzir.
+  O mesmo player aparece nas prévias do admin. O campo “Link ou ID do vídeo Panda” aceita o
+  endereço do player ou seu ID; o servidor confere o endereço e salva somente o ID.
 - As etapas têm cartões com altura determinada pelo conteúdo e progresso real. Um passo da Etapa 1 abre a lista
   de aulas; o passo da aula a retomar começa aberto. Prioridades da Etapa 2 usam seta para baixo,
   que vira ao abrir as instruções. A Biblioteca usa busca e cartões por categoria, em uma coluna
@@ -183,10 +192,8 @@ o tema escuro e o alto contraste.
   “Voltar às aulas”. O teclado tem o atalho “Pular para o conteúdo”, exclusivo do SLL.
 - A busca da Biblioteca ignora acentos e maiúsculas, oferece contagem e limpeza e mantém a
   busca confirmada no endereço. O formulário GET também funciona sem JavaScript.
-- No painel, banners publicados aparecem antes da saudação. Depois vêm a situação real da Shopee,
-  o acesso à Loja Pronta (somente para quem tem os dois produtos) e o caminho de aprendizagem.
-  Sem banner publicado, nenhum espaço vazio ocupa o topo. Em Recursos, os cartões usam sua altura
-  natural; links externos anunciam a abertura em outra aba.
+- No painel, o caminho de aprendizagem aparece antes do aviso de lojas. Em Recursos, os cartões
+  usam sua altura natural; links externos anunciam a abertura em outra aba.
 - Cursos complementares têm destaque amplo e biblioteca em cartões com contagem e progresso
   individuais. Sem o arquivo da capa, aparece um aviso neutro compacto “Capa em breve”, sem imagem
   inventada nem coluna reservada. Capas reais mantêm proporção 16:9. A lista do curso mantém
