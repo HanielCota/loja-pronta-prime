@@ -89,7 +89,8 @@ export async function recordSllLessonView(
         set: { currentLessonId: location.lessonId, lastAccessedAt: now, updatedAt: now },
       });
   });
-  revalidatePath('/sll');
+  // O painel consulta o progresso ao abrir. Revalidar a renderização durante a troca de aula
+  // pode aplicar a resposta da aula anterior depois de uma navegação ou do botão Voltar.
   return { saved: true, message: '' };
 }
 
