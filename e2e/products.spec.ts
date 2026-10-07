@@ -171,9 +171,10 @@ test('Loja Pronta mostra o que fazer agora e o caminho em 3 etapas', async ({ pa
 
   const stages = page.getByRole('list', { name: 'As etapas da sua loja' }).getByRole('listitem');
   await expect(stages).toHaveCount(3);
-  await expect(stages.nth(0)).toContainText('(feita)');
-  await expect(stages.nth(1)).toContainText('(feita)');
+  await expect(stages.nth(0)).toContainText('Feita');
+  await expect(stages.nth(1)).toContainText('Feita');
   await expect(stages.nth(2)).toHaveAttribute('aria-current', 'step');
+  await expect(stages.nth(2)).toContainText('Etapa 3 · Você está aqui');
   await expect(stages.nth(2)).toContainText('Passo 1 de 5: Conta na Shopee');
   // A conta na Shopee: um botão só, pro passo a passo (e2e/shopee.spec.ts).
   await expect(page.getByRole('heading', { name: 'Conta na Shopee' })).toBeVisible();
