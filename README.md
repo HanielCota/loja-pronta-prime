@@ -189,11 +189,11 @@ bun run dev                         # http://localhost:3000
 ```
 
 > [!NOTE]
-> There is no email provider yet. In development, password reset and verification links are printed to the `bun run dev` terminal.
+> Access emails use Resend. Set `RESEND_API_KEY` and `EMAIL_FROM` together to send password reset and verification emails. Without both settings, development prints the link to the terminal; production reports a delivery failure.
 
 ### Environment variables
 
-Only infrastructure settings live here. Business settings (Hotmart, emails, copy) will be managed from the admin panel.
+Infrastructure settings, including Resend credentials, live here. Hotmart and content settings are managed from the admin panel.
 
 | Variable               | Description                                                                  |
 | ---------------------- | ---------------------------------------------------------------------------- |
@@ -208,6 +208,9 @@ Only infrastructure settings live here. Business settings (Hotmart, emails, copy
 | `S3_REGION`            | Actual bucket region; defaults to `us-east-1`                                |
 | `S3_FORCE_PATH_STYLE`  | Whether the provider requires path-style access; defaults to `false`         |
 | `OPENAI_API_KEY`       | Optional at startup; required for AI logo generation and voice transcription |
+| `RESEND_API_KEY`       | Sending-only Resend key restricted to the verified email domain              |
+| `EMAIL_FROM`           | Sender email address on that domain; required together with the Resend key   |
+| `EMAIL_REPLY_TO`       | Optional monitored support inbox for replies                                 |
 | `PORT`                 | Internal server port; defaults to `3000`                                     |
 
 There are no `NEXT_PUBLIC_*` variables. Runtime secrets are not needed for `next build`.

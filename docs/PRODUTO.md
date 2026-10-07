@@ -72,7 +72,7 @@ Os limites de nome (30) e descrição (500) estão em `src/config/brand.ts`. As 
 ## Como o acesso funciona hoje
 
 - Não existe cadastro público. O login usa email e senha de uma conta já criada.
-- A recuperação de senha permite criar a primeira senha ou trocar uma senha existente, por link enviado ao email. Depende do serviço de email configurado.
+- A recuperação de senha permite criar a primeira senha ou trocar uma senha existente, por link enviado ao email pela Resend. Confirmação de email usa o mesmo provedor. O envio depende do domínio verificado e de `RESEND_API_KEY` e `EMAIL_FROM` configurados no servidor.
 - Contas marcadas com senha temporária precisam criar outra antes de acessar as áreas.
 - O recebimento de compras Hotmart já verifica o token, cria a conta e libera o produto mapeado. Uma conta nova recebe uma senha aleatória que não é enviada. **O convite automático de primeiro acesso ainda precisa ser concluído**, assim como a configuração real da Hotmart e do email.
 - Reembolso e contestação recalculam o acesso daquele produto, preservando outra compra ativa ou concessão manual. A política para cancelamento de assinatura continua pendente.
