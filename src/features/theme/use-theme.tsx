@@ -22,6 +22,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       defaultTheme="light"
       enableSystem
       disableTransitionOnChange
+      // O script do tema roda no HTML do servidor. Se o React recriar a página no navegador (depois
+      // de um erro de hidratação), um <script> recriado não roda e o React avisa no console: no
+      // navegador ele vira um bloco de texto, como o das preferências (display-script.tsx).
+      scriptProps={{ type: typeof window === 'undefined' ? undefined : 'text/plain' }}
     >
       <BrowserBarColor />
       <DisplaySync />
