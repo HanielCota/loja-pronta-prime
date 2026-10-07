@@ -256,11 +256,14 @@ export function useMascot(
 
     function resetIdleTimer() {
       window.clearTimeout(idleTimer);
-      if (!canSleepRef.current) return;
+      // A página pode montar já em segundo plano, antes de qualquer visibilitychange.
+      if (disposed || !canSleepRef.current || document.hidden) return;
       idleTimer = window.setTimeout(() => {
+        if (disposed || !canSleepRef.current || document.hidden) return;
         slowLidsUntil = performance.now() + SLOW_LIDS_MS;
         setReason('sleep', 'sleepy');
         idleTimer = window.setTimeout(() => {
+          if (disposed || !canSleepRef.current || document.hidden) return;
           slowLidsUntil = performance.now() + SLOW_LIDS_MS;
           setReason('sleep', 'asleep');
         }, ASLEEP_AFTER_SLEEPY_MS);
