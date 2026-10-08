@@ -1,7 +1,7 @@
 import { getImageProps, type StaticImageData } from 'next/image';
 // Importadas (e não servidas de public/): o endereço leva um hash do conteúdo, então qualquer
 // mudança na arte invalida os caches (navegador, CDN e otimizador de imagens) sozinha.
-import mascotArms from './assets/mascote-bracos.png';
+import mascotArms from './assets/mascote-bracos-relaxados.png';
 import mascotBody from './assets/mascote-corpo.png';
 import mascotClosedEyes from './assets/mascote-olhos-fechados.png';
 // O mascote inteiro, com o rosto desenhado na própria imagem: pros lugares pequenos e parados
@@ -56,23 +56,23 @@ export const SLEEP_Z = [
 export const EYE_AREA_SCALE = 1.08;
 export const INK = '#38171d';
 
-/** Braços separados da arte: ombro e posição relaxada, com a mão original preservada. */
+/** Arte desenhada em repouso: mão arredondada e braço curto, articulado pelo próprio ombro. */
 export const ARMS = {
   left: {
-    origin: '32% 58%',
-    rest: '-102deg',
+    origin: '30% 60%',
+    rest: '0deg',
     direction: -1,
-    offset: '-1% 4%',
-    mirror: true,
-    // O braço comprido, espelhado, deixa a ponta roxa cair pela lateral em vez de apontar pra frente.
-    clip: 'inset(0 0 0 50%)',
+    offset: '0 5%',
+    scale: 0.8,
+    // A arte já tem a pose relaxada: só o balanço pequeno gira a mão pelo ombro.
+    clip: 'inset(0 50% 0 0)',
   },
   right: {
-    origin: '68% 58%',
-    rest: '102deg',
+    origin: '70% 58%',
+    rest: '0deg',
     direction: 1,
-    offset: '0 0',
-    mirror: false,
+    offset: '0 4%',
+    scale: 0.8,
     // Este braço nasce atrás da lateral do corpo e da alça.
     clip: 'inset(0 0 0 50%)',
   },
