@@ -249,6 +249,11 @@ o tema escuro e o alto contraste.
 
 ### Painel admin
 
+- Leads (`/leads`) reutiliza o `AdminShell`, os mesmos cartões, campos e selects. Os indicadores
+  usam números reais e as etapas usam texto junto da cor. A lista vira cartões de contato no
+  celular, sem rolagem horizontal. Cadastro, importação com prévia e contato com histórico ficam
+  em telas próprias; filtros GET e formulários continuam funcionando sem JavaScript.
+
 - Moldura própria (`AdminShell`), com a mesma composição do SLL: no computador, **sem barra no
   topo**, menu lateral fixo de 288px de ponta a ponta (`bg-card` com linha à direita), com a marca
   e o tema no alto, as seções no meio (Painel, Contas e compras, Conteúdo das alunas) e, no pé,
