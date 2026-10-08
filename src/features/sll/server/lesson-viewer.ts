@@ -1,3 +1,6 @@
+import { DATABASE_CACHE_SCOPE } from '@/server/cache-context';
+import { unstable_cache } from 'next/cache';
+import { SLL_CONTENT_SECONDS, SLL_CONTENT_TAG } from './content-cache';
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { requireProduct } from '@/features/products/server/access';
 import { contentPreviewData } from '@/features/admin/content-preview';
@@ -16,6 +19,88 @@ import { isSafeContentDestination } from '@/lib/urls';
 import { resourceHref } from '../tools/catalog';
 import { isPlanReferenceAvailable } from '../lesson-access';
 
+// A leitura comum fica em cache; publicação e acesso da aluna são conferidos abaixo.
+const readPublishedLesson = unstable_cache(
+  async (lessonId: string) => {
+    return db.query.learningLessons.findFirst({
+      columns: {
+        id: true,
+        title: true,
+        description: true,
+        sourceNumber: true,
+        durationMinutes: true,
+        status: true,
+      },
+      where: and(
+        eq(learningLessons.id, lessonId),
+        eq(learningLessons.status, 'published'),
+        isNull(learningLessons.archivedAt),
+      ),
+      with: {
+        module: {
+          columns: { id: true, title: true, position: true, status: true, archivedAt: true },
+          with: {
+            stage: {
+              columns: { id: true, title: true, status: true, archivedAt: true },
+              with: {
+                track: {
+                  columns: { id: true, kind: true, title: true, status: true, archivedAt: true },
+                },
+              },
+            },
+            lessons: {
+              columns: {
+                id: true,
+                title: true,
+                position: true,
+                durationMinutes: true,
+                sourceNumber: true,
+              },
+              where: and(
+                eq(learningLessons.status, 'published'),
+                isNull(learningLessons.archivedAt),
+              ),
+              orderBy: [asc(learningLessons.position), asc(learningLessons.id)],
+            },
+          },
+        },
+        blocks: {
+          columns: { id: true, kind: true, data: true },
+          orderBy: [asc(learningContentBlocks.position), asc(learningContentBlocks.id)],
+        },
+      },
+    });
+  },
+  ['sll-published-lesson', DATABASE_CACHE_SCOPE],
+  { revalidate: SLL_CONTENT_SECONDS, tags: [SLL_CONTENT_TAG] },
+);
+
+// Os links publicados são comuns; só a aula desbloqueada chega a chamar esta leitura.
+const readLessonResources = unstable_cache(
+  async (lessonId: string) => {
+    return db
+      .select({
+        id: learningResources.id,
+        slug: learningResources.slug,
+        title: learningResources.title,
+        description: learningResources.description,
+        buttonLabel: learningResources.buttonLabel,
+        destination: learningResources.destination,
+      })
+      .from(learningResourceLessons)
+      .innerJoin(learningResources, eq(learningResourceLessons.resourceId, learningResources.id))
+      .where(
+        and(
+          eq(learningResourceLessons.lessonId, lessonId),
+          eq(learningResources.status, 'published'),
+          isNull(learningResources.archivedAt),
+        ),
+      );
+  },
+  ['sll-lesson-resources', DATABASE_CACHE_SCOPE],
+  { revalidate: SLL_CONTENT_SECONDS, tags: [SLL_CONTENT_TAG] },
+);
+
 /** Entrega à aula só os materiais publicados e os dados visíveis para a aluna. */
 export async function getSllLessonViewer(lessonId: string) {
   const { session, products } = await requireProduct(
@@ -24,51 +109,7 @@ export async function getSllLessonViewer(lessonId: string) {
   );
   if (!isProgressId(lessonId)) return null;
 
-  const lesson = await db.query.learningLessons.findFirst({
-    columns: {
-      id: true,
-      title: true,
-      description: true,
-      sourceNumber: true,
-      durationMinutes: true,
-      status: true,
-    },
-    where: and(
-      eq(learningLessons.id, lessonId),
-      eq(learningLessons.status, 'published'),
-      isNull(learningLessons.archivedAt),
-    ),
-    with: {
-      module: {
-        columns: { id: true, title: true, position: true, status: true, archivedAt: true },
-        with: {
-          stage: {
-            columns: { id: true, title: true, status: true, archivedAt: true },
-            with: {
-              track: {
-                columns: { id: true, kind: true, title: true, status: true, archivedAt: true },
-              },
-            },
-          },
-          lessons: {
-            columns: {
-              id: true,
-              title: true,
-              position: true,
-              durationMinutes: true,
-              sourceNumber: true,
-            },
-            where: and(eq(learningLessons.status, 'published'), isNull(learningLessons.archivedAt)),
-            orderBy: [asc(learningLessons.position), asc(learningLessons.id)],
-          },
-        },
-      },
-      blocks: {
-        columns: { id: true, kind: true, data: true },
-        orderBy: [asc(learningContentBlocks.position), asc(learningContentBlocks.id)],
-      },
-    },
-  });
+  const lesson = await readPublishedLesson(lessonId);
   if (
     !lesson ||
     lesson.module.status !== 'published' ||
@@ -120,26 +161,7 @@ export async function getSllLessonViewer(lessonId: string) {
   if (currentIndex < 0) return null;
 
   // Etapa fechada: nem procura as ferramentas da aula (a tela só mostra o aviso de bloqueio).
-  const linkedResources = !isUnlocked
-    ? []
-    : await db
-        .select({
-          id: learningResources.id,
-          slug: learningResources.slug,
-          title: learningResources.title,
-          description: learningResources.description,
-          buttonLabel: learningResources.buttonLabel,
-          destination: learningResources.destination,
-        })
-        .from(learningResourceLessons)
-        .innerJoin(learningResources, eq(learningResourceLessons.resourceId, learningResources.id))
-        .where(
-          and(
-            eq(learningResourceLessons.lessonId, lesson.id),
-            eq(learningResources.status, 'published'),
-            isNull(learningResources.archivedAt),
-          ),
-        );
+  const linkedResources = !isUnlocked ? [] : await readLessonResources(lesson.id);
 
   return {
     user: session.user,

@@ -270,7 +270,14 @@ bun x playwright install chromium   # first time only
 bun run db:up                       # the database must be running
 bun run test:integration            # database regressions, with no external services
 bun run test:e2e                    # starts an isolated app and database for this run
+bun run test:e2e:cache              # builds production and verifies shared cache and invalidation
 ```
+
+Published SLL catalogs, lesson content, sidebar titles, copy, banners and resources use Next.js's server data cache for five minutes. Publishing, withdrawing, archiving, restoring or reordering content expires the shared cache immediately. Draft text edits do not expire the published cache. Cache keys include a hash of the database configuration so changing databases cannot reuse another database's content.
+
+Sessions, product permissions, stage unlocks and student progress are checked on each request. Published course covers use versioned URLs and a private five-minute browser cache; draft previews remain uncached. The admin overview caches its aggregate data for one minute, expires it after account/access changes or Hotmart events, and polls only dashboard data every 30 seconds while visible.
+
+The production cache test verifies reuse across students, publication invalidation, individual progress, revoked access, banned accounts and cover versions. It also checks desktop/mobile layouts and accessibility in both themes. Direct database imports bypass application invalidation; cached content is refreshed on visits after the five-minute window.
 
 > [!NOTE]
 > The Playwright runner and Next.js use **Node.js**. Bun manages packages and runs the project scripts and unit tests. Production runs the standalone server configured in [`railpack.json`](railpack.json); the complete Coolify setup is in [`docs/DEPLOY-COOLIFY.md`](docs/DEPLOY-COOLIFY.md).

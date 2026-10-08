@@ -4,7 +4,7 @@ import { ArrowRight, Check } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { panelCard } from '@/features/member/components/area-shell';
 import { SllAreaShell } from '@/features/sll/sll-area-shell';
-import { getSllPublishedTracks } from '@/features/sll/server/catalog';
+import { getSllPublishedCourse } from '@/features/sll/server/catalog';
 import { requireProduct } from '@/features/products/server/access';
 import { SllProgress } from '@/features/sll/components/sll-progress';
 
@@ -16,11 +16,10 @@ export default async function ComplementaryCoursePage({
   params: Promise<{ courseSlug: string }>;
 }) {
   const { courseSlug } = await params;
-  const [{ session, products }, courses] = await Promise.all([
+  const [{ session, products }, course] = await Promise.all([
     requireProduct('sll'),
-    getSllPublishedTracks('complementary_course'),
+    getSllPublishedCourse(courseSlug),
   ]);
-  const course = courses.find((item) => item.slug === courseSlug);
   if (!course) notFound();
   const lessons = course.stages.flatMap((stage) =>
     stage.modules.flatMap((module) => module.lessons),

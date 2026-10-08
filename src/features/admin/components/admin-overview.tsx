@@ -104,7 +104,7 @@ function RecentPanel({
   children: React.ReactNode;
 }) {
   return (
-    <section aria-labelledby={id} className={cn(panelCard, 'gap-4 !p-6')}>
+    <section aria-labelledby={id} className={cn(panelCard, 'min-w-0 gap-4 !p-6')}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-body font-semibold text-foreground" id={id}>
           {title}

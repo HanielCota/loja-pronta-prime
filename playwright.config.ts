@@ -19,6 +19,9 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   use: {
     baseURL,
+    // Fixtures mudam o catálogo por SQL. Em dev, uma atualização sem cache reflete essas mudanças.
+    // A reutilização entre visitas e a invalidação são verificadas no build de produção.
+    extraHTTPHeaders: { 'Cache-Control': 'no-cache' },
     locale: 'pt-BR',
     trace: 'retain-on-failure',
   },
@@ -26,7 +29,7 @@ export default defineConfig({
     {
       name: 'desktop',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: [/layout\.spec\.ts/, catalogTests],
+      testIgnore: [/layout\.spec\.ts/, /sll-cache\.spec\.ts/, catalogTests],
     },
     {
       // Estes cenários publicam o catálogo global: cada arquivo precisa terminar antes do próximo.

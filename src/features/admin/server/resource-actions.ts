@@ -2,6 +2,7 @@
 
 import { and, asc, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { revalidateSllContent } from '@/features/sll/server/content-cache';
 import { unstable_rethrow } from 'next/navigation';
 import { z } from 'zod';
 import { db } from '@/server/db';
@@ -291,6 +292,7 @@ export async function publishSllResource(form: FormData): Promise<StructureActio
   if (!id) return unavailable;
   const result = await publishResource(id);
   if (!result.saved) return result;
+  revalidateSllContent();
   revalidatePath('/admin/recursos');
   revalidatePath('/sll/recursos');
   return { saved: true, message: 'Recurso publicado. As alunas já veem esta versão.' };
@@ -319,6 +321,7 @@ export async function restoreSllResourceVersion(form: FormData): Promise<Structu
   if (!previous) return { saved: false, message: 'Não há versão anterior deste recurso.' };
   const result = await publishResource(id, previous.data);
   if (!result.saved) return result;
+  revalidateSllContent();
   revalidatePath('/admin/recursos');
   revalidatePath('/sll/recursos');
   return { saved: true, message: 'A versão anterior do recurso voltou para as alunas.' };
@@ -343,6 +346,7 @@ export async function archiveSllResource(form: FormData): Promise<StructureActio
     return true;
   });
   if (!archived) return unavailable;
+  revalidateSllContent();
   revalidatePath('/admin/recursos');
   revalidatePath('/admin/arquivados');
   revalidatePath('/sll/recursos');
@@ -360,6 +364,7 @@ export async function restoreSllResource(form: FormData): Promise<StructureActio
     .where(and(eq(learningResources.id, id), isNotNull(learningResources.archivedAt)))
     .returning({ id: learningResources.id });
   if (!restored.length) return { saved: false, message: 'Este recurso não está arquivado.' };
+  revalidateSllContent();
   revalidatePath('/admin/arquivados');
   revalidatePath('/admin/recursos');
   return { saved: true, message: 'Recurso restaurado como rascunho.' };
@@ -406,6 +411,7 @@ export async function moveSllResource(
         .where(eq(learningResources.id, item.id));
     }
   });
+  revalidateSllContent();
   revalidatePath('/admin/recursos');
   revalidatePath('/sll/recursos');
   return {
@@ -476,6 +482,7 @@ export async function reorderSllResources(
         .where(eq(learningResources.id, id as string));
     }
   });
+  revalidateSllContent();
   revalidatePath('/admin/recursos');
   revalidatePath('/sll/recursos');
   return { saved: true, message: 'Nova ordem salva.' };

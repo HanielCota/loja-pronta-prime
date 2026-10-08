@@ -1,16 +1,9 @@
-import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { cache } from 'react';
+import { getPublishedSllTrack } from './published-track';
 import { requireProduct } from '@/features/products/server/access';
 import { db } from '@/server/db';
-import {
-  learningLessonProgress,
-  learningContentBlocks,
-  learningLessons,
-  learningModules,
-  learningStages,
-  learningTrackProgress,
-  learningTracks,
-} from '@/server/db/schema';
+import { learningLessonProgress, learningTrackProgress } from '@/server/db/schema';
 import {
   isProgressId,
   resolveSequentialStageAccess,
@@ -22,62 +15,7 @@ import {
 export const getSllTrackProgress = cache(async (trackId: string) => {
   const { session } = await requireProduct('sll');
   if (!isProgressId(trackId)) return null;
-  const track = await db.query.learningTracks.findFirst({
-    columns: {
-      id: true,
-      kind: true,
-      slug: true,
-      title: true,
-      description: true,
-      coverStorageKey: true,
-      coverAlt: true,
-      featured: true,
-    },
-    where: and(
-      eq(learningTracks.id, trackId),
-      eq(learningTracks.status, 'published'),
-      isNull(learningTracks.archivedAt),
-    ),
-    with: {
-      stages: {
-        columns: { id: true, slug: true, title: true, description: true, position: true },
-        where: and(eq(learningStages.status, 'published'), isNull(learningStages.archivedAt)),
-        orderBy: [asc(learningStages.position), asc(learningStages.id)],
-        with: {
-          modules: {
-            columns: { id: true, slug: true, title: true, position: true },
-            where: and(eq(learningModules.status, 'published'), isNull(learningModules.archivedAt)),
-            orderBy: [asc(learningModules.position), asc(learningModules.id)],
-            with: {
-              lessons: {
-                columns: {
-                  id: true,
-                  slug: true,
-                  title: true,
-                  relatedLessonId: true,
-                  description: true,
-                  position: true,
-                  durationMinutes: true,
-                  countsTowardProgress: true,
-                },
-                where: and(
-                  eq(learningLessons.status, 'published'),
-                  isNull(learningLessons.archivedAt),
-                ),
-                orderBy: [asc(learningLessons.position), asc(learningLessons.id)],
-                with: {
-                  blocks: {
-                    columns: { kind: true, data: true },
-                    orderBy: [asc(learningContentBlocks.position), asc(learningContentBlocks.id)],
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  });
+  const track = await getPublishedSllTrack(trackId);
   if (!track) return null;
 
   const lessons = track.stages.flatMap((stage) =>

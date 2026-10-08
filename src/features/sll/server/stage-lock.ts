@@ -1,12 +1,7 @@
-import { and, asc, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull } from 'drizzle-orm';
 import { db } from '@/server/db';
-import {
-  learningLessonProgress,
-  learningLessons,
-  learningModules,
-  learningStages,
-  learningTracks,
-} from '@/server/db/schema';
+import { learningLessonProgress } from '@/server/db/schema';
+import { getPublishedSllTrack } from './published-track';
 import { resolveSequentialStageAccess } from '../progress-rules';
 import { isPlanReferenceAvailable } from '../lesson-access';
 
@@ -17,36 +12,7 @@ import { isPlanReferenceAvailable } from '../lesson-access';
  * tranca etapas; nas outras trilhas, tudo fica aberto. `null`: trilha fora do ar.
  */
 export async function getTrackStageAccess(userId: string, trackId: string) {
-  const track = await db.query.learningTracks.findFirst({
-    columns: { id: true, kind: true },
-    where: and(
-      eq(learningTracks.id, trackId),
-      eq(learningTracks.status, 'published'),
-      isNull(learningTracks.archivedAt),
-    ),
-    with: {
-      stages: {
-        columns: { id: true, title: true, slug: true, position: true },
-        where: and(eq(learningStages.status, 'published'), isNull(learningStages.archivedAt)),
-        orderBy: [asc(learningStages.position), asc(learningStages.id)],
-        with: {
-          modules: {
-            columns: { id: true },
-            where: and(eq(learningModules.status, 'published'), isNull(learningModules.archivedAt)),
-            with: {
-              lessons: {
-                columns: { id: true, countsTowardProgress: true, relatedLessonId: true },
-                where: and(
-                  eq(learningLessons.status, 'published'),
-                  isNull(learningLessons.archivedAt),
-                ),
-              },
-            },
-          },
-        },
-      },
-    },
-  });
+  const track = await getPublishedSllTrack(trackId);
   if (!track) return null;
   const lessonIds = track.stages.flatMap((stage) =>
     stage.modules.flatMap((module) => module.lessons.map((lesson) => lesson.id)),

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { panelCard } from '@/features/member/components/area-shell';
 import { SllAreaShell } from '@/features/sll/sll-area-shell';
 import { SllKnowledgeLibrary } from '@/features/sll/components/sll-knowledge-library';
-import { getSllPublishedTracks } from '@/features/sll/server/catalog';
+import { getSllMethodTrackForStage } from '@/features/sll/server/catalog';
 import { requireProduct } from '@/features/products/server/access';
 import { getSllCopy } from '@/features/sll/server/copy';
 import { SllProgress } from '@/features/sll/components/sll-progress';
@@ -30,15 +30,11 @@ export default async function MethodStagePage({
 }) {
   const [{ stageId }, { q }] = await Promise.all([params, searchParams]);
   const libraryQuery = typeof q === 'string' ? q.slice(0, 200) : '';
-  const [{ session, products }, tracks, copy] = await Promise.all([
+  const [{ session, products }, track, copy] = await Promise.all([
     requireProduct('sll'),
-    getSllPublishedTracks('method'),
+    getSllMethodTrackForStage(stageId),
     getSllCopy(),
   ]);
-  // Uma URL direta precisa procurar a etapa na trilha que realmente a contém; isso também evita
-  // misturar uma etapa de teste ou de outro catálogo com a primeira trilha publicada.
-  const track =
-    tracks.find((item) => item.stages.some((stageItem) => stageItem.id === stageId)) ?? tracks[0];
   const stage = track?.stages.find((item) => item.id === stageId);
   if (!track || !stage) notFound();
   const completedCount = stage.access?.completedCount ?? 0;

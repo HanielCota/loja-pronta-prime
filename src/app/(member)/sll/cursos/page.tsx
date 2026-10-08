@@ -1,3 +1,4 @@
+import { courseCoverSrc } from '@/features/sll/course-cover';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, BookOpen } from 'lucide-react';
@@ -68,7 +69,7 @@ export default async function ComplementaryCoursesPage() {
                     className="aspect-video w-full rounded-2xl object-cover"
                     width={1280}
                     height={720}
-                    src={`/api/sll/course-cover/${featured.course.id}`}
+                    src={courseCoverSrc(featured.course.id, featured.course.coverStorageKey)}
                   />
                 ) : (
                   <CourseCoverPlaceholder />
@@ -122,7 +123,7 @@ export default async function ComplementaryCoursesPage() {
                       width={1280}
                       height={720}
                       loading="lazy"
-                      src={`/api/sll/course-cover/${course.id}`}
+                      src={courseCoverSrc(course.id, course.coverStorageKey)}
                     />
                   ) : (
                     <CourseCoverPlaceholder />
