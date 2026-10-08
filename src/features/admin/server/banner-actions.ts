@@ -2,6 +2,7 @@
 
 import { and, asc, eq, isNotNull, isNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { revalidateSllContent } from '@/features/sll/server/content-cache';
 import { unstable_rethrow } from 'next/navigation';
 import { z } from 'zod';
 import { db } from '@/server/db';
@@ -231,6 +232,7 @@ export async function publishSllBanner(form: FormData): Promise<StructureActionS
   if (!id) return unavailable;
   const result = await publishBanner(id);
   if (!result.saved) return result;
+  revalidateSllContent();
   revalidatePath('/admin/banners');
   revalidatePath('/sll');
   return { saved: true, message: 'Banner publicado. As alunas já veem esta versão.' };
@@ -259,6 +261,7 @@ export async function restoreSllBannerVersion(form: FormData): Promise<Structure
   if (!previous) return { saved: false, message: 'Não há versão anterior deste banner.' };
   const result = await publishBanner(id, previous.data);
   if (!result.saved) return result;
+  revalidateSllContent();
   revalidatePath('/admin/banners');
   revalidatePath('/sll');
   return { saved: true, message: 'A versão anterior do banner voltou para as alunas.' };
@@ -286,6 +289,7 @@ export async function archiveSllBanner(form: FormData): Promise<StructureActionS
     return true;
   });
   if (!archived) return unavailable;
+  revalidateSllContent();
   revalidatePath('/admin/banners');
   revalidatePath('/admin/arquivados');
   revalidatePath('/sll');
@@ -303,6 +307,7 @@ export async function restoreSllBanner(form: FormData): Promise<StructureActionS
     .where(and(eq(learningBanners.id, id), isNotNull(learningBanners.archivedAt)))
     .returning({ id: learningBanners.id });
   if (!restored.length) return { saved: false, message: 'Este banner não está arquivado.' };
+  revalidateSllContent();
   revalidatePath('/admin/arquivados');
   revalidatePath('/admin/banners');
   return { saved: true, message: 'Banner restaurado como rascunho.' };
@@ -338,6 +343,7 @@ export async function moveSllBanner(
         .where(eq(learningBanners.id, item.id));
     }
   });
+  revalidateSllContent();
   revalidatePath('/admin/banners');
   revalidatePath('/sll');
   return {
@@ -406,6 +412,7 @@ export async function reorderSllBanners(
         .where(eq(learningBanners.id, id as string));
     }
   });
+  revalidateSllContent();
   revalidatePath('/admin/banners');
   revalidatePath('/sll');
   return { saved: true, message: 'Nova ordem salva.' };

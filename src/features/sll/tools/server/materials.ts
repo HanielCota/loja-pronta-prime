@@ -1,3 +1,6 @@
+import { DATABASE_CACHE_SCOPE } from '@/server/cache-context';
+import { unstable_cache } from 'next/cache';
+import { SLL_CONTENT_SECONDS, SLL_CONTENT_TAG } from '@/features/sll/server/content-cache';
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { learningContentBlocks, learningLessons } from '@/server/db/schema';
@@ -5,30 +8,41 @@ import { requireProduct } from '@/features/products/server/access';
 import { getTrackStageAccess } from '@/features/sll/server/stage-lock';
 import { ORIGINAL_MATERIALS } from '../catalog';
 
-/** A lista respeita a publicação e o mesmo desbloqueio da aula e da rota de download. */
-export async function getLessonMaterials() {
-  const { session } = await requireProduct('sll');
-  const lessons = await db.query.learningLessons.findMany({
-    columns: { id: true, slug: true, title: true },
-    where: and(eq(learningLessons.status, 'published'), isNull(learningLessons.archivedAt)),
-    orderBy: [asc(learningLessons.position), asc(learningLessons.id)],
-    with: {
-      blocks: {
-        columns: { id: true, data: true },
-        where: eq(learningContentBlocks.kind, 'file'),
-        orderBy: [asc(learningContentBlocks.position)],
-      },
-      module: {
-        columns: { status: true, archivedAt: true },
-        with: {
-          stage: {
-            columns: { id: true, slug: true, status: true, archivedAt: true },
-            with: { track: { columns: { id: true, slug: true, status: true, archivedAt: true } } },
+// A leitura comum fica em cache; publicação e acesso da aluna são conferidos abaixo.
+const readLessonMaterials = unstable_cache(
+  async () => {
+    return db.query.learningLessons.findMany({
+      columns: { id: true, slug: true, title: true },
+      where: and(eq(learningLessons.status, 'published'), isNull(learningLessons.archivedAt)),
+      orderBy: [asc(learningLessons.position), asc(learningLessons.id)],
+      with: {
+        blocks: {
+          columns: { id: true, data: true },
+          where: eq(learningContentBlocks.kind, 'file'),
+          orderBy: [asc(learningContentBlocks.position)],
+        },
+        module: {
+          columns: { status: true, archivedAt: true },
+          with: {
+            stage: {
+              columns: { id: true, slug: true, status: true, archivedAt: true },
+              with: {
+                track: { columns: { id: true, slug: true, status: true, archivedAt: true } },
+              },
+            },
           },
         },
       },
-    },
-  });
+    });
+  },
+  ['sll-material-catalog', DATABASE_CACHE_SCOPE],
+  { revalidate: SLL_CONTENT_SECONDS, tags: [SLL_CONTENT_TAG] },
+);
+
+/** A lista respeita a publicação e o mesmo desbloqueio da aula e da rota de download. */
+export async function getLessonMaterials() {
+  const { session } = await requireProduct('sll');
+  const lessons = await readLessonMaterials();
   const published = lessons.filter((lesson) =>
     [lesson.module, lesson.module.stage, lesson.module.stage.track].every(
       (node) => node.status === 'published' && node.archivedAt === null,

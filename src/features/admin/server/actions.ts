@@ -4,6 +4,10 @@ import { and, eq, gte, inArray, sql } from 'drizzle-orm';
 import { desc } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
+import { revalidateAdminOverview } from './overview-cache';
+import { getAdminOverview } from './overview';
+import { getOnlineStudents } from './online';
+import { revalidateSllContent } from '@/features/sll/server/content-cache';
 import { z } from 'zod';
 import { requireAdmin } from './access';
 import { ONLINE_WINDOW_MS } from '@/features/presence/presence';
@@ -171,6 +175,7 @@ export async function changeStudentProductAccess(
     columns: { product: true },
     where: eq(studentProducts.userId, target.id),
   });
+  revalidateAdminOverview();
   revalidatePath('/admin/acessos');
   revalidatePath('/');
   return {
@@ -492,6 +497,7 @@ export async function saveLearningLesson(
     };
   }
 
+  revalidateSllContent();
   revalidatePath('/admin');
   return { message: 'A aula foi salva.', saved: true };
 }
@@ -566,6 +572,7 @@ export async function reorderLessonBlocks(formData: FormData): Promise<LessonEdi
         );
     }
   });
+  revalidateSllContent();
   revalidatePath('/admin');
   revalidatePath(`/sll/aula/${lessonId.data}`);
   return { saved: true, message: 'Ordem salva.' };
@@ -656,6 +663,7 @@ export async function removeLessonBlock(formData: FormData): Promise<LessonEditS
     typeof block.data.storageKey === 'string'
   )
     await removeStorageKeyIfUnused(block.data.storageKey, 'learning-content');
+  revalidateSllContent();
   revalidatePath('/admin');
   revalidatePath(`/sll/aula/${lessonId.data}`);
   return { saved: true, message: 'Material removido.' };
@@ -785,4 +793,13 @@ export async function getOnlineCount(): Promise<number> {
     .from(userPresence)
     .where(gte(userPresence.lastSeenAt, new Date(Date.now() - ONLINE_WINDOW_MS)));
   return row?.total ?? 0;
+}
+
+/** Atualiza só os números e a presença, sem renderizar novamente a moldura do painel. */
+export async function getAdminDashboard() {
+  const [overview, { now, rows: online }] = await Promise.all([
+    getAdminOverview(),
+    getOnlineStudents(),
+  ]);
+  return { overview, now, online };
 }

@@ -13,6 +13,8 @@ export function studentIp(email: string): string {
 
 /** Página sem problemas de acessibilidade (lista o que falhou e onde, se houver). */
 export async function expectNoA11yViolations(page: Page, externalFrameSelectors: string[] = []) {
+  // Depois de uma navegação, a animação só aparece na lista quando o navegador desenha a página.
+  await nextFrames(page);
   // Espera as entradas de página e as aberturas terminarem: no meio do esmaecido, o texto ainda
   // está semitransparente e o axe mediria um contraste que a pessoa não vê parado. As animações
   // infinitas (girando enquanto carrega) e as pausadas ficam de fora: nunca terminam. O limite de
@@ -46,6 +48,14 @@ export async function signIn(page: Page, email: string, password: string, next?:
   await page.getByLabel('Email da compra').fill(email);
   await page.getByLabel('Senha', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Entrar' }).click();
+  // O clique pode terminar antes da navegação do App Router ou do aviso de login recusado.
+  await expect
+    .poll(
+      async () =>
+        new URL(page.url()).pathname !== '/entrar' ||
+        (await page.locator('[data-error-code]').first().isVisible()),
+    )
+    .toBe(true);
 }
 
 /** Espera o navegador desenhar dois quadros (reações ao evento anterior já aconteceram). */

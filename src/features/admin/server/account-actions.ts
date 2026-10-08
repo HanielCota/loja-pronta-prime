@@ -3,6 +3,7 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import { and, eq, ne } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { revalidateAdminOverview } from './overview-cache';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { auth } from '@/server/auth/auth';
@@ -118,6 +119,7 @@ export async function createAccount(
     }
   }
 
+  revalidateAdminOverview();
   revalidatePath('/admin/contas');
   revalidatePath('/admin');
   redirect(
@@ -131,6 +133,7 @@ function accountId(data: FormData) {
 }
 
 function refresh(id: string) {
+  revalidateAdminOverview();
   revalidatePath('/admin/contas');
   revalidatePath(`/admin/contas/${id}`);
 }

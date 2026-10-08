@@ -2,6 +2,7 @@
 
 import { eq, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { revalidateSllContent } from '@/features/sll/server/content-cache';
 import { unstable_rethrow } from 'next/navigation';
 import { db } from '@/server/db';
 import { learningTextDrafts, learningTextHistory, learningTexts } from '@/server/db/schema';
@@ -105,6 +106,7 @@ async function publishCopyGroup(
 }
 
 function revalidateCopy() {
+  revalidateSllContent();
   for (const path of ['/admin/textos', '/sll', '/sll/cursos', '/sll/recursos', '/sll/metodo'])
     revalidatePath(path);
 }

@@ -2,6 +2,7 @@
 
 import { and, asc, desc, eq, isNotNull, isNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { revalidateSllContent } from '@/features/sll/server/content-cache';
 import { z } from 'zod';
 import { db } from '@/server/db';
 import {
@@ -399,6 +400,7 @@ export async function archiveLearningNode(data: FormData): Promise<StructureActi
       .where(and(eq(learningLessons.id, id), isNull(learningLessons.archivedAt)))
       .returning({ id: learningLessons.id });
   if (archived.length === 0) return { message: 'Este conteúdo não está disponível.', saved: false };
+  revalidateSllContent();
   revalidatePath('/admin');
   return { message: 'O conteúdo foi arquivado e pode ser restaurado.', saved: true };
 }
@@ -467,6 +469,7 @@ export async function restoreLearningNode(data: FormData): Promise<StructureActi
   }
   if (restored.length === 0)
     return { message: 'Este conteúdo não está disponível para restauração.', saved: false };
+  revalidateSllContent();
   revalidatePath('/admin');
   return { message: 'O conteúdo foi restaurado.', saved: true };
 }
@@ -565,6 +568,7 @@ export async function moveLearningNode(data: FormData): Promise<StructureActionS
     }
   });
 
+  revalidateSllContent();
   revalidatePath('/admin');
   return { message: 'A ordem foi atualizada.', saved: true };
 }
@@ -638,6 +642,7 @@ export async function reorderLearningNodes(data: FormData): Promise<StructureAct
   });
   if (!changed)
     return { message: 'A lista mudou. Atualize a página e tente de novo.', saved: false };
+  revalidateSllContent();
   revalidatePath('/admin');
   revalidatePath('/sll');
   return { message: 'Nova ordem salva.', saved: true };
@@ -759,6 +764,7 @@ export async function setLearningNodePublication(data: FormData): Promise<Struct
       .returning({ id: learningLessons.id });
   }
   if (!updated.length) return { message: 'Este conteúdo não está disponível.', saved: false };
+  revalidateSllContent();
   revalidatePath('/admin');
   revalidatePath('/admin/preview');
   return {
@@ -789,6 +795,7 @@ export async function setFeaturedCourse(data: FormData): Promise<StructureAction
     if (!course.featured)
       await tx.update(learningTracks).set({ featured: true }).where(eq(learningTracks.id, id));
   });
+  revalidateSllContent();
   revalidatePath('/admin');
   revalidatePath('/sll/cursos');
   return {
@@ -810,6 +817,7 @@ export async function publishNodeDraft(data: FormData): Promise<StructureActionS
     return { saved: false, message: 'Conteúdo inválido.' };
   const result = await applyNodeDraft(kind as LearningNodeKind, id, { validate: true });
   if (!result.saved) return result;
+  revalidateSllContent();
   revalidatePath('/admin');
   revalidatePath('/sll');
   revalidatePath('/sll/cursos');
@@ -985,6 +993,7 @@ export async function restorePreviousNodeVersion(data: FormData): Promise<Struct
     replacement: previous.data,
   });
   if (!result.saved) return result;
+  revalidateSllContent();
   revalidatePath('/admin');
   revalidatePath('/sll');
   revalidatePath('/sll/cursos');

@@ -1,3 +1,4 @@
+import { revalidateAdminOverview } from '@/features/admin/server/overview-cache';
 import { randomBytes } from 'node:crypto';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
@@ -81,7 +82,7 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
     );
   }
 
-  return db.transaction(async (tx) => {
+  const processed = await db.transaction(async (tx) => {
     // Serializa eventos da mesma transação e, depois, a recomputação dos acessos da aluna.
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${transaction}))`);
     const duplicate = await tx.query.hotmartEvents.findFirst({
@@ -192,4 +193,6 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
       .onConflictDoUpdate({ target: hotmartEvents.id, set: { result, receivedAt: new Date() } });
     return result;
   });
+  revalidateAdminOverview();
+  return processed;
 }

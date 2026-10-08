@@ -1,6 +1,8 @@
 import { and, eq, isNull } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
+import { revalidateSllContent } from '@/features/sll/server/content-cache';
+import { courseCoverVersion } from '@/features/sll/course-cover';
 import sharp from 'sharp';
 import { z } from 'zod';
 import { hasAdminRole } from '@/features/admin/access';
@@ -74,17 +76,24 @@ export async function GET(request: Request, context: Context) {
   const course = await courseFromParams(context);
   if (!course || (course.status !== 'published' && !permission.admin))
     return error('Este curso ainda não tem capa.', 404);
-  const draft =
-    permission.admin && new URL(request.url).searchParams.get('preview') === '1'
-      ? await getNodeDraft('track', course.id)
-      : null;
+  const query = new URL(request.url).searchParams;
+  const preview = query.get('preview') === '1';
+  const draft = permission.admin && preview ? await getNodeDraft('track', course.id) : null;
   const key =
     draft?.data.coverStorageKey === undefined ? course.coverStorageKey : draft.data.coverStorageKey;
   if (!key) return error('Este curso ainda não tem capa.', 404);
+  if (!preview && query.has('v') && query.get('v') !== courseCoverVersion(key))
+    return error('Esta capa foi atualizada. Abra o curso de novo.', 404);
   const bytes = await storage().get(key);
   if (!bytes) return error('A capa não está disponível.', 404);
   return new Response(Buffer.from(bytes), {
-    headers: { 'Content-Type': 'image/webp', 'Cache-Control': 'private, no-store' },
+    headers: {
+      'Content-Type': 'image/webp',
+      'Cache-Control':
+        !preview && course.status === 'published' && query.has('v')
+          ? 'private, max-age=300'
+          : 'private, no-store',
+    },
   });
 }
 
@@ -129,6 +138,7 @@ export async function POST(request: Request, context: Context) {
     // A capa trocada sai do bucket só se nenhuma versão (publicada, rascunho ou anterior)
     // ainda a usa.
     if (oldKey !== key) await removeStorageKeyIfUnused(oldKey, 'course-cover');
+    revalidateSllContent();
     revalidatePath('/admin');
     revalidatePath('/sll/cursos');
     return NextResponse.json(
@@ -150,6 +160,7 @@ export async function DELETE(request: Request, context: Context) {
   if (!course) return error('Este curso não está disponível.', 404);
   const oldKey = await replaceCover(course, { coverStorageKey: null, coverAlt: null });
   await removeStorageKeyIfUnused(oldKey, 'course-cover');
+  revalidateSllContent();
   revalidatePath('/admin');
   revalidatePath('/sll/cursos');
   return NextResponse.json(

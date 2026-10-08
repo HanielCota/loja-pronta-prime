@@ -4,7 +4,7 @@ import { SllArea } from '@/features/products/components/sll-area';
 import {
   getFirstSllPublishedTrack,
   getSllPublishedBanners,
-  getSllPublishedTracks,
+  hasSllPublishedTracks,
 } from '@/features/sll/server/catalog';
 import { requireProduct } from '@/features/products/server/access';
 import { getSllCopy } from '@/features/sll/server/copy';
@@ -20,8 +20,8 @@ export default async function Page() {
     await Promise.all([
       requireProduct('sll'),
       getFirstSllPublishedTrack('welcome'),
-      getFirstSllPublishedTrack('method'),
-      getSllPublishedTracks('complementary_course'),
+      hasSllPublishedTracks('method'),
+      hasSllPublishedTracks('complementary_course'),
       getSllPublishedBanners(),
       getSllCopy(),
     ]);
@@ -29,7 +29,7 @@ export default async function Page() {
     ? sllLessonHref('welcome', welcome.resumeLessonId)
     : null;
   const methodHref = method ? '/sll/metodo' : null;
-  const coursesHref = courses.length ? '/sll/cursos' : null;
+  const coursesHref = courses ? '/sll/cursos' : null;
   return (
     <SllArea
       user={session.user}

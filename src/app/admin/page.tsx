@@ -2,8 +2,7 @@ import type { Metadata } from 'next';
 import { requireAdmin } from '@/features/admin/server/access';
 import { LearningContentTree } from '@/features/admin/components/learning-content-tree';
 import { AdminShell } from '@/features/admin/components/admin-shell';
-import { AdminOverview } from '@/features/admin/components/admin-overview';
-import { AutoRefresh } from '@/features/admin/components/auto-refresh';
+import { AdminLiveOverview } from '@/features/admin/components/admin-live-overview';
 import type { AdminSection } from '@/features/admin/components/admin-sidebar';
 import { getOnlineStudents } from '@/features/admin/server/online';
 import { getAdminOverview } from '@/features/admin/server/overview';
@@ -39,9 +38,7 @@ export default async function AdminPage({
         title="Visão geral"
         intro="Os números da plataforma e o que mudou por último."
       >
-        {/* Mantém o "Online agora" e os números em dia sem recarregar. */}
-        <AutoRefresh everyMs={30_000} />
-        <AdminOverview now={now} online={online} overview={overview} />
+        <AdminLiveOverview initial={{ now, online, overview }} />
       </AdminShell>
     );
   }
