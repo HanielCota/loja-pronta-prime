@@ -11,9 +11,10 @@ As artes foram preparadas com a ferramenta integrada de imagem do Codex, em 7 de
 - `mascote-rosto.png`: desenho completo, para a barra do topo e usos pequenos.
 - `mascote-base.png`: olhos brancos e cílios, sem pupilas, sobrancelhas ou boca.
 - `mascote-corpo.png`: mesma base sem os braços, para receber as articulações por cima.
-- `mascote-bracos.png`: só os dois braços, com a ligação do ombro arredondada e transparente
-  ao redor. A pose relaxada usa a metade direita (braço comprido) nos dois lados, espelhada para
-  o esquerdo. A ponta roxa fica abaixo do ombro, junto à lateral; o braço esquerdo fica sobre o corpo.
+- `mascote-bracos.png`: braços isolados da pose original; referência para preparar a pose relaxada.
+- `mascote-bracos-relaxados.png`: dois braços curtos já apontando para baixo, com mãos roxas
+  arredondadas, polegar discreto e pontas suaves. Cada lado tem sua própria forma e iluminação.
+  Em `art.ts`, o tamanho e a posição alinham os ombros com o corpo; o braço esquerdo fica sobre ele.
 - `mascote-olhos-fechados.png`: pele nas regiões dos olhos, para cobrir olhos e cílios.
 
 O rosto animado usa as medidas de `art.ts`, com pupilas, brilhos, boca e sobrancelhas por cima
@@ -92,3 +93,26 @@ Se uma arte mudar de composição, as medidas precisam ser conferidas junto no n
 > original pixel location and scale; no shift, zoom, crop, repositioning, change in orientation
 > or redesign. Exactly two disconnected rounded arms on a transparent square canvas, no other
 > objects, no shadow, no text.
+
+### Braços e mãos em repouso
+
+> Use case: precise-object-edit. Asset type: registered transparent relaxed-arm layer for the
+> Lupita web mascot. Image 1 is the exact square placement guide (the existing body without
+> arms). Image 2 is a style and identity reference (the complete original Lupita). Create ONLY
+> two new compact arms and soft rounded hands already hanging naturally downward at her sides.
+> Output only the arms on genuine transparent alpha; do not include any part of the head, eyes,
+> torso, belly, strap, tag, legs, feet or stars. Preserve the exact square canvas, scale, 3D toy
+> material, orange-to-purple colors and soft lighting from the references. Place the LEFT orange
+> shoulder at x 30%, y 64%, with its purple rounded hand centered at x 26%, y 74%; this arm
+> occupies roughly x 21-33%, y 61-80%. Place the RIGHT orange shoulder at x 70%, y 61%, with its
+> purple rounded hand centered at x 75%, y 72%; this arm occupies roughly x 67-80%, y 58-78%.
+> Both shoulders must overlap the body silhouette at those attachment points when composited.
+> The arms should be short, comfortably thick, gently tapered and almost vertical with a very
+> small outward angle. The hand is a plump mitten-like mascot paw, with one subtle rounded thumb
+> and just two shallow soft fingertip scallops, readable at small size. Maintain continuous
+> smooth volume from shoulder through wrist to hand: no sharp elbow kink, bent-back wrist, thin
+> neck, pinched joints or long drooping forearm. Left and right have matching proportions but
+> naturally different light and perspective. Match the original character's simplicity; no
+> realistic human anatomy, fingernails, glove seams, outlines, accessories or extra limbs.
+> Orange upper arms blend smoothly to purple hands. Exactly two separated arms/hands in their
+> registered resting positions, no background, no shadow outside the arms, no text.

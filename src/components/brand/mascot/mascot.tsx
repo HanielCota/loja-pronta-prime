@@ -294,7 +294,8 @@ function MascotArm({ side, image }: { side: keyof typeof ARMS; image: string }) 
         style={{
           backgroundImage: image,
           clipPath: arm.clip,
-          transform: arm.mirror ? 'scaleX(-1)' : undefined,
+          transformOrigin: arm.origin,
+          scale: arm.scale,
         }}
       />
     </div>

@@ -91,7 +91,7 @@ test('balança os dois braços, assenta com as mãos baixas e reage sem reinicia
     )
     .toBe(true);
   await expect(mascot(page)).not.toHaveAttribute('data-sway', 'true', { timeout: 6_000 });
-  expect(await rotations()).toEqual([102, -102]);
+  expect(await rotations()).toEqual([0, 0]);
 
   const email = page.getByLabel('Email da compra');
   await email.focus();
@@ -374,7 +374,7 @@ test('a arte do mascote usa endereço com hash (mudou a arte, muda o endereço)'
     .locator('[data-slot="mascot-arm"] > div')
     .first()
     .evaluate((arm: HTMLElement) => decodeURIComponent(arm.style.backgroundImage));
-  expect(arms).toMatch(/\/_next\/static\/media\/mascote-bracos\.[\w-]+\.png/);
+  expect(arms).toMatch(/\/_next\/static\/media\/mascote-bracos-relaxados\.[\w-]+\.png/);
 
   const lidSkin = await page
     .locator('[data-lid]')
