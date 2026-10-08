@@ -10,6 +10,7 @@ import {
   VERIFICATION_LINK_TTL_HOURS,
 } from '@/config/auth';
 import { env } from '@/config/env';
+import { LEADS_ORIGIN } from '@/config/leads';
 import { db } from '@/server/db';
 import * as schema from '@/server/db/schema';
 import { sendPasswordResetEmail, sendVerificationEmail } from './emails';
@@ -22,6 +23,8 @@ const ONE_DAY = 24 * ONE_HOUR;
 export const auth = betterAuth({
   appName: 'Loja Pronta Prime',
   baseURL: env.BETTER_AUTH_URL,
+  // Somente os dois endereços da aplicação; o cookie continua restrito ao host do acesso.
+  trustedOrigins: [env.BETTER_AUTH_URL, LEADS_ORIGIN],
   secret: env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, { provider: 'pg', schema }),
 

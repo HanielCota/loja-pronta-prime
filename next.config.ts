@@ -26,6 +26,21 @@ const nextConfig: NextConfig = {
     qualities: [75, 100],
   },
 
+  async rewrites() {
+    return {
+      // Antes dos arquivos: a página inicial já existe para as alunas no domínio principal.
+      beforeFiles: [
+        {
+          source: '/',
+          has: [{ type: 'host', value: 'leads\\.lojaprontaprime\\.com' }],
+          destination: '/leads',
+        },
+      ],
+      afterFiles: [],
+      fallback: [],
+    };
+  },
+
   async headers() {
     return [
       {

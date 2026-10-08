@@ -4,7 +4,7 @@
 
 A Loja Pronta Prime ([lojaprontaprime.com](https://lojaprontaprime.com)) é uma área de membros para mulheres iniciantes que querem vender na Shopee. Ela oferece o curso SLL com ferramentas e a jornada Loja Pronta, em que a própria aluna prepara a marca e a conta, um passo por vez.
 
-Este documento descreve o que está implementado em 7 de outubro de 2026. Conexão, produtos de fornecedores e publicação automática na Shopee continuam em preparação.
+Este documento descreve o que está implementado em 8 de outubro de 2026. Conexão, produtos de fornecedores e publicação automática na Shopee continuam em preparação.
 
 ## Para quem é
 
@@ -88,6 +88,12 @@ Os limites de nome (30) e descrição (500) estão em `src/config/brand.ts`. A c
 Detalhes atuais e fluxo de convite planejado: `docs/INTEGRACAO-HOTMART.md`. Contas de desenvolvimento são criadas com `bun run dev:aluna`; não representam compras reais.
 
 ## Painel administrativo disponível
+
+O painel de Leads, em `/leads` e preparado para `leads.lojaprontaprime.com`, permite cadastrar
+e importar contatos por CSV, acompanhar etapas de venda, registrar conversas, marcar retornos,
+filtrar e exportar contatos, arquivar e restaurar. Os indicadores usam apenas os contatos reais.
+Administradores têm acesso; uma venda marcada não libera produtos. Detalhes e configuração do
+subdomínio: `docs/LEADS.md`.
 
 Administradores podem organizar e editar boas-vindas, método e cursos; enviar materiais, imagens e capas; conferir prévias; salvar rascunhos, publicar, arquivar e restaurar itens. Também editam banners, recursos e textos fixos do SLL.
 

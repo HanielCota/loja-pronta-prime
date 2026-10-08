@@ -13,3 +13,4 @@ export * from './learning-texts';
 export * from './product-access-events';
 export * from './hotmart';
 export * from './presence';
+export * from './leads';

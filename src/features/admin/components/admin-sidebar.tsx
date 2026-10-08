@@ -21,6 +21,7 @@ import { RememberedGroup } from './remembered-group';
 
 export type AdminSection =
   | 'overview'
+  | 'leads'
   | 'online'
   | 'welcome'
   | 'method'
@@ -38,6 +39,7 @@ const groups = [
     label: 'Painel',
     links: [
       { href: '/admin', label: 'Visão geral', section: 'overview', Icon: LayoutDashboard },
+      { href: '/leads', label: 'Leads', section: 'leads', Icon: UsersRound },
       { href: '/admin/online', label: 'Online agora', section: 'online', Icon: Radio },
     ],
   },
