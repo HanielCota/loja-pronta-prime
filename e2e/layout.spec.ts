@@ -41,7 +41,7 @@ test('visual sem padrões do navegador nos campos', async ({ page }) => {
     };
   });
   expect(style.appearance).toBe('none');
-  expect(style.caret).toBe('rgb(0, 113, 227)');
+  expect(style.caret).toBe('rgb(69, 46, 154)');
   expect(style.font).toContain('Manrope');
   // 16px ou mais: abaixo disso o iPhone dá zoom ao focar o campo.
   expect(parseFloat(style.size)).toBeGreaterThanOrEqual(16);

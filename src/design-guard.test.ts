@@ -21,6 +21,20 @@ function token(css: string, name: string): string | undefined {
   return new RegExp(`--${name}:\\s*([^;]+);`).exec(css)?.[1]?.trim();
 }
 
+/** Luminância sRGB: confere a relação entre as cores reais dos tokens, além da cor da marca. */
+function luminance(hex: string): number {
+  const channels = [1, 3, 5].map((start) => {
+    const channel = Number.parseInt(hex.slice(start, start + 2), 16) / 255;
+    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  });
+  return channels[0]! * 0.2126 + channels[1]! * 0.7152 + channels[2]! * 0.0722;
+}
+
+function contrast(a: string, b: string): number {
+  const [light, dark] = [luminance(a), luminance(b)].toSorted((x, y) => y - x);
+  return (light! + 0.05) / (dark! + 0.05);
+}
+
 /** Os arquivos de tela (.tsx) do app, com o texto de cada um. */
 const SCREENS = [...new Glob('src/**/*.tsx').scanSync('.')].map((path) => ({
   path: path.replaceAll('\\', '/'),
@@ -55,7 +69,7 @@ function offenders(pattern: RegExp): string[] {
 }
 
 describe('tokens da marca (globals.css)', () => {
-  test('tema claro: estilo Apple, um azul só', () => {
+  test('tema claro: estilo Apple, roxo da referência nas ações', () => {
     const light = block(':root');
     expect({
       background: token(light, 'background'),
@@ -68,20 +82,46 @@ describe('tokens da marca (globals.css)', () => {
       background: '#f5f5f7',
       foreground: '#1d1d1f',
       card: '#ffffff',
-      primary: '#0071e3',
+      primary: '#452e9a',
       'primary-foreground': '#ffffff',
-      link: '#0066cc',
+      link: '#452e9a',
     });
   });
 
-  test('tema escuro: grafite (não preto), o mesmo azul', () => {
+  test('tema escuro: grafite (não preto), roxo com contraste nas ações', () => {
     const dark = block('.dark');
     expect({
       background: token(dark, 'background'),
       card: token(dark, 'card'),
       primary: token(dark, 'primary'),
-    }).toEqual({ background: '#1f1f22', card: '#2a2a2e', primary: '#0071e3' });
+    }).toEqual({ background: '#1f1f22', card: '#2a2a2e', primary: '#8061ce' });
   });
+
+  for (const selector of [':root', '.dark']) {
+    for (const moreContrast of [false, true]) {
+      test(`${selector}, mais contraste ${moreContrast}: ações, links e foco atendem WCAG AA`, () => {
+        const base = block(selector);
+        const override = moreContrast
+          ? block(
+              selector === ':root'
+                ? ":root:not(.dark)[data-contrast='more']"
+                : ":root.dark[data-contrast='more']",
+            )
+          : '';
+        const color = (name: string) => token(override, name) ?? token(base, name)!;
+        for (const action of ['primary', 'primary-hover']) {
+          expect(contrast(color('primary-foreground'), color(action))).toBeGreaterThanOrEqual(4.5);
+          for (const surface of ['background', 'card']) {
+            expect(contrast(color(action), color(surface))).toBeGreaterThanOrEqual(3);
+          }
+        }
+        for (const surface of ['background', 'card', 'muted', 'primary-soft']) {
+          expect(contrast(color('link'), color(surface))).toBeGreaterThanOrEqual(4.5);
+          expect(contrast(color('ring'), color(surface))).toBeGreaterThanOrEqual(3);
+        }
+      });
+    }
+  }
 
   test('cartões de 28px, corpo de 17px e a fonte Manrope', () => {
     expect(GLOBALS).toContain('--radius-card: 28px;');

@@ -52,13 +52,13 @@
   --foreground: #1d1d1f;
   --card: #ffffff;
 
-  --primary: #0071e3;
+  --primary: #452e9a;
   /* Mais escuro no hover: o texto branco precisa de 4,5:1 também com o mouse em cima. */
-  --primary-hover: #0068d6;
-  --primary-soft: #e8f2fd;
+  --primary-hover: #3b2688;
+  --primary-soft: #f0edfb;
   --primary-foreground: #ffffff;
-  /* Azul mais escuro pra texto de link (contraste 5,6:1 no branco). */
-  --link: #0066cc;
+  /* Roxo da referência: 9,9:1 no branco e 8,6:1 no fundo da ação secundária. */
+  --link: #452e9a;
 
   --muted: #f5f5f7;
   /* Texto de apoio: 7:1 no cinza do fundo (WCAG AAA), pra quem tem a vista cansada ou usa o
@@ -74,7 +74,7 @@
   /* Borda de campo mais escura que --border pra ter contraste mínimo de 3:1. */
   --input: #86868b;
   /* Trilho das barras de progresso (as etapas que faltam): 3:1 no fundo e no branco, pra barra
-     não parecer só o pedaço azul (WCAG 1.4.11). */
+     não parecer só o pedaço colorido (WCAG 1.4.11). */
   --track: #8a8a8f;
   /* Barra do caminho da loja: verde esmeralda (3,9:1 no branco) num trilho claro (3,2:1 entre
      os dois). O trilho escuro acima teria a mesma luminosidade do verde e o cheio sumiria. */
@@ -82,7 +82,7 @@
   --progress-track: #e8e8ed;
   /* O verde da barra mais escuro, pra texto (5,4:1 no branco). */
   --progress-text: #0f7a46;
-  --ring: #0071e3;
+  --ring: #452e9a;
 
   /* Controle segmentado (as abas tipo iOS): trilho rebaixado e a opção escolhida em destaque. */
   --segment: rgb(0 0 0 / 0.06);
@@ -94,7 +94,7 @@
 /*
  * Tema escuro em grafite, não em preto: o preto puro cansa a vista (o texto claro "vaza" no fundo
  * escuro demais) e deixa os cartões sem relevo. A altura vem do tom: fundo, cartão e realce, cada
- * um um degrau mais claro, num cinza levemente azulado que conversa com o azul da marca. Os
+ * um degrau mais claro, com o roxo da marca nas ações. Os
  * contrastes valem no cartão (#2a2a2e) e no realce (#36363b), os fundos mais claros com texto.
  */
 .dark {
@@ -104,14 +104,15 @@
   --foreground: #f5f5f7;
   --card: #2a2a2e;
 
-  /* O azul do botão fica o mesmo: o branco em cima continua com 4,7:1. */
-  --primary: #0071e3;
-  --primary-hover: #0068d6;
+  /* Roxo mais claro no grafite: 4,6:1 com o texto branco e 3,1:1 com o cartão. No hover,
+     clareia um pouco, ainda com 4,5:1 no texto e 3,2:1 na borda da ação. */
+  --primary: #8061ce;
+  --primary-hover: #8263d0;
   /* Um pouco mais claro que no preto, pra não parecer um buraco no grafite. */
-  --primary-soft: #163a63;
+  --primary-soft: #382b58;
   --primary-foreground: #ffffff;
-  /* Azul claro pra texto: 5,9:1 no cartão, 5:1 no realce e 4,8:1 no azul escuro do botão claro. */
-  --link: #5aabff;
+  /* Roxo claro pra texto: 7,7:1 no cartão, 6,5:1 no realce e 6,9:1 na ação secundária. */
+  --link: #c5b4ff;
 
   /* Cinza do hover e dos destaques sobre o cartão. */
   --muted: #36363b;
@@ -132,8 +133,8 @@
   /* 4,6:1 entre o verde e o trilho. */
   --progress-track: #46464b;
   --progress-text: #30d158;
-  /* Anel de foco no azul claro: o azul do botão some no escuro. */
-  --ring: #5aabff;
+  /* Anel de foco claro: 6,9:1 no cartão e 8:1 no fundo. */
+  --ring: #baa9ff;
 
   /* Trilho rebaixado (escurece o que estiver embaixo, cartão ou fundo) e a escolhida clara: com
      a escolhida da cor do cartão, como no tema claro, ela não se destacava. Texto: 7,4:1 ou mais
@@ -149,7 +150,7 @@
 /*
  * Mais contraste (chave do perfil, data-contrast="more" no html): textos de apoio quase da cor do
  * texto principal, bordas e trilhos de 3:1 ou mais, links mais escuros (ou mais claros, no escuro)
- * e um contorno visível em volta dos cartões. O azul do botão e o verde do caminho não mudam.
+ * e um contorno visível em volta dos cartões. O roxo do botão e o verde do caminho não mudam.
  */
 :root:not(.dark)[data-contrast='more'] {
   /* 11,3:1 no branco e 10,4:1 no cinza do fundo. */
@@ -159,8 +160,8 @@
   /* 5,1:1 no branco. */
   --input: #6e6e73;
   --track: #6e6e73;
-  /* 7,6:1 no branco. */
-  --link: #0052a8;
+  /* 12,7:1 no branco. */
+  --link: #35207c;
   --segment: rgb(0 0 0 / 0.12);
   --card-shadow: 0 0 0 1px #8e8e93, 0 16px 48px -12px rgb(0 0 0 / 0.12);
 }
@@ -174,8 +175,8 @@
   /* 8,5:1 no cartão. */
   --input: #c7c7cc;
   --track: #aeaeb2;
-  /* 7,8:1 no cartão. */
-  --link: #8cc4ff;
+  /* 10,1:1 no cartão. */
+  --link: #dfd3ff;
   --segment-thumb: #5a5a60;
   --card-shadow: 0 0 0 1px #8e8e93, 0 16px 48px -12px rgb(0 0 0 / 0.5);
 }
@@ -411,7 +412,7 @@
   }
   /*
    * Controles nativos com a cara do app (nada do visual padrão do navegador). Caixa de marcar e
-   * rádio: borda da cor dos campos (3:1 no cartão), azul quando marcados, com o check ou o ponto
+   * rádio: borda da cor dos campos (3:1 no cartão), roxo quando marcados, com o check ou o ponto
    * aparecendo suave. No alto contraste do Windows, voltam a ser os do sistema.
    */
   input:where([type='checkbox'], [type='radio']) {

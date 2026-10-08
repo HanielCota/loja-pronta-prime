@@ -9,13 +9,13 @@ quem está implementando. O teste `src/design-guard.test.ts` falha se os pontos 
 ## A direção: estilo Apple
 
 Inspirado no iCloud e no Apple ID: fundo cinza bem claro, cartões brancos com cantos grandes e
-sombra difusa, um azul só pra ação, muito espaço em branco, letra grande. Calmo e simples, porque
+sombra difusa, um roxo só pra ação, muito espaço em branco, letra grande. Calmo e simples, porque
 o público é muito iniciante (muitas alunas mal usam o computador).
 
 ## Cores: só pelos tokens
 
 As cores ficam em `src/app/globals.css` (claro em `:root`, escuro em `.dark`) e viram classes do
-Tailwind. **Nunca** use cor solta (`#0071e3`, `bg-white`, `text-gray-500`, `bg-[#...]`): ela quebra
+Tailwind. **Nunca** use cor solta (`#452e9a`, `bg-white`, `text-gray-500`, `bg-[#...]`): ela quebra
 o tema escuro e o alto contraste.
 
 | Classe                                     | Pra quê                                         | Claro              | Escuro                           |
@@ -24,17 +24,21 @@ o tema escuro e o alto contraste.
 | `bg-card`                                  | Cartões                                         | `#ffffff`          | `#2a2a2e`                        |
 | `text-foreground`                          | Texto principal                                 | `#1d1d1f`          | `#f5f5f7`                        |
 | `text-muted-foreground`                    | Texto de apoio                                  | `#515155`          | `#aeaeb2`                        |
-| `bg-primary` / `text-primary-foreground`   | O botão principal                               | `#0071e3` / branco | igual                            |
-| `bg-primary-soft`                          | Botão secundário, opção escolhida, avisos leves | `#e8f2fd`          | `#163a63`                        |
-| `text-link`                                | Links e ações de texto                          | `#0066cc`          | `#5aabff`                        |
+| `bg-primary` / `text-primary-foreground`   | O botão principal                               | `#452e9a` / branco | `#8061ce` / branco               |
+| `bg-primary-soft`                          | Botão secundário, opção escolhida, avisos leves | `#f0edfb`          | `#382b58`                        |
+| `text-link`                                | Links e ações de texto                          | `#452e9a`          | `#c5b4ff`                        |
 | `bg-muted`                                 | Realce, hover                                   | `#f5f5f7`          | `#36363b`                        |
 | `text-destructive` / `bg-destructive-soft` | Erros                                           | `#d70015`          | `#ff8077`                        |
 | `bg-progress` / `text-progress-text`       | Progresso, feito, "Sugestão"                    | verde              | verde                            |
 | `border-border` / `border-input`           | Linhas / borda de campo                         |                    |                                  |
-| `outline-ring`                             | Anel de foco                                    | azul               | azul claro                       |
+| `outline-ring`                             | Anel de foco                                    | `#452e9a`          | `#baa9ff`                        |
 | `bg-segment` / `bg-segment-thumb`          | Controle segmentado (abas tipo iOS)             |                    |                                  |
 
-- **Um azul só**, pra ação. Nada de roxo, gradiente ou segunda cor de destaque.
+- **Um roxo só**, pra ação. Nada de gradiente ou segunda cor de destaque.
+- Em 8 de outubro de 2026, a cor de ação foi ajustada para o roxo dos botões da referência
+  enviada pelo dono (`#452e9a`), na Loja Pronta e no SLL. No tema escuro, o roxo é mais claro
+  para separar a ação do cartão com pelo menos 3:1 e manter o texto branco com pelo menos 4,5:1.
+  O fundo claro, os cartões, as letras e as molduras continuam no padrão Apple.
 - Todo contraste confere WCAG AA nos dois temas (os comentários do `globals.css` dizem os valores).
   Cor nova só com contraste conferido, e entra como token nos dois temas.
 - Exceções com motivo (desenhos, não a interface): o mascote, as amostras de cor, o rascunho do
@@ -64,7 +68,7 @@ o tema escuro e o alto contraste.
 
 ## Componentes que já existem (use, não recrie)
 
-- `Button` (`components/ui/button.tsx`): `default` (azul, a ação principal), `soft` (azul claro,
+- `Button` (`components/ui/button.tsx`): `default` (roxo, a ação principal), `soft` (roxo claro,
   secundária), `ghost`, `link`. Tamanhos `default` (altura mínima 48px, largura toda), `inline`,
   `icon`. Tem `loading` com texto ("Salvando…").
 - `FloatingLabelInput`, `PasswordInput`, `Field`/`FieldError`, `Switch`, `Avatar`, `Spinner`,
@@ -74,7 +78,7 @@ o tema escuro e o alto contraste.
   cresce com o texto, sem o puxador onde o navegador permite). Arquivo: `FileField` (botão `soft`
   "Escolher arquivo" e o nome e o tamanho embaixo; sem JavaScript, o campo do navegador). Caixa de
   marcar, rádio, número, busca e `<summary>` já têm estilo global no `globals.css`: borda dos
-  campos, azul quando marcados, sem setinhas, sem o "x" da busca e sem o triângulo das seções.
+  campos, roxo quando marcados, sem setinhas, sem o "x" da busca e sem o triângulo das seções.
   No alto contraste do Windows, caixa, rádio e a seta do `Select` voltam a ser os do sistema.
 - `Avatar` mostra a foto privada do perfil, com as iniciais de reserva. A foto é ajustada para o
   círculo no envio. Em Perfil, adicionar, trocar e remover ficam na linha "Foto de perfil", com o
@@ -114,12 +118,12 @@ o tema escuro e o alto contraste.
   Em cima de cada barra, o número e o estado escritos: "Etapa 1 · Você está aqui" (verde, com o
   ícone de marcador), "Feita" (verde, com check) ou "A seguir" (cinza). Onde ela está não fica só
   na cor.
-- No estúdio do logo, a barra acompanha a numeração: a etapa atual e as anteriores ficam azuis;
+- No estúdio do logo, a barra acompanha a numeração: a etapa atual e as anteriores ficam roxas;
   avançar não apaga o progresso já mostrado. Sugestões nas etapas futuras não antecipam a barra.
 - A prévia do logo pronto inclui uma imagem ilustrativa do kit de envio (caixa, adesivo e sacola),
   com o logo sobreposto e identificado como exemplo. As proporções acompanham a largura do cartão.
   A fonte sugerida na conversa entra no estúdio apenas quando ainda não existe uma escolha salva.
-- Na pergunta de cor, a seleção é indicada por um aro azul fino e um check na amostra, sem contornar
+- Na pergunta de cor, a seleção é indicada por um aro roxo fino e um check na amostra, sem contornar
   o cartão. Ao abrir “Outra cor”, a opção anterior é desmarcada e o mesmo aro aparece na amostra
   redonda, indicando o seletor aberto; a resposta é marcada só depois da escolha, quando a amostra
   mostra a cor real. Tocar de novo na cor marcada remove a seleção. O painel usa a superfície neutra
@@ -168,7 +172,7 @@ o tema escuro e o alto contraste.
   no padrão de acesso. O alerta continua ligado ao formulário e anunciado por leitor de tela.
 - No estúdio do logo, a alternativa escrita fica visível abaixo das opções. O campo diz “Escreva do
   seu jeito”, inclui um exemplo no placeholder e um botão “Usar essa ideia”; não fica escondido atrás
-  de um link. “Usar essa ideia” compartilha o azul de ação com “Continuar”, mas permanece compacto ao
+  de um link. “Usar essa ideia” compartilha o roxo de ação com “Continuar”, mas permanece compacto ao
   lado do campo; fica desativado enquanto estiver vazio.
 - No estúdio do logo, os botões “Voltar” das etapas de escolha e do resumo usam formato de pílula,
   contorno `border-border` e texto `text-link`.
@@ -201,7 +205,7 @@ o tema escuro e o alto contraste.
   o conteúdo à vista.
 - A aula usa vídeo em proporção 16:9 à esquerda e sequência à direita a partir de 1280px;
   em larguras menores, as colunas se empilham para manter a leitura. A aula atual fica numerada
-  em azul e visível na lista, que acompanha a rolagem no computador. Anterior/próxima ficam acima do botão
+  em roxo e visível na lista, que acompanha a rolagem no computador. Anterior/próxima ficam acima do botão
   de conclusão, que ocupa a largura do cartão. Sem vídeo disponível, um aviso compacto diz
   “Vídeo em breve”, sem reservar uma área vazia de player.
 - O vídeo usa o player Panda da conta conferida, com início apenas ao tocar em reproduzir.
@@ -322,7 +326,8 @@ o tema escuro e o alto contraste.
 - Tela de entrada dividida (painel azul da marca ao lado do formulário).
 - Cartão de duas colunas no login (mascote e título à esquerda, formulário à direita).
 - Mascote "encostado" na borda do cartão. O mascote fica dentro do cartão, centralizado no topo.
-- Paleta antiga roxa sobre bege (era do "Escala Shop"). A marca é Loja Pronta Prime.
+- Fundo bege da paleta antiga do "Escala Shop". A marca é Loja Pronta Prime; o roxo de ação
+  autorizado em 8 de outubro de 2026 usa as superfícies do padrão Apple.
 - Preto puro no tema escuro (o escuro é grafite).
 
 ## Acessibilidade (obrigatória, não opcional)

@@ -75,15 +75,15 @@ test('o foco do teclado é um contorno sólido de 2px nos botões e nos campos',
   await expect(button).toBeFocused();
   await expect(button).toHaveCSS('outline-style', 'solid');
   await expect(button).toHaveCSS('outline-width', '2px');
-  await expect(button).toHaveCSS('outline-color', 'rgb(0, 113, 227)');
+  await expect(button).toHaveCSS('outline-color', 'rgb(69, 46, 154)');
 
   await page.keyboard.press('Shift+Tab');
   await page.keyboard.press('Shift+Tab');
   await page.keyboard.press('Shift+Tab');
   const password = page.getByLabel('Senha', { exact: true });
   await expect(password).toBeFocused();
-  await expect(password).toHaveCSS('border-color', 'rgb(0, 113, 227)');
-  await expect(password).toHaveCSS('box-shadow', /rgb\(0, 113, 227\) 0px 0px 0px 1px/);
+  await expect(password).toHaveCSS('border-color', 'rgb(69, 46, 154)');
+  await expect(password).toHaveCSS('box-shadow', /rgb\(69, 46, 154\) 0px 0px 0px 1px/);
 });
 
 test('com 320px de largura não há rolagem lateral', async ({ page }) => {
