@@ -118,6 +118,12 @@ o tema escuro e o alto contraste.
   Em cima de cada barra, o número e o estado escritos: "Etapa 1 · Você está aqui" (verde, com o
   ícone de marcador), "Feita" (verde, com check) ou "A seguir" (cinza). Onde ela está não fica só
   na cor.
+- Antes da primeira resposta da Loja Pronta, a entrada usa a coluna estreita do `AreaShell`:
+  um resumo das três etapas, boas-vindas com o nome, título grande e "Quero ver o plano". O
+  botão leva ao plano na mesma página, com três cartões numerados em sequência e "Começar
+  agora" no fim. A âncora leva o foco ao título e funciona sem JavaScript. O plano usa as mesmas
+  etapas do painel e informa que produtos e publicação estão em breve, sem prazo inventado ou
+  trabalho de equipe. Depois de salvar a primeira resposta, volta o painel de retomada existente.
 - No estúdio do logo, a barra acompanha a numeração: a etapa atual e as anteriores ficam roxas;
   avançar não apaga o progresso já mostrado. Sugestões nas etapas futuras não antecipam a barra.
 - A prévia do logo pronto inclui uma imagem ilustrativa do kit de envio (caixa, adesivo e sacola),

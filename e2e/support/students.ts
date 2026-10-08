@@ -20,6 +20,7 @@ export type StudentKind =
   | 'sllprogress'
   | 'semproduto'
   | 'lojafase3'
+  | 'lojaboasvindas'
   | 'voltaarea'
   | 'doisprodutos'
   | 'doisprodutosmontagem'

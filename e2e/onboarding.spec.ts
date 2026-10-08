@@ -22,7 +22,8 @@ test('conversa inicial completa: perguntas, revisão com edição, WhatsApp e lo
   await expect(page).toHaveURL(/\/loja-pronta$/);
   await expect(page.getByRole('heading', { name: 'Conte sobre você e sua loja' })).toBeVisible();
   await expectNoA11yViolations(page);
-  await page.getByRole('link', { name: 'Começar a conversa' }).click();
+  await page.getByRole('link', { name: 'Quero ver o plano' }).click();
+  await page.getByRole('link', { name: 'Começar agora' }).click();
 
   // Pergunta 1: escolher uma opção só avança ao confirmar no botão.
   await expect(page).toHaveURL(step('vendas'));
@@ -219,7 +220,11 @@ test.describe('sem JavaScript', () => {
   test('a conversa funciona com formulários comuns e o servidor confere', async ({ page }) => {
     // Vai da primeira pergunta até o fim: longo de propósito.
     test.slow();
-    await signIn(page, studentEmail('conversasemjs'), PASSWORD, '/loja-pronta/conversa');
+    await signIn(page, studentEmail('conversasemjs'), PASSWORD, '/loja-pronta');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Bem-vinda, Ana.');
+    await page.getByRole('link', { name: 'Quero ver o plano' }).press('Enter');
+    await expect(page.getByRole('heading', { name: 'Sua loja em 3 etapas' })).toBeFocused();
+    await page.getByRole('link', { name: 'Começar agora' }).click();
     await expect(page).toHaveURL(step('vendas'));
 
     // Sem escolha: o servidor recusa e a pergunta continua.

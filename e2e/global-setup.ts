@@ -92,6 +92,7 @@ const STUDENTS: Student[] = [
     answers: { nome: 'Casa da Ana' },
   },
   { kind: 'voltaarea', emailVerified: true, banned: false },
+  { kind: 'lojaboasvindas', emailVerified: true, banned: false, products: ['loja-pronta'] },
   {
     kind: 'lojafase3',
     emailVerified: true,
