@@ -69,9 +69,9 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
   await page.getByRole('banner').getByRole('link', { name: 'Loja Pronta Prime' }).click();
   await expect(page.getByRole('heading', { name: /Pra onde vamos/ })).toBeVisible();
   await page.goto('/loja-pronta');
-  // A escolha já disse "Oi": a área não cumprimenta de novo.
+  // Antes de responder, a entrada apresenta as boas-vindas e o plano da loja.
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Vamos montar sua loja?', exact: true }),
+    page.getByRole('heading', { level: 1, name: 'Bem-vinda, Ana. Vamos montar sua loja juntas.' }),
   ).toBeVisible();
   await expectNoA11yViolations(page);
 
@@ -106,6 +106,54 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
       .getByRole('navigation', { name: 'Suas áreas' })
       .getByRole('link', { name: 'Ir pra Minha loja' }),
   ).toBeVisible();
+});
+
+test('boas-vindas mostram o plano antes da primeira pergunta, nos dois temas e tamanhos', async ({
+  page,
+}) => {
+  test.slow();
+  await signIn(page, studentEmail('lojaboasvindas'), PASSWORD, '/loja-pronta');
+  await expect(page).toHaveURL(/\/loja-pronta$/);
+
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
+    for (const colorScheme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme });
+      await page.goto('/loja-pronta');
+      await expect(
+        page.getByRole('heading', {
+          level: 1,
+          name: 'Bem-vinda, Ana. Vamos montar sua loja juntas.',
+        }),
+      ).toBeVisible();
+      const stages = page.getByRole('list', { name: 'Etapas da Loja Pronta' });
+      await expect(stages.getByRole('listitem')).toHaveCount(3);
+      await expect(stages.getByRole('listitem').first()).toHaveAttribute('aria-current', 'step');
+      await expectNoA11yViolations(page);
+
+      // A âncora serve tanto ao toque quanto ao teclado: leva a leitura para o plano.
+      await page.getByRole('link', { name: 'Quero ver o plano' }).press('Enter');
+      const planTitle = page.getByRole('heading', { level: 2, name: 'Sua loja em 3 etapas' });
+      await expect(page).toHaveURL(/\/loja-pronta#plano-da-loja$/);
+      await expect(planTitle).toBeFocused();
+      await expect(planTitle).toBeInViewport();
+      const plan = page.getByRole('region', { name: 'Sua loja em 3 etapas' });
+      await expect(plan.getByRole('listitem')).toHaveCount(3);
+      await expect(plan).toContainText('A escolha dos produtos e a publicação chegam em breve.');
+      await expect(plan.getByRole('link', { name: 'Começar agora' })).toHaveAttribute(
+        'href',
+        '/loja-pronta/conversa',
+      );
+      await expectNoA11yViolations(page);
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+      ).toBe(true);
+    }
+  }
+
+  await page.getByRole('link', { name: 'Começar agora' }).click();
+  await expect(page).toHaveURL(/\/loja-pronta\/conversa\/vendas$/);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Você já vendeu pela internet?');
 });
 
 test('com um produto só: entra direto nele, sem tela de escolha', async ({ page }) => {

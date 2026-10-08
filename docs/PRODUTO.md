@@ -52,6 +52,10 @@ A plataforma não confirma hoje que uma loja foi publicada na Shopee. A aluna co
 
 #### Conversa inicial
 
+Antes da primeira resposta, a aluna vê boas-vindas com o nome e pode abrir o plano em três
+etapas na mesma página. "Começar agora" leva à conversa. Quem já salvou uma resposta vê o painel
+com "Continuar a conversa", para retomar o ponto em que parou.
+
 Uma pergunta por tela, com o mascote e salvamento de cada resposta:
 
 - Experiência com vendas, para saber se a conta de vendedora já foi criada.

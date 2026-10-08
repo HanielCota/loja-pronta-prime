@@ -21,6 +21,7 @@ import { canReviseDonePhases } from '../editing';
 import { CONVERSATION_PATH, REVIEW_STEP, stepPath } from '../steps';
 import type { ConversationStatus } from '../store-phase';
 import { whatsappLink } from '../whatsapp';
+import { StoreWelcome } from './store-welcome';
 
 type StorePanelProps = {
   user: { name: string; email: string; preferredName?: string | null | undefined };
@@ -42,6 +43,10 @@ type StorePanelProps = {
  * vertical. Com a marca pronta, o título é o nome da loja.
  */
 export function StorePanel({ user, hasChoice, phase, conversation, brand }: StorePanelProps) {
+  // Quem ainda não respondeu vê o plano primeiro; respostas salvas continuam abrindo a retomada.
+  if (phase === 1 && conversation === 'nao-comecou') {
+    return <StoreWelcome user={user} hasChoice={hasChoice} />;
+  }
   // Com os dois produtos, ela chega aqui pela escolha de área, que já disse "Oi": sem repetir.
   const name = hasChoice ? '' : greetingName(user);
   return (

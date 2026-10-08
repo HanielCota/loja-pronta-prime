@@ -52,22 +52,26 @@ export const STORE_PHASES = [
  * em 3 etapas (menos coisa pra entender de uma vez); as fases continuam valendo por dentro.
  * `detail`: o que acontece na etapa, em duas frases curtas. O caminho do painel mostra as três
  * explicadas, pra ela saber o que vem depois (não só a atual, que o destaque já explica).
+ * `shortTitle`: cabe no resumo das boas-vindas, inclusive no celular.
  * `phases`: os números das fases (1 a 7) de cada etapa.
  */
 export const STORE_STAGES = [
   {
+    shortTitle: 'Seu estilo',
     title: 'Conte sobre você e sua loja',
     detail:
       'Você conta se já vende e escolhe como quer sua marca. Suas respostas ajudam a sugerir nome, logo e descrição pra sua loja.',
     phases: [1],
   },
   {
+    shortTitle: 'Sua marca',
     title: 'Crie a marca da sua loja',
     detail:
       'Você escolhe o nome, cria ou envia um logo e define a descrição. Você vê tudo antes de salvar.',
     phases: [2],
   },
   {
+    shortTitle: 'Shopee',
     title: 'Prepare sua loja para a Shopee',
     detail:
       'Você abre sua conta de vendedora na Shopee com o nosso passo a passo. A escolha dos produtos e a publicação chegam em breve.',
