@@ -107,6 +107,10 @@ O painel permite liberar ou remover um produto de uma conta existente com motivo
 
 Um painel de todas as lojas, histórico de montagem por loja, métricas comerciais e contagem de compradoras que entraram continuam fora da entrega atual.
 
+A base técnica da integração Shopee está preparada, com cliente de tokens, cifra e contrato
+validado do catálogo. Ainda não há callback de autorização, importação do fornecedor ou
+publicação. As fases 4 a 7 continuam indisponíveis. Ver `docs/INTEGRACAO-SHOPEE.md`.
+
 ## Glossário
 
 - **SLL:** Sistema Loja Lucrativa, o curso com ferramentas.

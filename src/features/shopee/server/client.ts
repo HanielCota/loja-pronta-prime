@@ -1,0 +1,103 @@
+import { z } from 'zod';
+import { signShopeeRequest } from '@/lib/shopee-protocol';
+
+const configurationSchema = z.object({
+  SHOPEE_PARTNER_ID: z.coerce.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+  SHOPEE_PARTNER_KEY: z.string().min(1),
+  SHOPEE_TOKEN_ENCRYPTION_KEY: z.string().regex(/^[a-f0-9]{64}$/i),
+});
+
+export function getShopeeConfiguration() {
+  const configured = configurationSchema.safeParse(process.env);
+  return configured.success ? configured.data : null;
+}
+
+const tokenResponse = z.object({
+  access_token: z.string().min(1),
+  refresh_token: z.string().min(1),
+  expire_in: z.number().int().positive(),
+});
+
+export class ShopeeApiError extends Error {
+  constructor(public readonly reason: 'configuration' | 'unavailable' | 'rejected' | 'response') {
+    super(
+      {
+        configuration: 'A conexão com a Shopee ainda não está disponível.',
+        unavailable: 'Não foi possível falar com a Shopee. Tente novamente mais tarde.',
+        rejected: 'A Shopee não aceitou a solicitação. Confira a autorização da loja.',
+        response: 'A resposta da Shopee não pôde ser confirmada.',
+      }[reason],
+    );
+    this.name = 'ShopeeApiError';
+  }
+}
+
+/** Preparado para produção. Não faz tentativas automáticas: códigos e refresh tokens são únicos. */
+export async function requestShopeeTokens(
+  input:
+    | { kind: 'authorize'; code: string; shopId: number }
+    | { kind: 'refresh'; refreshToken: string; shopId: number },
+  fetcher: typeof fetch = fetch,
+) {
+  const config = getShopeeConfiguration();
+  if (!config) throw new ShopeeApiError('configuration');
+  if (
+    !Number.isSafeInteger(input.shopId) ||
+    input.shopId <= 0 ||
+    !(input.kind === 'authorize' ? input.code : input.refreshToken)
+  )
+    throw new ShopeeApiError('rejected');
+  const path =
+    input.kind === 'authorize' ? '/api/v2/auth/token/get' : '/api/v2/auth/access_token/get';
+  const timestamp = Math.floor(Date.now() / 1000);
+  const url = new URL(path, 'https://partner.shopeemobile.com');
+  url.search = new URLSearchParams({
+    partner_id: String(config.SHOPEE_PARTNER_ID),
+    timestamp: String(timestamp),
+    sign: signShopeeRequest(config.SHOPEE_PARTNER_ID, path, timestamp, config.SHOPEE_PARTNER_KEY),
+  }).toString();
+  let response: Response;
+  try {
+    response = await fetcher(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        partner_id: config.SHOPEE_PARTNER_ID,
+        shop_id: input.shopId,
+        ...(input.kind === 'authorize'
+          ? { code: input.code }
+          : { refresh_token: input.refreshToken }),
+      }),
+      signal: AbortSignal.timeout(10000),
+      cache: 'no-store',
+      redirect: 'error',
+    });
+  } catch {
+    throw new ShopeeApiError('unavailable');
+  }
+  if (!response.ok)
+    throw new ShopeeApiError(
+      response.status >= 500 || response.status === 429 ? 'unavailable' : 'rejected',
+    );
+  let body: unknown;
+  try {
+    body = await response.json();
+  } catch {
+    throw new ShopeeApiError('response');
+  }
+  if (
+    typeof body !== 'object' ||
+    body === null ||
+    !('error' in body) ||
+    typeof body.error !== 'string'
+  )
+    throw new ShopeeApiError('response');
+  if (body.error) throw new ShopeeApiError('rejected');
+  const parsed = tokenResponse.safeParse(body);
+  if (!parsed.success) throw new ShopeeApiError('response');
+  return {
+    accessToken: parsed.data.access_token,
+    refreshToken: parsed.data.refresh_token,
+    expiresAt: new Date(Date.now() + parsed.data.expire_in * 1000),
+  };
+}

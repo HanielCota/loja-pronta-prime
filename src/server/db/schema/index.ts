@@ -14,3 +14,4 @@ export * from './product-access-events';
 export * from './hotmart';
 export * from './presence';
 export * from './leads';
+export * from './shopee';
