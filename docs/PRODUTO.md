@@ -111,6 +111,13 @@ A base técnica da integração Shopee está preparada, com cliente de tokens, c
 validado do catálogo. Ainda não há callback de autorização, importação do fornecedor ou
 publicação. As fases 4 a 7 continuam indisponíveis. Ver `docs/INTEGRACAO-SHOPEE.md`.
 
+Existe um piloto administrativo preparado em `/admin/bling`, desligado sem configuração. Ele
+autoriza a própria conta da empresa e consulta seus produtos e canais. A conta Bling da empresa
+e o aplicativo privado foram criados, com credenciais configuradas no servidor de produção.
+O teste do canal Shopee exige concluir o cadastro de vendedor da loja na Central do Vendedor.
+Deploy e autorização da Loja Pronta Prime ainda pendentes.
+Não conecta contas das alunas nem publica anúncios. Ver `docs/INTEGRACAO-BLING.md`.
+
 ## Glossário
 
 - **SLL:** Sistema Loja Lucrativa, o curso com ferramentas.

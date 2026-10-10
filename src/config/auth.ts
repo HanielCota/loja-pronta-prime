@@ -20,6 +20,8 @@ export const VERIFICATION_LINK_TTL_HOURS = 24;
  * - Por IP: freia quem testa uma senha em muitas contas (só quando o IP é conhecido).
  */
 export const RATE_LIMITS_PER_MINUTE = {
+  /** Autorizar e consultar o piloto Bling: evita rajadas na conta da empresa. */
+  blingPerUser: 3,
   loginPerEmailAndIp: 5,
   loginPerEmail: 30,
   loginPerIp: 30,

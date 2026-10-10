@@ -68,6 +68,9 @@ o tema escuro e o alto contraste.
 
 ## Componentes que já existem (use, não recrie)
 
+- O piloto Bling em `/admin/bling` usa `AdminShell`, `panelCard` e `Button`, como a tela Hotmart.
+  Sem configuração, mostra “Conexão em breve”; a consulta só mostra dados reais da API.
+
 - `Button` (`components/ui/button.tsx`): `default` (roxo, a ação principal), `soft` (roxo claro,
   secundária), `ghost`, `link`. Tamanhos `default` (altura mínima 48px, largura toda), `inline`,
   `icon`. Tem `loading` com texto ("Salvando…").

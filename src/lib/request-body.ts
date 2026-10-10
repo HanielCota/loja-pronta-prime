@@ -3,7 +3,7 @@ export class RequestBodyTooLargeError extends Error {}
 
 /** O limite vale para bytes recebidos, mesmo sem Content-Length ou com um valor falso. */
 export async function readLimitedBody(
-  request: Request,
+  request: Request | Response,
   maxBytes: number,
 ): Promise<Uint8Array<ArrayBuffer>> {
   if (!Number.isSafeInteger(maxBytes) || maxBytes < 0) throw new RangeError('Limite inválido');

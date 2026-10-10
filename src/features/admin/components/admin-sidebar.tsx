@@ -32,7 +32,8 @@ export type AdminSection =
   | 'archived'
   | 'accounts'
   | 'access'
-  | 'hotmart';
+  | 'hotmart'
+  | 'bling';
 
 const groups = [
   {
@@ -41,6 +42,7 @@ const groups = [
       { href: '/admin', label: 'Visão geral', section: 'overview', Icon: LayoutDashboard },
       { href: '/leads', label: 'Leads', section: 'leads', Icon: UsersRound },
       { href: '/admin/online', label: 'Online agora', section: 'online', Icon: Radio },
+      { href: '/admin/bling', label: 'Conexão Bling', section: 'bling', Icon: Wrench },
     ],
   },
   {
