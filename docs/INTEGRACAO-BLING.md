@@ -8,9 +8,12 @@ não está operacional. As cinco
 variáveis foram configuradas no Coolify somente para runtime de produção, com valores ocultos.
 Prévias ficam sem credenciais e com o piloto desligado. O PR #119 foi integrado e o deploy do
 callback terminou em 10/10/2026 às 18h00 de Brasília, com o servidor saudável. O dono autorizou
-o aplicativo da Loja Pronta Prime com os três escopos, mas o callback ainda não confirmou a
-conexão. A credencial efetiva foi corrigida no runtime e aplicada por reinício, preservando a
-chave de criptografia. Nenhuma consulta real do catálogo foi confirmada.
+o aplicativo da Loja Pronta Prime com os três escopos. A credencial efetiva foi corrigida no
+runtime, preservando a chave de criptografia, e o cadastro da empresa foi salvo com o município
+selecionado na lista do Bling. O callback conferiu o CNPJ e confirmou a conexão. Depois do
+deploy do PR #120, a consulta real retornou um canal Shopee habilitado e nenhum produto ativo.
+Esse canal pertence à loja anterior: a nova conta Shopee ainda está em cadastro e não foi
+conectada ao ERP. A leitura do canal no Bling não elimina o bloqueio da API Shopee.
 
 ## Entrega no código
 
@@ -88,6 +91,9 @@ verificação facial, código de email e aceite pelo responsável, inclusive os 
 de pagamento. Não substituir contrato social de LTDA pelo cartão CNPJ ou cadastrar o
 administrador como sócio por inferência. O código confere o CNPJ da empresa autorizada no ERP;
 os dados cadastrais e as evidências ficam em arquivos locais fora do Git.
+Os dados básicos do Bling também foram corrigidos e salvos com razão social, inscrição
+estadual, endereço, regime informado no Cadesp e contato confirmado pelo dono. Isso não é uma
+validação das configurações fiscais para emissão de notas.
 
 ## Colocar produtos à venda agora
 
