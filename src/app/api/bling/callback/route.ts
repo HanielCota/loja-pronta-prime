@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { env } from '@/config/env';
 import { requireAdmin } from '@/features/admin/server/access';
 import { BLING_PATH, parseBlingCallback } from '@/features/bling/model';
-import { getBlingConfiguration } from '@/features/bling/server/client';
+import { getBlingConfiguration, reportBlingFailure } from '@/features/bling/server/client';
 import { finishBlingAuthorization } from '@/features/bling/server/connection';
 
 export async function GET(request: Request) {
@@ -17,7 +17,8 @@ export async function GET(request: Request) {
         { userId: session.user.id, sessionId: session.session.id, ...callback },
         config,
       );
-    } catch {
+    } catch (error) {
+      reportBlingFailure('callback', error);
       result = 'failed';
     }
   }

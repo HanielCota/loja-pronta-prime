@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'bun:test';
-import { BlingError, readBlingResource, requestBlingTokens } from './client';
+import { describe, expect, it, spyOn } from 'bun:test';
+import { BlingError, readBlingResource, reportBlingFailure, requestBlingTokens } from './client';
 import type { BlingConfiguration } from '../model';
 
 const config: BlingConfiguration = {
@@ -14,6 +14,37 @@ const transport = (handler: (url: URL, init: RequestInit) => Response | Promise<
     Promise.resolve(handler(new URL(String(url)), init ?? {}))) as typeof fetch;
 
 describe('API Bling', () => {
+  it('aceita Bearer sem distinção de caixa e recusa outros tipos de token', async () => {
+    for (const tokenType of ['bearer', 'BEARER', 'Basic']) {
+      const request = requestBlingTokens(
+        config,
+        { code: 'code' },
+        transport(() =>
+          Response.json({
+            access_token: 'access',
+            refresh_token: 'refresh',
+            expires_in: 60,
+            token_type: tokenType,
+          }),
+        ),
+      );
+      if (tokenType === 'Basic') await expect(request).rejects.toThrow('confirmar a resposta');
+      else expect((await request).accessToken).toBe('access');
+    }
+  });
+  it('registra a etapa da falha sem mensagem ou corpo externo', () => {
+    const log = spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      reportBlingFailure('tokens', new Error('secret-code-and-response'));
+      reportBlingFailure('company', new BlingError('permission'));
+      expect(log.mock.calls).toEqual([
+        ['[bling] autorização falhou: tokens:unexpected'],
+        ['[bling] autorização falhou: company:permission'],
+      ]);
+    } finally {
+      log.mockRestore();
+    }
+  });
   it('pede JWT com credenciais no cabeçalho e código no corpo', async () => {
     const tokens = await requestBlingTokens(
       config,
