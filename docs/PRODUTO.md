@@ -115,7 +115,8 @@ Existe um piloto administrativo preparado em `/admin/bling`, desligado sem confi
 autoriza a própria conta da empresa e consulta seus produtos e canais. A conta Bling da empresa
 e o aplicativo privado foram criados, com credenciais configuradas no servidor de produção.
 O teste do canal Shopee exige concluir o cadastro de vendedor da loja na Central do Vendedor.
-Deploy e autorização da Loja Pronta Prime ainda pendentes.
+A conexão foi publicada em produção e o dono autorizou os três escopos, mas a confirmação
+do callback ainda está em diagnóstico.
 Não conecta contas das alunas nem publica anúncios. Ver `docs/INTEGRACAO-BLING.md`.
 
 ## Glossário

@@ -6,8 +6,11 @@ BlingV2 na loja Shopee. O canal foi criado, mas o teste real retornou `No permis
 exige concluir o cadastro de vendedor na Central do Vendedor antes de liberar a API. A conexão
 não está operacional. As cinco
 variáveis foram configuradas no Coolify somente para runtime de produção, com valores ocultos.
-Prévias ficam sem credenciais e com o piloto desligado. Deploy do callback e autorização da
-Loja Pronta Prime ainda pendentes. Nenhuma consulta real da API foi realizada.
+Prévias ficam sem credenciais e com o piloto desligado. O PR #119 foi integrado e o deploy do
+callback terminou em 10/10/2026 às 18h00 de Brasília, com o servidor saudável. O dono autorizou
+o aplicativo da Loja Pronta Prime com os três escopos, mas o callback ainda não confirmou a
+conexão. A credencial efetiva foi corrigida no runtime e aplicada por reinício, preservando a
+chave de criptografia. Nenhuma consulta real do catálogo foi confirmada.
 
 ## Entrega no código
 
@@ -26,6 +29,9 @@ Loja Pronta Prime ainda pendentes. Nenhuma consulta real da API foi realizada.
   habilitado no ERP não prova que o token Shopee continua válido ou que um anúncio foi publicado.
 - Limite de tentativas e respostas sem segredos ou corpo de erro externo. O callback elimina
   código/estado da URL ao retornar ao painel, com `no-store` e `no-referrer`.
+- Falhas de autorização registram somente etapa e motivo conhecido, sem mensagem externa,
+  código, tokens ou dados da empresa. `token_type` aceita Bearer sem distinguir caixa,
+  conforme a RFC 6749, seção 5.1.
 
 Não há criação de anúncios, alteração de preço/estoque, compartilhamento do catálogo da MSL
 com alunas, sincronização de pedidos ou mudança automática das fases da Loja Pronta.
@@ -56,8 +62,10 @@ exige uma autorização nova, em vez de repetir o refresh token.
    O Bling descreve o último escopo como configuração de integrações: ele é mais amplo que as
    consultas realizadas pelo código e precisa de aprovação explícita antes de salvar o app.
    Esses IDs são documentação da tela, não substituem a configuração no Bling.
-8. Guardar Client ID e Client Secret no servidor. Não enviar senha pessoal, não colocar chaves
-   no Git, no navegador ou em variáveis `NEXT_PUBLIC_*`.
+8. Em **Informações do app**, clicar no olho ao lado de **Client Secret** antes de copiar.
+   O valor apresentado com o segredo oculto não é a credencial efetiva. Guardar Client ID e
+   Client Secret no servidor. Não enviar senha pessoal, não colocar chaves no Git, no navegador
+   ou em variáveis `NEXT_PUBLIC_*`.
 9. Gerar uma chave aleatória de 32 bytes em hexadecimal para `BLING_TOKEN_ENCRYPTION_KEY`,
    preservando-a nas cópias de segurança. Trocar sem recifrar invalida os tokens armazenados.
 10. Configurar `BLING_CLIENT_ID`, `BLING_CLIENT_SECRET`, `BLING_TOKEN_ENCRYPTION_KEY`,
@@ -68,10 +76,18 @@ exige uma autorização nova, em vez de repetir o refresh token.
 12. Entrar como admin em `/admin/bling` → Autorizar no Bling. Conferir a empresa exibida e
     os dados retornados em “Consultar catálogo e canal Shopee”.
 
-Os dados cadastrais fornecidos pelo dono vêm de documento de 2023 e não representam uma
-consulta atual da Receita. O código confere a empresa autorizada no ERP, sem declarar sua
-situação cadastral atual. Os dados completos foram deixados num arquivo local de cadastro,
-fora do Git; são desnecessários na interface das alunas.
+O documento cadastral inicial é de 2023. As consultas oficiais da Receita Federal e da
+Sefaz/SP em 10/10/2026 confirmaram alterações de razão social, sede, porte e regime fiscal.
+O formulário da nova loja Shopee foi corrigido com os dados atuais. A inscrição estadual foi
+conferida como ativa no Cadesp. O QSA público informa três empresas sócias e um administrador,
+mas não os percentuais de participação: não permite identificar por conta própria as pessoas
+que devem passar pela verificação de identidade da Shopee.
+
+A finalização exige contrato social atualizado, dados e documentos dos responsáveis,
+verificação facial, código de email e aceite pelo responsável, inclusive os termos da conta
+de pagamento. Não substituir contrato social de LTDA pelo cartão CNPJ ou cadastrar o
+administrador como sócio por inferência. O código confere o CNPJ da empresa autorizada no ERP;
+os dados cadastrais e as evidências ficam em arquivos locais fora do Git.
 
 ## Colocar produtos à venda agora
 

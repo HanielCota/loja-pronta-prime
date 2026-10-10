@@ -24,6 +24,16 @@ export class BlingError extends Error {
   }
 }
 
+/** Só etapa e motivo conhecido: mensagens externas podem conter códigos e credenciais. */
+export function reportBlingFailure(
+  stage: 'tokens' | 'company' | 'save' | 'callback',
+  error: unknown,
+) {
+  console.error(
+    `[bling] autorização falhou: ${stage}:${error instanceof BlingError ? error.reason : 'unexpected'}`,
+  );
+}
+
 async function requestJson(url: URL, init: RequestInit, fetcher: typeof fetch) {
   let response: Response;
   try {
@@ -57,7 +67,8 @@ async function requestJson(url: URL, init: RequestInit, fetcher: typeof fetch) {
 const tokensSchema = z.object({
   access_token: z.string().min(1).max(16000),
   refresh_token: z.string().min(1).max(16000),
-  token_type: z.literal('Bearer'),
+  // OAuth define token_type sem distinção entre maiúsculas e minúsculas (RFC 6749, 5.1).
+  token_type: z.string().regex(/^Bearer$/i),
   expires_in: z
     .number()
     .int()

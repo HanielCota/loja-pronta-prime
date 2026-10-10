@@ -10,7 +10,13 @@ import {
   buildBlingAuthorizationUrl,
   type BlingConfiguration,
 } from '../model';
-import { BlingError, getBlingConfiguration, readBlingResource, requestBlingTokens } from './client';
+import {
+  BlingError,
+  getBlingConfiguration,
+  readBlingResource,
+  reportBlingFailure,
+  requestBlingTokens,
+} from './client';
 
 const stateHash = (state: string) => createHash('sha256').update(state).digest('hex');
 const owner = (userId: string, clientId: string, companyId: string) =>
@@ -69,14 +75,17 @@ export async function finishBlingAuthorization(
     if (!intent) return 'expired';
     if (input.denied) return 'denied';
     if (!input.code) return 'failed';
+    let stage: 'tokens' | 'company' | 'save' = 'tokens';
     try {
       const tokens = await requestBlingTokens(config, { code: input.code }, fetcher);
+      stage = 'company';
       const parsed = blingCompanySchema.safeParse(
         await readBlingResource(tokens.accessToken, 'company', fetcher),
       );
-      if (!parsed.success) return 'failed';
+      if (!parsed.success) throw new BlingError('response');
       const company = parsed.data.data;
       if (company.cnpj !== config.BLING_EXPECTED_CNPJ) return 'company';
+      stage = 'save';
       const tokenOwner = owner(input.userId, config.BLING_CLIENT_ID, company.id);
       const values = {
         userId: input.userId,
@@ -103,8 +112,9 @@ export async function finishBlingAuthorization(
         .values({ id: 'main', ...values })
         .onConflictDoUpdate({ target: blingConnections.id, set: values });
       return 'connected';
-    } catch {
+    } catch (error) {
       // Consumo confirmado mesmo na falha: um código de uso único não pode ser repetido.
+      reportBlingFailure(stage, error);
       return 'failed';
     }
   });
