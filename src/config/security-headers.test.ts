@@ -20,7 +20,7 @@ test('formulários OAuth permitem os provedores oficiais nas telas correspondent
     'Content-Security-Policy',
   );
   expect(shopee).toContain(
-    "form-action 'self' https://open.shopee.com.br https://open.test-stable.shopee.com.br",
+    "form-action 'self' https://open.shopee.com.br https://open.sandbox.test-stable.shopee.com",
   );
   expect(shopee).not.toContain('bling.com.br');
   const bling = (await responseFor('/admin/bling')).headers.get('Content-Security-Policy');
