@@ -1,9 +1,12 @@
 # Integração Shopee
 
 Atualizado em 15 de outubro de 2026. O dono escolheu o aplicativo **Escala Shop** existente,
-que aparece como Online na Shopee Open Platform. O fluxo de autorização foi publicado com
-a conexão desligada. O dono decidiu manter o retorno antigo; a ativação e o teste com uma loja
-real continuam pendentes.
+que aparece como Online na Shopee Open Platform. O dono decidiu manter o retorno antigo e não
+tem acesso à sua hospedagem. O modo manual permite usar um endereço estático desse domínio:
+a aluna autoriza na Shopee e cola o endereço de retorno na Loja Pronta Prime. A conclusão usa a
+mesma validação de sessão, estado, código único e tokens cifrados do retorno automático.
+O piloto é restrito a contas escolhidas. Uma loja real ainda precisa autorizar o aplicativo para
+validar a conexão externa; o login de desenvolvedor não é uma conta de vendedora.
 Importação do fornecedor e publicação automática continuam em breve.
 
 ## Acessos e configurações
@@ -21,7 +24,7 @@ A senha do painel não é usada pelo sistema: cada aluna autoriza a própria loj
   a três tentativas por minuto por conta. A autorização brasileira abre o Escala Shop na Shopee.
 - Estado aleatório de 32 bytes, guardado só como hash, ligado à dona, sessão e aplicativo,
   com validade de 10 minutos. Iniciar outra tentativa invalida a anterior.
-- Retorno fixo em `/api/shopee/callback`. Confere sessão, acesso, estado, código e `shop_id`;
+- Retorno automático em `/api/shopee/callback`. Confere sessão, acesso, estado, código e `shop_id`;
   recusa parâmetros duplicados e conta principal com várias lojas (`main_account_id`).
 - Consumo atômico e durável do estado antes da troca do código de uso único. Retorno à jornada
   sem propagar código, estado ou mensagem externa; resposta sem cache e sem referência ao callback.
@@ -36,7 +39,8 @@ A senha do painel não é usada pelo sistema: cada aluna autoriza a própria loj
 - Renovação serializada por conta: persiste o novo par de tokens. Antes de tentar a renovação,
   bloqueia o par anterior no banco; timeout ou queda do processo exigem nova autorização.
 - Conexão confirmada em produção avança a fase 4 para a 5 na mesma transação dos tokens.
-  A escolha dos produtos continua em breve. Sandbox é restrito a admin e não avança a fase.
+  A escolha dos produtos continua em breve. Sandbox é restrito a admin ou às contas explícitas
+  do piloto e não avança a fase. O piloto não concede papel administrativo.
 - Desconectar apaga somente os tokens e estados da própria conta nesta plataforma. A revogação
   do Escala Shop na Shopee é feita pela titular na Central do Vendedor; não é automática porque
   o aplicativo existente pode ser usado em outro sistema.
@@ -49,41 +53,62 @@ A conexão não importa o nome da loja, catálogo, pedidos ou métricas e não p
 
 Configure apenas no servidor, como Runtime no Coolify:
 
-| Variável                      | Valor                                                    |
-| ----------------------------- | -------------------------------------------------------- |
-| `SHOPEE_PARTNER_ID`           | ID live do Escala Shop; em sandbox, o ID de teste        |
-| `SHOPEE_PARTNER_KEY`          | Chave do mesmo ambiente, preservada no registro privado  |
-| `SHOPEE_TOKEN_ENCRYPTION_KEY` | Chave própria de 32 bytes aleatórios, em hexadecimal     |
-| `SHOPEE_ENVIRONMENT`          | `live` ou `sandbox`; padrão `live`                       |
-| `SHOPEE_ENABLED`              | `false` até a configuração e validação; padrão desligado |
+| Variável                      | Valor                                                             |
+| ----------------------------- | ----------------------------------------------------------------- |
+| `SHOPEE_PARTNER_ID`           | ID live do Escala Shop; em sandbox, o ID de teste                 |
+| `SHOPEE_PARTNER_KEY`          | Chave do mesmo ambiente, preservada no registro privado           |
+| `SHOPEE_TOKEN_ENCRYPTION_KEY` | Chave própria de 32 bytes aleatórios, em hexadecimal              |
+| `SHOPEE_ENVIRONMENT`          | `live` ou `sandbox`; padrão `live`                                |
+| `SHOPEE_ENABLED`              | `false` até a configuração e validação; padrão desligado          |
+| `SHOPEE_CALLBACK_MODE`        | `automatic` (padrão) ou `manual`                                  |
+| `SHOPEE_REDIRECT_URI`         | URL HTTPS exata no domínio autorizado; obrigatória no modo manual |
+| `SHOPEE_PILOT_USER_IDS`       | IDs de contas separados por vírgula; restringe o piloto           |
 
 Preserve a chave de cifra em backup: trocar sem recifrar perde os tokens existentes.
 Não reutilizar a senha, a chave da API ou a chave do Bling. Os tokens são vinculados ao ID
 mais ambiente; registros anteriores marcados como `legacy` exigem nova autorização.
 
-O retorno previsto para produção é `https://lojaprontaprime.com/api/shopee/callback`.
-O Escala Shop ainda permite o domínio `https://membros.priscianemsl.com/` e apresenta um único
-campo de domínio live. A substituição precisa ser coordenada com o dono: novos retornos para
-o sistema antigo podem parar de funcionar. Nenhum domínio ou IP foi alterado nesta entrega.
+O retorno automático previsto é `https://lojaprontaprime.com/api/shopee/callback`.
+O Escala Shop permite o domínio `https://membros.priscianemsl.com/` e apresenta um único
+campo de domínio live. Esse domínio deve ser preservado. No modo manual, o retorno vai para
+`https://membros.priscianemsl.com/favicon.ico`, que foi verificado no navegador: mantém os
+parâmetros na barra de endereço e abre uma imagem estática sem login ou JavaScript da aplicação
+antiga. Nenhuma rota, DNS ou configuração do sistema antigo precisa mudar.
 A lista de IPs deve continuar ligada, preservando os atuais e acrescentando somente o IP de
 saída confirmado do servidor da Loja Pronta. Não deduzir esse IP pelo DNS público do site.
 
-Em 15 de outubro, o dono decidiu **manter o domínio antigo por enquanto**. Os retornos live
-e de teste, IPs e cadastro do Escala Shop foram preservados. Nenhuma variável Shopee foi
-configurada no Coolify; a conexão permanece desligada. Não substituir o domínio nem liberar
-o servidor enquanto essa decisão não mudar. O IP de saída confirmado e o backup anterior à
-publicação estão registrados somente no arquivo privado.
+O modo manual nunca baixa a URL colada. Confere origem e caminho exatos, recusa credenciais,
+fragmentos e parâmetros ambíguos, e recebe o endereço por Server Action (POST). O código não
+é colocado no URL da Loja Pronta Prime, no estado de erro, no armazenamento do navegador ou em
+logs. A intenção continua vinculada à sessão que começou o processo e expira em 10 minutos.
+Há limites separados de início e envio do retorno. A tela reaproveita a moldura, os botões e
+o campo com rótulo flutuante existentes, com instruções e erros acessíveis.
+
+Este é um fluxo manual: não prometer retorno automático entre os dois sites. O domínio antigo
+recebe o código na requisição do navegador, como exige o cadastro atual; seus logs de hospedagem
+não são controlados por este projeto. A aluna deve colar o endereço somente na plataforma.
+Reautorizar uma loja que já usa o mesmo aplicativo pode renovar seus tokens e afetar outro
+sistema. Preferir uma loja ainda não vinculada para o teste live. Não revogar autorizações do
+sistema antigo nem usar tokens copiados dele.
 
 Sequência para ativar:
 
 1. Conferir o backup, o código e as migrações já publicados pelo PR #122.
 2. Confirmar o IP de saída e preparar as variáveis privadas de Runtime, mantendo o recurso desligado.
-3. Coordenar a troca do domínio de retorno e a inclusão do IP na Shopee. Guardar os valores
-   anteriores e os novos no registro privado antes de salvar.
-4. Validar primeiro em sandbox com uma conta admin e uma loja de teste autorizada. Isso exige
-   retorno de teste HTTPS permitido no aplicativo e as credenciais de teste correspondentes.
+3. Preservar os domínios de retorno e a lista de IPs; incluir apenas o IP confirmado e registrar
+   os valores anteriores e novos no arquivo privado. Configurar o modo manual e o endereço
+   estático do domínio permitido, com `SHOPEE_PILOT_USER_IDS` limitado à conta de teste.
+4. Validar primeiro em sandbox com uma conta admin ou do piloto e uma loja de teste autorizada.
+   Usar as credenciais de sandbox e um endereço no domínio de teste já cadastrado. Não contornar
+   bloqueios do navegador para realizar essa etapa.
 5. Configurar live, autorizar uma loja real da titular e conferir a persistência e a renovação.
    Só liberar às alunas depois dessa validação. Não criar nem alterar anúncios nesse teste.
+
+Na verificação de 15 de outubro, o modo manual passou em 398 testes unitários e 17 testes de
+banco, incluindo sessão incorreta, repetição do código e validação do endereço colado. O teste
+local abriu a autorização oficial de sandbox em outra aba; a leitura dessa aba foi bloqueada
+pela política de segurança do navegador. Isso não comprova uma conexão com a Shopee. O dono
+confirmou que, por enquanto, só há acesso de desenvolvedor, sem uma conta de vendedora live.
 
 Endereços usados no código:
 

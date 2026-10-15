@@ -22,6 +22,7 @@ export const VERIFICATION_LINK_TTL_HOURS = 24;
 export const RATE_LIMITS_PER_MINUTE = {
   /** Começar uma autorização: evita rajadas e links antigos em várias abas. */
   shopeePerUser: 3,
+  shopeeManualReturnPerUser: 6,
   /** Autorizar e consultar o piloto Bling: evita rajadas na conta da empresa. */
   blingPerUser: 3,
   loginPerEmailAndIp: 5,

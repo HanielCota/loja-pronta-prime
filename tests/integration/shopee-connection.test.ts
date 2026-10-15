@@ -3,7 +3,10 @@ import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { user, stores, shopeeAuthorizationStates, shopeeConnections } from '@/server/db/schema';
-import { shopeeConfigurationSchema } from '@/features/shopee/authorization';
+import {
+  parseManualShopeeCallback,
+  shopeeConfigurationSchema,
+} from '@/features/shopee/authorization';
 import {
   beginShopeeAuthorization,
   finishShopeeAuthorization,
@@ -189,4 +192,51 @@ test('desconexão remove somente os tokens e intenções da própria aluna', asy
   expect(
     await db.select().from(shopeeConnections).where(eq(shopeeConnections.userId, otherUser)),
   ).toHaveLength(1);
+});
+
+test('retorno colado mantém sessão e uso único antes de persistir a conexão', async () => {
+  const manual = {
+    ...config,
+    SHOPEE_CALLBACK_MODE: 'manual' as const,
+    SHOPEE_REDIRECT_URI: 'https://legacy.example.invalid/favicon.ico',
+  };
+  const link = new URL(
+    await beginShopeeAuthorization(userId, 'manual-session', manual, 'https://new.example.invalid'),
+  );
+  const returned = new URL(link.searchParams.get('redirect_uri')!);
+  returned.search = new URLSearchParams({
+    state: link.searchParams.get('state')!,
+    code: 'manual-code',
+    shop_id: '987123459',
+  }).toString();
+  const parsed = parseManualShopeeCallback(returned.toString(), manual)!;
+  let calls = 0;
+  const api = transport(() => {
+    calls++;
+    return tokens('manual-access');
+  });
+  expect(
+    await finishShopeeAuthorization({ ...parsed, userId, sessionId: 'wrong-session' }, manual, api),
+  ).toBe('expired');
+  expect(calls).toBe(0);
+  expect(
+    await finishShopeeAuthorization(
+      { ...parsed, userId, sessionId: 'manual-session' },
+      manual,
+      api,
+    ),
+  ).toBe('connected');
+  expect(
+    await finishShopeeAuthorization(
+      { ...parsed, userId, sessionId: 'manual-session' },
+      manual,
+      api,
+    ),
+  ).toBe('expired');
+  expect(calls).toBe(1);
+  expect(await readShopeeAccess(userId, manual, api)).toEqual({
+    shopId: 987123459,
+    accessToken: 'manual-access',
+  });
+  await removeShopeeConnection(userId);
 });

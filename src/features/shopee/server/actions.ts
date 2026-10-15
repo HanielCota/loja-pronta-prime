@@ -3,7 +3,6 @@
 import { and, eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { env } from '@/config/env';
-import { hasAdminRole } from '@/features/admin/access';
 import { SHOPEE_CONNECT_PATH } from '@/config/shopee';
 import { getStorePhase } from '@/features/loja-pronta/server/store';
 import { requireProductAction } from '@/features/products/server/access';
@@ -11,7 +10,12 @@ import { db } from '@/server/db';
 import { stores } from '@/server/db/schema';
 import { consumeAttempt } from '@/server/auth/rate-limit';
 import { getShopeeConfiguration } from './client';
-import { beginShopeeAuthorization, removeShopeeConnection } from './connection';
+import { canUseShopee, parseManualShopeeCallback } from '../authorization';
+import {
+  beginShopeeAuthorization,
+  finishShopeeAuthorization,
+  removeShopeeConnection,
+} from './connection';
 
 /** A fase da conta na Shopee (ver src/config/store-phases.ts). */
 const ACCOUNT_PHASE = 3;
@@ -36,8 +40,8 @@ export async function connectShopee(): Promise<void> {
   const config = getShopeeConfiguration();
   if (
     !config ||
-    config.SHOPEE_ENABLED !== 'true' ||
-    (config.SHOPEE_ENVIRONMENT === 'sandbox' && !hasAdminRole(session.user.role))
+    !canUseShopee(config, userId, session.user.role) ||
+    config.SHOPEE_CALLBACK_MODE !== 'automatic'
   )
     redirect(`${SHOPEE_CONNECT_PATH}?resultado=unavailable`);
   if (!(await consumeAttempt('shopeePerUser', userId)))
@@ -49,6 +53,67 @@ export async function connectShopee(): Promise<void> {
     env.BETTER_AUTH_URL,
   );
   redirect(url);
+}
+
+export type ManualShopeeStartResult = { authorizationUrl?: string; error?: string } | undefined;
+export type ManualShopeeResult = { error: string } | undefined;
+
+export async function startManualShopeeAuthorization(
+  _state: ManualShopeeStartResult,
+): Promise<ManualShopeeStartResult> {
+  const { userId, session } = await requireProductAction('loja-pronta');
+  if ((await getStorePhase(userId)) < 4) redirect('/loja-pronta');
+  const config = getShopeeConfiguration();
+  if (
+    !config ||
+    !canUseShopee(config, userId, session.user.role) ||
+    config.SHOPEE_CALLBACK_MODE !== 'manual'
+  )
+    redirect(`${SHOPEE_CONNECT_PATH}?resultado=unavailable`);
+  if (!(await consumeAttempt('shopeePerUser', userId)))
+    return { error: 'Aguarde um minuto antes de tentar novamente.' };
+  try {
+    return {
+      authorizationUrl: await beginShopeeAuthorization(
+        userId,
+        session.session.id,
+        config,
+        env.BETTER_AUTH_URL,
+      ),
+    };
+  } catch {
+    return { error: 'Não foi possível preparar a conexão. Tente de novo.' };
+  }
+}
+
+export async function completeManualShopeeAuthorization(
+  _state: ManualShopeeResult,
+  formData: FormData,
+): Promise<ManualShopeeResult> {
+  const { userId, session } = await requireProductAction('loja-pronta');
+  if ((await getStorePhase(userId)) < 4) redirect('/loja-pronta');
+  const config = getShopeeConfiguration();
+  if (
+    !config ||
+    !canUseShopee(config, userId, session.user.role) ||
+    config.SHOPEE_CALLBACK_MODE !== 'manual'
+  )
+    redirect(`${SHOPEE_CONNECT_PATH}?resultado=unavailable`);
+  if (!(await consumeAttempt('shopeeManualReturnPerUser', userId)))
+    return { error: 'Aguarde um minuto antes de tentar novamente.' };
+  const callback = parseManualShopeeCallback(String(formData.get('returnUrl') ?? ''), config);
+  if (!callback)
+    return { error: 'Copie o endereço completo que apareceu depois de autorizar na Shopee.' };
+  let result = 'failed';
+  try {
+    result = await finishShopeeAuthorization(
+      { ...callback, userId, sessionId: session.session.id },
+      config,
+    );
+  } catch {
+    // Nunca ecoar o endereço colado: ele contém um código de uso único.
+  }
+  redirect(`${SHOPEE_CONNECT_PATH}?resultado=${result}`);
 }
 
 export async function disconnectShopee(): Promise<void> {

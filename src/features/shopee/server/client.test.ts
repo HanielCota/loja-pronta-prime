@@ -7,6 +7,9 @@ const names = [
   'SHOPEE_TOKEN_ENCRYPTION_KEY',
   'SHOPEE_ENVIRONMENT',
   'SHOPEE_ENABLED',
+  'SHOPEE_CALLBACK_MODE',
+  'SHOPEE_REDIRECT_URI',
+  'SHOPEE_PILOT_USER_IDS',
 ] as const;
 const previous = Object.fromEntries(names.map((name) => [name, process.env[name]]));
 beforeEach(() => {
@@ -15,6 +18,9 @@ beforeEach(() => {
   process.env.SHOPEE_TOKEN_ENCRYPTION_KEY = 'ab'.repeat(32);
   process.env.SHOPEE_ENVIRONMENT = 'live';
   process.env.SHOPEE_ENABLED = 'false';
+  delete process.env.SHOPEE_CALLBACK_MODE;
+  delete process.env.SHOPEE_REDIRECT_URI;
+  delete process.env.SHOPEE_PILOT_USER_IDS;
 });
 afterEach(() => {
   for (const name of names) {
