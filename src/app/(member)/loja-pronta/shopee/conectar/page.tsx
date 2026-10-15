@@ -117,7 +117,7 @@ export default async function ShopeeConnectPage({
           <span>
             {enabled
               ? 'Seu nome, logo e texto ficam salvos aqui para'
-              : 'A conexão depende da liberação da Shopee. Seu nome, logo e texto ficam salvos aqui para'}{' '}
+              : 'A conexão ainda está em preparação. Seu nome, logo e texto ficam salvos aqui para'}{' '}
             a publicação automática, que também está em breve. Por enquanto, a plataforma não
             publica sua marca nem seus produtos por lá.
           </span>
