@@ -82,10 +82,10 @@ export function buildShopeeAuthorizationUrl(
       !(origin.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(origin.hostname)))
   )
     throw new Error('Endereço de retorno inválido.');
-  // O Sandbox V2 usa o portal global; o Brasil é escolhido no login da loja de teste.
+  // O Escala Shop usa o cadastro do portal global; o Brasil é escolhido no login.
   const url = new URL(
     config.SHOPEE_ENVIRONMENT === 'live'
-      ? 'https://open.shopee.com.br/auth'
+      ? 'https://open.shopee.com/auth'
       : 'https://open.sandbox.test-stable.shopee.com/auth',
   );
   url.search = new URLSearchParams({
