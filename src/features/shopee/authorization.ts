@@ -82,10 +82,11 @@ export function buildShopeeAuthorizationUrl(
       !(origin.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(origin.hostname)))
   )
     throw new Error('Endereço de retorno inválido.');
+  // O Sandbox V2 usa o portal global; o Brasil é escolhido no login da loja de teste.
   const url = new URL(
     config.SHOPEE_ENVIRONMENT === 'live'
       ? 'https://open.shopee.com.br/auth'
-      : 'https://open.test-stable.shopee.com.br/auth',
+      : 'https://open.sandbox.test-stable.shopee.com/auth',
   );
   url.search = new URLSearchParams({
     partner_id: String(config.SHOPEE_PARTNER_ID),

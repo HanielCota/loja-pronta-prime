@@ -37,7 +37,7 @@ describe('autorização Shopee de uma loja', () => {
     const sandbox = { ...config, SHOPEE_ENVIRONMENT: 'sandbox' as const };
     expect(
       new URL(buildShopeeAuthorizationUrl(sandbox, 'http://127.0.0.1:3000', state)).origin,
-    ).toBe('https://open.test-stable.shopee.com.br');
+    ).toBe('https://open.sandbox.test-stable.shopee.com');
     expect(shopeeApiOrigin(sandbox)).toBe('https://openplatform.sandbox.test-stable.shopee.sg');
     expect(shopeeApiOrigin(config)).toBe('https://partner.shopeemobile.com');
     expect(shopeeApplicationId(config)).not.toBe(shopeeApplicationId(sandbox));
