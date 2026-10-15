@@ -1,60 +1,108 @@
-# Preparação da integração Shopee
+# Integração Shopee
 
-Atualizado em 9 de outubro de 2026. O perfil enviado está em análise, conforme a tela recebida.
-Não há loja conectada, catálogo importado ou publicação automática nesta entrega.
+Atualizado em 15 de outubro de 2026. O dono escolheu o aplicativo **Escala Shop** existente,
+que aparece como Online na Shopee Open Platform. O fluxo de autorização está implementado,
+mas a ativação e o teste com uma loja real ainda dependem da configuração do retorno e dos IPs.
+Importação do fornecedor e publicação automática continuam em breve.
 
-## Preparado no código
+## Acessos e configurações
 
-- Cliente de troca de código e renovação de tokens, assinatura HMAC-SHA256, limite de 10 segundos,
-  sem seguir redirecionamentos e sem repetição automática de operações com tokens de uso único.
-- Mensagens em português para configuração ausente, falha temporária, autorização recusada e
-  resposta inválida. Mensagens externas, códigos e tokens não entram no erro exibido.
-- Cifra AES-256-GCM com nonce aleatório e identificação da dona como dado autenticado.
-- Migração `0046_shopee-preparation`: conexão exclusiva por loja, estado de autorização com hash,
-  validade e consumo, e catálogo por fornecedor/SKU. Migração gerada; não aplicada em produção.
-- Contrato do catálogo com preços em centavos, estoque inteiro, imagens HTTPS, peso, dimensões,
-  horário de atualização e variações. SKU duplicado é recusado. Dados antigos, estoque esgotado
-  ou preço igual/abaixo do custo bloqueiam a preparação. A janela inicial de 15 minutos é uma
-  escolha local ajustável ao fornecedor; não é uma regra da Shopee.
-- Testes usam apenas dados unitários e transporte simulado. Não criam anúncios nem chamam a API.
+O registro solicitado pelo dono fica em `docs/private/SHOPEE.md`: login do painel,
+credenciais de teste e produção, configurações originais e histórico das alterações.
+A pasta é ignorada pelo Git e não entra no contexto Docker. O arquivo tem permissão `600`
+e a pasta `700`; é texto local, sem criptografia, e exige cópia de segurança privada.
+Nunca copiar esses valores para este documento, commits, PRs, logs ou variáveis `NEXT_PUBLIC_*`.
+A senha do painel não é usada pelo sistema: cada aluna autoriza a própria loja na Shopee.
 
-Validação desta entrega: typecheck e lint aprovados; 373 testes unitários aprovados.
-A migração foi aplicada em um Postgres temporário isolado: 4 testes de integração aprovados,
-incluindo exclusividade da loja, remoção dos tokens com a conta e consumo do estado por sessão.
-O banco local que pertence a outro projeto e o banco de produção não foram alterados.
+## Autorização implementada
 
-O resultado `prepared` significa que o contrato local passou. Ainda exige taxas, margem, frete,
-categoria, atributos obrigatórios, limites e imagens confirmados para a loja real na Shopee.
-As telas e fases continuam como antes, com as funções indisponíveis indicando “em breve”.
+- Server Action exige sessão ativa, acesso à Loja Pronta e fase 4 ou posterior; limita o início
+  a três tentativas por minuto por conta. A autorização brasileira abre o Escala Shop na Shopee.
+- Estado aleatório de 32 bytes, guardado só como hash, ligado à dona, sessão e aplicativo,
+  com validade de 10 minutos. Iniciar outra tentativa invalida a anterior.
+- Retorno fixo em `/api/shopee/callback`. Confere sessão, acesso, estado, código e `shop_id`;
+  recusa parâmetros duplicados e conta principal com várias lojas (`main_account_id`).
+- Consumo atômico e durável do estado antes da troca do código de uso único. Retorno à jornada
+  sem propagar código, estado ou mensagem externa; resposta sem cache e sem referência ao callback.
+- Loja exclusiva por aluna. Os tokens ficam cifrados com AES-256-GCM e identificação da dona,
+  loja, aplicativo e ambiente como dado autenticado. As migrações `0046_shopee-preparation`
+  e `0048_shopee-oauth-connection` precisam estar aplicadas no servidor.
+- Troca e renovação com HMAC-SHA256, limite de 10 segundos, sem seguir redirecionamentos ou
+  repetir automaticamente códigos e tokens de uso único. A validade usa `expire_in` da API.
+- Renovação serializada por conta: persiste o novo par de tokens. Antes de tentar a renovação,
+  bloqueia o par anterior no banco; timeout ou queda do processo exigem nova autorização.
+- Conexão confirmada em produção avança a fase 4 para a 5 na mesma transação dos tokens.
+  A escolha dos produtos continua em breve. Sandbox é restrito a admin e não avança a fase.
+- Desconectar apaga somente os tokens e estados da própria conta nesta plataforma. A revogação
+  do Escala Shop na Shopee é feita pela titular na Central do Vendedor; não é automática porque
+  o aplicativo existente pode ser usado em outro sistema.
 
-## Depois da aprovação
+A tela usa a moldura existente. O botão real de autorização só aparece com configuração completa
+**e** `SHOPEE_ENABLED=true`. Sem isso, mantém “em breve”. Tokens não são enviados ao navegador.
+A conexão não importa o nome da loja, catálogo, pedidos ou métricas e não publica anúncios.
 
-1. Criar o aplicativo com o serviço e dados reais. Guardar `partner_id` e `partner_key` no servidor.
-2. Gerar uma chave aleatória de 32 bytes em hexadecimal para `SHOPEE_TOKEN_ENCRYPTION_KEY`.
-   Não reutilizar senha ou chave da API. Preservar a chave nas cópias de segurança; trocar sem
-   recifrar perde o acesso aos tokens armazenados. Não colocar segredos no Git ou em `NEXT_PUBLIC_*`.
-3. Confirmar no aplicativo a origem da API atribuída à região e as permissões aprovadas.
-   O cliente preparado usa a origem de tokens documentada `https://partner.shopeemobile.com`.
-   Ainda não foi testado para este aplicativo brasileiro. Sandbox não está configurado.
-4. Registrar o domínio real do retorno na Shopee. Implementar início e callback antes de abrir
-   a conexão: sessão ativa, acesso Loja Pronta, estado aleatório de pelo menos 32 bytes, hash no
-   banco ligado à sessão e à dona, validade de 10 minutos, consumo atômico de uso único.
-   Validar código, shop_id, estado, dona e sessão antes de trocar tokens. Não aceitar
-   `main_account_id` no fluxo de loja única sem implementar a seleção e autorização das lojas.
-5. Usar o endereço de autorização brasileiro `https://open.shopee.com.br/auth` com
-   `partner_id`, `auth_type=seller`, `redirect_uri`, `response_type=code` e `state`.
-   O link não é um endpoint de consulta de produtos. A cliente autoriza a própria loja;
-   não precisa cadastrar uma plataforma parceira para simplesmente conceder acesso.
-6. Salvar os dois tokens cifrados numa transação. Usar `expire_in` da resposta para a validade;
-   não confundir validade do token com prazo da autorização. Renovação deve ser serializada
-   por conexão, salvando os dois tokens novos, porque o refresh token é de uso único.
-7. Implementar revogação e reconexão, limpeza de estados vencidos, retorno seguro à jornada e
-   testes de estados vencidos/reutilizados, conta errada e renovação concorrente num banco isolado.
-8. Validar em sandbox e depois numa loja de teste autorizada. Só então ativar a tela e avançar
-   a fase da aluna após uma conexão real, confirmada pelo servidor.
+## Configuração e ativação
 
-O callback e a persistência/renovação automática ainda não estão implementados. A aprovação
-por si só não ativa a integração. Nenhuma chamada de publicação foi acrescentada nesta entrega.
+Configure apenas no servidor, como Runtime no Coolify:
+
+| Variável                      | Valor                                                    |
+| ----------------------------- | -------------------------------------------------------- |
+| `SHOPEE_PARTNER_ID`           | ID live do Escala Shop; em sandbox, o ID de teste        |
+| `SHOPEE_PARTNER_KEY`          | Chave do mesmo ambiente, preservada no registro privado  |
+| `SHOPEE_TOKEN_ENCRYPTION_KEY` | Chave própria de 32 bytes aleatórios, em hexadecimal     |
+| `SHOPEE_ENVIRONMENT`          | `live` ou `sandbox`; padrão `live`                       |
+| `SHOPEE_ENABLED`              | `false` até a configuração e validação; padrão desligado |
+
+Preserve a chave de cifra em backup: trocar sem recifrar perde os tokens existentes.
+Não reutilizar a senha, a chave da API ou a chave do Bling. Os tokens são vinculados ao ID
+mais ambiente; registros anteriores marcados como `legacy` exigem nova autorização.
+
+O retorno previsto para produção é `https://lojaprontaprime.com/api/shopee/callback`.
+O Escala Shop ainda permite o domínio `https://membros.priscianemsl.com/` e apresenta um único
+campo de domínio live. A substituição precisa ser coordenada com o dono: novos retornos para
+o sistema antigo podem parar de funcionar. Nenhum domínio ou IP foi alterado nesta entrega.
+A lista de IPs deve continuar ligada, preservando os atuais e acrescentando somente o IP de
+saída confirmado do servidor da Loja Pronta. Não deduzir esse IP pelo DNS público do site.
+
+Sequência para ativar:
+
+1. Publicar o código e as migrações pelo fluxo normal de PR para `main`, com backup do banco.
+2. Confirmar o IP de saída e preparar as variáveis privadas de Runtime, mantendo o recurso desligado.
+3. Coordenar a troca do domínio de retorno e a inclusão do IP na Shopee. Guardar os valores
+   anteriores e os novos no registro privado antes de salvar.
+4. Validar primeiro em sandbox com uma conta admin e uma loja de teste autorizada. Isso exige
+   retorno de teste HTTPS permitido no aplicativo e as credenciais de teste correspondentes.
+5. Configurar live, autorizar uma loja real da titular e conferir a persistência e a renovação.
+   Só liberar às alunas depois dessa validação. Não criar nem alterar anúncios nesse teste.
+
+Endereços usados no código:
+
+| Ambiente | Autorização brasileira                        | API de tokens                                        |
+| -------- | --------------------------------------------- | ---------------------------------------------------- |
+| Live     | `https://open.shopee.com.br/auth`             | `https://partner.shopeemobile.com`                   |
+| Sandbox  | `https://open.test-stable.shopee.com.br/auth` | `https://openplatform.sandbox.test-stable.shopee.sg` |
+
+Parâmetros de autorização: `partner_id`, `auth_type=seller`, `redirect_uri`,
+`response_type=code` e `state`. Código de autorização: uso único e validade de 10 minutos.
+Referência oficial: [Autorização de lojas](https://open.shopee.com/developer-guide/20),
+atualizada pela Shopee em 23 de julho de 2026 e conferida no painel em 15 de outubro.
+
+## Validação local
+
+Typecheck e lint aprovados; 389 testes unitários e 16 testes de integração aprovados.
+O Postgres dos testes é temporário e separado dos bancos existentes. Os testes exercitam
+estado vencido e repetido, dona/sessão/aplicativo incorretos, exclusividade da loja, cifra,
+renovação concorrente e com resultado desconhecido, isolamento de sandbox e desconexão.
+O transporte da Shopee é simulado apenas nos testes; isso não comprova uma conexão externa.
+A migração ainda não foi aplicada em produção e nenhuma loja real foi autorizada neste fluxo.
+
+## Catálogo preparado
+
+O contrato local tem preços em centavos, estoque inteiro, imagens HTTPS, peso, dimensões,
+horário de atualização e variações. SKU duplicado, dados antigos, estoque esgotado e preço
+igual ou abaixo do custo bloqueiam a preparação. A janela inicial de 15 minutos é uma escolha
+local ajustável ao fornecedor; não é regra da Shopee. O resultado `prepared` exige ainda taxas,
+margem, frete, categoria, atributos, limites e imagens confirmados para a loja real.
 
 ## Dados necessários do fornecedor
 
@@ -88,14 +136,3 @@ retornados. Usar fila e chave de deduplicação por loja/produto; se houver time
 reconciliar com a Shopee antes de repetir. Consultar status e permitir correção de rejeições.
 Pedidos, estoque sincronizado, nome/logo/descrição da loja e métricas exigem permissões e
 endpoints próprios; confirmar cada operação em vez de prometer acesso pelo cadastro inicial.
-
-## Mensagem para a cliente
-
-“O cadastro ficou em análise na Shopee. Agora precisamos aguardar o email de aprovação.
-Enquanto isso, estamos preparando a integração e o formato dos produtos. Pode me enviar o
-nome do fornecedor e o link do catálogo ou da documentação dele? Quando chegar a resposta da
-Shopee, me encaminhe para continuarmos a configuração e os testes de conexão.”
-
-Referência oficial consultada: [Autorização de lojas](https://open.shopee.com/developer-guide/20),
-atualizada pela Shopee em 23 de julho de 2026. Os endereços e regras precisam ser confirmados
-novamente no aplicativo antes da ativação.

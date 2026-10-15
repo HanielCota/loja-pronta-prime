@@ -1,4 +1,8 @@
-import { createCipheriv, createDecipheriv, createHmac, randomBytes } from 'node:crypto';
+import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes } from 'node:crypto';
+
+export function hashShopeeAuthorizationState(state: string) {
+  return createHash('sha256').update(state).digest('hex');
+}
 
 /** Só aceita o caminho da API; a origem é escolhida pelo cliente de servidor. */
 export function signShopeeRequest(

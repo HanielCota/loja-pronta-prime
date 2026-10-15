@@ -1,12 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { getShopeeConfiguration, requestShopeeTokens } from './client';
 
-const names = ['SHOPEE_PARTNER_ID', 'SHOPEE_PARTNER_KEY', 'SHOPEE_TOKEN_ENCRYPTION_KEY'] as const;
+const names = [
+  'SHOPEE_PARTNER_ID',
+  'SHOPEE_PARTNER_KEY',
+  'SHOPEE_TOKEN_ENCRYPTION_KEY',
+  'SHOPEE_ENVIRONMENT',
+  'SHOPEE_ENABLED',
+] as const;
 const previous = Object.fromEntries(names.map((name) => [name, process.env[name]]));
 beforeEach(() => {
   process.env.SHOPEE_PARTNER_ID = '123';
   process.env.SHOPEE_PARTNER_KEY = 'test-key';
   process.env.SHOPEE_TOKEN_ENCRYPTION_KEY = 'ab'.repeat(32);
+  process.env.SHOPEE_ENVIRONMENT = 'live';
+  process.env.SHOPEE_ENABLED = 'false';
 });
 afterEach(() => {
   for (const name of names) {

@@ -4,7 +4,7 @@
 
 A Loja Pronta Prime ([lojaprontaprime.com](https://lojaprontaprime.com)) é uma área de membros para mulheres iniciantes que querem vender na Shopee. Ela oferece o curso SLL com ferramentas e a jornada Loja Pronta, em que a própria aluna prepara a marca e a conta, um passo por vez.
 
-Este documento descreve o que está implementado em 8 de outubro de 2026. Conexão, produtos de fornecedores e publicação automática na Shopee continuam em preparação.
+Este documento descreve o que está implementado em 15 de outubro de 2026. A autorização Shopee está implementada, com ativação pendente no servidor e no Escala Shop. Produtos de fornecedores e publicação automática continuam em preparação.
 
 ## Para quem é
 
@@ -41,7 +41,7 @@ A própria aluna monta sua marca e prepara a conta. A interface tem uma decisão
 | 1    | Responde à conversa inicial                               | Disponível                                        |
 | 2    | Escolhe nome, cria ou envia logo e define o texto da loja | Disponível                                        |
 | 3    | Abre a conta de vendedora no site da Shopee com um guia   | Guia disponível; confirmação informada pela aluna |
-| 4    | Autoriza a conexão com a Shopee                           | Explicação disponível; conexão em breve           |
+| 4    | Autoriza a conexão com a Shopee                           | Autorização implementada; ativação pendente       |
 | 5    | Escolhe produtos do fornecedor                            | Em breve; depende do fornecedor e da integração   |
 | 6    | Publica a marca e os produtos pela plataforma             | Em breve; depende da Shopee                       |
 | 7    | Confere a finalização e as vendas                         | Consulta de vendas em breve                       |
@@ -107,9 +107,11 @@ O painel permite liberar ou remover um produto de uma conta existente com motivo
 
 Um painel de todas as lojas, histórico de montagem por loja, métricas comerciais e contagem de compradoras que entraram continuam fora da entrega atual.
 
-A base técnica da integração Shopee está preparada, com cliente de tokens, cifra e contrato
-validado do catálogo. Ainda não há callback de autorização, importação do fornecedor ou
-publicação. As fases 4 a 7 continuam indisponíveis. Ver `docs/INTEGRACAO-SHOPEE.md`.
+A autorização Shopee está implementada para o Escala Shop existente: início, callback, tokens
+cifrados, renovação e desconexão local. Depende da configuração do retorno, IPs e validação
+com uma loja autorizada antes de ativar. Sem isso, a fase 4 mantém “em breve”. Conexão live
+confirmada avança para a fase 5; produtos e publicação continuam em breve. O contrato local
+do catálogo está preparado. Ver `docs/INTEGRACAO-SHOPEE.md`.
 
 Existe um piloto administrativo preparado em `/admin/bling`, desligado sem configuração. Ele
 autoriza a própria conta da empresa e consulta seus produtos e canais. A conta Bling da empresa

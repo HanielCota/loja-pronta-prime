@@ -1,14 +1,13 @@
 import { z } from 'zod';
 import { signShopeeRequest } from '@/lib/shopee-protocol';
-
-const configurationSchema = z.object({
-  SHOPEE_PARTNER_ID: z.coerce.number().int().positive().max(Number.MAX_SAFE_INTEGER),
-  SHOPEE_PARTNER_KEY: z.string().min(1),
-  SHOPEE_TOKEN_ENCRYPTION_KEY: z.string().regex(/^[a-f0-9]{64}$/i),
-});
+import {
+  shopeeApiOrigin,
+  shopeeConfigurationSchema,
+  type ShopeeConfiguration,
+} from '../authorization';
 
 export function getShopeeConfiguration() {
-  const configured = configurationSchema.safeParse(process.env);
+  const configured = shopeeConfigurationSchema.safeParse(process.env);
   return configured.success ? configured.data : null;
 }
 
@@ -38,8 +37,9 @@ export async function requestShopeeTokens(
     | { kind: 'authorize'; code: string; shopId: number }
     | { kind: 'refresh'; refreshToken: string; shopId: number },
   fetcher: typeof fetch = fetch,
+  configuration?: ShopeeConfiguration,
 ) {
-  const config = getShopeeConfiguration();
+  const config = configuration ?? getShopeeConfiguration();
   if (!config) throw new ShopeeApiError('configuration');
   if (
     !Number.isSafeInteger(input.shopId) ||
@@ -50,7 +50,7 @@ export async function requestShopeeTokens(
   const path =
     input.kind === 'authorize' ? '/api/v2/auth/token/get' : '/api/v2/auth/access_token/get';
   const timestamp = Math.floor(Date.now() / 1000);
-  const url = new URL(path, 'https://partner.shopeemobile.com');
+  const url = new URL(path, shopeeApiOrigin(config));
   url.search = new URLSearchParams({
     partner_id: String(config.SHOPEE_PARTNER_ID),
     timestamp: String(timestamp),

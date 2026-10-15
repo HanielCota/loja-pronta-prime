@@ -21,6 +21,8 @@ export const shopeeConnections = pgTable(
       .primaryKey()
       .references(() => user.id, { onDelete: 'cascade' }),
     shopId: bigint('shop_id', { mode: 'number' }).notNull(),
+    /** Registros antigos não podem ser usados por outro aplicativo ou ambiente. */
+    applicationId: text('application_id').notNull().default('legacy'),
     accessTokenEncrypted: text('access_token_encrypted').notNull(),
     refreshTokenEncrypted: text('refresh_token_encrypted').notNull(),
     accessTokenExpiresAt: timestamp('access_token_expires_at', { withTimezone: true }).notNull(),
@@ -39,7 +41,7 @@ export const shopeeConnections = pgTable(
   ],
 );
 
-/** Guardar apenas o hash; o futuro callback deverá consumir o estado numa operação atômica. */
+/** Só o hash; o callback consome a intenção antes de trocar o código de uso único. */
 export const shopeeAuthorizationStates = pgTable(
   'shopee_authorization_states',
   {
@@ -48,6 +50,7 @@ export const shopeeAuthorizationStates = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
     sessionId: text('session_id').notNull(),
+    applicationId: text('application_id').notNull().default('legacy'),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
     consumedAt: timestamp('consumed_at', { withTimezone: true }),
   },
