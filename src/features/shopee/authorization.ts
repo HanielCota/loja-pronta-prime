@@ -1,15 +1,58 @@
 import { z } from 'zod';
 import { SHOPEE_CALLBACK_PATH } from '@/config/shopee';
 import { hasControlCharacters } from '@/lib/text';
+import { hasAdminRole } from '@/features/admin/access';
 
-export const shopeeConfigurationSchema = z.object({
-  SHOPEE_PARTNER_ID: z.coerce.number().int().positive().safe(),
-  SHOPEE_PARTNER_KEY: z.string().min(1).max(500),
-  SHOPEE_TOKEN_ENCRYPTION_KEY: z.string().regex(/^[a-f0-9]{64}$/i),
-  SHOPEE_ENVIRONMENT: z.enum(['live', 'sandbox']).default('live'),
-  SHOPEE_ENABLED: z.enum(['true', 'false']).default('false'),
-});
+const redirectUriSchema = z.url().refine((value) => {
+  const url = new URL(value);
+  return (
+    url.protocol === 'https:' &&
+    !url.username &&
+    !url.password &&
+    !url.search &&
+    !url.hash &&
+    !hasControlCharacters(value)
+  );
+}, 'Use um endereço HTTPS de retorno, sem parâmetros ou credenciais.');
+
+export const shopeeConfigurationSchema = z
+  .object({
+    SHOPEE_PARTNER_ID: z.coerce.number().int().positive().safe(),
+    SHOPEE_PARTNER_KEY: z.string().min(1).max(500),
+    SHOPEE_TOKEN_ENCRYPTION_KEY: z.string().regex(/^[a-f0-9]{64}$/i),
+    SHOPEE_ENVIRONMENT: z.enum(['live', 'sandbox']).default('live'),
+    SHOPEE_ENABLED: z.enum(['true', 'false']).default('false'),
+    SHOPEE_CALLBACK_MODE: z.enum(['automatic', 'manual']).default('automatic'),
+    SHOPEE_REDIRECT_URI: redirectUriSchema.optional(),
+    /** Restringe o piloto sem dar acesso administrativo à conta de teste. */
+    SHOPEE_PILOT_USER_IDS: z.string().max(2000).default(''),
+  })
+  .refine(
+    (value) => value.SHOPEE_CALLBACK_MODE !== 'manual' || Boolean(value.SHOPEE_REDIRECT_URI),
+    {
+      path: ['SHOPEE_REDIRECT_URI'],
+      message: 'O retorno manual precisa do endereço cadastrado no aplicativo.',
+    },
+  );
 export type ShopeeConfiguration = z.infer<typeof shopeeConfigurationSchema>;
+
+/** O piloto vale também nas actions e no callback, não só na exibição do botão. */
+export function canUseShopee(
+  config: ShopeeConfiguration | null,
+  userId: string,
+  role: string | null | undefined,
+) {
+  if (!config || config.SHOPEE_ENABLED !== 'true') return false;
+  const pilot = config.SHOPEE_PILOT_USER_IDS.split(',')
+    .map((id) => id.trim())
+    .filter(Boolean);
+  const selected = pilot.includes(userId);
+  const admin = hasAdminRole(role);
+  return (
+    (!pilot.length || selected || admin) &&
+    (config.SHOPEE_ENVIRONMENT === 'live' || selected || admin)
+  );
+}
 
 export function shopeeApplicationId(config: ShopeeConfiguration) {
   return `${config.SHOPEE_ENVIRONMENT}:${config.SHOPEE_PARTNER_ID}`;
@@ -47,7 +90,7 @@ export function buildShopeeAuthorizationUrl(
   url.search = new URLSearchParams({
     partner_id: String(config.SHOPEE_PARTNER_ID),
     auth_type: 'seller',
-    redirect_uri: new URL(SHOPEE_CALLBACK_PATH, origin).toString(),
+    redirect_uri: config.SHOPEE_REDIRECT_URI ?? new URL(SHOPEE_CALLBACK_PATH, origin).toString(),
     response_type: 'code',
     state,
   }).toString();
@@ -77,6 +120,35 @@ export function parseShopeeCallback(params: URLSearchParams) {
   return { state, kind: 'authorize' as const, code, shopId: Number(shop) };
 }
 export type ShopeeCallback = NonNullable<ReturnType<typeof parseShopeeCallback>>;
+
+/**
+ * O retorno manual não faz requisição ao endereço colado. Só aceita o destino exato configurado
+ * e reaproveita as mesmas conferências de estado, sessão e uso único do retorno automático.
+ */
+export function parseManualShopeeCallback(value: string, config: ShopeeConfiguration) {
+  if (
+    config.SHOPEE_CALLBACK_MODE !== 'manual' ||
+    !config.SHOPEE_REDIRECT_URI ||
+    value.length > 6000
+  )
+    return null;
+  try {
+    const url = new URL(value.trim());
+    const expected = new URL(config.SHOPEE_REDIRECT_URI);
+    if (
+      hasControlCharacters(value) ||
+      url.username ||
+      url.password ||
+      url.hash ||
+      url.origin !== expected.origin ||
+      url.pathname !== expected.pathname
+    )
+      return null;
+    return parseShopeeCallback(url.searchParams);
+  } catch {
+    return null;
+  }
+}
 
 export const SHOPEE_RESULT_MESSAGES: Record<string, string> = {
   connected: 'Sua loja foi conectada à Shopee. A publicação dos produtos ainda está em breve.',

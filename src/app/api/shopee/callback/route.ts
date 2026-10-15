@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import { env } from '@/config/env';
 import { SHOPEE_CONNECT_PATH } from '@/config/shopee';
-import { hasAdminRole } from '@/features/admin/access';
 import { getActiveSession, needsFirstPassword } from '@/features/auth/server/session';
 import { getStudentProducts } from '@/features/products/server/access';
-import { parseShopeeCallback } from '@/features/shopee/authorization';
+import { canUseShopee, parseShopeeCallback } from '@/features/shopee/authorization';
 import { getShopeeConfiguration } from '@/features/shopee/server/client';
 import { finishShopeeAuthorization } from '@/features/shopee/server/connection';
 
@@ -18,7 +17,7 @@ export async function GET(request: Request) {
     session &&
     !needsFirstPassword(session.user) &&
     callback &&
-    (config.SHOPEE_ENVIRONMENT === 'live' || hasAdminRole(session.user.role))
+    canUseShopee(config, session.user.id, session.user.role)
   ) {
     const { products } = await getStudentProducts(session.user.id);
     if (products.includes('loja-pronta')) {

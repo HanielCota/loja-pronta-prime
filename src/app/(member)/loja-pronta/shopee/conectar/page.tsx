@@ -10,8 +10,8 @@ import { getBrand } from '@/features/brand/server/brand';
 import { getStorePhase } from '@/features/loja-pronta/server/store';
 import { CenteredMemberPage, panelCard } from '@/features/member/components/area-shell';
 import { requireProduct } from '@/features/products/server/access';
-import { hasAdminRole } from '@/features/admin/access';
-import { SHOPEE_RESULT_MESSAGES } from '@/features/shopee/authorization';
+import { canUseShopee, SHOPEE_RESULT_MESSAGES } from '@/features/shopee/authorization';
+import { ManualConnectionForm } from '@/features/shopee/components/manual-connection-form';
 import { connectShopee, disconnectShopee } from '@/features/shopee/server/actions';
 import { getShopeeConfiguration } from '@/features/shopee/server/client';
 import { getShopeeStatus } from '@/features/shopee/server/connection';
@@ -57,12 +57,11 @@ export default async function ShopeeConnectPage({
   ]);
   if (phase < CONNECT_PHASE) redirect('/loja-pronta');
   const config = getShopeeConfiguration();
-  const enabled =
-    config?.SHOPEE_ENABLED === 'true' &&
-    (config.SHOPEE_ENVIRONMENT === 'live' || hasAdminRole(session.user.role));
-  const status = enabled
-    ? await getShopeeStatus(session.user.id, config)
-    : { connected: false as const };
+  const enabled = canUseShopee(config, session.user.id, session.user.role);
+  const status =
+    enabled && config
+      ? await getShopeeStatus(session.user.id, config)
+      : { connected: false as const };
   const result = getParam((await searchParams).resultado);
   const message =
     result && Object.hasOwn(SHOPEE_RESULT_MESSAGES, result)
@@ -89,14 +88,18 @@ export default async function ShopeeConnectPage({
                 ? 'Loja de teste conectada'
                 : 'Sua loja está conectada à Shopee'
               : enabled
-                ? 'Conecte sua loja à Shopee'
+                ? config?.SHOPEE_ENVIRONMENT === 'sandbox'
+                  ? 'Conecte uma loja de teste'
+                  : 'Conecte sua loja à Shopee'
                 : 'Conexão com a Shopee em breve'
           }
           description={
             status.connected
               ? 'A conexão foi autorizada. A escolha dos produtos e a publicação chegam em breve.'
               : enabled
-                ? `Autorize o aplicativo Escala Shop para conectar a ${brand.name ?? 'sua loja'}. Você entra no site da Shopee no próximo passo.`
+                ? config?.SHOPEE_ENVIRONMENT === 'sandbox'
+                  ? 'Este é o ambiente de testes da Shopee. Use apenas a conta da loja de sandbox.'
+                  : `Autorize o aplicativo Escala Shop para conectar a ${brand.name ?? 'sua loja'}. Você entra no site da Shopee no próximo passo.`
                 : `A ${brand.name ?? 'sua loja'} ainda não está conectada pela plataforma. Veja como a autorização vai funcionar.`
           }
         />
@@ -123,11 +126,15 @@ export default async function ShopeeConnectPage({
           </span>
         </p>
         {enabled && !status.connected ? (
-          <form action={connectShopee}>
-            <Button type="submit" className="w-full">
-              Autorizar na Shopee
-            </Button>
-          </form>
+          config?.SHOPEE_CALLBACK_MODE === 'manual' ? (
+            <ManualConnectionForm />
+          ) : (
+            <form action={connectShopee}>
+              <Button type="submit" className="w-full">
+                Autorizar na Shopee
+              </Button>
+            </form>
+          )
         ) : null}
         {enabled && status.connected ? (
           <form action={disconnectShopee}>
