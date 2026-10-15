@@ -46,7 +46,8 @@ try {
   child = Bun.spawn(
     mode === 'e2e'
       ? ['node', 'node_modules/@playwright/test/cli.js', 'test', ...process.argv.slice(3)]
-      : [process.execPath, 'test', 'tests/integration', ...process.argv.slice(3)],
+      : // Cada arquivo encerra seus pools: isolar também os módulos evita reaproveitar um pool fechado.
+        [process.execPath, 'test', '--isolate', 'tests/integration', ...process.argv.slice(3)],
     {
       stdin: 'inherit',
       stdout: 'inherit',

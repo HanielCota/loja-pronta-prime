@@ -1,0 +1,2 @@
+ALTER TABLE "shopee_authorization_states" ADD COLUMN "application_id" text DEFAULT 'legacy' NOT NULL;--> statement-breakpoint
+ALTER TABLE "shopee_connections" ADD COLUMN "application_id" text DEFAULT 'legacy' NOT NULL;

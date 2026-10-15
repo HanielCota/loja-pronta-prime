@@ -15,6 +15,9 @@
 .env*
 !.env.example
 
+# local access records and credentials
+/docs/private/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
