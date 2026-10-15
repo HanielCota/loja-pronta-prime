@@ -76,7 +76,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: `${contentPolicy}; form-action 'self' https://open.shopee.com.br https://open.sandbox.test-stable.shopee.com`,
+            value: `${contentPolicy}; form-action 'self' https://open.shopee.com https://open.sandbox.test-stable.shopee.com`,
           },
         ],
       },

@@ -115,11 +115,14 @@ Endereços usados no código:
 
 | Ambiente | Autorização                                        | API de tokens                                        |
 | -------- | -------------------------------------------------- | ---------------------------------------------------- |
-| Live     | `https://open.shopee.com.br/auth`                  | `https://partner.shopeemobile.com`                   |
+| Live     | `https://open.shopee.com/auth`                    | `https://partner.shopeemobile.com`                   |
 | Sandbox  | `https://open.sandbox.test-stable.shopee.com/auth` | `https://openplatform.sandbox.test-stable.shopee.sg` |
 
-O Sandbox V2 usa o portal global de autorização, conforme o [guia oficial de teste](https://open.shopee.com/developer-guide/644).
-No login, selecione Brasil e use a conta da loja sandbox criada na Open Platform. Para abrir
+O Escala Shop usa o portal global de autorização. No teste live, o endpoint regional brasileiro
+rejeitou o domínio salvo, enquanto o global aceitou o mesmo Partner ID e callback e abriu o
+login com Brasil disponível. Esse teste não autoriza uma loja real sem acesso de vendedora.
+O Sandbox V2 também usa o portal global, conforme o [guia oficial de teste](https://open.shopee.com/developer-guide/644).
+No login, selecione Brasil; em sandbox, use a conta de teste criada na Open Platform. Para abrir
 a Central do Vendedor de teste, use o botão Login Seller Center no painel Test Account-Sandbox v2.
 O retorno continua dentro do domínio de teste já cadastrado no aplicativo.
 

@@ -18,11 +18,11 @@ const state = 'cd'.repeat(32);
 const params = () => new URLSearchParams({ state, code: 'test-code', shop_id: '456' });
 
 describe('autorização Shopee de uma loja', () => {
-  test('usa autorização brasileira, callback fixo e nenhum segredo no link', () => {
+  test('usa o portal global do aplicativo, callback fixo e nenhum segredo no link', () => {
     const url = new URL(
       buildShopeeAuthorizationUrl(config, 'https://example.invalid/other?untrusted=1', state),
     );
-    expect(url.origin).toBe('https://open.shopee.com.br');
+    expect(url.origin).toBe('https://open.shopee.com');
     expect(Object.fromEntries(url.searchParams)).toEqual({
       partner_id: '123',
       auth_type: 'seller',
