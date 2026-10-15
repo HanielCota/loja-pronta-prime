@@ -1,5 +1,7 @@
 import type { NextConfig } from 'next';
 
+const contentPolicy = "frame-ancestors 'none'; object-src 'none'; base-uri 'self'";
+
 const nextConfig: NextConfig = {
   // A imagem leva só os arquivos usados pelo servidor, sem as ferramentas de desenvolvimento.
   output: 'standalone',
@@ -49,7 +51,7 @@ const nextConfig: NextConfig = {
           // Ninguém embute as telas em outro site (protege o login contra clickjacking).
           {
             key: 'Content-Security-Policy',
-            value: "frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'",
+            value: `${contentPolicy}; form-action 'self'`,
           },
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -59,6 +61,32 @@ const nextConfig: NextConfig = {
           // Depois da primeira visita, o navegador só abre o site por https (os navegadores
           // ignoram esse cabeçalho em http, então o dev local não muda).
           { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
+        ],
+      },
+      // A regra específica vem por último: o Next sobrescreve o cabeçalho definido pela rota.
+      // O código e o estado do retorno não podem aparecer no Referer da página seguinte.
+      ...['/api/shopee/callback', '/api/bling/callback'].map((source) => ({
+        source,
+        headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }],
+      })),
+      // Sem JavaScript, o navegador segue o 303 do formulário. Autorize só os provedores usados
+      // nessas duas telas; form-action 'self' bloquearia a saída para a autorização oficial.
+      {
+        source: '/loja-pronta/shopee/conectar',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: `${contentPolicy}; form-action 'self' https://open.shopee.com.br https://open.test-stable.shopee.com.br`,
+          },
+        ],
+      },
+      {
+        source: '/admin/bling',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: `${contentPolicy}; form-action 'self' https://www.bling.com.br`,
+          },
         ],
       },
     ];

@@ -1,8 +1,9 @@
 # Integração Shopee
 
 Atualizado em 15 de outubro de 2026. O dono escolheu o aplicativo **Escala Shop** existente,
-que aparece como Online na Shopee Open Platform. O fluxo de autorização está implementado,
-mas a ativação e o teste com uma loja real ainda dependem da configuração do retorno e dos IPs.
+que aparece como Online na Shopee Open Platform. O fluxo de autorização foi publicado com
+a conexão desligada. O dono decidiu manter o retorno antigo; a ativação e o teste com uma loja
+real continuam pendentes.
 Importação do fornecedor e publicação automática continuam em breve.
 
 ## Acessos e configurações
@@ -24,9 +25,12 @@ A senha do painel não é usada pelo sistema: cada aluna autoriza a própria loj
   recusa parâmetros duplicados e conta principal com várias lojas (`main_account_id`).
 - Consumo atômico e durável do estado antes da troca do código de uso único. Retorno à jornada
   sem propagar código, estado ou mensagem externa; resposta sem cache e sem referência ao callback.
+  O `next.config.ts` define a exceção `no-referrer` depois da regra geral, para que o Next não
+  sobrescreva a proteção da rota. As telas de autorização permitem o redirecionamento dos
+  formulários somente para os provedores oficiais correspondentes, inclusive sem JavaScript.
 - Loja exclusiva por aluna. Os tokens ficam cifrados com AES-256-GCM e identificação da dona,
   loja, aplicativo e ambiente como dado autenticado. As migrações `0046_shopee-preparation`
-  e `0048_shopee-oauth-connection` precisam estar aplicadas no servidor.
+  e `0048_shopee-oauth-connection` estão aplicadas no servidor de produção.
 - Troca e renovação com HMAC-SHA256, limite de 10 segundos, sem seguir redirecionamentos ou
   repetir automaticamente códigos e tokens de uso único. A validade usa `expire_in` da API.
 - Renovação serializada por conta: persiste o novo par de tokens. Antes de tentar a renovação,
@@ -64,9 +68,15 @@ o sistema antigo podem parar de funcionar. Nenhum domínio ou IP foi alterado ne
 A lista de IPs deve continuar ligada, preservando os atuais e acrescentando somente o IP de
 saída confirmado do servidor da Loja Pronta. Não deduzir esse IP pelo DNS público do site.
 
+Em 15 de outubro, o dono decidiu **manter o domínio antigo por enquanto**. Os retornos live
+e de teste, IPs e cadastro do Escala Shop foram preservados. Nenhuma variável Shopee foi
+configurada no Coolify; a conexão permanece desligada. Não substituir o domínio nem liberar
+o servidor enquanto essa decisão não mudar. O IP de saída confirmado e o backup anterior à
+publicação estão registrados somente no arquivo privado.
+
 Sequência para ativar:
 
-1. Publicar o código e as migrações pelo fluxo normal de PR para `main`, com backup do banco.
+1. Conferir o backup, o código e as migrações já publicados pelo PR #122.
 2. Confirmar o IP de saída e preparar as variáveis privadas de Runtime, mantendo o recurso desligado.
 3. Coordenar a troca do domínio de retorno e a inclusão do IP na Shopee. Guardar os valores
    anteriores e os novos no registro privado antes de salvar.
@@ -87,14 +97,18 @@ Parâmetros de autorização: `partner_id`, `auth_type=seller`, `redirect_uri`,
 Referência oficial: [Autorização de lojas](https://open.shopee.com/developer-guide/20),
 atualizada pela Shopee em 23 de julho de 2026 e conferida no painel em 15 de outubro.
 
-## Validação local
+## Validação e publicação
 
-Typecheck e lint aprovados; 389 testes unitários e 16 testes de integração aprovados.
+Typecheck e lint aprovados; 392 testes unitários e 16 testes de integração aprovados.
+Os testes de cabeçalhos usam o resolvedor de rotas do próprio Next para conferir exceções
+de privacidade, destinos dos formulários e preservação da política geral nas outras páginas.
 O Postgres dos testes é temporário e separado dos bancos existentes. Os testes exercitam
 estado vencido e repetido, dona/sessão/aplicativo incorretos, exclusividade da loja, cifra,
 renovação concorrente e com resultado desconhecido, isolamento de sandbox e desconexão.
 O transporte da Shopee é simulado apenas nos testes; isso não comprova uma conexão externa.
-A migração ainda não foi aplicada em produção e nenhuma loja real foi autorizada neste fluxo.
+O [PR #122](https://github.com/HanielCota/loja-pronta-prime/pull/122) foi publicado em 15 de outubro, com a migração `0048` aplicada, container saudável
+e `/api/auth/ok` retornando `{"ok":true}`. O callback retorna 303 para o aviso de indisponibilidade
+enquanto a configuração está ausente. Nenhuma loja real foi autorizada neste fluxo.
 
 ## Catálogo preparado
 
