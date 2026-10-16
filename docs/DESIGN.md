@@ -297,6 +297,11 @@ o tema escuro e o alto contraste.
   `bg-destructive-soft`, o resto em `bg-muted`); no celular, a mesma informação em lista. A
   busca fica no cabeçalho do cartão. A tela de uma conta tem os formulários à esquerda e o
   resumo e o acesso à plataforma numa coluna de 400px à direita, presa ao rolar.
+- The account summary includes a `Button` linking to **View current stage**. The read-only
+  journey page reuses `AdminShell`, `panelCard`, and the existing account return link. It shows
+  the current phase above two saved-data cards, stacked on mobile and side by side on wide
+  screens. A `bg-primary-soft` notice identifies the administrator view; no student mutation
+  controls appear.
 - Criar conta (`/admin/contas/nova`, botão principal no cabeçalho de Contas): um cartão de até
   672px com os campos, os produtos como opções grandes com caixa de marcar e o primeiro acesso
   como opções grandes com rádio; a senha temporária só aparece com essa opção marcada (por CSS,
