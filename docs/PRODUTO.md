@@ -99,26 +99,23 @@ Administradores podem organizar e editar boas-vindas, método e cursos; enviar m
 
 Em Contas, a admin busca qualquer conta por nome ou email e, na tela da conta, edita nome, apelido, email e função (aluna ou admin), pede uma senha nova no próximo acesso, libera ou remove produtos, desconecta a conta dos aparelhos e bloqueia ou desbloqueia o acesso com motivo. A própria conta não pode perder a função admin nem ser bloqueada por ela mesma. Apagar contas ainda não existe.
 
-Administrators can open **View current stage** in an account's summary. The protected page at
-`/admin/contas/<id>/journey` shows the student's current Loja Pronta phase, next step, saved
-answers, WhatsApp contact, and saved brand, including the selected logo. It uses the same phase
-rules as the student dashboard. This is a read-only view: the administrator keeps their own
-session, and opening it does not change student progress, product visits, or presence. Blocked
-accounts and accounts without current product access keep their saved information visible to
-administrators, with their access status explained.
+No resumo de uma conta, a admin abre **Ver etapa atual**. A tela protegida em
+`/admin/contas/<id>/etapa` mostra a fase da Loja Pronta em que a aluna está, o próximo passo, as
+respostas salvas, o WhatsApp e a marca salva, com o logo escolhido. Ela usa as mesmas regras de
+fase do painel da aluna. É só para ver: a admin continua na própria conta, e abrir a tela não
+muda o progresso da aluna, as visitas aos produtos nem o "online agora". Contas bloqueadas ou sem
+acesso ao produto continuam mostrando o que foi salvo, com um aviso explicando a situação.
 
-The page leads with a visual preview of the saved name, logo, and description, using the same
-illustrative packaging composition as the student's studio. A gallery shows the saved logo
-versions, marks the selected logo and uploaded images, and opens each original at full size
-through protected administrator routes. The preview is explicitly illustrative: it does not
-confirm the appearance of a published Shopee storefront. Product images remain unavailable
-until the supplier and publication integrations are delivered.
+A tela começa com uma prévia do nome, do logo e do texto salvos, com a mesma embalagem
+ilustrativa do estúdio da aluna. Uma galeria mostra os logos salvos, marca o escolhido e os que
+ela enviou, e abre cada um no tamanho original por rotas protegidas do admin. A prévia é só
+ilustrativa: não quer dizer que a loja já está assim na Shopee. As fotos dos produtos chegam
+quando as integrações de fornecedor e publicação ficarem prontas.
 
-Administrator image routes accept only saved PNG references inside the selected account's
-logo folder. Invalid studio entries are omitted without changing stored data; an invalid
-selected-logo reference shows an unavailable message and returns HTTP 404. Current session,
-role, blocked status, and first-password requirements are checked again for every page or
-image request.
+As rotas de imagem do admin só aceitam PNGs salvos na pasta de logos da própria conta. Itens
+inválidos do estúdio ficam de fora sem mudar o que está salvo; se o logo escolhido for inválido,
+aparece um aviso de indisponível e a rota responde 404. Sessão, função, bloqueio e senha nova
+pendente são conferidos de novo em cada tela e em cada imagem.
 
 Também dá pra criar uma conta pelo painel (Contas → Criar conta), para quem não comprou pela Hotmart ou para uma nova administradora: nome, email, função (aluna ou admin) e os produtos liberados, que entram no histórico de acessos como liberação manual. O primeiro acesso é por email (o mesmo link de criar senha da recuperação, que vale 1 hora) ou por uma senha temporária que a admin define e passa pra ela; com a senha temporária, ela cria outra ao entrar.
 

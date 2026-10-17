@@ -115,32 +115,29 @@ for (const mobile of [false, true]) {
       await expect(page.getByRole('region', { name: 'Resumo', exact: true })).toContainText(
         '2 de 7',
       );
-      const open = page.getByRole('link', { name: 'View current stage', exact: true });
+      const open = page.getByRole('link', { name: 'Ver etapa atual', exact: true });
       await open.focus();
       await expect(open).toBeFocused();
       await open.press('Enter');
       await expect(
-        page.getByRole('heading', { name: 'Journey student · Current stage' }),
+        page.getByRole('heading', { name: 'Journey student · Etapa atual' }),
       ).toBeVisible();
-      await expect(
-        page.getByRole('heading', { name: 'Journey student · Current stage' }),
-      ).toHaveAttribute('lang', 'en');
-      await expect(
-        page.getByRole('link', { name: 'Back to account', exact: true }),
-      ).toHaveAttribute('lang', 'en');
-      await expect(page.getByRole('region', { name: 'Store brand', exact: true })).toContainText(
-        'Phase 2 of 7',
+      await expect(page.getByRole('region', { name: 'Marca da loja', exact: true })).toContainText(
+        'Fase 2 de 7',
       );
       await expect(
-        page.getByRole('heading', { name: 'Review and confirm the brand' }),
+        page.getByRole('heading', { name: 'Revisar e confirmar a marca' }),
       ).toBeVisible();
-      const appearance = page.getByRole('region', { name: 'Store appearance', exact: true });
+      const appearance = page.getByRole('region', {
+        name: 'Como a loja está ficando',
+        exact: true,
+      });
       await expect(appearance.getByText('Saved test store', { exact: true })).toBeVisible();
       await expect(appearance.getByText('Saved store description.', { exact: true })).toBeVisible();
       await expect(appearance).toContainText('does not confirm publication on Shopee');
-      const gallery = page.getByRole('region', { name: 'Saved images (2)', exact: true });
+      const gallery = page.getByRole('region', { name: 'Imagens salvas (2)', exact: true });
       await expect(gallery.getByRole('img')).toHaveCount(2);
-      await expect(gallery.getByText('Selected logo', { exact: true })).toHaveCount(1);
+      await expect(gallery.getByText('Logo escolhido', { exact: true })).toHaveCount(1);
       await expect(gallery.getByText('Uploaded', { exact: true })).toHaveCount(1);
       for (const image of await gallery.getByRole('img').all()) {
         await image.scrollIntoViewIfNeeded();
@@ -151,9 +148,9 @@ for (const mobile of [false, true]) {
           .toBe(true);
       }
       await expect(
-        gallery.getByRole('link', { name: 'View full image 1 (opens in a new tab)' }),
+        gallery.getByRole('link', { name: 'Ver imagem inteira 1 (abre em outra aba)' }),
       ).toHaveAttribute('target', '_blank');
-      await expect(page.getByText('Read-only view.', { exact: false })).toBeVisible();
+      await expect(page.getByText('Só para ver.', { exact: false })).toBeVisible();
       await expectNoA11yViolations(page);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
         true,
@@ -164,7 +161,7 @@ for (const mobile of [false, true]) {
         fullPage: true,
       });
       expect(await snapshot(student.id)).toEqual(before);
-      await page.getByRole('link', { name: 'Back to account', exact: true }).click();
+      await page.getByRole('link', { name: 'Voltar pra conta', exact: true }).click();
       await expect(
         page.getByRole('heading', { name: 'Journey student', exact: true }),
       ).toBeVisible();
@@ -181,16 +178,16 @@ test('anonymous and student requests cannot read another journey or its logo', a
   const target = await createAccount();
   const viewer = await createAccount();
   await seedJourney(target.id);
-  const path = `/admin/contas/${target.id}/journey`;
+  const path = `/admin/contas/${target.id}/etapa`;
   const anonymous = await request.get(path, { maxRedirects: 0 });
   expect(anonymous.status()).toBe(307);
   expect(anonymous.headers().location).toContain('/entrar');
   expect((await request.get(`${path}/logo`, { maxRedirects: 0 })).status()).toBe(307);
-  expect((await request.get(`${path}/images/0`, { maxRedirects: 0 })).status()).toBe(307);
+  expect((await request.get(`${path}/imagens/0`, { maxRedirects: 0 })).status()).toBe(307);
   await signIn(page, viewer.email, PASSWORD, '/perfil');
   expect((await page.goto(path))?.status()).toBe(404);
   expect((await page.request.get(`${path}/logo`)).status()).toBe(404);
-  expect((await page.request.get(`${path}/images/0`)).status()).toBe(404);
+  expect((await page.request.get(`${path}/imagens/0`)).status()).toBe(404);
 });
 
 test('saved next steps remain accurate through all phases without changing student data', async ({
@@ -198,17 +195,15 @@ test('saved next steps remain accurate through all phases without changing stude
 }) => {
   const admin = await createAccount(true);
   const student = await createAccount();
-  const path = `/admin/contas/${student.id}/journey`;
+  const path = `/admin/contas/${student.id}/etapa`;
   await signIn(page, admin.email, PASSWORD, path);
-  await expect(page.getByText('The student has not started the conversation.')).toBeVisible();
-  await expect(page.getByText('Not answered yet', { exact: true })).toHaveCount(5);
-  await expect(page.getByText('No store images have been saved yet.')).toBeVisible();
-  await expect(page.getByText(/does not currently have Loja Pronta access/)).toBeVisible();
+  await expect(page.getByText('A aluna ainda não começou a conversa.')).toBeVisible();
+  await expect(page.getByText('Ainda sem resposta', { exact: true })).toHaveCount(5);
+  await expect(page.getByText('Nenhuma imagem salva ainda.')).toBeVisible();
+  await expect(page.getByText(/está sem acesso à Loja Pronta agora/)).toBeVisible();
   await database().query('insert into stores (user_id, phase) values ($1, 2)', [student.id]);
   await page.reload();
-  await expect(
-    page.getByRole('region', { name: 'Initial conversation', exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Conversa inicial', exact: true })).toBeVisible();
   await database().query('insert into store_onboarding (user_id, answers) values ($1, $2)', [
     student.id,
     JSON.stringify({ vendas: answers.vendas }),
@@ -223,18 +218,18 @@ test('saved next steps remain accurate through all phases without changing stude
     await database().query('update stores set phase = $2 where user_id = $1', [student.id, phase]);
     const before = await snapshot(student.id);
     await page.reload();
-    await expect(page.getByText(new RegExp(`Phase ${phase} of 7`))).toBeVisible();
+    await expect(page.getByText(new RegExp(`Fase ${phase} de 7`))).toBeVisible();
     if (phase >= 5)
-      await expect(page.getByRole('heading', { name: 'Coming soon', exact: true })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Em breve', exact: true })).toBeVisible();
     expect(await snapshot(student.id)).toEqual(before);
   }
   await database().query('update "user" set banned = true where id = $1', [student.id]);
   await page.reload();
   await expect(
-    page.getByText('This account is blocked. The saved journey is shown below.'),
+    page.getByText('Esta conta está bloqueada. O que a aluna salvou aparece abaixo.'),
   ).toBeVisible();
   expect((await page.request.get(`${path}/logo`)).status()).toBe(404);
-  expect((await page.goto(`/admin/contas/${randomUUID()}/journey`))?.status()).toBe(404);
+  expect((await page.goto(`/admin/contas/${randomUUID()}/etapa`))?.status()).toBe(404);
 });
 
 test('the stage link and return path work without JavaScript', async ({ browser }) => {
@@ -245,9 +240,9 @@ test('the stage link and return path work without JavaScript', async ({ browser 
   try {
     const page = await context.newPage();
     await signIn(page, admin.email, PASSWORD, `/admin/contas/${student.id}`);
-    await page.getByRole('link', { name: 'View current stage', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Create or upload the logo' })).toBeVisible();
-    await page.getByRole('link', { name: 'Back to account', exact: true }).click();
+    await page.getByRole('link', { name: 'Ver etapa atual', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Criar ou enviar o logo' })).toBeVisible();
+    await page.getByRole('link', { name: 'Voltar pra conta', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Journey student', exact: true })).toBeVisible();
   } finally {
     await context.close();
@@ -261,39 +256,41 @@ test('the administrator can read only the selected saved logo through an uncache
   const student = await createAccount();
   await seedJourney(student.id);
   const png = await readFile('public/brand/mascote.png');
-  const key = `logos/${student.id}/journey-test-${randomUUID()}.png`;
+  const key = `logos/${student.id}/etapa-test-${randomUUID()}.png`;
   try {
     await storage().put(key, png, 'image/png');
     await database().query('update store_brand set logo_image = $2 where user_id = $1', [
       student.id,
       key,
     ]);
-    const path = `/admin/contas/${student.id}/journey`;
+    const path = `/admin/contas/${student.id}/etapa`;
     await signIn(page, admin.email, PASSWORD, path);
-    await expect(page.getByRole('img', { name: 'Saved logo for Saved test store' })).toBeVisible();
-    await expect(page.getByRole('region', { name: 'Saved images (1)', exact: true })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Logo salvo de Saved test store' })).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: 'Imagens salvas (1)', exact: true }),
+    ).toBeVisible();
     const response = await page.request.get(`${path}/logo`);
     expect(response.status()).toBe(200);
     expect(response.headers()['cache-control']).toBe('private, no-store');
     expect(response.headers()['content-type']).toBe('image/png');
     expect(await response.body()).toEqual(png);
-    expect((await page.request.get(`/admin/contas/${admin.id}/journey/logo`)).status()).toBe(404);
+    expect((await page.request.get(`/admin/contas/${admin.id}/etapa/logo`)).status()).toBe(404);
     await database().query('insert into logo_studio (user_id, logos) values ($1, $2)', [
       student.id,
       JSON.stringify([{ key, uploaded: true }]),
     ]);
     await page.reload();
-    const gallery = page.getByRole('region', { name: 'Saved images (1)', exact: true });
-    await expect(gallery.getByRole('img')).toHaveAttribute('src', `${path}/images/0`);
-    const savedImage = await page.request.get(`${path}/images/0`);
+    const gallery = page.getByRole('region', { name: 'Imagens salvas (1)', exact: true });
+    await expect(gallery.getByRole('img')).toHaveAttribute('src', `${path}/imagens/0`);
+    const savedImage = await page.request.get(`${path}/imagens/0`);
     expect(savedImage.status()).toBe(200);
     expect(savedImage.headers()['cache-control']).toBe('private, no-store');
     expect(savedImage.headers()['content-type']).toBe('image/png');
     expect(await savedImage.body()).toEqual(png);
     for (const index of ['99', '-1', '00', 'image.png']) {
-      expect((await page.request.get(`${path}/images/${index}`)).status()).toBe(404);
+      expect((await page.request.get(`${path}/imagens/${index}`)).status()).toBe(404);
     }
-    expect((await page.request.get(`/admin/contas/${admin.id}/journey/images/0`)).status()).toBe(
+    expect((await page.request.get(`/admin/contas/${admin.id}/etapa/imagens/0`)).status()).toBe(
       404,
     );
   } finally {
@@ -339,15 +336,15 @@ test('invalid saved image references are skipped and invalid selected logos retu
     student.id,
     JSON.stringify([{ key: '../invalid.png' }, { key: 'logos/another-account/legacy.png' }]),
   ]);
-  const path = `/admin/contas/${student.id}/journey`;
+  const path = `/admin/contas/${student.id}/etapa`;
   const before = await snapshot(student.id);
   await signIn(page, admin.email, PASSWORD, path);
-  const first = await page.request.get(`${path}/images/0`);
+  const first = await page.request.get(`${path}/imagens/0`);
   expect(first.status()).toBe(200);
   expect(await first.body()).toEqual(await readFile('public/brand/mascote.png'));
-  const gallery = page.getByRole('region', { name: 'Saved images (2)', exact: true });
+  const gallery = page.getByRole('region', { name: 'Imagens salvas (2)', exact: true });
   await expect(gallery.getByRole('img')).toHaveCount(2);
-  expect((await page.request.get(`${path}/images/2`)).status()).toBe(404);
+  expect((await page.request.get(`${path}/imagens/2`)).status()).toBe(404);
   expect(await snapshot(student.id)).toEqual(before);
   await database().query('update store_brand set logo_image = $2 where user_id = $1', [
     student.id,
@@ -355,8 +352,8 @@ test('invalid saved image references are skipped and invalid selected logos retu
   ]);
   const invalidSelected = await snapshot(student.id);
   await page.reload();
-  await expect(page.getByText('Saved logo is unavailable.', { exact: true })).toBeVisible();
-  await expect(page.getByRole('img', { name: 'Saved logo for Saved test store' })).toHaveCount(0);
+  await expect(page.getByText('O logo salvo não está disponível.', { exact: true })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Logo salvo de Saved test store' })).toHaveCount(0);
   expect((await page.request.get(`${path}/logo`)).status()).toBe(404);
   expect(await snapshot(student.id)).toEqual(invalidSelected);
 });
@@ -369,10 +366,10 @@ for (const change of ['role', 'session', 'blocked', 'password'] as const) {
     const student = await createAccount();
     await seedJourney(student.id);
     await seedStoreImages(student.id);
-    const path = `/admin/contas/${student.id}/journey`;
+    const path = `/admin/contas/${student.id}/etapa`;
     await signIn(page, admin.email, PASSWORD, path);
     expect((await page.request.get(`${path}/logo`)).status()).toBe(200);
-    expect((await page.request.get(`${path}/images/0`)).status()).toBe(200);
+    expect((await page.request.get(`${path}/imagens/0`)).status()).toBe(200);
     if (change === 'role')
       await database().query('update "user" set role = null where id = $1', [admin.id]);
     if (change === 'session')
@@ -384,7 +381,7 @@ for (const change of ['role', 'session', 'blocked', 'password'] as const) {
         admin.id,
       ]);
     const expected = change === 'role' ? 404 : 307;
-    for (const route of [path, `${path}/logo`, `${path}/images/0`]) {
+    for (const route of [path, `${path}/logo`, `${path}/imagens/0`]) {
       const response = await page.request.get(route, { maxRedirects: 0 });
       expect(response.status()).toBe(expected);
       if (expected === 307)

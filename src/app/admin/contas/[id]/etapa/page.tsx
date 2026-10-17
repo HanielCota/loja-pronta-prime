@@ -11,7 +11,7 @@ import { stageNumber } from '@/features/loja-pronta/stages';
 import { formatWhatsapp } from '@/features/loja-pronta/whatsapp';
 import { panelCard } from '@/features/member/components/area-shell';
 
-export const metadata: Metadata = { title: 'Student stage · Administration' };
+export const metadata: Metadata = { title: 'Etapa da aluna · Administração' };
 
 export default async function AdminStoreJourneyPage({
   params,
@@ -25,30 +25,26 @@ export default async function AdminStoreJourneyPage({
   const step = currentStoreStep({ phase: overview.phase, answers: onboarding.answers, brand });
   const accountPath = `/admin/contas/${encodeURIComponent(account.id)}`;
   const started = overview.conversation !== 'nao-comecou' || overview.phase > 1;
-  const showingQuestion =
-    overview.phase === 1 &&
-    ONBOARDING_QUESTIONS.some((question) => !isAnswered(onboarding.answers, question.id));
 
   return (
     <AdminShell
       account={session.user}
       current="accounts"
-      backLink={{ href: accountPath, label: 'Back to account', lang: 'en' }}
-      title={`${account.name} · Current stage`}
-      titleLang="en"
+      backLink={{ href: accountPath, label: 'Voltar pra conta' }}
+      title={`${account.name} · Etapa atual`}
       intro={account.email}
     >
-      <div lang="en" className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6">
         <p className="flex items-start gap-3 rounded-2xl bg-primary-soft px-5 py-4 text-body text-foreground forced-colors:border forced-colors:border-[CanvasText]">
           <Eye aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
-          Read-only view. You are signed in as an administrator. Viewing this page does not change
-          the student's progress.
+          Só para ver. Você está na sua conta de administradora. Abrir esta tela não muda o
+          progresso da aluna.
         </p>
         {!hasAccess || account.banned ? (
           <p className="rounded-2xl bg-muted px-5 py-4 text-body text-muted-foreground">
             {account.banned
-              ? 'This account is blocked. The saved journey is shown below.'
-              : 'This account does not currently have Loja Pronta access. The saved journey is shown below.'}
+              ? 'Esta conta está bloqueada. O que a aluna salvou aparece abaixo.'
+              : 'Esta conta está sem acesso à Loja Pronta agora. O que a aluna salvou aparece abaixo.'}
           </p>
         ) : null}
         <StudentStoreAppearance
@@ -59,59 +55,45 @@ export default async function AdminStoreJourneyPage({
         />
         <section aria-labelledby="current-stage" className={`${panelCard} gap-4`}>
           <p className="text-sm font-semibold text-progress-text">
-            Stage {stageNumber(overview.phase)} of 3 · Phase {overview.phase} of{' '}
+            Etapa {stageNumber(overview.phase)} de 3 · Fase {overview.phase} de{' '}
             {STORE_PHASE_LABELS.length}
           </p>
           <h2 id="current-stage" className="text-title font-semibold text-balance">
             {STORE_PHASE_LABELS[overview.phase - 1]}
           </h2>
           {!started ? (
-            <p className="text-body text-muted-foreground">
-              The student has not started the conversation.
-            </p>
+            <p className="text-body text-muted-foreground">A aluna ainda não começou a conversa.</p>
           ) : null}
           <div className="rounded-2xl bg-muted p-5">
             <h3 className="text-body font-semibold">{step.title}</h3>
-            <p
-              className="mt-2 text-body text-pretty text-muted-foreground"
-              lang={showingQuestion ? 'pt-BR' : 'en'}
-            >
-              {step.detail}
-            </p>
+            <p className="mt-2 text-body text-pretty text-muted-foreground">{step.detail}</p>
           </div>
         </section>
         <div className="grid items-start gap-6 xl:grid-cols-2">
           <section aria-labelledby="saved-answers" className={`${panelCard} gap-4`}>
             <div>
               <h2 id="saved-answers" className="text-title font-semibold">
-                Saved answers
+                Respostas salvas
               </h2>
               <p className="mt-2 text-body text-muted-foreground">
-                {onboarding.completedAt
-                  ? 'Conversation submitted.'
-                  : 'Conversation not submitted yet.'}
+                {onboarding.completedAt ? 'Conversa enviada.' : 'Conversa ainda não enviada.'}
               </p>
             </div>
             <dl className="divide-y divide-border">
               {ONBOARDING_QUESTIONS.map((question) => (
                 <div key={question.id} className="flex flex-col gap-1 py-3">
-                  <dt lang="pt-BR" className="text-sm text-muted-foreground">
-                    {question.label}
-                  </dt>
-                  <dd
-                    className="text-body font-semibold wrap-anywhere whitespace-pre-wrap"
-                    lang={isAnswered(onboarding.answers, question.id) ? 'pt-BR' : 'en'}
-                  >
+                  <dt className="text-sm text-muted-foreground">{question.label}</dt>
+                  <dd className="text-body font-semibold wrap-anywhere whitespace-pre-wrap">
                     {isAnswered(onboarding.answers, question.id)
                       ? answerText(question, onboarding.answers)
-                      : 'Not answered yet'}
+                      : 'Ainda sem resposta'}
                   </dd>
                 </div>
               ))}
               <div className="flex flex-col gap-1 py-3">
                 <dt className="text-sm text-muted-foreground">WhatsApp</dt>
                 <dd className="text-body font-semibold">
-                  {onboarding.whatsapp ? formatWhatsapp(onboarding.whatsapp) : 'Not saved yet'}
+                  {onboarding.whatsapp ? formatWhatsapp(onboarding.whatsapp) : 'Ainda não salvo'}
                 </dd>
               </div>
             </dl>
@@ -119,43 +101,43 @@ export default async function AdminStoreJourneyPage({
           <section aria-labelledby="saved-brand" className={`${panelCard} gap-4`}>
             <div>
               <h2 id="saved-brand" className="text-title font-semibold">
-                Saved brand
+                Marca salva
               </h2>
               <p className="mt-2 text-body text-muted-foreground">
-                {brand.completedAt ? 'Brand confirmed.' : 'Brand not confirmed yet.'}
+                {brand.completedAt ? 'Marca confirmada.' : 'Marca ainda não confirmada.'}
               </p>
             </div>
             <dl className="divide-y divide-border">
               <div className="flex flex-col gap-2 py-3">
-                <dt className="text-sm text-muted-foreground">Store name</dt>
+                <dt className="text-sm text-muted-foreground">Nome da loja</dt>
                 <dd className="text-body font-semibold wrap-anywhere">
-                  {brand.name ?? 'Not chosen yet'}
+                  {brand.name ?? 'Ainda não escolhido'}
                 </dd>
               </div>
               <div className="flex flex-col gap-2 py-3">
                 <dt className="text-sm text-muted-foreground">Logo</dt>
                 <dd className="text-body">
                   {logoSrc ? (
-                    // The protected admin route reads only the selected student's saved logo.
+                    // A rota protegida do admin só lê o logo salvo desta aluna.
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={logoSrc}
-                      alt={`Saved logo for ${brand.name ?? account.name}`}
+                      alt={`Logo salvo de ${brand.name ?? account.name}`}
                       width={256}
                       height={256}
                       className="aspect-square w-full max-w-64 rounded-2xl border border-border object-contain"
                     />
                   ) : brand.logoImage ? (
-                    'Saved logo is unavailable.'
+                    'O logo salvo não está disponível.'
                   ) : (
-                    'Not chosen yet'
+                    'Ainda não escolhido'
                   )}
                 </dd>
               </div>
               <div className="flex flex-col gap-2 py-3">
-                <dt className="text-sm text-muted-foreground">Store description</dt>
+                <dt className="text-sm text-muted-foreground">Texto da loja</dt>
                 <dd className="text-body wrap-anywhere whitespace-pre-wrap">
-                  {brand.description ?? 'Not written yet'}
+                  {brand.description ?? 'Ainda não escrito'}
                 </dd>
               </div>
             </dl>

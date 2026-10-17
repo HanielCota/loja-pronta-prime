@@ -4,7 +4,7 @@ import { BrandKitPreview } from '@/features/brand/components/brand-kit-preview';
 import { panelCard } from '@/features/member/components/area-shell';
 import type { StoreJourneyImage } from '../store-journey';
 
-/** Show the student's saved visual assets without creating or selecting any images. */
+/** Mostra a marca e as imagens que a aluna salvou, sem criar nem escolher nenhuma. */
 export function StudentStoreAppearance({
   name,
   description,
@@ -21,11 +21,11 @@ export function StudentStoreAppearance({
       <section aria-labelledby="store-appearance" className={`${panelCard} gap-5`}>
         <div>
           <h2 id="store-appearance" className="text-title font-semibold">
-            Store appearance
+            Como a loja está ficando
           </h2>
           <p className="mt-2 text-body text-pretty text-muted-foreground">
-            Illustrative preview using the student's saved brand. This does not confirm publication
-            on Shopee. Product images are not available in the platform yet.
+            Prévia ilustrativa com a marca que a aluna salvou. Não quer dizer que a loja já está na
+            Shopee. As fotos dos produtos chegam em breve.
           </p>
         </div>
         <div className="grid items-start gap-6 xl:grid-cols-2">
@@ -42,23 +42,23 @@ export function StudentStoreAppearance({
                 />
               ) : null}
               <p className="min-w-0 text-body font-semibold wrap-anywhere">
-                {name ?? 'Store name not chosen yet'}
+                {name ?? 'Nome da loja ainda não escolhido'}
               </p>
             </div>
             <p className="p-5 text-body wrap-anywhere whitespace-pre-wrap">
-              {description ?? 'Store description not written yet'}
+              {description ?? 'Texto da loja ainda não escrito'}
             </p>
           </div>
           {logoSrc ? (
             <figure className="flex flex-col gap-3">
               <BrandKitPreview logoSrc={logoSrc} />
               <figcaption className="text-sm text-pretty text-muted-foreground">
-                Illustrative packaging with the saved logo: box, sticker, and bag.
+                Embalagem ilustrativa com o logo salvo: caixa, adesivo e sacola.
               </figcaption>
             </figure>
           ) : (
             <p className="text-body text-pretty text-muted-foreground">
-              The packaging preview will appear after the student saves a logo.
+              A prévia da embalagem aparece quando a aluna salvar um logo.
             </p>
           )}
         </div>
@@ -66,10 +66,10 @@ export function StudentStoreAppearance({
       <section aria-labelledby="store-images" className={`${panelCard} gap-5`}>
         <div>
           <h2 id="store-images" className="text-title font-semibold">
-            Saved images ({images.length})
+            Imagens salvas ({images.length})
           </h2>
           <p className="mt-2 text-body text-pretty text-muted-foreground">
-            Logos created or uploaded by the student. Open an image to inspect it at full size.
+            Logos que a aluna criou ou enviou. Abra uma imagem para ver no tamanho original.
           </p>
         </div>
         {images.length ? (
@@ -82,35 +82,35 @@ export function StudentStoreAppearance({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={image.src}
-                  alt={`Saved logo ${index + 1}`}
+                  alt={`Logo salvo ${index + 1}`}
                   width={320}
                   height={320}
                   loading="lazy"
                   className="aspect-square w-full rounded-field border border-border object-contain"
                 />
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-body font-semibold">Image {index + 1}</p>
+                  <p className="text-body font-semibold">Imagem {index + 1}</p>
                   {image.selected ? (
                     <span className="rounded-full bg-primary-soft px-3 py-1 text-sm font-semibold text-link">
-                      Selected logo
+                      Logo escolhido
                     </span>
                   ) : null}
                   {image.uploaded ? (
-                    <span className="text-sm text-muted-foreground">Uploaded</span>
+                    <span className="text-sm text-muted-foreground">Enviada pela aluna</span>
                   ) : null}
                 </div>
                 <Button asChild size="inline" variant="soft" className="w-fit">
                   <a href={image.src} target="_blank" rel="noreferrer">
-                    View full image
+                    Ver imagem inteira
                     <ExternalLink aria-hidden="true" />
-                    <span className="sr-only"> {index + 1} (opens in a new tab)</span>
+                    <span className="sr-only"> {index + 1} (abre em outra aba)</span>
                   </a>
                 </Button>
               </li>
             ))}
           </ol>
         ) : (
-          <p className="text-body text-muted-foreground">No store images have been saved yet.</p>
+          <p className="text-body text-muted-foreground">Nenhuma imagem salva ainda.</p>
         )}
       </section>
     </>

@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string; image: string }> },
 ) {
   const { id, image } = await params;
-  await requireAdmin(`/admin/contas/${encodeURIComponent(id)}/journey`);
+  await requireAdmin(`/admin/contas/${encodeURIComponent(id)}/etapa`);
   if (!/^(0|[1-9]\d?)$/.test(image)) return new Response('Not found', { status: 404 });
   const studio = await getLogoStudio(id);
   const saved = studio.logos.filter((logo) => isStoreLogoKey(id, logo.key))[Number(image)];

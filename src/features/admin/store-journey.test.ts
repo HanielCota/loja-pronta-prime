@@ -22,17 +22,17 @@ describe('the student next step in the admin view', () => {
       toque: '',
     };
     expect(currentStoreStep({ phase: 1, answers, brand: emptyBrand }).title).toBe(
-      'Review answers and confirm WhatsApp',
+      'Revisar as respostas e confirmar o WhatsApp',
     );
   });
 
   test.each([
-    [emptyBrand, 'Choose the store name'],
-    [{ ...emptyBrand, name: 'Test store' }, 'Create or upload the logo'],
-    [{ ...emptyBrand, name: 'Test store', logoImage: 'saved.png' }, 'Write the store description'],
+    [emptyBrand, 'Escolher o nome da loja'],
+    [{ ...emptyBrand, name: 'Test store' }, 'Criar ou enviar o logo'],
+    [{ ...emptyBrand, name: 'Test store', logoImage: 'saved.png' }, 'Escrever o texto da loja'],
     [
       { ...emptyBrand, name: 'Test store', logoImage: 'saved.png', description: 'Saved text' },
-      'Review and confirm the brand',
+      'Revisar e confirmar a marca',
     ],
   ])('resumes the saved brand choices: %j', (brand, title) => {
     expect(currentStoreStep({ phase: 2, answers: {}, brand }).title).toBe(title);
@@ -45,7 +45,7 @@ describe('the student next step in the admin view', () => {
         answers: {},
         brand: { ...emptyBrand, name: 'Test store', completedAt: new Date() },
       }).title,
-    ).toBe('Create the missing logo');
+    ).toBe('Criar o logo que falta');
   });
 
   test('keeps the initial conversation first when a legacy brand has no logo', () => {
@@ -59,6 +59,6 @@ describe('the student next step in the admin view', () => {
   });
 
   test.each([5, 6, 7])('does not imply that pending phase %i is implemented', (phase) => {
-    expect(currentStoreStep({ phase, answers: {}, brand: emptyBrand }).title).toBe('Coming soon');
+    expect(currentStoreStep({ phase, answers: {}, brand: emptyBrand }).title).toBe('Em breve');
   });
 });
