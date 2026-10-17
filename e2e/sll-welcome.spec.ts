@@ -33,7 +33,7 @@ const waitForLessonView = (page: Page) =>
   page.waitForResponse(
     (response) =>
       response.request().method() === 'POST' &&
-      new URL(response.url()).pathname === '/sll/comece-aqui' &&
+      new URL(response.url()).pathname === '/api/sll/progress/view' &&
       Boolean(response.request().postData()?.includes(trackId)),
   );
 

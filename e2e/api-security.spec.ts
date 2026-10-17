@@ -69,3 +69,46 @@ test('o aviso de presença guarda a página e recusa caminhos de fora', async ({
   expect((await send('/sll/metodo')).status()).toBe(204);
   expect((await send('https://outro-site.example/x')).status()).toBe(400);
 });
+
+test('registro de aula exige origem, sessão, acesso SLL e identificadores válidos', async ({
+  page,
+  request,
+  browser,
+  baseURL,
+}) => {
+  const ownSite = { origin: new URL(baseURL ?? '').origin };
+  const path = '/api/sll/progress/view';
+  const data = {
+    trackId: '00000000-0000-4000-8000-000000000001',
+    lessonId: '00000000-0000-4000-8000-000000000002',
+  };
+  expect((await request.post(path, { headers: ownSite, data })).status()).toBe(401);
+  expect(
+    (
+      await request.post(path, { headers: { origin: 'https://outro-site.example' }, data })
+    ).status(),
+  ).toBe(403);
+  const noAccess = await browser.newContext();
+  try {
+    const student = await noAccess.newPage();
+    await signIn(student, studentEmail('semproduto'), PASSWORD);
+    expect((await student.request.post(path, { headers: ownSite, data })).status()).toBe(403);
+  } finally {
+    await noAccess.close();
+  }
+  await signIn(page, studentEmail('sosll'), PASSWORD, '/sll');
+  expect(
+    (
+      await page.request.post(path, {
+        headers: ownSite,
+        data: { trackId: 'inválido', lessonId: 'inválido' },
+      })
+    ).status(),
+  ).toBe(400);
+  expect((await page.request.post(path, { headers: ownSite, data })).status()).toBe(409);
+  expect(
+    (
+      await page.request.post(path, { headers: ownSite, data: { padding: 'a'.repeat(4096) } })
+    ).status(),
+  ).toBe(413);
+});
