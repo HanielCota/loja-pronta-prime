@@ -135,9 +135,9 @@ export default async function AdminAccountPage({
               <dd className="mb-2 text-foreground sm:mb-0 xl:mb-2">
                 {storePhase ? `${storePhase} de 7` : 'Ainda não começou'}
                 <Button asChild size="inline" variant="soft" className="mt-3 w-fit">
-                  <Link href={`/admin/contas/${encodeURIComponent(account.id)}/journey`} lang="en">
+                  <Link href={`/admin/contas/${encodeURIComponent(account.id)}/etapa`}>
                     <Eye aria-hidden="true" />
-                    View current stage
+                    Ver etapa atual
                   </Link>
                 </Button>
               </dd>

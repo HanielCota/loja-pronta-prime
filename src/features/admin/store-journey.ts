@@ -3,13 +3,13 @@ import { findQuestion, resumeStep } from '@/features/loja-pronta/steps';
 import { resumeBrandStep, type BrandDraft } from '@/features/brand/steps';
 
 export const STORE_PHASE_LABELS = [
-  'Initial conversation',
-  'Store brand',
-  'Shopee account',
-  'Shopee connection',
-  'Products',
-  'Publication',
-  'Store completion',
+  'Conversa inicial',
+  'Marca da loja',
+  'Conta na Shopee',
+  'Conexão com a Shopee',
+  'Produtos',
+  'Publicação',
+  'Loja pronta',
 ] as const;
 
 export type StoreJourneyImage = {
@@ -18,7 +18,7 @@ export type StoreJourneyImage = {
   uploaded?: boolean;
 };
 
-/** Describe the saved next step without opening a student session or changing their progress. */
+/** Diz o próximo passo salvo, sem entrar na conta da aluna nem mudar o progresso dela. */
 export function currentStoreStep({
   phase,
   answers,
@@ -31,51 +31,51 @@ export function currentStoreStep({
   if (phase === 1) {
     const question = findQuestion(resumeStep(answers));
     return question
-      ? { title: 'Answer the next question', detail: question.ask }
+      ? { title: 'Responder a próxima pergunta', detail: question.ask }
       : {
-          title: 'Review answers and confirm WhatsApp',
-          detail:
-            'All questions have saved answers. The student still needs to submit the conversation.',
+          title: 'Revisar as respostas e confirmar o WhatsApp',
+          detail: 'Todas as perguntas têm resposta. Falta a aluna enviar a conversa.',
         };
   }
   if (brand.completedAt && !brand.logoImage) {
     return {
-      title: 'Create the missing logo',
-      detail: 'The brand was confirmed without a logo. The student can create or upload one.',
+      title: 'Criar o logo que falta',
+      detail: 'A marca foi confirmada sem logo. A aluna pode criar ou enviar um.',
     };
   }
   if (phase === 2) {
     const titles = {
-      nome: 'Choose the store name',
-      logo: 'Create or upload the logo',
-      descricao: 'Write the store description',
-      revisao: 'Review and confirm the brand',
+      nome: 'Escolher o nome da loja',
+      logo: 'Criar ou enviar o logo',
+      descricao: 'Escrever o texto da loja',
+      revisao: 'Revisar e confirmar a marca',
     };
     return {
       title: titles[resumeBrandStep(brand)],
-      detail: 'The student continues from the choices already saved below.',
+      detail: 'A aluna continua das escolhas que já estão salvas abaixo.',
     };
   }
   if (phase === 3) {
     return {
-      title: 'Create the Shopee seller account',
-      detail: 'The student follows the guide and confirms when their seller account is ready.',
+      title: 'Abrir a conta de vendedora na Shopee',
+      detail:
+        'A aluna segue o passo a passo e confirma quando a conta de vendedora estiver pronta.',
     };
   }
   if (phase === 4) {
     return {
-      title: 'Connect the Shopee account',
+      title: 'Conectar a conta da Shopee',
       detail:
-        'The student authorizes the connection from their own Shopee account when the integration is available.',
+        'A aluna autoriza a conexão pela própria conta da Shopee quando a conexão estiver disponível.',
     };
   }
   return {
-    title: 'Coming soon',
+    title: 'Em breve',
     detail:
       phase === 5
-        ? 'Product selection is still in preparation.'
+        ? 'A escolha dos produtos chega em breve.'
         : phase === 6
-          ? 'Automatic publication is still in preparation.'
-          : 'Sales tracking is still in preparation. This phase does not confirm publication on Shopee.',
+          ? 'A publicação automática chega em breve.'
+          : 'O acompanhamento das vendas chega em breve. Esta fase não quer dizer que a loja já está na Shopee.',
   };
 }

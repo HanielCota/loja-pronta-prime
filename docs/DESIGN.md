@@ -65,9 +65,9 @@ o tema escuro e o alto contraste.
 - Peças dentro de cartões (miniaturas, opções grandes): `rounded-2xl` / `rounded-3xl`.
 - Campos: `rounded-field` (12px), com rótulo flutuante (`FloatingLabelInput`).
 - Sombra: só `shadow-card`. Nada de `shadow-lg` ou sombras inventadas.
-- In the dark theme, `shadow-card` uses a short shadow (`0 8px 24px -12px`, 18% black)
-  to avoid dark halos on graphite. Keep the fine outline for separation; "More contrast"
-  keeps its stronger outline with the same subtle shadow.
+- No tema escuro, `shadow-card` é uma sombra curta (`0 8px 24px -12px`, preto a 18%) pra não
+  fazer halo escuro no grafite. O contorno fino separa os cartões; em "Mais contraste" o
+  contorno fica mais forte, com a mesma sombra suave.
 
 ## Componentes que já existem (use, não recrie)
 
@@ -300,13 +300,13 @@ o tema escuro e o alto contraste.
   `bg-destructive-soft`, o resto em `bg-muted`); no celular, a mesma informação em lista. A
   busca fica no cabeçalho do cartão. A tela de uma conta tem os formulários à esquerda e o
   resumo e o acesso à plataforma numa coluna de 400px à direita, presa ao rolar.
-- The account summary includes a `Button` linking to **View current stage**. The read-only
-  journey page reuses `AdminShell`, `panelCard`, and the existing account return link. It leads
-  with the saved brand's illustrative profile and packaging preview (`BrandKitPreview`, shared
-  with the student's studio), followed by the real saved-image gallery. The chosen logo has a
-  `bg-primary-soft` label; each image opens at full size. The current phase and saved-data cards
-  follow, stacked on mobile and side by side on wide screens. A `bg-primary-soft` notice
-  identifies the administrator view; no student mutation controls appear.
+- O resumo da conta tem um `Button` **Ver etapa atual**. A tela da etapa (só para ver) usa
+  `AdminShell`, `panelCard` e o mesmo link de voltar pra conta. Começa com a prévia ilustrativa
+  do perfil e da embalagem com a marca salva (`BrandKitPreview`, o mesmo do estúdio da aluna) e,
+  depois, a galeria das imagens salvas. O logo escolhido tem etiqueta `bg-primary-soft`; cada
+  imagem abre no tamanho original. Em seguida vêm os cartões da fase atual e dos dados salvos,
+  empilhados no celular e lado a lado em telas largas. Um aviso `bg-primary-soft` diz que é a
+  visão da admin; nenhum controle muda nada da aluna.
 - Criar conta (`/admin/contas/nova`, botão principal no cabeçalho de Contas): um cartão de até
   672px com os campos, os produtos como opções grandes com caixa de marcar e o primeiro acesso
   como opções grandes com rádio; a senha temporária só aparece com essa opção marcada (por CSS,

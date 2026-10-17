@@ -7,7 +7,7 @@ import { storage } from '@/server/storage';
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  await requireAdmin(`/admin/contas/${encodeURIComponent(id)}/journey`);
+  await requireAdmin(`/admin/contas/${encodeURIComponent(id)}/etapa`);
   const brand = await db.query.storeBrand.findFirst({
     columns: { logoImage: true },
     where: eq(storeBrand.userId, id),

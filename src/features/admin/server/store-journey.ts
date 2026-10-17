@@ -10,9 +10,9 @@ import { requireAdmin } from './access';
 import type { StoreJourneyImage } from '../store-journey';
 import { isStoreLogoKey } from '../store-images';
 
-/** Read saved journey data only; product visit tracking and student actions are never called. */
+/** Só lê o que a aluna já salvou: não registra visita nem mexe no progresso dela. */
 export async function getAccountStoreJourney(id: string) {
-  const session = await requireAdmin(`/admin/contas/${encodeURIComponent(id)}/journey`);
+  const session = await requireAdmin(`/admin/contas/${encodeURIComponent(id)}/etapa`);
   const account = await db.query.user.findFirst({
     columns: { id: true, name: true, email: true, banned: true },
     where: eq(user.id, id),
@@ -26,15 +26,15 @@ export async function getAccountStoreJourney(id: string) {
     getStudentProducts(id),
     getLogoStudio(id),
   ]);
-  const path = `/admin/contas/${encodeURIComponent(id)}/journey`;
+  const path = `/admin/contas/${encodeURIComponent(id)}/etapa`;
   const logoSrc = isStoreLogoKey(id, brand.logoImage) ? `${path}/logo` : null;
   const logos = studio.logos.filter((logo) => isStoreLogoKey(id, logo.key));
   const images: StoreJourneyImage[] = logos.map((logo, index) => ({
-    src: `${path}/images/${index}`,
+    src: `${path}/imagens/${index}`,
     selected: logo.key === brand.logoImage,
     uploaded: Boolean(logo.uploaded),
   }));
-  // Older selected logos may predate the studio's saved image list.
+  // Logos escolhidos antes da galeria do estúdio existir não estão na lista: entram primeiro.
   if (logoSrc && !images.some((image) => image.selected)) {
     images.unshift({ src: logoSrc, selected: true });
   }
