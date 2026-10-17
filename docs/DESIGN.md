@@ -65,6 +65,9 @@ o tema escuro e o alto contraste.
 - Peças dentro de cartões (miniaturas, opções grandes): `rounded-2xl` / `rounded-3xl`.
 - Campos: `rounded-field` (12px), com rótulo flutuante (`FloatingLabelInput`).
 - Sombra: só `shadow-card`. Nada de `shadow-lg` ou sombras inventadas.
+- In the dark theme, `shadow-card` uses a short shadow (`0 8px 24px -12px`, 18% black)
+  to avoid dark halos on graphite. Keep the fine outline for separation; "More contrast"
+  keeps its stronger outline with the same subtle shadow.
 
 ## Componentes que já existem (use, não recrie)
 
