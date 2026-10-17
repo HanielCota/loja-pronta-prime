@@ -9,6 +9,7 @@ import { hasAdminRole } from '@/features/admin/access';
 import { productLabel } from '@/features/admin/account-labels';
 import { requireAdmin } from '@/features/admin/server/access';
 import { ACCOUNTS_PAGE_SIZE, listAccounts } from '@/features/admin/server/accounts';
+import { RowCellLink } from '@/features/admin/components/row-cell-link';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Contas · Administração' };
@@ -95,7 +96,7 @@ export default async function AdminAccountsPage({
 
         {rows.length ? (
           <>
-            {/* Computador: tabela. A linha toda abre a conta (o link do nome cobre a linha). */}
+            {/* Computador: tabela. A linha toda abre a conta (cada célula tem o link dela). */}
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full border-collapse text-left text-body">
                 <thead>
@@ -120,10 +121,10 @@ export default async function AdminAccountsPage({
                 <tbody className="divide-y divide-border">
                   {rows.map((account) => (
                     <tr
-                      className="relative hover:bg-muted motion-safe:transition-colors motion-safe:duration-150"
+                      className="hover:bg-muted has-[a:focus-visible]:bg-muted motion-safe:transition-colors motion-safe:duration-150"
                       key={account.id}
                     >
-                      <td className="max-w-0 py-3 pr-4 pl-3 lg:w-[40%]">
+                      <td className="relative max-w-0 py-3 pr-4 pl-3 lg:w-[40%]">
                         <Link
                           className="block truncate font-semibold text-foreground outline-none after:absolute after:inset-0 after:rounded-2xl focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-ring"
                           href={account.href}
@@ -134,7 +135,7 @@ export default async function AdminAccountsPage({
                           {account.email}
                         </span>
                       </td>
-                      <td className="py-3 pr-4">
+                      <td className="relative py-3 pr-4">
                         <span className="flex flex-wrap gap-1.5">
                           {account.products.length ? (
                             account.products.map((product) => (
@@ -146,8 +147,9 @@ export default async function AdminAccountsPage({
                             <span className="text-sm text-muted-foreground">Nenhum</span>
                           )}
                         </span>
+                        <RowCellLink href={account.href} />
                       </td>
-                      <td className="py-3 pr-4">
+                      <td className="relative py-3 pr-4">
                         <span className="flex flex-wrap gap-1.5">
                           {account.banned ? (
                             <Tag tone="danger">Bloqueada</Tag>
@@ -156,15 +158,18 @@ export default async function AdminAccountsPage({
                           )}
                           {account.admin ? <Tag tone="neutral">Admin</Tag> : null}
                         </span>
+                        <RowCellLink href={account.href} />
                       </td>
-                      <td className="py-3 pr-4 text-sm whitespace-nowrap text-muted-foreground tabular-nums">
+                      <td className="relative py-3 pr-4 text-sm whitespace-nowrap text-muted-foreground tabular-nums">
                         {dateFormat.format(account.createdAt)}
+                        <RowCellLink href={account.href} />
                       </td>
-                      <td className="py-3 pr-3 text-right">
+                      <td className="relative py-3 pr-3 text-right">
                         <ChevronRight
                           aria-hidden="true"
                           className="inline size-5 text-muted-foreground"
                         />
+                        <RowCellLink href={account.href} />
                       </td>
                     </tr>
                   ))}

@@ -296,7 +296,9 @@ o tema escuro e o alto contraste.
   navegador. A tela de uma conta mostra o "Último acesso" no resumo e um cartão "Aparelho" com
   os detalhes que o navegador contou.
 - Contas: tabela no computador (nome e email, produtos, situação, data), com a linha toda
-  clicável e etiquetas `rounded-full` (produto em `bg-primary-soft`, bloqueada em
+  clicável (o nome é o link de verdade; cada outra célula tem `RowCellLink`, fora do teclado.
+  Nada de link esticado a partir do `<tr>`: em alguns navegadores ele cobre a tabela toda) e
+  etiquetas `rounded-full` (produto em `bg-primary-soft`, bloqueada em
   `bg-destructive-soft`, o resto em `bg-muted`); no celular, a mesma informação em lista. A
   busca fica no cabeçalho do cartão. A tela de uma conta tem os formulários à esquerda e o
   resumo e o acesso à plataforma numa coluna de 400px à direita, presa ao rolar.

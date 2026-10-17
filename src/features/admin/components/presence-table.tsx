@@ -3,6 +3,7 @@ import { ChevronRight } from 'lucide-react';
 import type { DeviceClient, DeviceInfo } from '@/features/presence/device';
 import { formatLastSeen, type PresencePlace } from '@/features/presence/presence';
 import { DeviceLabel } from './device-label';
+import { RowCellLink } from './row-cell-link';
 import { cn } from '@/lib/utils';
 
 export type PresenceRow = PresencePlace & {
@@ -75,10 +76,10 @@ export function PresenceTable({ rows, now }: { rows: PresenceRow[]; now: Date })
           <tbody className="divide-y divide-border">
             {rows.map((row) => (
               <tr
-                className="relative hover:bg-muted motion-safe:transition-colors motion-safe:duration-150"
+                className="hover:bg-muted has-[a:focus-visible]:bg-muted motion-safe:transition-colors motion-safe:duration-150"
                 key={row.userId}
               >
-                <td className="max-w-0 py-3 pr-4 pl-3 lg:w-[26%]">
+                <td className="relative max-w-0 py-3 pr-4 pl-3 lg:w-[26%]">
                   <Link
                     className="block truncate font-semibold text-foreground outline-none after:absolute after:inset-0 after:rounded-2xl focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-ring"
                     href={`/admin/contas/${row.userId}`}
@@ -87,23 +88,28 @@ export function PresenceTable({ rows, now }: { rows: PresenceRow[]; now: Date })
                   </Link>
                   <span className="block truncate text-sm text-muted-foreground">{row.email}</span>
                 </td>
-                <td className="py-3 pr-4">
+                <td className="relative py-3 pr-4">
                   <AreaTag area={row.area} />
+                  <RowCellLink href={`/admin/contas/${row.userId}`} />
                 </td>
-                <td className="max-w-0 py-3 pr-4 lg:w-[26%]">
+                <td className="relative max-w-0 py-3 pr-4 lg:w-[26%]">
                   <PresencePlaceText row={row} />
+                  <RowCellLink href={`/admin/contas/${row.userId}`} />
                 </td>
-                <td className="max-w-0 py-3 pr-4 lg:w-[22%]">
+                <td className="relative max-w-0 py-3 pr-4 lg:w-[22%]">
                   <DeviceLabel device={row.device} />
+                  <RowCellLink href={`/admin/contas/${row.userId}`} />
                 </td>
-                <td className="py-3 pr-4 text-sm whitespace-nowrap text-muted-foreground">
+                <td className="relative py-3 pr-4 text-sm whitespace-nowrap text-muted-foreground">
                   {formatLastSeen(row.lastSeenAt, now)}
+                  <RowCellLink href={`/admin/contas/${row.userId}`} />
                 </td>
-                <td className="py-3 pr-3 text-right">
+                <td className="relative py-3 pr-3 text-right">
                   <ChevronRight
                     aria-hidden="true"
                     className="inline size-5 text-muted-foreground"
                   />
+                  <RowCellLink href={`/admin/contas/${row.userId}`} />
                 </td>
               </tr>
             ))}
