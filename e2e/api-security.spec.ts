@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { LEADS_ORIGIN } from '@/config/leads';
 import { signIn } from './support/auth';
 import { PASSWORD, studentEmail } from './support/students';
 
@@ -44,6 +45,12 @@ test('o aviso de presença só vale para quem está logada e vem do próprio sit
   const ownSite = { origin: new URL(baseURL ?? '').origin };
   const anonymous = await request.post('/api/presence', { headers: ownSite, data });
   expect(anonymous.status()).toBe(401);
+  // O subdomínio pertence à mesma aplicação; a origem é aceita, mas a sessão continua exigida.
+  const leadsSite = await request.post('/api/presence', {
+    headers: { origin: LEADS_ORIGIN },
+    data,
+  });
+  expect(leadsSite.status()).toBe(401);
   const otherSite = await request.post('/api/presence', {
     headers: { origin: 'https://outro-site.example' },
     data,
