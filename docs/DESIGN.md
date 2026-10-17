@@ -379,3 +379,13 @@ o tema escuro e o alto contraste.
 - Botão diz o que acontece: "Criar meu logo", "Continuar", "Usar o logo 1".
 - A plataforma é automática: nada de "a equipe faz X".
 - Nada de fingir: se algo ainda não funciona, a tela diz "em breve", sem botão que finge.
+
+## Assistente e experts (17/10/2026)
+
+As páginas Meu plano, Comparar categorias e Conectar minha loja usam `SllAreaShell`, os tokens e
+os componentes existentes. Tarefas do plano mostram dia, estado escrito e aula relacionada,
+com ações independentes da conclusão das aulas. Produtos usa `AreaShell`, com seleção por
+checkbox e confirmação explícita antes da fila de publicação. Dados ausentes, catálogo em
+preparação e publicação incerta aparecem com texto próprio. Admin usa `AdminShell`, cartões,
+campos existentes e detalhes expansíveis para roteiros e prévia de variantes. Nenhuma nova
+linguagem visual, fonte ou cor foi introduzida.

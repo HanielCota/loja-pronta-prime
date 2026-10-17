@@ -33,4 +33,15 @@ const result = await Bun.build({
 });
 if (!result.success) throw new AggregateError(result.logs, 'Falha ao preparar o migrador.');
 
-console.log('Servidor, arquivos públicos, fontes e migrações preparados em build/runtime.');
+const worker = await Bun.build({
+  entrypoints: ['scripts/run-assistant-worker.ts'],
+  outdir: runtimeDirectory,
+  naming: 'assistant-worker.cjs',
+  target: 'node',
+  format: 'cjs',
+  external: ['pg-native'],
+  minify: true,
+});
+if (!worker.success)
+  throw new AggregateError(worker.logs, 'Falha ao preparar a rotina do assistente.');
+console.log('Servidor, arquivos públicos, fontes, migrações e worker preparados em build/runtime.');

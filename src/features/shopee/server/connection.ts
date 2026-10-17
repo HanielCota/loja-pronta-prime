@@ -2,7 +2,14 @@ import { randomBytes } from 'node:crypto';
 import { and, eq, gt, isNull, lt, ne } from 'drizzle-orm';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { db } from '@/server/db';
-import { shopeeAuthorizationStates, shopeeConnections, stores } from '@/server/db/schema';
+import {
+  assistantJobs,
+  shopeeAuthorizationStates,
+  shopeeConnections,
+  stores,
+  studentProducts,
+} from '@/server/db/schema';
+import type { ShopeeEntry } from '../entry';
 import {
   decryptShopeeToken,
   encryptShopeeToken,
@@ -54,6 +61,7 @@ export async function beginShopeeAuthorization(
   sessionId: string,
   config: ShopeeConfiguration,
   applicationUrl: string,
+  origin: ShopeeEntry = 'loja-pronta',
 ) {
   const state = randomBytes(32).toString('hex');
   const url = buildShopeeAuthorizationUrl(config, applicationUrl, state);
@@ -70,6 +78,7 @@ export async function beginShopeeAuthorization(
         userId,
         sessionId,
         applicationId: shopeeApplicationId(config),
+        origin,
         expiresAt: new Date(Date.now() + 10 * 60 * 1000),
       });
     }),
@@ -86,11 +95,32 @@ export async function finishShopeeAuthorization(
     input.userId,
     input.kind === 'authorize' ? input.shopId : undefined,
     async (connection) => {
+      const [pending] = await connection
+        .select({ origin: shopeeAuthorizationStates.origin })
+        .from(shopeeAuthorizationStates)
+        .where(
+          and(
+            eq(shopeeAuthorizationStates.stateHash, hashShopeeAuthorizationState(input.state)),
+            eq(shopeeAuthorizationStates.userId, input.userId),
+            eq(shopeeAuthorizationStates.sessionId, input.sessionId),
+          ),
+        );
+      if (!pending) return 'expired';
+      const [access] = await connection
+        .select({ product: studentProducts.product })
+        .from(studentProducts)
+        .where(
+          and(
+            eq(studentProducts.userId, input.userId),
+            eq(studentProducts.product, pending.origin),
+          ),
+        );
+      if (!access) return 'expired';
       const [store] = await connection
         .select({ phase: stores.phase })
         .from(stores)
         .where(eq(stores.userId, input.userId));
-      if (!store || store.phase < 4) return 'expired';
+      if (pending.origin === 'loja-pronta' && (!store || store.phase < 4)) return 'expired';
       // Este UPDATE é confirmado antes da chamada externa: nem uma falha de persistência repete o código.
       const [intent] = await connection
         .update(shopeeAuthorizationStates)
@@ -158,8 +188,16 @@ export async function finishShopeeAuthorization(
             .insert(shopeeConnections)
             .values(values)
             .onConflictDoUpdate({ target: shopeeConnections.userId, set: values });
+          await tx
+            .insert(assistantJobs)
+            .values({
+              userId: input.userId,
+              kind: 'collect',
+              deduplicationKey: `collect:connection:${input.userId}:${intent.stateHash}`,
+            })
+            .onConflictDoNothing();
           // Sandbox nunca avança a jornada de uma loja real.
-          if (config.SHOPEE_ENVIRONMENT === 'live')
+          if (config.SHOPEE_ENVIRONMENT === 'live' && pending.origin === 'loja-pronta')
             await tx
               .update(stores)
               .set({ phase: 5 })
@@ -171,6 +209,25 @@ export async function finishShopeeAuthorization(
       }
     },
   );
+}
+
+/** Lê apenas a origem vinculada à dona e sessão, inclusive para devolver erros à área correta. */
+export async function getShopeeAuthorizationOrigin(
+  userId: string,
+  sessionId: string,
+  state: string,
+) {
+  const [intent] = await db
+    .select({ origin: shopeeAuthorizationStates.origin })
+    .from(shopeeAuthorizationStates)
+    .where(
+      and(
+        eq(shopeeAuthorizationStates.stateHash, hashShopeeAuthorizationState(state)),
+        eq(shopeeAuthorizationStates.userId, userId),
+        eq(shopeeAuthorizationStates.sessionId, sessionId),
+      ),
+    );
+  return intent?.origin ?? null;
 }
 
 /** Só retorna tokens para código de servidor. A tela recebe apenas o estado e o ID da loja. */

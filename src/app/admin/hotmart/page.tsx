@@ -35,8 +35,13 @@ export default async function HotmartAdminPage() {
         </p>
         <HotmartSettingsForm
           configured={state.configured}
-          sll={state.mappings.find((item) => item.access === 'sll')?.productUcode ?? ''}
-          store={state.mappings.find((item) => item.access === 'loja-pronta')?.productUcode ?? ''}
+          sll={
+            state.mappings.find((item) => item.access === 'sll' && item.primary)?.productUcode ?? ''
+          }
+          store={
+            state.mappings.find((item) => item.access === 'loja-pronta' && item.primary)
+              ?.productUcode ?? ''
+          }
         />
       </section>
       <section className={`${panelCard} mt-6 gap-4`} aria-labelledby="hotmart-history">

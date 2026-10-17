@@ -1,0 +1,172 @@
+# Assistente SLL e produtos da Loja Pronta
+
+Implementação de 17/10/2026, baseada nos 12 áudios e no plano
+[registrado](PLANO-SLL-LOJA-PRONTA-2026-10-17.md). Código e testes locais não comprovam a
+liberação das APIs externas. Nenhum anúncio real foi publicado nesta implementação.
+
+## O que cada área faz
+
+- `/sll/plano`: contexto da loja, estratégias orgânica/híbrida/paga, roteiro versionado de sete
+  dias e tarefas próprias. Menos de sete dias usa roteiro; exatamente sete ou mais usa histórico.
+  Uma tarefa não conclui automaticamente uma aula. Reiniciar preserva o histórico do plano.
+- `/sll/minhas-lojas/conectar`: cadastro da vendedora e autorização Shopee usando apenas SLL.
+  A conexão é a mesma usada pela Loja Pronta; desconectar afeta ambas. A origem fica no estado
+  OAuth e não aceita um endereço de retorno arbitrário. Conectar pelo SLL não avança a montagem.
+- `/loja-pronta/produtos`: cinco produtos distintos no primeiro lote; seleção variada exige mais
+  de uma categoria, e seleção de nicho usa a mesma categoria preparada. Após a análise, novos
+  lotes podem ter de um a cinquenta produtos. Preço e quantidade autorizados ficam registrados.
+- `/sll/comparar-categorias`: compara dois anúncios existentes de categorias diferentes,
+  no mesmo intervalo. O mínimo inicial de 100 visualizações por anúncio é configurável e é
+  somente um filtro de exposição, sem significado de teste estatístico. Não duplica anúncios,
+  muda fotos ou categorias, nem promete que uma categoria causou o resultado.
+- `/admin/assistente`: edita e publica roteiros; importa catálogo real; prepara publicações para
+  uma loja específica; mostra jobs, falhas e conciliação. Sugestões baseadas nos áudios são
+  **rascunhos**, sem atribuir aprovação a Pri ou Zé. Para disponibilizar uma ação com aula,
+  selecione uma aula publicada dentro de módulo, etapa e trilha publicados.
+- `/admin/experts`: mapeia códigos reais Hotmart para Pri/Zé, cadastra variantes Panda com
+  rascunho, prévia e publicação, e define experiências de acessos manuais com registro de ator.
+
+O código não gera um catálogo fictício ou vídeos substitutos. Aulas de Matheus podem ser
+criadas no editor existente e vinculadas aos dias, quando os três vídeos e seus direitos de uso
+forem fornecidos. Não há um fornecedor escolhido por inferência a partir do exemplo “Stock Shop”.
+
+## Dados e orientação
+
+A coleta usa a conexão cifrada existente. Pagina os anúncios ativos e lê informações básicas e
+extras. Cada execução tem loja, aplicativo/ambiente, início, conclusão, estado e snapshots.
+Uma coleta parcial nunca substitui uma completa. Ausência é `null`, e zero é mantido como zero.
+A interface informa o horário da coleta em Brasília; após 12h sem coleta completa, mostra atraso.
+
+A orientação do histórico usa diferenças entre as duas últimas coletas completas. Informa o
+intervalo e não interpreta contador acumulado como desempenho de uma campanha. Regras fixas
+sugerem coleta adicional, revisão de exposição, revisão de oferta ou observação. Somente com
+`OPENAI_API_KEY` disponível a aluna pode solicitar priorização por IA. `ASSISTANT_AI_MODEL`
+seleciona o modelo (padrão `gpt-5-mini`). A IA recebe diferenças numéricas e pares de ações/IDs
+permitidos, sem email, senha, tokens ou URLs. A saída estruturada só pode ordenar até três
+pares elegíveis; o texto e os fatos exibidos são controlados pelo código.
+
+A entrada da IA limita-se a 24 anúncios elegíveis e uma opção geral; não envia todo o catálogo.
+Há no máximo uma tentativa de IA por coleta e três por conta em 24h, inclusive falhas, com
+reserva transacional, timeout, limite de saída e sem repetição automática. O recurso não executa
+campanhas ou alterações na loja. A chave/modelo precisam ser validados com uma chamada real;
+sem chave, regras e comparações continuam disponíveis. Não foi realizada chamada paga nesta entrega.
+
+## Matriz de capacidades e limites atuais
+
+| Operação                                 | Código preparado                                                | Evidência local                                                        | Dependência externa / limite                                                                 |
+| ---------------------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| OAuth SLL/Loja Pronta                    | Estado por dona/sessão/origem, cifra, aplicativo e ambiente     | Integração de sessão, reuso, expiração, revogação, acesso e sandbox    | Credenciais e aplicativo Shopee autorizado; retorno/IPs/loja e escopos reais                 |
+| Listar anúncios e categorias registradas | `get_item_list`, `get_item_base_info`                           | Paginação e validação de respostas no banco                            | Confirmar contrato e permissões do aplicativo real                                           |
+| Visualizações/vendas acumuladas          | `get_item_extra_info`, campos `views`/`sale`                    | Ausência/zero, falha parcial e intervalos                              | Confirmar disponibilidade, significado, atualização e histórico desses campos no Brasil      |
+| Impressões, cliques, CTR                 | Nenhuma coleta habilitada para esses campos                     | CTR só aceita impressões reais do mesmo intervalo                      | Não inferidos de visualizações; indisponíveis nesta integração                               |
+| Publicação simples                       | `product/add_item`, uma escrita por item                        | Cinco itens, parcial, timeout, reexecução, SKU existente e conciliação | Imagens Shopee, categoria/atributos, frete e permissões conferidos; piloto real pendente     |
+| Variações de produto                     | O catálogo preserva opções/SKUs                                 | Produtos com variações ficam fora da publicação                        | Publicação de modelos/variações ainda não implementada                                       |
+| Marca na Shopee                          | Marca/onboarding existentes preservados                         | Regressões da jornada                                                  | Nome/logo/descrição não são enviados automaticamente por este worker                         |
+| Comparar categorias                      | Dois anúncios existentes, período e limiar iguais               | Dona, mudança de categoria, ausência e contador reiniciado             | Resultado descritivo; fotos, preço, tráfego e campanhas não são controlados pelo experimento |
+| IA                                       | Priorização restrita e controle de custo                        | Validação das ações/IDs e dados ausentes                               | Chave, modelo e chamada real ainda pendentes                                                 |
+| Fornecedor                               | Importador JSON real e mapeamentos por loja/aplicativo          | Catálogo recente, preço/estoque e seleção                              | Fornecedor/feed/API não fornecidos; não há atualização automática do fornecedor              |
+| Experts                                  | Origem preservada na compra; variante aplicada após cache comum | Compra, reembolso, legado, duas contas e ausência de vídeo             | Códigos reais das ofertas e vídeos finalizados de Zé não fornecidos                          |
+
+A consulta de documentação oficial nesta máquina retornou HTTP 403; ela não foi usada como
+prova das capacidades do aplicativo. Antes de ativar escrita, registrar o contrato oficial
+atual e o resultado real por endpoint, escopo, loja e ambiente. `SHOPEE_PUBLICATION_ENABLED`
+permanece desligado por padrão. O limite `SHOPEE_PILOT_USER_IDS` continua válido no servidor,
+inclusive no worker. O modo de duplicação de anúncios não foi habilitado sem validação das regras.
+
+## Catálogo real e preparação da publicação
+
+No painel, envie um JSON com uma lista de registros `{ product, publication? }`. Os formatos
+validados estão em `src/features/shopee/catalog.ts` e
+`src/features/assistant/model.ts` (`publicationPayloadSchema`). Não envie credenciais no arquivo.
+
+`product` informa fornecedor/SKU, título, descrição, imagens HTTPS, custos e preços em centavos,
+estoque, peso em gramas, dimensões em centímetros, `updatedAt` com fuso e variações. O instante
+original é preservado: importar novamente não renova artificialmente preço ou estoque. Um
+produto fica indisponível após 15 minutos sem atualização, com data futura, estoque vazio ou
+preço incompatível com o custo.
+
+`publication` é opcional, específico da loja e do aplicativo atuais: título, descrição, categoria,
+SKU, preço em reais, quantidade, peso em kg, imagens já hospedadas na Shopee (`image_id_list`),
+dimensões, logística habilitada, atributos e marca válidos. Importar exige selecionar a conta
+pelo identificador e confirmar a preparação real desses dados. URL de imagem do fornecedor não
+vira automaticamente um ID Shopee. O importador não faz upload de imagens nem consulta frete.
+Preço/estoque/SKU são conferidos ao importar, selecionar e antes do envio. Variações ficam bloqueadas.
+
+É necessário conectar o feed real do fornecedor para manter a oferta atualizada de forma
+automática. Enquanto isso, o importador é uma entrada operacional explícita; não simula uma
+integração contínua ou disponibilidade de estoque em tempo real.
+
+## Worker, relógio e recuperação
+
+As migrações aditivas são `0049` a `0053`. Use o migrador normal, preservando o histórico.
+No desenvolvimento, com as mesmas variáveis do servidor:
+
+```bash
+bun --env-file=.env.local run db:migrate
+bun run assistant:worker
+# Uma execução curta consome no máximo um job devido e encerra:
+bun run assistant:worker --once
+```
+
+O worker é um processo separado do Next. Conectar a loja agenda a primeira coleta; uma coleta
+bem-sucedida agenda outra em seis horas. A aluna também pode solicitar atualização, com deduplicação
+em janelas de quinze minutos. A fila usa `FOR UPDATE SKIP LOCKED`, concessão de cinco minutos e
+renovação a cada trinta segundos. Ao reiniciar, leituras interrompidas voltam à fila; escritas
+interrompidas passam a resultado incerto. A rotina verifica novamente acesso, bloqueio da conta,
+configuração do piloto e vínculo da loja antes de cada job.
+
+O lote só começa a observação quando **todos** os anúncios estão confirmados, nunca na seleção,
+na primeira tentativa ou no primeiro anúncio. O relógio soma cinco períodos de 24h ao último
+anúncio confirmado. A avaliação também exige duas coletas completas cobrindo ao menos cinco
+dias após esse marco e dados válidos dos cinco anúncios. A coleta inicial atrasada pode atrasar
+a análise; o sistema informa essa espera. Mudança de categoria, item ausente ou queda/ausência
+intermediária do contador impede uma conclusão. O maior ganho observado de visualizações pode
+orientar a próxima seleção, com empate e zeros explícitos e sem promessa de vendas.
+
+Antes da escrita, o worker procura o SKU em anúncios ativos, não listados e banidos, e bloqueia
+se já existir. Depois de um timeout ou queda de processo, **não reenvie** o anúncio: o painel
+consulta esses mesmos estados e só concilia um SKU único com título correspondente. Ausência ou
+ambiguidade permanece pendente, sem repetição automática. Se a última confirmação vier dessa
+conciliação, o mesmo relógio e os mesmos jobs são criados uma única vez.
+
+Erros definitivos ficam bloqueados. Após corrigir a integração/catálogo/mapeamento, o admin pode
+recolocar o job na fila. A correção do payload só é reaproveitada se preservar SKU, preço e
+quantidade autorizados. Se o preço mudar, a seleção existente continua bloqueada até nova confirmação da aluna em Produtos.
+A tela mostra preço anterior, preço e quantidade atuais; a conferência dos dados evita confirmar
+uma oferta que mudou depois da leitura. A confirmação atualiza o mesmo item e seu horário de
+autorização e recoloca somente aquele job na fila. Itens incertos nunca usam esse caminho.
+
+## Produção
+
+`bun run build` também gera `build/runtime/assistant-worker.cjs`, executável com Node 24 e as
+mesmas variáveis privadas do servidor. Configure um processo supervisionado separado usando a
+mesma imagem da aplicação, depois de aplicar as migrações:
+
+```bash
+cd /app/build/runtime
+node assistant-worker.cjs
+```
+
+Não iniciar o worker durante o build, no navegador ou como processo sem supervisão. O comando web
+existente continua iniciando somente migrações e Next. O worker precisa reiniciar após falhas e
+receber SIGTERM no encerramento; finaliza o job atual antes de fechar o pool. `--once` serve para
+uma execução operacional limitada. Mais de um worker é permitido pela fila, mas os limites da
+Shopee e o tamanho do piloto devem orientar a concorrência.
+
+## Conteúdo, compras e o que falta para o piloto real
+
+Códigos de produto Hotmart identificam o expert. Uma nova compra salva essa origem, e atualizações
+ou reembolsos não a reescrevem. Compras ativas de ambos os experts permitem escolher. Ao reembolsar
+um deles, apenas a experiência correspondente deixa de ser elegível, salvo acesso manual explícito.
+O padrão legado é Pri. A atribuição manual registra administrador e data, sem liberar o produto.
+O ID da aula e o progresso permanecem comuns. Para Zé, falta de variante publicada mostra “Vídeo
+em breve”; nunca usa um rascunho ou um vídeo da Pri silenciosamente. Materiais comuns permanecem comuns.
+
+Antes de liberar para alunas reais, faltam entradas externas concretas: aplicativo/loja/escopos
+Shopee, contrato do fornecedor e sua atualização automática, payloads reais conferidos, roteiros
+editoriais finais e aulas correspondentes, vídeos e códigos de compra de Zé, e os três vídeos de
+Matheus com autorização de uso. A lista das cerca de 23 ferramentas não foi anexada. Assinatura,
+cobrança e TikTok permanecem evolução posterior, como registrado no plano.
+
+A oferta adicional da Loja Pronta pode usar `LOJA_PRONTA_CHECKOUT_URL` com o checkout HTTPS real.
+Sem esse endereço, a página explica o acesso adicional e não cria uma compra fictícia.

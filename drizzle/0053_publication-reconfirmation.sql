@@ -1,0 +1,1 @@
+ALTER TABLE "assistant_publication_items" ADD COLUMN "authorized_at" timestamp with time zone DEFAULT now() NOT NULL;

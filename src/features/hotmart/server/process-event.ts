@@ -123,6 +123,8 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
             transaction,
             buyerEmail: email,
             productUcode,
+            expert:
+              mapping.find((item) => item.access === 'sll')?.expert ?? mapping[0]?.expert ?? 'pri',
             userId: linkedUserId,
             active,
             lastEventAt: createdAt,

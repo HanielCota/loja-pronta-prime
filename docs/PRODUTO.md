@@ -4,7 +4,7 @@
 
 A Loja Pronta Prime ([lojaprontaprime.com](https://lojaprontaprime.com)) é uma área de membros para mulheres iniciantes que querem vender na Shopee. Ela oferece o curso SLL com ferramentas e a jornada Loja Pronta, em que a própria aluna prepara a marca e a conta, um passo por vez.
 
-Este documento descreve o que está implementado em 15 de outubro de 2026. A autorização Shopee está implementada, com ativação pendente no servidor e no Escala Shop. Produtos de fornecedores e publicação automática continuam em preparação.
+Atualização de 17 de outubro de 2026: planos SLL, conexão compartilhada, variantes por expert e rotinas de produtos estão implementados no código. A operação real da Shopee, o fornecedor e os conteúdos finais continuam pendentes. Consulte [operação e limites do assistente](ASSISTENTE-SLL-OPERACAO.md) para distinguir implementação, testes locais e liberação externa.
 
 ## Para quem é
 
@@ -22,13 +22,14 @@ Curso em vídeo para a aluna aprender e vender por conta própria.
 
 - Boas-vindas, Método em 3 Etapas e cursos complementares.
 - Progresso salvo no servidor; a próxima etapa do método abre após concluir as aulas obrigatórias da anterior. Aulas opcionais não impedem o avanço.
-- Etapa 2 com uma pergunta sobre o tempo da loja, 6 prioridades e 7 ações complementares.
+- Meu plano separa lojas novas (roteiro de sete dias orgânico, híbrido ou pago) de lojas com sete dias ou mais (histórico e orientação pelos dados). Os roteiros são publicados pelo admin e preservam sua versão e progresso. A Etapa 2 mantém as aulas e ações já publicadas e leva ao plano pessoal.
 - Aulas de apoio vinculadas ao plano ficam disponíveis quando a Etapa 2 abre, mesmo antes de liberar toda a Biblioteca. Cada dia mostra todas as suas ações obrigatórias e só fica concluído quando todas terminam.
 - Biblioteca da Etapa 3 com busca, retorno à busca e numeração original das aulas.
 - 71 aulas vinculadas ao Panda, com reprodução iniciada pela aluna; o catálogo também tem aulas em texto. Conteúdo e publicação podem ser editados no admin.
 - Calculadoras de preço e lucro, descontos e anúncios; guia em PDF e planilha de custos em XLSX com download protegido pelo acesso ao SLL.
 - Quatro guias de uso que levam aos assistentes externos no ChatGPT. O acesso externo depende da conta e das condições do serviço.
-- Minhas Lojas mostra o andamento real da Loja Pronta quando a aluna também tem esse produto. A conexão com a Shopee e as métricas de vendas ainda estão em breve.
+- Minhas Lojas permite cadastrar e autorizar a Shopee usando somente SLL, quando a integração está configurada. A conexão é compartilhada com Loja Pronta. Coletas completas mostram os contadores disponíveis e seu horário; comparações usam o mesmo intervalo e não dependem de IA. Ausência e falha não viram zero.
+- Variantes de vídeo Pri/Zé seguem a origem da compra na mesma plataforma e aula, sem misturar progresso ou apresentar rascunhos. O admin configura as ofertas e os vídeos.
 
 Arquivos originais ausentes aparecem como “Em breve”. Não há material inventado para substituí-los. Inventário e pendências: `docs/SLL-FERRAMENTAS.md`.
 
@@ -36,19 +37,19 @@ Arquivos originais ausentes aparecem como “Em breve”. Não há material inve
 
 A própria aluna monta sua marca e prepara a conta. A interface tem uma decisão por tela, texto simples e respostas salvas para continuar depois. A jornada usa 7 fases no banco, agrupadas em 3 etapas na interface:
 
-| Fase | O que a aluna faz                                         | Situação atual                                    |
-| ---- | --------------------------------------------------------- | ------------------------------------------------- |
-| 1    | Responde à conversa inicial                               | Disponível                                        |
-| 2    | Escolhe nome, cria ou envia logo e define o texto da loja | Disponível                                        |
-| 3    | Abre a conta de vendedora no site da Shopee com um guia   | Guia disponível; confirmação informada pela aluna |
-| 4    | Autoriza a conexão com a Shopee                           | Autorização implementada; ativação pendente       |
-| 5    | Escolhe produtos do fornecedor                            | Em breve; depende do fornecedor e da integração   |
-| 6    | Publica a marca e os produtos pela plataforma             | Em breve; depende da Shopee                       |
-| 7    | Confere a finalização e as vendas                         | Consulta de vendas em breve                       |
+| Fase | O que a aluna faz                                            | Situação atual                                                                   |
+| ---- | ------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| 1    | Responde à conversa inicial                                  | Disponível                                                                       |
+| 2    | Escolhe nome, cria ou envia logo e define o texto da loja    | Disponível                                                                       |
+| 3    | Abre a conta de vendedora no site da Shopee com um guia      | Guia disponível; confirmação informada pela aluna                                |
+| 4    | Autoriza a conexão com a Shopee                              | Autorização implementada; ativação pendente                                      |
+| 5    | Escolhe os cinco primeiros produtos do fornecedor            | Fluxo implementado; depende de catálogo real, atualizado e preparado para a loja |
+| 6    | Acompanha os anúncios confirmados e cinco dias de observação | Worker implementado para produtos simples; piloto real pendente                  |
+| 7    | Confere a finalização e as vendas                            | Consulta de vendas em breve                                                      |
 
 O nome, o logo e o texto ficam salvos antes da conexão para a futura publicação automática. Baixar o logo é opcional, para guardar uma cópia; aplicar a marca manualmente na Shopee não é uma etapa obrigatória da Loja Pronta. A conta de vendedora continua sendo criada pela aluna no site da Shopee. O guia de cadastro tem um espaço de vídeo (`conta-na-shopee`, enviado com `bun run dev:video`), que só aparece depois do envio de um arquivo real e não bloqueia o passo a passo escrito.
 
-A plataforma não confirma hoje que uma loja foi publicada na Shopee. A aluna confere a loja e as vendas na Central do Vendedor. Fases pendentes não têm botões que simulam essas operações.
+A plataforma só registra anúncio publicado após resposta confirmada ou conciliação na Shopee. Não houve piloto de publicação real nesta entrega. O catálogo permanece em preparação sem fornecedor atualizado ou liberação da integração. A marca ainda não é enviada automaticamente. Não há botões que simulam essas operações.
 
 #### Conversa inicial
 

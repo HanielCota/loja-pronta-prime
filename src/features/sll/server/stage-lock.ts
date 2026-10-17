@@ -4,6 +4,7 @@ import { learningLessonProgress } from '@/server/db/schema';
 import { getPublishedSllTrack } from './published-track';
 import { resolveSequentialStageAccess } from '../progress-rules';
 import { isPlanReferenceAvailable } from '../lesson-access';
+import { hasAssistantLessonReference } from '@/features/assistant/server/plans';
 
 // Fica fora do arquivo 'use server': exportada de lá, viraria uma ação que qualquer
 // navegador pode chamar. Aqui ela serve às ações de progresso e à rota de materiais.
@@ -72,7 +73,8 @@ export async function getLessonLockMessage(
   if (
     track.kind !== 'method' ||
     access?.isUnlocked ||
-    isPlanReferenceAvailable(track.stages, lessonId)
+    isPlanReferenceAvailable(track.stages, lessonId) ||
+    (await hasAssistantLessonReference(userId, lessonId))
   )
     return null;
   return access?.lockMessage ?? 'Conclua a etapa anterior para abrir esta aula.';

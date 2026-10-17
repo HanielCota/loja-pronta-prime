@@ -30,12 +30,14 @@ test('adicionar ou conectar loja usa um fluxo único e reaproveita a montagem', 
   await expect(page).toHaveURL(/\/sll\/minhas-lojas\/adicionar\?plataforma=shopee$/);
   await expect(page.getByRole('heading', { name: 'O que você quer fazer?' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Conectar uma loja existente' })).toBeVisible();
-  await expect(page.getByText('A autorização oficial ainda não está disponível.')).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: 'Cadastrar ou conectar minha loja' }),
+  ).toHaveAttribute('href', '/sll/minhas-lojas/conectar');
   await expect(page.getByRole('link', { name: 'Começar na Loja Pronta' })).toHaveAttribute(
     'href',
     '/loja-pronta',
   );
-  await expect(page.getByRole('link', { name: /Conectar/ })).toHaveCount(0);
+
   await expectNoA11yViolations(page);
 
   await page.getByRole('link', { name: 'Começar na Loja Pronta' }).click();
@@ -47,7 +49,7 @@ test('mostra a montagem real sem contar como loja conectada', async ({ page }) =
 
   await expect(page.getByRole('heading', { name: 'Casa da Ana' })).toBeVisible();
   await expect(page.getByText('Em montagem')).toBeVisible();
-  await expect(page.getByText('Sua marca')).toBeVisible();
+  await expect(page.getByText('Sua marca', { exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Continuar montagem' })).toHaveAttribute(
     'href',
     '/loja-pronta',

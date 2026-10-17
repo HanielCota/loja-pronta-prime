@@ -12,7 +12,11 @@ import { CenteredMemberPage, panelCard } from '@/features/member/components/area
 import { requireProduct } from '@/features/products/server/access';
 import { canUseShopee, SHOPEE_RESULT_MESSAGES } from '@/features/shopee/authorization';
 import { ManualConnectionForm } from '@/features/shopee/components/manual-connection-form';
-import { connectShopee, disconnectShopee } from '@/features/shopee/server/actions';
+import {
+  connectShopee,
+  disconnectShopee,
+  continueWithConnectedShopee,
+} from '@/features/shopee/server/actions';
 import { getShopeeConfiguration } from '@/features/shopee/server/client';
 import { getShopeeStatus } from '@/features/shopee/server/connection';
 import { getParam, type SearchParams } from '@/lib/search-params';
@@ -95,7 +99,7 @@ export default async function ShopeeConnectPage({
           }
           description={
             status.connected
-              ? 'A conexão foi autorizada. A escolha dos produtos e a publicação chegam em breve.'
+              ? 'A conexão foi autorizada. Confira os produtos disponíveis no próximo passo.'
               : enabled
                 ? config?.SHOPEE_ENVIRONMENT === 'sandbox'
                   ? 'Este é o ambiente de testes da Shopee. Use apenas a conta da loja de sandbox.'
@@ -121,8 +125,8 @@ export default async function ShopeeConnectPage({
             {enabled
               ? 'Seu nome, logo e texto ficam salvos aqui para'
               : 'A conexão ainda está em preparação. Seu nome, logo e texto ficam salvos aqui para'}{' '}
-            a publicação automática, que também está em breve. Por enquanto, a plataforma não
-            publica sua marca nem seus produtos por lá.
+            as próximas etapas. A publicação dos produtos depende de um catálogo atualizado e das
+            permissões da sua loja. Sua marca ainda não é enviada automaticamente.
           </span>
         </p>
         {enabled && !status.connected ? (
@@ -135,6 +139,11 @@ export default async function ShopeeConnectPage({
               </Button>
             </form>
           )
+        ) : null}
+        {enabled && status.connected && config?.SHOPEE_ENVIRONMENT === 'live' ? (
+          <form action={continueWithConnectedShopee}>
+            <Button>Continuar para os produtos</Button>
+          </form>
         ) : null}
         {enabled && status.connected ? (
           <form action={disconnectShopee}>

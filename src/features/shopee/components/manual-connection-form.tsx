@@ -11,7 +11,11 @@ import {
 } from '../server/actions';
 
 /** A autorização abre em outra aba; o endereço volta por POST, sem guardar o código na página. */
-export function ManualConnectionForm() {
+export function ManualConnectionForm({
+  origin = 'loja-pronta',
+}: {
+  origin?: 'sll' | 'loja-pronta';
+}) {
   const [start, startAction, starting] = useActionState(startManualShopeeAuthorization, undefined);
   const [result, completeAction, completing] = useActionState(
     completeManualShopeeAuthorization,
@@ -21,6 +25,7 @@ export function ManualConnectionForm() {
   if (!start?.authorizationUrl && !result?.error) {
     return (
       <form action={startAction} className="flex flex-col gap-3">
+        <input type="hidden" name="origin" value={origin} />
         <p className="text-body text-pretty text-muted-foreground">
           Você autoriza na Shopee e volta aqui para colar o endereço que aparecer. Vamos conferir a
           autorização antes de conectar sua loja.
@@ -56,6 +61,7 @@ export function ManualConnectionForm() {
         </Button>
       ) : null}
       <form action={completeAction} className="flex flex-col gap-3">
+        <input type="hidden" name="origin" value={origin} />
         <Field>
           <FloatingLabelInput
             id="shopee-return-url"

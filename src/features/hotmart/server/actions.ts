@@ -1,6 +1,6 @@
 'use server';
 
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/server/db';
 import { hotmartEvents, hotmartProductMappings, hotmartSettings } from '@/server/db/schema';
@@ -18,25 +18,35 @@ export async function saveHotmartSettings(
   const parsed = parseHotmartSettings(form);
   if (!parsed.ok) return { message: parsed.message, saved: false };
   const { token, sllCode: sll, storeCode: store } = parsed.value;
-  const previous = await db.query.hotmartSettings.findFirst({
-    where: eq(hotmartSettings.id, 'main'),
-  });
-  if (!previous && !token) return { message: 'Informe o token de verificação.', saved: false };
-  const currentMappings = await db.query.hotmartProductMappings.findMany();
-  const changedMappings = currentMappings.some(
-    (item) => (item.access === 'sll' ? sll : store) !== item.productUcode,
-  );
-  if (
-    changedMappings &&
-    (await db.query.hotmartPurchases.findFirst({ columns: { transaction: true } }))
-  ) {
-    return {
-      saved: false,
-      message:
-        'Já chegaram compras com esses códigos, então eles não podem mudar: isso mexeria no acesso de quem já comprou. Volte aos códigos de antes e salve de novo.',
-    };
-  }
-  await db.transaction(async (tx) => {
+  const outcome = await db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext('hotmart-product-mappings'))`);
+    const previous = await tx.query.hotmartSettings.findFirst({
+      where: eq(hotmartSettings.id, 'main'),
+    });
+    if (!previous && !token) return { message: 'Informe o token de verificação.', saved: false };
+    const currentMappings = await tx.query.hotmartProductMappings.findMany();
+    if (
+      currentMappings.some(
+        (item) => !item.primary && (item.productUcode === sll || item.productUcode === store),
+      )
+    )
+      return {
+        saved: false,
+        message:
+          'Esse código já está cadastrado em Experts e vídeos. Preserve a origem e use os códigos principais deste formulário.',
+      };
+    const changedMappings = currentMappings
+      .filter((item) => item.primary)
+      .some((item) => (item.access === 'sll' ? sll : store) !== item.productUcode);
+    if (
+      changedMappings &&
+      (await tx.query.hotmartPurchases.findFirst({ columns: { transaction: true } }))
+    )
+      return {
+        saved: false,
+        message:
+          'Já chegaram compras com esses códigos, então eles não podem mudar: isso mexeria no acesso de quem já comprou. Volte aos códigos de antes e salve de novo.',
+      };
     if (token.trim()) {
       await tx
         .insert(hotmartSettings)
@@ -54,7 +64,7 @@ export async function saveHotmartSettings(
           },
         });
     }
-    await tx.delete(hotmartProductMappings);
+    await tx.delete(hotmartProductMappings).where(eq(hotmartProductMappings.primary, true));
     await tx
       .insert(hotmartProductMappings)
       .values([
@@ -62,9 +72,10 @@ export async function saveHotmartSettings(
         { productUcode: store, access: 'loja-pronta' },
       ])
       .onConflictDoNothing();
+    return { message: 'Configuração salva. Novos avisos já podem ser recebidos.', saved: true };
   });
-  revalidatePath('/admin/hotmart');
-  return { message: 'Configuração salva. Novos avisos já podem ser recebidos.', saved: true };
+  if (outcome.saved) revalidatePath('/admin/hotmart');
+  return outcome;
 }
 
 export async function getHotmartAdminState() {
