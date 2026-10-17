@@ -34,7 +34,7 @@ export async function getAccountStoreJourney(id: string) {
     selected: logo.key === brand.logoImage,
     uploaded: Boolean(logo.uploaded),
   }));
-  // Older selected logos may predate the studio's saved image list.
+  // Logos escolhidos antes da galeria do estúdio existir não estão na lista: entram primeiro.
   if (logoSrc && !images.some((image) => image.selected)) {
     images.unshift({ src: logoSrc, selected: true });
   }

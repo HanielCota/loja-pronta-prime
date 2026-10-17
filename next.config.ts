@@ -28,6 +28,17 @@ const nextConfig: NextConfig = {
     qualities: [75, 100],
   },
 
+  async redirects() {
+    return [
+      // A tela da etapa da aluna se chamava /journey; links salvos continuam funcionando.
+      {
+        source: '/admin/contas/:id/journey',
+        destination: '/admin/contas/:id/etapa',
+        permanent: true,
+      },
+    ];
+  },
+
   async rewrites() {
     return {
       // Antes dos arquivos: a página inicial já existe para as alunas no domínio principal.

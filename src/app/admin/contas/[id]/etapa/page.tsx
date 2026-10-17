@@ -37,8 +37,8 @@ export default async function AdminStoreJourneyPage({
       <div className="flex flex-col gap-6">
         <p className="flex items-start gap-3 rounded-2xl bg-primary-soft px-5 py-4 text-body text-foreground forced-colors:border forced-colors:border-[CanvasText]">
           <Eye aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
-          Só para ver. Você está na sua conta de administradora. Abrir esta tela não muda o
-          progresso da aluna.
+          Só para ver. Você continua na sua própria conta. Abrir esta tela não muda o progresso da
+          aluna.
         </p>
         {!hasAccess || account.banned ? (
           <p className="rounded-2xl bg-muted px-5 py-4 text-body text-muted-foreground">
