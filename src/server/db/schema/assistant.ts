@@ -225,7 +225,9 @@ export const assistantPublicationBatches = pgTable(
       .notNull()
       .default('initial'),
     strategy: text('strategy', { enum: ['varied', 'niche'] }).notNull(),
-    status: text('status', { enum: ['publishing', 'observing', 'evaluated', 'blocked'] })
+    status: text('status', {
+      enum: ['publishing', 'observing', 'evaluated', 'published', 'blocked'],
+    })
       .notNull()
       .default('publishing'),
     publishedAt: timestamp('published_at', { withTimezone: true }),

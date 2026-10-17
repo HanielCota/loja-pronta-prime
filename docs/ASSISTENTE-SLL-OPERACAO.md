@@ -81,7 +81,8 @@ validados estão em `src/features/shopee/catalog.ts` e
 
 `product` informa fornecedor/SKU, título, descrição, imagens HTTPS, custos e preços em centavos,
 estoque, peso em gramas, dimensões em centímetros, `updatedAt` com fuso e variações. O instante
-original é preservado: importar novamente não renova artificialmente preço ou estoque. Um
+original é preservado: importar novamente não renova artificialmente preço ou estoque. Arquivos anteriores ou conflitantes não substituem uma versão mais recente, inclusive seus
+mapeamentos de publicação. Datas futuras são recusadas na importação. Um
 produto fica indisponível após 15 minutos sem atualização, com data futura, estoque vazio ou
 preço incompatível com o custo.
 
@@ -90,7 +91,10 @@ SKU, preço em reais, quantidade, peso em kg, imagens já hospedadas na Shopee (
 dimensões, logística habilitada, atributos e marca válidos. Importar exige selecionar a conta
 pelo identificador e confirmar a preparação real desses dados. URL de imagem do fornecedor não
 vira automaticamente um ID Shopee. O importador não faz upload de imagens nem consulta frete.
-Preço/estoque/SKU são conferidos ao importar, selecionar e antes do envio. Variações ficam bloqueadas.
+Preço/estoque/SKU são conferidos ao importar, selecionar e antes do envio. A seleção inicial
+inclui a confirmação da oferta exibida e da dona/loja/aplicativo; mudança de oferta entre abrir
+a página e confirmar exige atualizar a seleção. A quantidade do anúncio aparece junto do
+estoque do fornecedor. Variações ficam bloqueadas.
 
 É necessário conectar o feed real do fornecedor para manter a oferta atualizada de forma
 automática. Enquanto isso, o importador é uma entrada operacional explícita; não simula uma
@@ -109,13 +113,16 @@ bun run assistant:worker --once
 ```
 
 O worker é um processo separado do Next. Conectar a loja agenda a primeira coleta; uma coleta
-bem-sucedida agenda outra em seis horas. A aluna também pode solicitar atualização, com deduplicação
+bem-sucedida agenda outra em seis horas. Falhas temporárias de consulta também mantêm a
+próxima coleta; acesso removido ou configuração ausente não geram novas tentativas automáticas. A aluna também pode solicitar atualização, com deduplicação
 em janelas de quinze minutos. A fila usa `FOR UPDATE SKIP LOCKED`, concessão de cinco minutos e
-renovação a cada trinta segundos. Ao reiniciar, leituras interrompidas voltam à fila; escritas
-interrompidas passam a resultado incerto. A rotina verifica novamente acesso, bloqueio da conta,
+renovação a cada trinta segundos. Ao reiniciar, leituras interrompidas e publicações que ainda não chegaram a `sending` voltam
+à fila. Escritas iniciadas sem resposta confirmada passam a resultado incerto. O worker antigo
+precisa manter a posse da tarefa para iniciar a escrita e não pode interferir na nova tentativa.
+Uma resposta real recebida após a expiração ainda é persistida como confirmação, sem reenviar. A rotina verifica novamente acesso, bloqueio da conta,
 configuração do piloto e vínculo da loja antes de cada job.
 
-O lote só começa a observação quando **todos** os anúncios estão confirmados, nunca na seleção,
+O lote inicial só começa a observação quando **todos** os anúncios estão confirmados, nunca na seleção,
 na primeira tentativa ou no primeiro anúncio. O relógio soma cinco períodos de 24h ao último
 anúncio confirmado. A avaliação também exige duas coletas completas cobrindo ao menos cinco
 dias após esse marco e dados válidos dos cinco anúncios. A coleta inicial atrasada pode atrasar
@@ -135,6 +142,9 @@ quantidade autorizados. Se o preço mudar, a seleção existente continua bloque
 A tela mostra preço anterior, preço e quantidade atuais; a conferência dos dados evita confirmar
 uma oferta que mudou depois da leitura. A confirmação atualiza o mesmo item e seu horário de
 autorização e recoloca somente aquele job na fila. Itens incertos nunca usam esse caminho.
+
+Os lotes seguintes terminam como publicados quando todos os seus itens são confirmados.
+Eles não prometem uma nova análise de cinco dias, reservada ao lote inicial.
 
 ## Produção
 
@@ -170,3 +180,17 @@ cobrança e TikTok permanecem evolução posterior, como registrado no plano.
 
 A oferta adicional da Loja Pronta pode usar `LOJA_PRONTA_CHECKOUT_URL` com o checkout HTTPS real.
 Sem esse endereço, a página explica o acesso adicional e não cria uma compra fictícia.
+
+## Verificações da revisão
+
+A suíte `test:integration` cobre oferta alterada entre exibição e seleção, estoque alterado durante
+busca de SKUs, retomada de tarefa sem envio, resposta após expiração, continuidade de coleta e
+importações atrasadas/concorrentes. Para conferir o catálogo habilitado no navegador, use:
+
+```bash
+bun --env-file=.env.local run test:e2e --config=playwright.assistant.config.ts
+```
+
+Essa configuração aplica credenciais exclusivamente de teste ao servidor do banco temporário.
+Não inicia worker nem realiza publicações na Shopee. Os cenários verificam a mudança de preço
+antes da confirmação em celular/computador e nos dois temas, com a fila real no banco isolado.

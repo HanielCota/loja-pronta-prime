@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { requireProductAction } from '@/features/products/server/access';
 import { reauthorizePublicationItem } from './corrections';
+import { publicationSelectionSchema } from '../publication-selection';
 import { createPublicationBatch } from './operations';
 
 export async function submitPublicationBatch(form: FormData): Promise<void> {
@@ -14,12 +15,10 @@ export async function submitPublicationBatch(form: FormData): Promise<void> {
     .array(
       z
         .string()
-        .max(500)
+        .max(2000)
         .transform((value, ctx) => {
           try {
-            return z
-              .tuple([z.string().min(1).max(100), z.string().min(1).max(100)])
-              .parse(JSON.parse(value));
+            return publicationSelectionSchema.parse(JSON.parse(value));
           } catch {
             ctx.addIssue({ code: 'custom', message: 'Seleção inválida.' });
             return z.NEVER;

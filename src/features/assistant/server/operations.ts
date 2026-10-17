@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { and, asc, desc, eq, inArray, lte, ne, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, lte, ne, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
 import {
   assistantJobs,
@@ -28,7 +28,50 @@ import {
   type BatchAnalysis,
 } from '../model';
 
+import { publicationOfferFingerprint, type PublicationSelection } from '../publication-selection';
+
 type Job = typeof assistantJobs.$inferSelect;
+const COLLECTION_INTERVAL_MS = 6 * 60 * 60 * 1000;
+const activeLease = (job: Job) =>
+  and(
+    eq(assistantJobs.id, job.id),
+    eq(assistantJobs.userId, job.userId),
+    eq(assistantJobs.status, 'running'),
+    eq(assistantJobs.attempts, job.attempts),
+    gt(assistantJobs.leaseUntil, new Date()),
+  );
+async function renewLease(job: Job) {
+  const [current] = await db
+    .update(assistantJobs)
+    .set({ leaseUntil: new Date(Date.now() + 5 * 60_000) })
+    .where(activeLease(job))
+    .returning({ id: assistantJobs.id });
+  return Boolean(current);
+}
+async function scheduleNextCollection(
+  job: Job,
+  executor: Pick<typeof db, 'insert' | 'select'> = db,
+) {
+  const next = new Date(Date.now() + COLLECTION_INTERVAL_MS);
+  const key = `collect:${job.userId}:${Math.floor(next.getTime() / COLLECTION_INTERVAL_MS)}:scheduled`;
+  const values = { userId: job.userId, kind: 'collect' as const, runAt: next };
+  const [scheduled] = await executor
+    .insert(assistantJobs)
+    .values({ ...values, deduplicationKey: key })
+    .onConflictDoNothing()
+    .returning({ id: assistantJobs.id });
+  if (scheduled) return;
+  const [existing] = await executor
+    .select()
+    .from(assistantJobs)
+    .where(eq(assistantJobs.deduplicationKey, key));
+  // Retomar antes do horário não pode usar a própria tarefa como sua próxima execução.
+  if (existing && (existing.id === job.id || !['pending', 'running'].includes(existing.status)))
+    await executor
+      .insert(assistantJobs)
+      .values({ ...values, deduplicationKey: `${key}:after:${job.id}` })
+      .onConflictDoNothing();
+}
 class OperationBlocked extends Error {
   constructor(public readonly reason: string) {
     super(reason);
@@ -42,16 +85,16 @@ const connectionMatches = (
 
 export async function createPublicationBatch(
   userId: string,
-  keys: [string, string][],
+  keys: PublicationSelection[],
   strategy: 'varied' | 'niche',
   kind: 'initial' | 'expansion' = 'initial',
 ) {
   if (
     kind === 'initial'
-      ? !validateInitialSelection(keys.map((key) => JSON.stringify(key)))
+      ? !validateInitialSelection(keys.map((key) => JSON.stringify(key.slice(0, 2))))
       : keys.length < 1 ||
         keys.length > 50 ||
-        new Set(keys.map((key) => JSON.stringify(key))).size !== keys.length
+        new Set(keys.map((key) => JSON.stringify(key.slice(0, 2)))).size !== keys.length
   )
     throw new OperationBlocked('selection');
   const config = await assertAssistantAccess(userId, 'loja-pronta');
@@ -80,11 +123,14 @@ export async function createPublicationBatch(
     if (kind === 'expansion' && initial?.status !== 'evaluated')
       throw new OperationBlocked('observation');
     const prepared = [];
-    for (const [supplierId, sku] of keys) {
+    for (const [supplierId, sku, expectedOffer] of keys.toSorted((a, b) =>
+      JSON.stringify(a.slice(0, 2)).localeCompare(JSON.stringify(b.slice(0, 2))),
+    )) {
       const [catalog] = await tx
         .select()
         .from(supplierCatalog)
-        .where(and(eq(supplierCatalog.supplierId, supplierId), eq(supplierCatalog.sku, sku)));
+        .where(and(eq(supplierCatalog.supplierId, supplierId), eq(supplierCatalog.sku, sku)))
+        .for('share');
       const [mapping] = await tx
         .select()
         .from(supplierPublicationMappings)
@@ -96,13 +142,22 @@ export async function createPublicationBatch(
             eq(supplierPublicationMappings.shopId, shop.shopId),
             eq(supplierPublicationMappings.applicationId, appId),
           ),
-        );
+        )
+        .for('share');
       if (!catalog || !mapping) throw new OperationBlocked('catalog-mapping');
       const product = prepareSupplierProduct(catalog.product, new Date());
       if (product.status !== 'prepared' || !('product' in product))
         throw new OperationBlocked('catalog-stale');
       if (product.product.variants.length) throw new OperationBlocked('variants');
       const payload = publicationPayloadSchema.parse(mapping.payload);
+      if (
+        publicationOfferFingerprint(payload, {
+          userId,
+          shopId: shop.shopId,
+          applicationId: appId,
+        }) !== expectedOffer
+      )
+        throw new OperationBlocked('offer-changed');
       if (
         payload.item_sku !== sku ||
         Math.round(payload.original_price * 100) !== product.product.priceCents ||
@@ -148,9 +203,9 @@ export async function createPublicationBatch(
 /** Nenhum timeout de escrita volta automaticamente à fila de publicação. */
 export async function claimAssistantJob(now = new Date()) {
   return db.transaction(async (tx) => {
-    const uncertain = await tx
-      .update(assistantJobs)
-      .set({ status: 'unknown', failure: 'interrupted' })
+    const interrupted = await tx
+      .select()
+      .from(assistantJobs)
       .where(
         and(
           eq(assistantJobs.status, 'running'),
@@ -158,18 +213,42 @@ export async function claimAssistantJob(now = new Date()) {
           lte(assistantJobs.leaseUntil, now),
         ),
       )
-      .returning({ payload: assistantJobs.payload });
-    for (const job of uncertain)
-      if (job.payload.itemId)
+      .for('update', { skipLocked: true });
+    for (const job of interrupted) {
+      const [item] = job.payload.itemId
+        ? await tx
+            .select()
+            .from(assistantPublicationItems)
+            .where(
+              and(
+                eq(assistantPublicationItems.id, job.payload.itemId),
+                eq(assistantPublicationItems.userId, job.userId),
+              ),
+            )
+            .for('update')
+        : [];
+      // Antes de sending não houve escrita externa: só esse caso pode voltar à fila.
+      const status =
+        item?.status === 'published'
+          ? 'completed'
+          : item && ['pending', 'failed'].includes(item.status)
+            ? 'pending'
+            : 'unknown';
+      if (item?.status === 'sending')
         await tx
           .update(assistantPublicationItems)
           .set({ status: 'unknown', failure: 'interrupted' })
-          .where(
-            and(
-              eq(assistantPublicationItems.id, job.payload.itemId),
-              eq(assistantPublicationItems.status, 'sending'),
-            ),
-          );
+          .where(eq(assistantPublicationItems.id, item.id));
+      await tx
+        .update(assistantJobs)
+        .set({
+          status,
+          leaseUntil: null,
+          failure: status === 'completed' ? null : 'interrupted',
+          ...(status === 'pending' ? { runAt: now } : {}),
+        })
+        .where(eq(assistantJobs.id, job.id));
+    }
     await tx
       .update(assistantJobs)
       .set({ status: 'pending', leaseUntil: null })
@@ -207,17 +286,36 @@ async function confirmPublishedItem(
   itemId: number,
 ) {
   await db.transaction(async (tx) => {
+    await tx
+      .select({ id: assistantJobs.id })
+      .from(assistantJobs)
+      .where(eq(assistantJobs.deduplicationKey, `publish:${item.id}`))
+      .for('update');
     const [batch] = await tx
       .select()
       .from(assistantPublicationBatches)
       .where(eq(assistantPublicationBatches.id, item.batchId))
       .for('update');
     if (!batch) throw new Error('Lote ausente.');
+    const [current] = await tx
+      .select()
+      .from(assistantPublicationItems)
+      .where(eq(assistantPublicationItems.id, item.id))
+      .for('update');
+    if (!current || !['sending', 'unknown', 'published'].includes(current.status))
+      throw new OperationBlocked('reconciliation');
+    if (current.status === 'published' && current.itemId !== itemId)
+      throw new OperationBlocked('reconciliation');
     const now = new Date();
+    if (current.status !== 'published')
+      await tx
+        .update(assistantPublicationItems)
+        .set({ status: 'published', itemId, publishedAt: now, failure: null })
+        .where(eq(assistantPublicationItems.id, item.id));
     await tx
-      .update(assistantPublicationItems)
-      .set({ status: 'published', itemId, publishedAt: now, failure: null })
-      .where(eq(assistantPublicationItems.id, item.id));
+      .update(assistantJobs)
+      .set({ status: 'completed', failure: null, leaseUntil: null })
+      .where(eq(assistantJobs.deduplicationKey, `publish:${item.id}`));
     const items = await tx
       .select()
       .from(assistantPublicationItems)
@@ -225,7 +323,7 @@ async function confirmPublishedItem(
     if (items.every((row) => row.status === 'published') && !batch.publishedAt) {
       await tx
         .update(assistantPublicationBatches)
-        .set({ status: 'observing', publishedAt: now })
+        .set({ status: batch.kind === 'initial' ? 'observing' : 'published', publishedAt: now })
         .where(eq(assistantPublicationBatches.id, batch.id));
       if (batch.kind === 'initial')
         await tx
@@ -342,16 +440,52 @@ async function publishItem(job: Job, fetcher: typeof fetch) {
     throw new OperationBlocked('catalog-stale');
   if ((await findSku(config, access, payload.item_sku, fetcher)).length)
     throw new OperationBlocked('sku-exists');
-  const [sending] = await db
-    .update(assistantPublicationItems)
-    .set({ status: 'sending', failure: null })
-    .where(
-      and(
-        eq(assistantPublicationItems.id, item.id),
-        inArray(assistantPublicationItems.status, ['pending', 'failed']),
-      ),
+  await assertAssistantAccess(job.userId, 'loja-pronta');
+  const sending = await db.transaction(async (tx) => {
+    const [owned] = await tx
+      .select({ id: assistantJobs.id })
+      .from(assistantJobs)
+      .where(activeLease(job))
+      .for('update');
+    if (!owned) throw new OperationBlocked('lease-lost');
+    const [connection] = await tx
+      .select()
+      .from(shopeeConnections)
+      .where(eq(shopeeConnections.userId, job.userId))
+      .for('share');
+    if (!connection || connection.revokedAt || !connectionMatches(access, config, connection))
+      throw new OperationBlocked('connection-changed');
+    if (process.env.SHOPEE_PUBLICATION_ENABLED !== 'true')
+      throw new OperationBlocked('publication-disabled');
+    // A busca de SKU pode ser longa. Reconfere o estoque imediatamente antes do envio.
+    const [catalogNow] = await tx
+      .select()
+      .from(supplierCatalog)
+      .where(
+        and(eq(supplierCatalog.supplierId, item.supplierId), eq(supplierCatalog.sku, item.sku)),
+      )
+      .for('share');
+    const prepared = prepareSupplierProduct(catalogNow?.product, new Date());
+    if (
+      prepared.status !== 'prepared' ||
+      !('product' in prepared) ||
+      prepared.product.variants.length ||
+      Math.round(payload.original_price * 100) !== prepared.product.priceCents ||
+      payload.normal_stock > prepared.product.stock
     )
-    .returning({ id: assistantPublicationItems.id });
+      throw new OperationBlocked('catalog-stale');
+    const [changed] = await tx
+      .update(assistantPublicationItems)
+      .set({ status: 'sending', failure: null })
+      .where(
+        and(
+          eq(assistantPublicationItems.id, item.id),
+          inArray(assistantPublicationItems.status, ['pending', 'failed']),
+        ),
+      )
+      .returning({ id: assistantPublicationItems.id });
+    return changed;
+  });
   if (!sending) throw new OperationBlocked('reconciliation');
   let itemId: number;
   try {
@@ -456,7 +590,7 @@ export async function evaluatePublicationBatch(userId: string, batchId: string, 
         }),
       );
     });
-    if (windows.every((window) => window && window.views !== null)) {
+    if (windows.every((window) => window && window.views !== null && window.categoryId !== null)) {
       const observed = windows.map((window) => ({
         itemId: window!.itemId,
         views: window!.views,
@@ -479,14 +613,25 @@ export async function evaluatePublicationBatch(userId: string, batchId: string, 
       };
     }
   }
-  await db
+  const [saved] = await db
     .update(assistantPublicationBatches)
     .set({
       analysis,
       ...(analysis.status === 'ready' ? { status: 'evaluated' as const, evaluatedAt: now } : {}),
     })
+    .where(
+      and(
+        eq(assistantPublicationBatches.id, batch.id),
+        ne(assistantPublicationBatches.status, 'evaluated'),
+      ),
+    )
+    .returning({ analysis: assistantPublicationBatches.analysis });
+  if (saved) return saved.analysis;
+  const [current] = await db
+    .select({ analysis: assistantPublicationBatches.analysis })
+    .from(assistantPublicationBatches)
     .where(eq(assistantPublicationBatches.id, batch.id));
-  return analysis;
+  return current?.analysis ?? analysis;
 }
 
 export async function processAssistantJob(job: Job, fetcher: typeof fetch = fetch) {
@@ -497,19 +642,17 @@ export async function processAssistantJob(job: Job, fetcher: typeof fetch = fetc
       eq(assistantJobs.attempts, job.attempts),
     );
   const heartbeat = setInterval(() => {
-    void db
-      .update(assistantJobs)
-      .set({ leaseUntil: new Date(Date.now() + 5 * 60_000) })
-      .where(owns())
-      .catch(() => {});
+    void renewLease(job).catch(() => {});
   }, 30_000);
   try {
+    if (!(await renewLease(job))) return 'stale' as const;
     const config = await assertAssistantAccess(
       job.userId,
-      job.kind === 'publish' ? 'loja-pronta' : undefined,
+      job.kind === 'collect' ? undefined : 'loja-pronta',
     );
     if (job.kind === 'collect') {
       const runId = await collectStoreMetrics(job.userId, config, fetcher);
+      if (!(await renewLease(job))) return 'stale' as const;
       const due = await db
         .select()
         .from(assistantPublicationBatches)
@@ -531,16 +674,7 @@ export async function processAssistantJob(job: Job, fetcher: typeof fetch = fetc
             payload: { batchId: batch.id },
           })
           .onConflictDoNothing();
-      const next = new Date(Date.now() + 6 * 60 * 60 * 1000);
-      await db
-        .insert(assistantJobs)
-        .values({
-          userId: job.userId,
-          kind: 'collect',
-          deduplicationKey: `collect:${job.userId}:${Math.floor(next.getTime() / (6 * 60 * 60 * 1000))}:scheduled`,
-          runAt: next,
-        })
-        .onConflictDoNothing();
+      await scheduleNextCollection(job);
     } else if (job.kind === 'publish') await publishItem(job, fetcher);
     else if (job.payload.batchId) await evaluatePublicationBatch(job.userId, job.payload.batchId);
     else throw new OperationBlocked('batch');
@@ -556,22 +690,50 @@ export async function processAssistantJob(job: Job, fetcher: typeof fetch = fetc
         : error instanceof ShopeeApiError
           ? error.reason
           : 'unavailable';
-    let status = reason === 'uncertain' ? ('unknown' as const) : ('blocked' as const);
-    if (job.kind === 'publish' && job.payload.itemId) {
-      const [uncertain] = await db
-        .update(assistantPublicationItems)
-        .set({ status: 'unknown', failure: 'interrupted' })
+    if (reason === 'lease-lost') return 'stale' as const;
+    return db.transaction(async (tx) => {
+      const [current] = await tx
+        .select()
+        .from(assistantJobs)
         .where(
           and(
-            eq(assistantPublicationItems.id, job.payload.itemId),
-            eq(assistantPublicationItems.status, 'sending'),
+            eq(assistantJobs.id, job.id),
+            eq(assistantJobs.attempts, job.attempts),
+            inArray(
+              assistantJobs.status,
+              job.kind === 'publish' ? ['running', 'unknown'] : ['running'],
+            ),
           ),
         )
-        .returning({ id: assistantPublicationItems.id });
-      if (uncertain) status = 'unknown';
-    }
-    await db.update(assistantJobs).set({ status, failure: reason, leaseUntil: null }).where(owns());
-    return status;
+        .for('update');
+      if (!current) return 'stale' as const;
+      let status = reason === 'uncertain' ? ('unknown' as const) : ('blocked' as const);
+      if (job.kind === 'publish' && job.payload.itemId) {
+        const [item] = await tx
+          .select()
+          .from(assistantPublicationItems)
+          .where(
+            and(
+              eq(assistantPublicationItems.id, job.payload.itemId),
+              eq(assistantPublicationItems.userId, job.userId),
+            ),
+          )
+          .for('update');
+        if (item?.status === 'sending')
+          await tx
+            .update(assistantPublicationItems)
+            .set({ status: 'unknown', failure: 'interrupted' })
+            .where(eq(assistantPublicationItems.id, item.id));
+        if (item && ['sending', 'unknown'].includes(item.status)) status = 'unknown';
+      }
+      await tx
+        .update(assistantJobs)
+        .set({ status, failure: reason, leaseUntil: null })
+        .where(eq(assistantJobs.id, job.id));
+      if (job.kind === 'collect' && ['unavailable', 'response'].includes(reason))
+        await scheduleNextCollection(job, tx);
+      return status;
+    });
   } finally {
     clearInterval(heartbeat);
   }

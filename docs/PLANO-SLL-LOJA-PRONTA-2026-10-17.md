@@ -1,6 +1,6 @@
 # Evolução do SLL e da Loja Pronta — pedidos de 17/10/2026
 
-Estado: proposta consolidada após a revisão integral dos 12 áudios. Este documento organiza o trabalho; não declara as funcionalidades implementadas nem autoriza publicação ou alterações em lojas reais.
+Estado: plano aprovado, com implementação técnica disponível para revisão. O escopo consolidado após a revisão integral dos 12 áudios está preservado abaixo. O estado da implementação e as dependências do piloto estão na seção 10 e no guia operacional.
 
 Base: 12 áudios enviados nesta conversa, aproximadamente 16 minutos e 39 segundos; código local em `3819fb6d46b424a8432265d80bb65d91075bc7d4`. O usuário confirmou que “Escala Shop”, nos áudios, corresponde à área Curso SLL deste projeto. Os planos anteriores continuam como histórico das entregas já feitas.
 

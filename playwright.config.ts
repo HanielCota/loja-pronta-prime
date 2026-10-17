@@ -29,7 +29,12 @@ export default defineConfig({
     {
       name: 'desktop',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: [/layout\.spec\.ts/, /sll-cache\.spec\.ts/, catalogTests],
+      testIgnore: [
+        /layout\.spec\.ts/,
+        /sll-cache\.spec\.ts/,
+        /assistant-publication\.spec\.ts/,
+        catalogTests,
+      ],
     },
     {
       // Estes cenários publicam o catálogo global: cada arquivo precisa terminar antes do próximo.

@@ -9,6 +9,7 @@ import {
 import { prepareSupplierProduct } from '@/features/shopee/catalog';
 import { canUseShopee, shopeeApplicationId } from '@/features/shopee/authorization';
 import { getShopeeConfiguration } from '@/features/shopee/server/client';
+import { publicationOfferFingerprint } from '../publication-selection';
 import { publicationPayloadSchema } from '../model';
 
 /** Só oferece produtos reais, recentes e preparados para esta conta e este aplicativo. */
@@ -75,7 +76,19 @@ export async function availableSupplierProducts(userId: string, role: string | n
       payload.data.normal_stock > ready.product.stock
     )
       return [];
-    return [{ ...ready.product, categoryId: payload.data.category_id }];
+    return [
+      {
+        ...ready.product,
+        title: payload.data.item_name,
+        categoryId: payload.data.category_id,
+        quantity: payload.data.normal_stock,
+        fingerprint: publicationOfferFingerprint(payload.data, {
+          userId,
+          shopId: connection.shopId,
+          applicationId: connection.applicationId,
+        }),
+      },
+    ];
   });
   return { status: 'ready' as const, products };
 }

@@ -59,6 +59,8 @@ export default async function AssistantAdminPage({
   const result = getParam(params.resultado);
   const messages: Record<string, string> = {
     saved: 'Alteração salva.',
+    outdated:
+      'Dados anteriores ou conflitantes foram ignorados. As informações mais recentes foram preservadas.',
     invalid: 'Confira os dados e tente novamente.',
     'lesson-unavailable': 'Uma das aulas escolhidas ainda não está publicada.',
     'confirmation-required': 'Confira a conta e as informações de publicação antes de importar. ',

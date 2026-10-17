@@ -68,13 +68,17 @@ export default async function StoreProductsPage({
               {batch.kind === 'initial' ? 'Seus cinco primeiros produtos' : 'Próximos produtos'}
             </h2>
             <p className="text-body text-muted-foreground">
-              {!batch.publishedAt
-                ? 'O acompanhamento de cinco dias começa quando todos os anúncios deste lote estiverem confirmados.'
-                : batch.status === 'evaluated'
-                  ? 'Os cinco dias foram analisados com os dados disponíveis.'
-                  : observation.status === 'observing'
-                    ? `Período de observação até ${date(observation.readyAt!)}.`
-                    : 'O período de cinco dias terminou. A análise aguarda coletas completas cobrindo esse intervalo.'}
+              {batch.kind === 'expansion'
+                ? batch.publishedAt
+                  ? 'Todos os produtos deste lote foram confirmados na Shopee.'
+                  : 'A publicação deste lote está em andamento. Confira a confirmação de cada produto abaixo.'
+                : !batch.publishedAt
+                  ? 'O acompanhamento de cinco dias começa quando todos os anúncios deste lote estiverem confirmados.'
+                  : batch.status === 'evaluated'
+                    ? 'Os cinco dias foram analisados com os dados disponíveis.'
+                    : observation.status === 'observing'
+                      ? `Período de observação até ${date(observation.readyAt!)}.`
+                      : 'O período de cinco dias terminou. A análise aguarda coletas completas cobrindo esse intervalo.'}
             </p>
             <ul className="space-y-3">
               {items.map((item) => (
@@ -99,6 +103,11 @@ export default async function StoreProductsPage({
           </section>
         );
       })}
+      {overview.batches.length ? (
+        <Button asChild variant="soft">
+          <Link href="/loja-pronta/shopee/conectar">Conferir a conexão da Shopee</Link>
+        </Button>
+      ) : null}
       {corrections.length ? (
         <section className={panelCard} aria-labelledby="publication-corrections">
           <h2 id="publication-corrections" className="text-title font-semibold">
@@ -173,7 +182,7 @@ export default async function StoreProductsPage({
                     <input
                       type="checkbox"
                       name="product"
-                      value={JSON.stringify([product.supplierId, product.sku])}
+                      value={JSON.stringify([product.supplierId, product.sku, product.fingerprint])}
                       className="mt-1 size-5 shrink-0"
                     />
                     <span className="text-body">
@@ -183,7 +192,8 @@ export default async function StoreProductsPage({
                           style: 'currency',
                           currency: 'BRL',
                         })}{' '}
-                        · {product.stock} em estoque
+                        · {product.stock} disponíveis no fornecedor · {product.quantity} para
+                        publicar
                         {initial?.analysis?.preferredCategoryId === product.categoryId
                           ? ' · Categoria em destaque na observação'
                           : ''}

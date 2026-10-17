@@ -1,7 +1,8 @@
 'use server';
 
+import { isDeepStrictEqual } from 'node:util';
 import { z } from 'zod';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, lt, sql } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/features/admin/server/access';
@@ -114,6 +115,8 @@ export async function importSupplierCatalog(form: FormData): Promise<void> {
   if (!parsed.success) redirect('/admin/assistente?resultado=invalid');
   const keys = parsed.data.map((row) => JSON.stringify([row.product.supplierId, row.product.sku]));
   if (new Set(keys).size !== keys.length) redirect('/admin/assistente?resultado=invalid');
+  if (parsed.data.some((row) => Date.parse(row.product.updatedAt) > Date.now()))
+    redirect('/admin/assistente?resultado=invalid');
   const hasMappings = parsed.data.some((row) => row.publication);
   const [connection] = targetUserId
     ? await db
@@ -136,8 +139,13 @@ export async function importSupplierCatalog(form: FormData): Promise<void> {
         row.publication.normal_stock > row.product.stock)
     )
       redirect('/admin/assistente?resultado=invalid');
-  await db.transaction(async (tx) => {
-    for (const row of parsed.data) {
+  const ignored = await db.transaction(async (tx) => {
+    let skipped = 0;
+    for (const row of parsed.data.toSorted((a, b) =>
+      JSON.stringify([a.product.supplierId, a.product.sku]).localeCompare(
+        JSON.stringify([b.product.supplierId, b.product.sku]),
+      ),
+    )) {
       await tx
         .insert(supplierCatalog)
         .values({
@@ -149,7 +157,23 @@ export async function importSupplierCatalog(form: FormData): Promise<void> {
         .onConflictDoUpdate({
           target: [supplierCatalog.supplierId, supplierCatalog.sku],
           set: { product: row.product, updatedAt: new Date(row.product.updatedAt) },
+          setWhere: lt(supplierCatalog.updatedAt, new Date(row.product.updatedAt)),
         });
+      const [current] = await tx
+        .select()
+        .from(supplierCatalog)
+        .where(
+          and(
+            eq(supplierCatalog.supplierId, row.product.supplierId),
+            eq(supplierCatalog.sku, row.product.sku),
+          ),
+        )
+        .for('share');
+      // Arquivo atrasado não pode recuperar estoque ou preço que já foi atualizado.
+      if (!current || !isDeepStrictEqual(current.product, row.product)) {
+        skipped++;
+        continue;
+      }
       if (row.publication && connection)
         await tx
           .insert(supplierPublicationMappings)
@@ -177,8 +201,9 @@ export async function importSupplierCatalog(form: FormData): Promise<void> {
             },
           });
     }
+    return skipped;
   });
   revalidatePath('/admin/assistente');
   revalidatePath('/loja-pronta/produtos');
-  redirect('/admin/assistente?resultado=saved');
+  redirect(`/admin/assistente?resultado=${ignored ? 'outdated' : 'saved'}`);
 }

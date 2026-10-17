@@ -1,3 +1,7 @@
+import {
+  publicationOfferFingerprint,
+  type PublicationSelection,
+} from '@/features/assistant/publication-selection';
 import { env } from '@/config/env';
 import { generateAssistantAdvice } from '@/features/assistant/server/advice';
 import { afterAll, beforeAll, expect, test } from 'bun:test';
@@ -117,10 +121,18 @@ async function catalog(id: string, count = 5) {
     .select()
     .from(shopeeConnections)
     .where(eq(shopeeConnections.userId, id));
-  const keys: [string, string][] = [];
+  const keys: PublicationSelection[] = [];
   for (let i = 0; i < count; i++) {
     const sku = `${id}-${i}`;
-    keys.push([supplierId, sku]);
+    keys.push([
+      supplierId,
+      sku,
+      publicationOfferFingerprint(payload(sku, i % 2 ? 20 : 10), {
+        userId: id,
+        shopId: connection!.shopId,
+        applicationId: 'live:123',
+      }),
+    ]);
     const product = {
       supplierId,
       sku,
@@ -770,5 +782,248 @@ test('preço alterado exige nova confirmação da dona e nunca reautoriza result
     .set({ status: 'blocked' })
     .where(eq(assistantJobs.deduplicationKey, `publish:${item!.id}`));
   expect(await reauthorizePublicationItem(id, item!.id, correction!.fingerprint)).toBe(false);
+  await db.update(assistantJobs).set({ status: 'completed' }).where(eq(assistantJobs.userId, id));
+});
+
+test('a seleção inicial exige a oferta exibida, mesmo se o fornecedor e o mapeamento já mudaram juntos', async () => {
+  const { availableSupplierProducts } = await import('@/features/assistant/server/catalog');
+  const id = await account();
+  const keys = await catalog(id);
+  const sku = keys[0]![1];
+  const [source] = await db.select().from(supplierCatalog).where(eq(supplierCatalog.sku, sku));
+  const [mapping] = await db
+    .select()
+    .from(supplierPublicationMappings)
+    .where(eq(supplierPublicationMappings.sku, sku));
+  await db
+    .update(supplierCatalog)
+    .set({ product: { ...source!.product, priceCents: 2500 } })
+    .where(eq(supplierCatalog.sku, sku));
+  await db
+    .update(supplierPublicationMappings)
+    .set({ payload: { ...mapping!.payload, original_price: 25 } })
+    .where(eq(supplierPublicationMappings.sku, sku));
+  await expect(createPublicationBatch(id, keys, 'varied')).rejects.toThrow('offer-changed');
+  expect(
+    await db
+      .select()
+      .from(assistantPublicationBatches)
+      .where(eq(assistantPublicationBatches.userId, id)),
+  ).toHaveLength(0);
+  const refreshed = await availableSupplierProducts(id, 'user');
+  const selections = refreshed.products.map(
+    (product) => [product.supplierId, product.sku, product.fingerprint] as PublicationSelection,
+  );
+  const batchId = await createPublicationBatch(id, selections, 'varied');
+  expect(
+    (
+      await db
+        .select()
+        .from(assistantPublicationItems)
+        .where(
+          and(
+            eq(assistantPublicationItems.batchId, batchId),
+            eq(assistantPublicationItems.sku, sku),
+          ),
+        )
+    )[0]?.payload.original_price,
+  ).toBe(25);
+  await db.update(assistantJobs).set({ status: 'completed' }).where(eq(assistantJobs.userId, id));
+});
+
+test('estoque alterado durante a busca de SKUs é conferido antes da escrita', async () => {
+  const id = await account();
+  const keys = await catalog(id);
+  await createPublicationBatch(id, keys, 'varied');
+  const job = await claimAssistantJob();
+  const [item] = await db
+    .select()
+    .from(assistantPublicationItems)
+    .where(eq(assistantPublicationItems.id, job!.payload.itemId!));
+  let writes = 0;
+  let changed = false;
+  const fetcher = transport(async (url) => {
+    if (url.pathname.endsWith('add_item')) {
+      writes++;
+      return envelope({ item_id: 123 });
+    }
+    if (!changed) {
+      changed = true;
+      const [source] = await db
+        .select()
+        .from(supplierCatalog)
+        .where(eq(supplierCatalog.sku, item!.sku));
+      await db
+        .update(supplierCatalog)
+        .set({ product: { ...source!.product, stock: 0 } })
+        .where(eq(supplierCatalog.sku, item!.sku));
+    }
+    return emptyReads(url);
+  });
+  expect(await processAssistantJob(job!, fetcher)).toBe('blocked');
+  expect(writes).toBe(0);
+  expect(
+    (
+      await db
+        .select()
+        .from(assistantPublicationItems)
+        .where(eq(assistantPublicationItems.id, item!.id))
+    )[0]?.status,
+  ).toBe('pending');
+  await db.update(assistantJobs).set({ status: 'completed' }).where(eq(assistantJobs.userId, id));
+});
+
+test('worker antigo não envia depois que uma publicação ainda não iniciada é retomada', async () => {
+  const id = await account();
+  const keys = await catalog(id);
+  await createPublicationBatch(id, keys, 'varied');
+  const original = await claimAssistantJob();
+  await db
+    .update(assistantJobs)
+    .set({ runAt: new Date(Date.now() + DAY_MS) })
+    .where(eq(assistantJobs.userId, id));
+  let replacement: Awaited<ReturnType<typeof claimAssistantJob>> = null;
+  let writes = 0;
+  let interrupted = false;
+  const fetcher = transport(async (url) => {
+    if (url.pathname.endsWith('add_item')) {
+      writes++;
+      return envelope({ item_id: 12345 });
+    }
+    if (!interrupted) {
+      interrupted = true;
+      await db
+        .update(assistantJobs)
+        .set({ leaseUntil: new Date(Date.now() - 1000) })
+        .where(eq(assistantJobs.id, original!.id));
+      replacement = await claimAssistantJob();
+    }
+    return emptyReads(url);
+  });
+  expect(await processAssistantJob(original!, fetcher)).toBe('stale');
+  expect(writes).toBe(0);
+  expect(replacement!.id).toBe(original!.id);
+  expect(replacement!.attempts).toBe(original!.attempts + 1);
+  expect(
+    (await db.select().from(assistantJobs).where(eq(assistantJobs.id, original!.id)))[0]?.status,
+  ).toBe('running');
+  expect(await processAssistantJob(replacement!, fetcher)).toBe('completed');
+  expect(writes).toBe(1);
+  await db.update(assistantJobs).set({ status: 'completed' }).where(eq(assistantJobs.userId, id));
+});
+
+test('a resposta aceita após a expiração é persistida sem deixar um job incerto órfão', async () => {
+  const id = await account();
+  const keys = await catalog(id);
+  await createPublicationBatch(id, keys, 'varied');
+  const job = await claimAssistantJob();
+  await db
+    .update(assistantJobs)
+    .set({ runAt: new Date(Date.now() + DAY_MS) })
+    .where(eq(assistantJobs.userId, id));
+  const fetcher = transport(async (url) => {
+    if (!url.pathname.endsWith('add_item')) return emptyReads(url);
+    await db
+      .update(assistantJobs)
+      .set({ leaseUntil: new Date(Date.now() - 1000) })
+      .where(eq(assistantJobs.id, job!.id));
+    expect(await claimAssistantJob()).toBeNull();
+    return envelope({ item_id: 56789 });
+  });
+  expect(await processAssistantJob(job!, fetcher)).toBe('completed');
+  expect(
+    (await db.select().from(assistantJobs).where(eq(assistantJobs.id, job!.id)))[0]?.status,
+  ).toBe('completed');
+  expect(
+    (
+      await db
+        .select()
+        .from(assistantPublicationItems)
+        .where(eq(assistantPublicationItems.id, job!.payload.itemId!))
+    )[0],
+  ).toMatchObject({ status: 'published', itemId: 56789 });
+  await db.update(assistantJobs).set({ status: 'completed' }).where(eq(assistantJobs.userId, id));
+});
+
+test('uma falha temporária mantém a próxima coleta e o agendamento não contorna acesso removido', async () => {
+  const id = await account('sll');
+  await db
+    .insert(assistantJobs)
+    .values({ userId: id, kind: 'collect', deduplicationKey: randomUUID() });
+  const job = await claimAssistantJob();
+  expect(
+    await processAssistantJob(
+      job!,
+      transport(() => {
+        throw new Error('timeout');
+      }),
+    ),
+  ).toBe('blocked');
+  const [next] = await db
+    .select()
+    .from(assistantJobs)
+    .where(and(eq(assistantJobs.userId, id), eq(assistantJobs.status, 'pending')));
+  expect(next?.kind).toBe('collect');
+  expect(next!.runAt.getTime()).toBeGreaterThan(Date.now() + 5 * 60 * 60 * 1000);
+  await db.update(assistantJobs).set({ runAt: new Date() }).where(eq(assistantJobs.id, next!.id));
+  const retry = await claimAssistantJob();
+  expect(await processAssistantJob(retry!, transport(emptyReads))).toBe('completed');
+  const [last] = await db
+    .select()
+    .from(assistantJobs)
+    .where(and(eq(assistantJobs.userId, id), eq(assistantJobs.status, 'pending')));
+  await db.delete(studentProducts).where(eq(studentProducts.userId, id));
+  await db.update(assistantJobs).set({ runAt: new Date() }).where(eq(assistantJobs.id, last!.id));
+  const revoked = await claimAssistantJob();
+  let calls = 0;
+  expect(
+    await processAssistantJob(
+      revoked!,
+      transport(() => {
+        calls++;
+        return envelope({});
+      }),
+    ),
+  ).toBe('blocked');
+  expect(calls).toBe(0);
+  expect(
+    await db
+      .select()
+      .from(assistantJobs)
+      .where(and(eq(assistantJobs.userId, id), eq(assistantJobs.status, 'pending'))),
+  ).toHaveLength(0);
+});
+
+test('lote seguinte termina publicado sem aguardar uma análise que só existe para o lote inicial', async () => {
+  const id = await account();
+  const keys = await catalog(id, 6);
+  const initialId = await createPublicationBatch(id, keys.slice(0, 5), 'varied');
+  await db.update(assistantJobs).set({ status: 'completed' }).where(eq(assistantJobs.userId, id));
+  await db
+    .update(assistantPublicationBatches)
+    .set({ status: 'evaluated', publishedAt: new Date(Date.now() - 6 * DAY_MS) })
+    .where(eq(assistantPublicationBatches.id, initialId));
+  const expansionId = await createPublicationBatch(id, [keys[5]!], 'niche', 'expansion');
+  const job = await claimAssistantJob();
+  expect(
+    await processAssistantJob(
+      job!,
+      transport((url) =>
+        url.pathname.endsWith('add_item') ? envelope({ item_id: 998877 }) : emptyReads(url),
+      ),
+    ),
+  ).toBe('completed');
+  const [batch] = await db
+    .select()
+    .from(assistantPublicationBatches)
+    .where(eq(assistantPublicationBatches.id, expansionId));
+  expect(batch?.status).toBe('published');
+  expect(batch?.publishedAt).toBeInstanceOf(Date);
+  expect(
+    await db
+      .select()
+      .from(assistantJobs)
+      .where(and(eq(assistantJobs.userId, id), eq(assistantJobs.kind, 'evaluate'))),
+  ).toHaveLength(0);
   await db.update(assistantJobs).set({ status: 'completed' }).where(eq(assistantJobs.userId, id));
 });

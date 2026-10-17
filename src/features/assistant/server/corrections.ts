@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
 import {
@@ -11,10 +10,9 @@ import {
 import { prepareSupplierProduct } from '@/features/shopee/catalog';
 import { shopeeApplicationId } from '@/features/shopee/authorization';
 import { assertAssistantAccess } from './metrics';
-import { publicationPayloadSchema, type PublicationPayload } from '../model';
+import { publicationPayloadSchema } from '../model';
 
-const fingerprint = (payload: PublicationPayload) =>
-  createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+import { publicationOfferFingerprint } from '../publication-selection';
 
 /** Nova confirmação usa dados recentes do mesmo SKU, loja e aplicativo. Nunca cria um sexto item. */
 export async function publicationCorrections(userId: string) {
@@ -97,7 +95,7 @@ export async function publicationCorrections(userId: string) {
         previousPrice: item.payload.original_price,
         price: parsed.data.original_price,
         stock: parsed.data.normal_stock,
-        fingerprint: fingerprint(parsed.data),
+        fingerprint: publicationOfferFingerprint(parsed.data, item),
       },
     ];
   });
@@ -143,6 +141,13 @@ export async function reauthorizePublicationItem(userId: string, itemId: string,
       item.applicationId !== shopeeApplicationId(config)
     )
       return false;
+    const [catalog] = await tx
+      .select()
+      .from(supplierCatalog)
+      .where(
+        and(eq(supplierCatalog.supplierId, item.supplierId), eq(supplierCatalog.sku, item.sku)),
+      )
+      .for('share');
     const [mapping] = await tx
       .select()
       .from(supplierPublicationMappings)
@@ -156,13 +161,6 @@ export async function reauthorizePublicationItem(userId: string, itemId: string,
         ),
       )
       .for('share');
-    const [catalog] = await tx
-      .select()
-      .from(supplierCatalog)
-      .where(
-        and(eq(supplierCatalog.supplierId, item.supplierId), eq(supplierCatalog.sku, item.sku)),
-      )
-      .for('share');
     if (!mapping || !catalog) return false;
     const ready = prepareSupplierProduct(catalog.product, new Date());
     const payload = publicationPayloadSchema.safeParse(mapping.payload);
@@ -174,7 +172,7 @@ export async function reauthorizePublicationItem(userId: string, itemId: string,
       payload.data.item_sku !== item.sku ||
       Math.round(payload.data.original_price * 100) !== ready.product.priceCents ||
       payload.data.normal_stock > ready.product.stock ||
-      fingerprint(payload.data) !== expected
+      publicationOfferFingerprint(payload.data, item) !== expected
     )
       return false;
     await tx
