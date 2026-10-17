@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import { Eye } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { panelCard } from '@/features/member/components/area-shell';
 import { AdminShell } from '@/features/admin/components/admin-shell';
 import {
@@ -131,6 +134,12 @@ export default async function AdminAccountPage({
               <dt className="text-muted-foreground">Fase da loja</dt>
               <dd className="mb-2 text-foreground sm:mb-0 xl:mb-2">
                 {storePhase ? `${storePhase} de 7` : 'Ainda não começou'}
+                <Button asChild size="inline" variant="soft" className="mt-3 w-fit">
+                  <Link href={`/admin/contas/${encodeURIComponent(account.id)}/journey`} lang="en">
+                    <Eye aria-hidden="true" />
+                    View current stage
+                  </Link>
+                </Button>
               </dd>
               <dt className="text-muted-foreground">Sessões abertas</dt>
               <dd className="mb-2 text-foreground sm:mb-0 xl:mb-2">{sessions}</dd>

@@ -1,6 +1,7 @@
 import { desc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
-import { session, stores, studentProducts, user } from '@/server/db/schema';
+import { session, studentProducts, user } from '@/server/db/schema';
+import { getStoreOverview } from '@/features/loja-pronta/server/overview';
 import { requireAdmin } from './access';
 
 export const ACCOUNTS_PAGE_SIZE = 50;
@@ -61,14 +62,16 @@ export async function getAccount(id: string) {
   const account = await db.query.user.findFirst({ where: eq(user.id, id) });
   if (!account) return null;
 
-  const [products, store, [opened]] = await Promise.all([
+  const [products, overview, [opened]] = await Promise.all([
     db.query.studentProducts.findMany({ where: eq(studentProducts.userId, id) }),
-    db.query.stores.findFirst({ columns: { phase: true }, where: eq(stores.userId, id) }),
+    getStoreOverview(id),
     db
       .select({ sessions: sql<number>`count(*)::int` })
       .from(session)
       .where(eq(session.userId, id)),
   ]);
 
-  return { account, products, storePhase: store?.phase ?? null, sessions: opened?.sessions ?? 0 };
+  const storePhase =
+    overview.phase > 1 || overview.conversation !== 'nao-comecou' ? overview.phase : null;
+  return { account, products, storePhase, sessions: opened?.sessions ?? 0 };
 }

@@ -2,6 +2,7 @@
 
 import { CheckIcon, SlidersHorizontalIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { BrandKitPreview } from '@/features/brand/components/brand-kit-preview';
 import { cn } from '@/lib/utils';
 import { LOGO_TWEAK_IDS, LOGO_TWEAKS, type LogoTweak } from '../tweaks';
 import type { StudioViewLogo } from '../view';
@@ -84,42 +85,7 @@ export function StudioResult({
 
         <div className="flex flex-col gap-2 rounded-3xl bg-card p-3 shadow-card forced-colors:border forced-colors:border-[CanvasText]">
           <span className="text-body font-bold">Kit de envio</span>
-          <div className="relative aspect-[3/2] w-full overflow-hidden rounded-2xl bg-muted">
-            {/* A foto deixa ao menos 12% de folga; proporção original e contain evitam cortes em telas estreitas. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/brand/kit-envio-kraft.webp"
-              alt=""
-              width={1536}
-              height={1024}
-              className="absolute inset-0 size-full object-contain"
-            />
-            {/* O logo inteiro fica dentro do painel da caixa, do adesivo solto e da sacola. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={src}
-              alt=""
-              width={1024}
-              height={1024}
-              className="absolute top-[68%] left-[30%] h-[10%] w-[24%] object-contain opacity-90 mix-blend-multiply"
-            />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={src}
-              alt=""
-              width={1024}
-              height={1024}
-              className="absolute top-[79%] left-[54%] h-[9%] w-[14%] rounded-full object-contain"
-            />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={src}
-              alt=""
-              width={1024}
-              height={1024}
-              className="absolute top-[42%] left-[56.5%] h-[18%] w-[22%] object-contain opacity-90 mix-blend-multiply"
-            />
-          </div>
+          <BrandKitPreview logoSrc={src} />
           <span className="text-center text-sm text-muted-foreground">Caixa, adesivo e sacola</span>
         </div>
       </div>

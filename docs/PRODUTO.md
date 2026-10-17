@@ -99,6 +99,21 @@ Administradores podem organizar e editar boas-vindas, método e cursos; enviar m
 
 Em Contas, a admin busca qualquer conta por nome ou email e, na tela da conta, edita nome, apelido, email e função (aluna ou admin), pede uma senha nova no próximo acesso, libera ou remove produtos, desconecta a conta dos aparelhos e bloqueia ou desbloqueia o acesso com motivo. A própria conta não pode perder a função admin nem ser bloqueada por ela mesma. Apagar contas ainda não existe.
 
+Administrators can open **View current stage** in an account's summary. The protected page at
+`/admin/contas/<id>/journey` shows the student's current Loja Pronta phase, next step, saved
+answers, WhatsApp contact, and saved brand, including the selected logo. It uses the same phase
+rules as the student dashboard. This is a read-only view: the administrator keeps their own
+session, and opening it does not change student progress, product visits, or presence. Blocked
+accounts and accounts without current product access keep their saved information visible to
+administrators, with their access status explained.
+
+The page leads with a visual preview of the saved name, logo, and description, using the same
+illustrative packaging composition as the student's studio. A gallery shows the saved logo
+versions, marks the selected logo and uploaded images, and opens each original at full size
+through protected administrator routes. The preview is explicitly illustrative: it does not
+confirm the appearance of a published Shopee storefront. Product images remain unavailable
+until the supplier and publication integrations are delivered.
+
 Também dá pra criar uma conta pelo painel (Contas → Criar conta), para quem não comprou pela Hotmart ou para uma nova administradora: nome, email, função (aluna ou admin) e os produtos liberados, que entram no histórico de acessos como liberação manual. O primeiro acesso é por email (o mesmo link de criar senha da recuperação, que vale 1 hora) ou por uma senha temporária que a admin define e passa pra ela; com a senha temporária, ela cria outra ao entrar.
 
 O painel abre numa visão geral com os números das contas e compras e com quem está online agora: as áreas das alunas avisam a página aberta a cada 30 segundos, só com a aba à vista, e conta como online quem avisou nos últimos 90 segundos. Guarda só a última página de cada conta, sem histórico, IP ou localização. Junto, guarda o aparelho daquele acesso: o user agent e o que o navegador conta (tela, janela, idioma, fuso horário, toque, tema, app instalado, tipo de conexão e, no Chrome, a versão do sistema e o modelo). O admin mostra se é celular, tablet ou computador, o sistema, o navegador e se o link foi aberto dentro de outro app, como o Instagram.
