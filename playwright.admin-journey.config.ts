@@ -3,7 +3,7 @@ import base from './playwright.config';
 
 const { globalSetup: _setup, globalTeardown: _teardown, ...local } = base;
 
-// These tests create their own accounts in the isolated database and do not seed remote files.
+// These tests create isolated accounts and clean up their temporary images in the real bucket.
 export default defineConfig({
   ...local,
   testMatch: 'admin-journey.spec.ts',

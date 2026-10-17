@@ -122,6 +122,12 @@ for (const mobile of [false, true]) {
       await expect(
         page.getByRole('heading', { name: 'Journey student · Current stage' }),
       ).toBeVisible();
+      await expect(
+        page.getByRole('heading', { name: 'Journey student · Current stage' }),
+      ).toHaveAttribute('lang', 'en');
+      await expect(
+        page.getByRole('link', { name: 'Back to account', exact: true }),
+      ).toHaveAttribute('lang', 'en');
       await expect(page.getByRole('region', { name: 'Store brand', exact: true })).toContainText(
         'Phase 2 of 7',
       );
@@ -321,3 +327,70 @@ test('the shared packaging composition remains available in the student studio',
   expect(composition.fit).toBe('contain');
   await expectNoA11yViolations(page);
 });
+
+test('invalid saved image references are skipped and invalid selected logos return 404', async ({
+  page,
+}) => {
+  const admin = await createAccount(true);
+  const student = await createAccount();
+  await seedJourney(student.id);
+  await seedStoreImages(student.id);
+  await database().query('update logo_studio set logos = $2::jsonb || logos where user_id = $1', [
+    student.id,
+    JSON.stringify([{ key: '../invalid.png' }, { key: 'logos/another-account/legacy.png' }]),
+  ]);
+  const path = `/admin/contas/${student.id}/journey`;
+  const before = await snapshot(student.id);
+  await signIn(page, admin.email, PASSWORD, path);
+  const first = await page.request.get(`${path}/images/0`);
+  expect(first.status()).toBe(200);
+  expect(await first.body()).toEqual(await readFile('public/brand/mascote.png'));
+  const gallery = page.getByRole('region', { name: 'Saved images (2)', exact: true });
+  await expect(gallery.getByRole('img')).toHaveCount(2);
+  expect((await page.request.get(`${path}/images/2`)).status()).toBe(404);
+  expect(await snapshot(student.id)).toEqual(before);
+  await database().query('update store_brand set logo_image = $2 where user_id = $1', [
+    student.id,
+    '../invalid.png',
+  ]);
+  const invalidSelected = await snapshot(student.id);
+  await page.reload();
+  await expect(page.getByText('Saved logo is unavailable.', { exact: true })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Saved logo for Saved test store' })).toHaveCount(0);
+  expect((await page.request.get(`${path}/logo`)).status()).toBe(404);
+  expect(await snapshot(student.id)).toEqual(invalidSelected);
+});
+
+for (const change of ['role', 'session', 'blocked', 'password'] as const) {
+  test(`open previews and media enforce current administrator access after ${change} changes`, async ({
+    page,
+  }) => {
+    const admin = await createAccount(true);
+    const student = await createAccount();
+    await seedJourney(student.id);
+    await seedStoreImages(student.id);
+    const path = `/admin/contas/${student.id}/journey`;
+    await signIn(page, admin.email, PASSWORD, path);
+    expect((await page.request.get(`${path}/logo`)).status()).toBe(200);
+    expect((await page.request.get(`${path}/images/0`)).status()).toBe(200);
+    if (change === 'role')
+      await database().query('update "user" set role = null where id = $1', [admin.id]);
+    if (change === 'session')
+      await database().query('delete from session where user_id = $1', [admin.id]);
+    if (change === 'blocked')
+      await database().query('update "user" set banned = true where id = $1', [admin.id]);
+    if (change === 'password')
+      await database().query('update "user" set must_change_password = true where id = $1', [
+        admin.id,
+      ]);
+    const expected = change === 'role' ? 404 : 307;
+    for (const route of [path, `${path}/logo`, `${path}/images/0`]) {
+      const response = await page.request.get(route, { maxRedirects: 0 });
+      expect(response.status()).toBe(expected);
+      if (expected === 307)
+        expect(response.headers().location).toContain(
+          change === 'password' ? '/primeiro-acesso' : '/entrar',
+        );
+    }
+  });
+}

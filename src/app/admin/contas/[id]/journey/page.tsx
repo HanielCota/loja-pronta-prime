@@ -21,7 +21,7 @@ export default async function AdminStoreJourneyPage({
   const { id } = await params;
   const data = await getAccountStoreJourney(id);
   if (!data) notFound();
-  const { session, account, overview, onboarding, brand, images, hasAccess } = data;
+  const { session, account, overview, onboarding, brand, logoSrc, images, hasAccess } = data;
   const step = currentStoreStep({ phase: overview.phase, answers: onboarding.answers, brand });
   const accountPath = `/admin/contas/${encodeURIComponent(account.id)}`;
   const started = overview.conversation !== 'nao-comecou' || overview.phase > 1;
@@ -33,8 +33,9 @@ export default async function AdminStoreJourneyPage({
     <AdminShell
       account={session.user}
       current="accounts"
-      backLink={{ href: accountPath, label: 'Back to account' }}
+      backLink={{ href: accountPath, label: 'Back to account', lang: 'en' }}
       title={`${account.name} · Current stage`}
+      titleLang="en"
       intro={account.email}
     >
       <div lang="en" className="flex flex-col gap-6">
@@ -53,7 +54,7 @@ export default async function AdminStoreJourneyPage({
         <StudentStoreAppearance
           name={brand.name}
           description={brand.description}
-          logoSrc={brand.logoImage ? `${accountPath}/journey/logo` : null}
+          logoSrc={logoSrc}
           images={images}
         />
         <section aria-labelledby="current-stage" className={`${panelCard} gap-4`}>
@@ -134,16 +135,18 @@ export default async function AdminStoreJourneyPage({
               <div className="flex flex-col gap-2 py-3">
                 <dt className="text-sm text-muted-foreground">Logo</dt>
                 <dd className="text-body">
-                  {brand.logoImage ? (
+                  {logoSrc ? (
                     // The protected admin route reads only the selected student's saved logo.
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={`${accountPath}/journey/logo`}
+                      src={logoSrc}
                       alt={`Saved logo for ${brand.name ?? account.name}`}
                       width={256}
                       height={256}
                       className="aspect-square w-full max-w-64 rounded-2xl border border-border object-contain"
                     />
+                  ) : brand.logoImage ? (
+                    'Saved logo is unavailable.'
                   ) : (
                     'Not chosen yet'
                   )}

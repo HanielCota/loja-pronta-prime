@@ -8,6 +8,7 @@ import { db } from '@/server/db';
 import { user } from '@/server/db/schema';
 import { requireAdmin } from './access';
 import type { StoreJourneyImage } from '../store-journey';
+import { isStoreLogoKey } from '../store-images';
 
 /** Read saved journey data only; product visit tracking and student actions are never called. */
 export async function getAccountStoreJourney(id: string) {
@@ -26,14 +27,16 @@ export async function getAccountStoreJourney(id: string) {
     getLogoStudio(id),
   ]);
   const path = `/admin/contas/${encodeURIComponent(id)}/journey`;
-  const images: StoreJourneyImage[] = studio.logos.map((logo, index) => ({
+  const logoSrc = isStoreLogoKey(id, brand.logoImage) ? `${path}/logo` : null;
+  const logos = studio.logos.filter((logo) => isStoreLogoKey(id, logo.key));
+  const images: StoreJourneyImage[] = logos.map((logo, index) => ({
     src: `${path}/images/${index}`,
     selected: logo.key === brand.logoImage,
     uploaded: Boolean(logo.uploaded),
   }));
   // Older selected logos may predate the studio's saved image list.
-  if (brand.logoImage && !images.some((image) => image.selected)) {
-    images.unshift({ src: `${path}/logo`, selected: true });
+  if (logoSrc && !images.some((image) => image.selected)) {
+    images.unshift({ src: logoSrc, selected: true });
   }
   return {
     session,
@@ -41,6 +44,7 @@ export async function getAccountStoreJourney(id: string) {
     overview,
     onboarding,
     brand,
+    logoSrc,
     images,
     hasAccess: products.includes('loja-pronta'),
   };

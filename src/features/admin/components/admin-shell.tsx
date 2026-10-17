@@ -15,9 +15,10 @@ type AdminShellProps = {
   /** A seção do menu marcada como atual (a prévia da aula não tem uma). */
   current?: AdminSection | undefined;
   title: string;
+  titleLang?: string | undefined;
   intro?: string | undefined;
   /** O caminho de volta, antes do título (a tela de uma conta). */
-  backLink?: { href: string; label: string } | undefined;
+  backLink?: { href: string; label: string; lang?: string } | undefined;
   /** Ação ao lado do título, no computador (embaixo dele no celular). */
   actions?: ReactNode;
   children: ReactNode;
@@ -33,6 +34,7 @@ export function AdminShell({
   account,
   current,
   title,
+  titleLang,
   intro,
   backLink,
   actions,
@@ -99,13 +101,16 @@ export function AdminShell({
                     size="inline"
                     variant="ghost"
                   >
-                    <Link href={backLink.href}>
+                    <Link href={backLink.href} lang={backLink.lang}>
                       <ArrowLeft aria-hidden="true" />
                       {backLink.label}
                     </Link>
                   </Button>
                 ) : null}
-                <h1 className="text-title font-semibold text-balance break-words sm:text-title-lg">
+                <h1
+                  lang={titleLang}
+                  className="text-title font-semibold text-balance break-words sm:text-title-lg"
+                >
                   {title}
                 </h1>
                 {intro ? (
