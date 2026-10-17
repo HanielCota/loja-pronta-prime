@@ -3,18 +3,15 @@
 import { parseWithZod } from '@conform-to/zod/v4';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
-import { headers } from 'next/headers';
 import { PROFILE_PHOTO_MAX_BYTES } from '@/config/profile-photo';
-import { auth } from '@/server/auth/auth';
 import { consumeAttempt } from '@/server/auth/rate-limit';
 import { reportAuthError } from '@/server/auth/report-error';
-import { revokeOtherSessions } from '@/server/auth/sessions';
 import { db } from '@/server/db';
 import { user } from '@/server/db/schema';
 import { storage } from '@/server/storage';
 import { profilePhotoId, profilePhotoKey, profilePhotoUrl } from '../profile-photo';
 import { changePasswordSchema, profileNameSchema } from '../schemas';
-import { toAuthErrorCode } from './better-auth-errors';
+import { changeOwnPassword } from './password';
 import { normalizeProfilePhoto } from './profile-photo-image';
 import { getActiveSession, needsFirstPassword } from './session';
 import { HIDDEN_FIELDS, reject, type FormResult } from './submission';
@@ -136,8 +133,7 @@ export async function updateName(
 
 /**
  * Trocar a senha pedindo a atual. As outras sessões (outro celular, um computador emprestado)
- * terminam; esta continua a mesma. (O `revokeOtherSessions` do Better Auth troca também esta, e o
- * cookie novo faz a página recarregar e perder o aviso de "Senha trocada".)
+ * terminam na mesma transação; esta continua a mesma para preservar o aviso de sucesso.
  */
 export async function changePassword(
   _state: ProfileResult,
@@ -165,17 +161,17 @@ export async function changePassword(
   if (currentPassword === password) return { submission: reject(submission, 'unchanged_password') };
 
   try {
-    await auth.api.changePassword({
-      body: { currentPassword, newPassword: password },
-      headers: await headers(),
-    });
+    const failure = await changeOwnPassword(
+      session.user.id,
+      session.session.token,
+      currentPassword,
+      password,
+    );
+    if (failure) return { submission: reject(submission, failure) };
   } catch (error) {
-    const code = toAuthErrorCode(error);
-    if (code === 'unknown') reportAuthError('troca de senha no perfil', error);
-    return { submission: reject(submission, code) };
+    reportAuthError('troca de senha no perfil', error);
+    return { submission: reject(submission, 'unknown') };
   }
-  // A senha já mudou: encerrar os outros aparelhos não pode virar um "deu errado" na tela.
-  await revokeOtherSessions(session.user.id, session.session.token);
 
   // Sem os valores de volta: os campos de senha ficam vazios depois de salvar.
   return { submission: submission.reply({ resetForm: true }), saved: true };
