@@ -2,7 +2,13 @@ import { afterAll, beforeAll, expect, test } from 'bun:test';
 import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { db } from '@/server/db';
-import { user, stores, shopeeAuthorizationStates, shopeeConnections } from '@/server/db/schema';
+import {
+  user,
+  stores,
+  studentProducts,
+  shopeeAuthorizationStates,
+  shopeeConnections,
+} from '@/server/db/schema';
 import {
   parseManualShopeeCallback,
   shopeeConfigurationSchema,
@@ -26,6 +32,7 @@ beforeAll(async () => {
   for (const id of [userId, otherUser]) {
     await db.insert(user).values({ id, name: 'Teste Shopee', email: `${id}@example.invalid` });
     await db.insert(stores).values({ userId: id, phase: 4 });
+    await db.insert(studentProducts).values({ userId: id, product: 'loja-pronta' });
   }
 });
 afterAll(async () => {
@@ -54,6 +61,42 @@ const callback = (value: string, id = userId) => ({
   kind: 'authorize' as const,
   code: 'test-code',
   shopId: 987123456,
+});
+
+test('SLL conecta sem Loja Pronta e não avança uma montagem existente', async () => {
+  const id = randomUUID();
+  await db.insert(user).values({ id, name: 'Somente SLL', email: `${id}@example.invalid` });
+  try {
+    await db.insert(studentProducts).values({ userId: id, product: 'sll' });
+    const authorize = async () => {
+      const url = new URL(
+        await beginShopeeAuthorization(id, 'session', config, 'https://example.invalid', 'sll'),
+      );
+      return { ...callback(url.searchParams.get('state')!, id), shopId: 987123459 };
+    };
+    expect(await finishShopeeAuthorization(await authorize(), config, accepted)).toBe('connected');
+    expect(await db.select().from(stores).where(eq(stores.userId, id))).toHaveLength(0);
+    await db.insert(stores).values({ userId: id, phase: 4 });
+    await db.insert(studentProducts).values({ userId: id, product: 'loja-pronta' });
+    expect(await finishShopeeAuthorization(await authorize(), config, accepted)).toBe('connected');
+    expect((await db.select().from(stores).where(eq(stores.userId, id)))[0]?.phase).toBe(4);
+    const pending = await authorize();
+    await db.delete(studentProducts).where(eq(studentProducts.userId, id));
+    let calls = 0;
+    expect(
+      await finishShopeeAuthorization(
+        pending,
+        config,
+        transport(() => {
+          calls++;
+          return tokens();
+        }),
+      ),
+    ).toBe('expired');
+    expect(calls).toBe(0);
+  } finally {
+    await db.delete(user).where(eq(user.id, id));
+  }
 });
 
 test('dona, sessão, aplicativo e validade são conferidos antes de usar o código', async () => {

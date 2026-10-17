@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
@@ -38,6 +39,13 @@ export default async function AddStorePage({
     searchParams,
   ]);
   const platform = getParam(query.plataforma);
+  const checkout = z
+    .url()
+    .refine((value) => {
+      const url = new URL(value);
+      return url.protocol === 'https:' && !url.username && !url.password;
+    })
+    .safeParse(process.env.LOJA_PRONTA_CHECKOUT_URL);
   const hasLojaPronta = products.includes('loja-pronta');
   const overview =
     platform === 'shopee' && hasLojaPronta
@@ -61,6 +69,7 @@ export default async function AddStorePage({
       {platform === 'shopee' ? (
         <StorePathStep
           hasLojaPronta={hasLojaPronta}
+          checkoutUrl={checkout.success ? checkout.data : null}
           assembly={overview?.assembly ?? null}
           hasLoadFailure={hasLoadFailure}
         />
@@ -138,10 +147,12 @@ function PlatformStep() {
 
 function StorePathStep({
   hasLojaPronta,
+  checkoutUrl,
   assembly,
   hasLoadFailure,
 }: {
   hasLojaPronta: boolean;
+  checkoutUrl: string | null;
   assembly: { name: string; phaseTitle: string } | null;
   hasLoadFailure: boolean | undefined;
 }) {
@@ -186,7 +197,7 @@ function StorePathStep({
               <Link2Icon aria-hidden="true" className="size-6" />
             </span>
             <span className="rounded-full border border-border px-3 py-1 text-sm font-medium text-muted-foreground">
-              Em preparação
+              Acesso pelo SLL
             </span>
           </div>
           <div className="flex flex-col gap-2">
@@ -201,11 +212,13 @@ function StorePathStep({
           <p className="flex gap-3 rounded-2xl bg-muted px-4 py-3 text-sm text-pretty text-muted-foreground">
             <ExternalLinkIcon aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
             <span>
-              A autorização oficial ainda não está disponível. Quando estiver pronta, você será
-              levada ao site da Shopee para autorizar o acesso. Esta tela só mostrará a conexão
-              depois da confirmação da Shopee.
+              Você confere a disponibilidade da conexão na próxima tela e autoriza o acesso no site
+              da Shopee. A loja só aparece conectada depois dessa confirmação.
             </span>
           </p>
+          <Button asChild>
+            <Link href="/sll/minhas-lojas/conectar">Cadastrar ou conectar minha loja</Link>
+          </Button>
         </section>
 
         <section aria-labelledby="assembly-title" className={cn(panelCard, 'gap-4')}>
@@ -252,6 +265,18 @@ function StorePathStep({
                 <ArrowRightIcon aria-hidden="true" />
               </Link>
             </Button>
+          ) : checkoutUrl ? (
+            <>
+              <p className="text-body text-muted-foreground">
+                A Loja Pronta é uma compra adicional. Seu acesso ao SLL e a conexão da Shopee
+                continuam independentes.
+              </p>
+              <Button asChild>
+                <a href={checkoutUrl} target="_blank" rel="noreferrer">
+                  Conhecer a Loja Pronta<span className="sr-only"> (abre em outra aba)</span>
+                </a>
+              </Button>
+            </>
           ) : (
             <p className="flex gap-3 rounded-2xl bg-muted px-4 py-3 text-sm text-pretty text-muted-foreground">
               <CircleHelpIcon aria-hidden="true" className="mt-0.5 size-5 shrink-0" />

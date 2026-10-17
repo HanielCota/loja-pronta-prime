@@ -91,20 +91,18 @@ export async function saveSllBanner(
   try {
     let bannerId = existing?.id;
     if (existing) {
-      const current = await db.query.learningBanners.findFirst({
-        columns: { status: true },
-        where: eq(learningBanners.id, existing.id),
+      const available = await withNodeDraftLock('banner', existing.id, async (tx) => {
+        const current = await tx.query.learningBanners.findFirst({
+          columns: { status: true },
+          where: and(eq(learningBanners.id, existing.id), isNull(learningBanners.archivedAt)),
+        });
+        if (!current) return false;
+        if (current.status === 'published') await saveNodeDraft('banner', existing.id, values, tx);
+        else
+          await tx.update(learningBanners).set(values).where(eq(learningBanners.id, existing.id));
+        return true;
       });
-      if (current?.status === 'published') {
-        await saveNodeDraft('banner', existing.id, values);
-        revalidatePath('/admin/banners');
-        return {
-          message: 'Rascunho salvo. Publique quando estiver pronto.',
-          saved: true,
-          bannerId: existing.id,
-        };
-      }
-      await db.update(learningBanners).set(values).where(eq(learningBanners.id, existing.id));
+      if (!available) return { message: 'Este banner não está disponível.', saved: false };
     } else {
       let slug = learningSlugFromTitle(parsed.data.title);
       for (

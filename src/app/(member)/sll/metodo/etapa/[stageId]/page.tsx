@@ -10,7 +10,6 @@ import { getSllMethodTrackForStage } from '@/features/sll/server/catalog';
 import { requireProduct } from '@/features/products/server/access';
 import { getSllCopy } from '@/features/sll/server/copy';
 import { SllProgress } from '@/features/sll/components/sll-progress';
-import { SllPlanEntry } from '@/features/sll/components/sll-plan-entry';
 import { SllStage2Pilot } from '@/features/sll/components/sll-stage2-pilot';
 import { getSllStageCardState } from '@/features/sll/stage-card-state';
 import { sllLessonHref } from '@/features/sll/lesson-navigation';
@@ -143,13 +142,20 @@ export default async function MethodStagePage({
               }))}
             />
           ) : stage.slug === 'etapa-2' ? (
-            planIntake ? (
-              <>
-                {planIntake.storeAge === 'exactly_7_days' ? (
-                  <p className="text-body text-pretty text-muted-foreground">
-                    Sua loja está aberta há 7 dias. Siga as ações no seu ritmo.
-                  </p>
-                ) : null}
+            <>
+              <section className={panelCard} aria-labelledby="personal-plan-title">
+                <h2 id="personal-plan-title" className="text-title font-semibold">
+                  Seu plano de ação
+                </h2>
+                <p className="text-body text-muted-foreground">
+                  Escolha um roteiro para uma loja nova ou acompanhe os dados de uma loja com
+                  histórico. As ações do plano e as aulas guardam seu progresso separadamente.
+                </p>
+                <Button asChild>
+                  <Link href="/sll/plano">Abrir meu plano</Link>
+                </Button>
+              </section>
+              {planIntake ? (
                 <SllStage2Pilot
                   trackId={track.id}
                   requiredModules={requiredModules}
@@ -159,10 +165,8 @@ export default async function MethodStagePage({
                   resumeLessonId={track.resumeLessonId}
                   returnHref={`/sll/metodo/etapa/${stage.id}`}
                 />
-              </>
-            ) : (
-              <SllPlanEntry />
-            )
+              ) : null}
+            </>
           ) : (
             stage.modules.map((module, moduleIndex) => {
               const requiredLessons = module.lessons.filter(

@@ -40,6 +40,8 @@ export function SllSidebarLinks({
   const operation: NavItem[] = [
     { href: '/sll', label: copy.sidebarPanel, icon: LayoutDashboard, exact: true },
     { href: '/sll/minhas-lojas', label: copy.sidebarStores, icon: Store },
+    { href: '/sll/plano', label: 'Meu plano', icon: BookOpen },
+    { href: '/sll/comparar-categorias', label: 'Comparar categorias', icon: Wrench },
   ];
   const learning: NavItem[] = [
     { href: '/sll/comece-aqui', label: copy.sidebarWelcome, icon: CirclePlay },

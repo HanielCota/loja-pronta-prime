@@ -33,7 +33,9 @@ export type AdminSection =
   | 'accounts'
   | 'access'
   | 'hotmart'
-  | 'bling';
+  | 'bling'
+  | 'experts'
+  | 'assistant';
 
 const groups = [
   {
@@ -42,6 +44,8 @@ const groups = [
       { href: '/admin', label: 'Visão geral', section: 'overview', Icon: LayoutDashboard },
       { href: '/leads', label: 'Leads', section: 'leads', Icon: UsersRound },
       { href: '/admin/online', label: 'Online agora', section: 'online', Icon: Radio },
+      { href: '/admin/assistente', label: 'Planos e operação', section: 'assistant', Icon: Wrench },
+      { href: '/admin/experts', label: 'Experts e vídeos', section: 'experts', Icon: UsersRound },
       { href: '/admin/bling', label: 'Conexão Bling', section: 'bling', Icon: Wrench },
     ],
   },

@@ -61,7 +61,7 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
   });
   if (received && received.result !== 'Produto sem acesso configurado.')
     return 'Aviso já recebido.';
-  const mapping = await db.query.hotmartProductMappings.findMany({
+  const preliminaryMapping = await db.query.hotmartProductMappings.findMany({
     where: eq(hotmartProductMappings.productUcode, productUcode),
   });
 
@@ -75,7 +75,7 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
     knownMismatch === 'product' || (knownMismatch === 'email' && Boolean(known?.userId));
 
   let buyerId: string | null = null;
-  if (effect === 'grant' && mapping.length && !keepsKnownAccount) {
+  if (effect === 'grant' && preliminaryMapping.length && !keepsKnownAccount) {
     buyerId = await findOrCreateBuyer(
       email,
       event.data.buyer.name?.trim() || email.split('@')[0] || 'Aluna',
@@ -83,6 +83,10 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
   }
 
   const processed = await db.transaction(async (tx) => {
+    // Uma mudança de códigos espera os avisos em andamento antes de decidir se já há compras.
+    await tx.execute(
+      sql`select pg_advisory_xact_lock_shared(hashtext('hotmart-product-mappings'))`,
+    );
     // Serializa eventos da mesma transação e, depois, a recomputação dos acessos da aluna.
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${transaction}))`);
     const duplicate = await tx.query.hotmartEvents.findFirst({
@@ -91,10 +95,13 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
     });
     if (duplicate && duplicate.result !== 'Produto sem acesso configurado.')
       return 'Aviso já recebido.';
+    const mapping = await tx.query.hotmartProductMappings.findMany({
+      where: eq(hotmartProductMappings.productUcode, productUcode),
+    });
     let result = 'Aviso sem mudança de acesso.';
     if (!mapping.length) result = 'Produto sem acesso configurado.';
     else if (effect !== 'ignore') {
-      const previous = await tx.query.hotmartPurchases.findFirst({
+      let previous = await tx.query.hotmartPurchases.findFirst({
         where: eq(hotmartPurchases.transaction, transaction),
       });
       // Erro aqui faria a Hotmart reenviar para sempre e o reembolso nunca seria aplicado;
@@ -103,9 +110,9 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
       const active = effect === 'grant';
       if (mismatch === 'product') {
         result = 'Transação já registrada com outro produto; acesso mantido.';
-      } else if (shouldApplyEvent(previous, { createdAt, active })) {
+      } else {
         // Com email trocado, a compra segue na conta que ela já usa, sem procurar pelo novo.
-        const linkedUserId =
+        let linkedUserId =
           mismatch === 'email'
             ? (previous?.userId ?? buyerId)
             : (buyerId ??
@@ -117,66 +124,87 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
                 })
               )?.id ??
               null);
-        await tx
-          .insert(hotmartPurchases)
-          .values({
-            transaction,
-            buyerEmail: email,
-            productUcode,
-            userId: linkedUserId,
-            active,
-            lastEventAt: createdAt,
-          })
-          .onConflictDoUpdate({
-            target: hotmartPurchases.transaction,
-            set: { userId: linkedUserId, active, lastEventAt: createdAt, updatedAt: new Date() },
-          });
+        // O código pode ter sido configurado depois da leitura inicial, que só evita criar
+        // contas sem necessidade. A decisão de conceder usa o mapeamento sob a trava.
+        if (!linkedUserId && active) {
+          linkedUserId = await findOrCreateBuyer(
+            email,
+            event.data.buyer.name?.trim() || email.split('@')[0] || 'Aluna',
+          );
+        }
         if (linkedUserId) {
           await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${linkedUserId}))`);
-          for (const { access } of mapping) {
-            const mappedCodes = await tx.query.hotmartProductMappings.findMany({
-              columns: { productUcode: true },
-              where: eq(hotmartProductMappings.access, access),
+          // A admin pode ter revogado esta compra enquanto o aviso aguardava a trava.
+          // Releia antes de aplicar o evento e antes de travar a linha da compra.
+          previous = await tx.query.hotmartPurchases.findFirst({
+            where: eq(hotmartPurchases.transaction, transaction),
+          });
+        }
+        if (shouldApplyEvent(previous, { createdAt, active })) {
+          await tx
+            .insert(hotmartPurchases)
+            .values({
+              transaction,
+              buyerEmail: email,
+              productUcode,
+              expert:
+                mapping.find((item) => item.access === 'sll')?.expert ??
+                mapping[0]?.expert ??
+                'pri',
+              userId: linkedUserId,
+              active,
+              lastEventAt: createdAt,
+            })
+            .onConflictDoUpdate({
+              target: hotmartPurchases.transaction,
+              set: { userId: linkedUserId, active, lastEventAt: createdAt, updatedAt: new Date() },
             });
-            const activePurchases = await tx.query.hotmartPurchases.findMany({
-              columns: { transaction: true },
-              where: and(
-                eq(hotmartPurchases.userId, linkedUserId),
-                eq(hotmartPurchases.active, true),
-                inArray(
-                  hotmartPurchases.productUcode,
-                  mappedCodes.map((item) => item.productUcode),
-                ),
-              ),
-            });
-            const manual = await tx.query.manualProductGrants.findFirst({
-              columns: { userId: true },
-              where: and(
-                eq(manualProductGrants.userId, linkedUserId),
-                eq(manualProductGrants.product, access),
-              ),
-            });
-            if (activePurchases.length || manual) {
-              await tx
-                .insert(studentProducts)
-                .values({ userId: linkedUserId, product: access as ProductId })
-                .onConflictDoNothing();
-            } else {
-              await tx
-                .delete(studentProducts)
-                .where(
-                  and(
-                    eq(studentProducts.userId, linkedUserId),
-                    eq(studentProducts.product, access),
+          if (linkedUserId) {
+            for (const { access } of mapping) {
+              const mappedCodes = await tx.query.hotmartProductMappings.findMany({
+                columns: { productUcode: true },
+                where: eq(hotmartProductMappings.access, access),
+              });
+              const activePurchases = await tx.query.hotmartPurchases.findMany({
+                columns: { transaction: true },
+                where: and(
+                  eq(hotmartPurchases.userId, linkedUserId),
+                  eq(hotmartPurchases.active, true),
+                  inArray(
+                    hotmartPurchases.productUcode,
+                    mappedCodes.map((item) => item.productUcode),
                   ),
-                );
+                ),
+              });
+              const manual = await tx.query.manualProductGrants.findFirst({
+                columns: { userId: true },
+                where: and(
+                  eq(manualProductGrants.userId, linkedUserId),
+                  eq(manualProductGrants.product, access),
+                ),
+              });
+              if (activePurchases.length || manual) {
+                await tx
+                  .insert(studentProducts)
+                  .values({ userId: linkedUserId, product: access as ProductId })
+                  .onConflictDoNothing();
+              } else {
+                await tx
+                  .delete(studentProducts)
+                  .where(
+                    and(
+                      eq(studentProducts.userId, linkedUserId),
+                      eq(studentProducts.product, access),
+                    ),
+                  );
+              }
             }
           }
-        }
-        result = active
-          ? 'Compra aprovada; acesso liberado.'
-          : 'Reembolso recebido; acesso recalculado.';
-      } else result = 'Aviso antigo; acesso mantido.';
+          result = active
+            ? 'Compra aprovada; acesso liberado.'
+            : 'Reembolso recebido; acesso recalculado.';
+        } else result = 'Aviso antigo; acesso mantido.';
+      }
       if (mismatch === 'email')
         result += ' O email mudou na Hotmart; a compra segue na mesma conta.';
     }

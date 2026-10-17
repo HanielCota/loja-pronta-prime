@@ -3,7 +3,6 @@ import { unstable_cache } from 'next/cache';
 import { SLL_CONTENT_SECONDS, SLL_CONTENT_TAG } from './content-cache';
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { requireProduct } from '@/features/products/server/access';
-import { contentPreviewData } from '@/features/admin/content-preview';
 import { db } from '@/server/db';
 import {
   learningContentBlocks,
@@ -18,6 +17,8 @@ import { getSllTrackProgress } from './progress';
 import { isSafeContentDestination } from '@/lib/urls';
 import { resourceHref } from '../tools/catalog';
 import { isPlanReferenceAvailable } from '../lesson-access';
+import { studentContentBlocks } from './experience';
+import { hasAssistantLessonReference } from '@/features/assistant/server/plans';
 
 // A leitura comum fica em cache; publicação e acesso da aluna são conferidos abaixo.
 const readPublishedLesson = unstable_cache(
@@ -131,7 +132,11 @@ export async function getSllLessonViewer(lessonId: string) {
       module.lessons.map((sourceLesson) => sourceLesson.relatedLessonId),
     ),
   }));
+  const assistantReference = await hasAssistantLessonReference(session.user.id, lesson.id);
+  const isReference = (id: string) =>
+    (assistantReference && id === lesson.id) || isPlanReferenceAvailable(planStages, id);
   const isUnlocked =
+    assistantReference ||
     stage.access.isUnlocked ||
     (track.kind === 'method' && isPlanReferenceAvailable(planStages, lesson.id));
   const referenceOnly = isUnlocked && !stage.access.isUnlocked;
@@ -149,13 +154,13 @@ export async function getSllLessonViewer(lessonId: string) {
   // Uma aula de apoio não oferece navegação para aulas que continuam fechadas.
   const adjacent = getAdjacentSllLessons(
     referenceOnly
-      ? orderedStageLessons.filter((item) => isPlanReferenceAvailable(planStages, item.id))
+      ? orderedStageLessons.filter((item) => isReference(item.id))
       : orderedStageLessons,
     lesson.id,
   );
 
   const moduleLessons = referenceOnly
-    ? lesson.module.lessons.filter((item) => isPlanReferenceAvailable(planStages, item.id))
+    ? lesson.module.lessons.filter((item) => isReference(item.id))
     : lesson.module.lessons;
   const currentIndex = moduleLessons.findIndex((item) => item.id === lesson.id);
   if (currentIndex < 0) return null;
@@ -213,11 +218,7 @@ export async function getSllLessonViewer(lessonId: string) {
       };
     }),
     // Etapa fechada não manda o conteúdo pro navegador: a tela só mostra o aviso.
-    blocks: (isUnlocked ? lesson.blocks : []).map((block) => ({
-      id: block.id,
-      kind: block.kind,
-      data: contentPreviewData(block.kind, block.data),
-    })),
+    blocks: await studentContentBlocks(session.user.id, isUnlocked ? lesson.blocks : []),
     resources: linkedResources.map((resource) => ({
       ...resource,
       destination:

@@ -344,6 +344,41 @@
       "when": 1792083797530,
       "tag": "0048_shopee-oauth-connection",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1792251746930,
+      "tag": "0049_shared-shopee-entry",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1792252438035,
+      "tag": "0050_store-assistant-and-experts",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1792253376596,
+      "tag": "0051_assistant-analysis-and-advice",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1792254335335,
+      "tag": "0052_publication-identity-guards",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1792254564925,
+      "tag": "0053_publication-reconfirmation",
+      "breakpoints": true
     }
   ]
 }

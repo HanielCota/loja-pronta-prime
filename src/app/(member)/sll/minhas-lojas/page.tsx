@@ -6,6 +6,9 @@ import { panelCard } from '@/features/member/components/area-shell';
 import { SllAreaShell } from '@/features/sll/sll-area-shell';
 import { getSllStoreOverview } from '@/features/sll/server/store-overview';
 import { requireProduct } from '@/features/products/server/access';
+import { getShopeeConfiguration } from '@/features/shopee/server/client';
+import { getShopeeStatus } from '@/features/shopee/server/connection';
+import { canUseShopee } from '@/features/shopee/authorization';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Minhas Lojas · SLL' };
@@ -18,7 +21,16 @@ export default async function SllStoresPage() {
   const { session, products } = await requireProduct('sll');
   const hasLojaPronta = products.includes('loja-pronta');
   const overview = await getSllStoreOverview(session.user.id, hasLojaPronta);
-  const hasLoadFailure = overview.connected.status === 'failure';
+  const config = getShopeeConfiguration();
+  let connection: { connected: boolean; shopId?: number } = { connected: false };
+  let connectionFailed = false;
+  try {
+    if (config && canUseShopee(config, session.user.id, session.user.role))
+      connection = await getShopeeStatus(session.user.id, config);
+  } catch {
+    connectionFailed = true;
+  }
+  const hasLoadFailure = overview.connected.status === 'failure' || connectionFailed;
 
   return (
     <SllAreaShell
@@ -33,7 +45,11 @@ export default async function SllStoresPage() {
             <StoreIcon aria-hidden="true" className="size-6" />
           </span>
           <span className={badgeClass}>
-            {hasLoadFailure ? 'Falha ao carregar' : 'Shopee · Em preparação'}
+            {hasLoadFailure
+              ? 'Falha ao carregar'
+              : connection.connected
+                ? 'Shopee · Conectada'
+                : 'Shopee · Não conectada'}
           </span>
         </div>
         <div className="flex flex-col gap-2">
@@ -43,20 +59,30 @@ export default async function SllStoresPage() {
           <p className="text-body text-pretty text-muted-foreground">
             {hasLoadFailure
               ? 'Tente novamente. Enquanto a leitura não terminar, não é possível confirmar se há montagem ou dados conectados.'
-              : 'O SLL ainda não consulta lojas conectadas da Shopee. Por isso, não mostramos vendas, pedidos ou outras métricas nesta página.'}
+              : connection.connected
+                ? 'Sua loja está conectada. No seu plano, você pode acompanhar os dados autorizados e organizar os próximos passos.'
+                : 'Você pode cadastrar e conectar sua loja com seu acesso ao SLL. A Loja Pronta é uma opção adicional para montar sua marca e selecionar produtos.'}
           </p>
         </div>
         <dl className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-2xl bg-muted p-4">
             <dt className="text-sm text-muted-foreground">Lojas conectadas</dt>
             <dd className="mt-1 text-body font-semibold text-foreground">
-              {hasLoadFailure ? 'Não foi possível consultar' : 'Indisponível'}
+              {hasLoadFailure
+                ? 'Não foi possível consultar'
+                : connection.connected
+                  ? '1 loja'
+                  : 'Nenhuma conexão confirmada'}
             </dd>
           </div>
           <div className="rounded-2xl bg-muted p-4">
             <dt className="text-sm text-muted-foreground">Dados da Shopee</dt>
             <dd className="mt-1 text-body font-semibold text-foreground">
-              {hasLoadFailure ? 'Leitura interrompida' : 'Em preparação'}
+              {hasLoadFailure
+                ? 'Leitura interrompida'
+                : connection.connected
+                  ? 'Consulta disponível no seu plano'
+                  : 'Aguardando conexão'}
             </dd>
           </div>
         </dl>
@@ -77,7 +103,7 @@ export default async function SllStoresPage() {
           <span>
             {hasLoadFailure
               ? 'A falha de leitura não significa que você não tenha uma loja. Atualize a página para tentar de novo.'
-              : 'A ausência de consulta não significa zero vendas. Quando a integração estiver disponível, esta área poderá mostrar os dados autorizados da loja.'}
+              : 'Dados ausentes não significam zero vendas. A conexão é compartilhada entre o SLL e a Loja Pronta, quando você tem os dois produtos.'}
           </span>
         </p>
         {hasLoadFailure ? (
@@ -88,8 +114,9 @@ export default async function SllStoresPage() {
           </Button>
         ) : (
           <Button asChild className="w-full sm:w-fit">
-            <Link href="/sll/minhas-lojas/adicionar">
-              Ver opções para minha loja <ArrowRightIcon aria-hidden="true" />
+            <Link href={connection.connected ? '/sll/plano' : '/sll/minhas-lojas/adicionar'}>
+              {connection.connected ? 'Ver meu plano' : 'Ver opções para minha loja'}{' '}
+              <ArrowRightIcon aria-hidden="true" />
             </Link>
           </Button>
         )}
@@ -115,8 +142,8 @@ export default async function SllStoresPage() {
             <span className={badgeClass}>Em montagem</span>
           </div>
           <p className="text-body text-pretty text-muted-foreground">
-            Esta loja pertence ao processo da Loja Pronta. Ela não entra na contagem de lojas
-            conectadas do SLL.
+            Esta loja pertence ao processo da Loja Pronta. O cadastro da marca não confirma uma
+            conexão com a Shopee.
           </p>
           <dl className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl bg-muted p-4">

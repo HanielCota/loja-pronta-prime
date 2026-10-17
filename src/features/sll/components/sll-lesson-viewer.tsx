@@ -21,7 +21,7 @@ import { SllLessonVideo } from './sll-lesson-video';
 import { sllLessonHref, sllLibraryReturnHref } from '../lesson-navigation';
 import { describeSllMaterial } from '../material-format';
 import type { SllExpectedMaterial } from '../material-catalog';
-import { setSllLessonCompletionForm, recordSllLessonView } from '../server/actions';
+import { setSllLessonCompletionForm } from '../server/actions';
 
 export type SllLessonViewerData = {
   returnHref?: string | null;
@@ -134,11 +134,29 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
   useEffect(() => {
     if (isLocked) return;
     let active = true;
-    void recordSllLessonView(data.track.id, data.lesson.id).then((result) => {
-      if (active && !result.saved) setViewMessage(result.message);
-    });
+    const controller = new AbortController();
+    void fetch('/api/sll/progress/view', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ trackId: data.track.id, lessonId: data.lesson.id }),
+      signal: controller.signal,
+      cache: 'no-store',
+    })
+      .then(async (response) => {
+        const result = await response.json();
+        if (active && (!response.ok || !result.saved))
+          setViewMessage(
+            typeof result.message === 'string'
+              ? result.message
+              : 'Não foi possível registrar a abertura da aula.',
+          );
+      })
+      .catch(() => {
+        if (active) setViewMessage('Não foi possível registrar a abertura da aula. Tente de novo.');
+      });
     return () => {
       active = false;
+      controller.abort();
     };
   }, [data.lesson.id, data.track.id, isLocked]);
 

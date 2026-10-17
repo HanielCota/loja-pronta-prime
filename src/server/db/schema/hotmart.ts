@@ -1,5 +1,6 @@
 import { boolean, index, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core';
 import { user } from './auth';
+import type { ExpertId } from '../../../config/experts';
 
 /** Configuração editada no painel; o token nunca sai do servidor em texto puro. */
 export const hotmartSettings = pgTable('hotmart_settings', {
@@ -14,6 +15,8 @@ export const hotmartProductMappings = pgTable(
   {
     productUcode: text('product_ucode').notNull(),
     access: text('access', { enum: ['sll', 'loja-pronta'] }).notNull(),
+    expert: text('expert').$type<ExpertId>().notNull().default('pri'),
+    primary: boolean('primary').notNull().default(true),
   },
   (table) => [primaryKey({ columns: [table.productUcode, table.access] })],
 );
@@ -25,6 +28,7 @@ export const hotmartPurchases = pgTable(
     transaction: text('transaction').primaryKey(),
     buyerEmail: text('buyer_email').notNull(),
     productUcode: text('product_ucode').notNull(),
+    expert: text('expert').$type<ExpertId>().notNull().default('pri'),
     userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
     active: boolean('active').notNull(),
     lastEventAt: timestamp('last_event_at').notNull(),

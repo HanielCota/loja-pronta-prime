@@ -4,6 +4,7 @@ import { learningLessonProgress } from '@/server/db/schema';
 import { getPublishedSllTrack } from './published-track';
 import { resolveSequentialStageAccess } from '../progress-rules';
 import { isPlanReferenceAvailable } from '../lesson-access';
+import { hasAssistantLessonReference } from '@/features/assistant/server/plans';
 
 // Fica fora do arquivo 'use server': exportada de lá, viraria uma ação que qualquer
 // navegador pode chamar. Aqui ela serve às ações de progresso e à rota de materiais.
@@ -67,12 +68,23 @@ export async function getLessonLockMessage(
   lessonId: string,
 ) {
   const track = await getTrackStageAccess(userId, trackId);
+  return getLessonLockMessageForTrack(userId, track, stageId, lessonId);
+}
+
+/** A lista de materiais reaproveita a trilha já lida e aplica as mesmas exceções da aula. */
+export async function getLessonLockMessageForTrack(
+  userId: string,
+  track: Awaited<ReturnType<typeof getTrackStageAccess>>,
+  stageId: string,
+  lessonId: string,
+) {
   if (!track) return 'Esta aula não está disponível.';
   const access = track.stages.find((stage) => stage.stageId === stageId);
   if (
     track.kind !== 'method' ||
     access?.isUnlocked ||
-    isPlanReferenceAvailable(track.stages, lessonId)
+    isPlanReferenceAvailable(track.stages, lessonId) ||
+    (await hasAssistantLessonReference(userId, lessonId))
   )
     return null;
   return access?.lockMessage ?? 'Conclua a etapa anterior para abrir esta aula.';

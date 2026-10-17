@@ -92,6 +92,15 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: '/sll/minhas-lojas/conectar',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: `${contentPolicy}; form-action 'self' https://open.shopee.com https://open.sandbox.test-stable.shopee.com`,
+          },
+        ],
+      },
+      {
         source: '/admin/bling',
         headers: [
           {

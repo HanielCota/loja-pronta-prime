@@ -192,6 +192,7 @@ test('a aula de apoio abre com seus materiais e progresso sem liberar as outras 
     .values({ userId, lessonId: lessons[0]!, completedAt: new Date() });
 
   const { getSllLessonViewer } = await import('@/features/sll/server/lesson-viewer');
+  const { getLessonMaterials } = await import('@/features/sll/tools/server/materials');
   const { getTrackStageAccess } = await import('@/features/sll/server/stage-lock');
   const { recordSllLessonView, saveSllLessonPosition, setSllLessonCompletion } =
     await import('@/features/sll/server/progress-actions');
@@ -213,6 +214,11 @@ test('a aula de apoio abre com seus materiais e progresso sem liberar as outras 
   expect((await setSllLessonCompletion(trackId, lessons[3]!, true)).saved).toBe(false);
   expect((await material(blocks[0]!)).status).toBe(200);
   expect((await material(blocks[1]!)).status).toBe(404);
+  const listed = await getLessonMaterials();
+  expect(listed.find((item) => item.lessonId === lessons[2])?.destination).toBe(
+    `/api/sll/material/${blocks[0]}`,
+  );
+  expect(listed.find((item) => item.lessonId === lessons[3])?.destination).toBeNull();
 
   // Retirar a ação de publicação também retira a exceção, mesmo com progresso já salvo.
   await database
@@ -220,6 +226,9 @@ test('a aula de apoio abre com seus materiais e progresso sem liberar as outras 
     .set({ status: 'draft' })
     .where(eq(schema.learningLessons.id, lessons[1]!));
   expect((await getSllLessonViewer(lessons[2]!))?.blocks).toHaveLength(0);
+  expect(
+    (await getLessonMaterials()).find((item) => item.lessonId === lessons[2])?.destination,
+  ).toBeNull();
   expect((await material(blocks[0]!)).status).toBe(404);
   expect((await recordSllLessonView(trackId, lessons[2]!)).saved).toBe(false);
   await database

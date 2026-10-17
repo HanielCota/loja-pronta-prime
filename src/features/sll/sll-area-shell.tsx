@@ -75,12 +75,14 @@ export function SllAreaShell({
 
   return (
     <>
-      <a
-        href="#sll-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-4 focus:z-50 focus:rounded-full focus:bg-card focus:px-6 focus:py-3 focus:text-body focus:text-link focus:shadow-card focus:outline-2 focus:outline-ring"
-      >
-        Pular para o conteúdo
-      </a>
+      <nav aria-label="Atalho para o conteúdo">
+        <a
+          href="#sll-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-4 focus:z-50 focus:rounded-full focus:bg-card focus:px-6 focus:py-3 focus:text-body focus:text-link focus:shadow-card focus:outline-2 focus:outline-ring"
+        >
+          Pular para o conteúdo
+        </a>
+      </nav>
       <div className="min-h-dvh lg:grid lg:grid-cols-[18rem_minmax(0,1fr)]">
         <aside
           aria-label="Navegação do SLL"

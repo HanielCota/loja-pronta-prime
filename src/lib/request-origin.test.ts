@@ -26,3 +26,20 @@ test('permite os endereços locais somente com a mesma porta e protocolo', () =>
     expect(isApplicationOrigin(origin, 'http://localhost:3000')).toBe(false);
   expect(isApplicationOrigin('http://localhost:3000', 'https://app.example.com')).toBe(false);
 });
+
+test('permite apenas os domínios adicionais explicitamente configurados', () => {
+  const app = 'https://app.example.com';
+  const allowed = ['https://leads.example.com'];
+  expect(isApplicationOrigin('https://leads.example.com', app)).toBe(false);
+  expect(isApplicationOrigin('https://leads.example.com', app, allowed)).toBe(true);
+  for (const origin of [
+    null,
+    'null',
+    'http://leads.example.com',
+    'https://leads.example.com:3000',
+    'https://leads.example.com/path',
+    'https://leads.example.com.evil',
+    'https://other.example.com',
+  ])
+    expect(isApplicationOrigin(origin, app, allowed)).toBe(false);
+});

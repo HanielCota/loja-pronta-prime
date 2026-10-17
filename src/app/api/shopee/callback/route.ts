@@ -1,17 +1,25 @@
 import { NextResponse } from 'next/server';
 import { env } from '@/config/env';
-import { SHOPEE_CONNECT_PATH } from '@/config/shopee';
+import { shopeeConnectionPath, type ShopeeEntry } from '@/features/shopee/entry';
 import { getActiveSession, needsFirstPassword } from '@/features/auth/server/session';
 import { getStudentProducts } from '@/features/products/server/access';
 import { canUseShopee, parseShopeeCallback } from '@/features/shopee/authorization';
 import { getShopeeConfiguration } from '@/features/shopee/server/client';
-import { finishShopeeAuthorization } from '@/features/shopee/server/connection';
+import {
+  finishShopeeAuthorization,
+  getShopeeAuthorizationOrigin,
+} from '@/features/shopee/server/connection';
 
 export async function GET(request: Request) {
   let result = 'expired';
+  let origin: ShopeeEntry = 'loja-pronta';
   const session = await getActiveSession();
   const config = getShopeeConfiguration();
   const callback = parseShopeeCallback(new URL(request.url).searchParams);
+  if (session && callback && !needsFirstPassword(session.user))
+    origin =
+      (await getShopeeAuthorizationOrigin(session.user.id, session.session.id, callback.state)) ??
+      origin;
   if (!config || config.SHOPEE_ENABLED !== 'true') result = 'unavailable';
   else if (
     session &&
@@ -20,7 +28,13 @@ export async function GET(request: Request) {
     canUseShopee(config, session.user.id, session.user.role)
   ) {
     const { products } = await getStudentProducts(session.user.id);
-    if (products.includes('loja-pronta')) {
+    const savedOrigin = await getShopeeAuthorizationOrigin(
+      session.user.id,
+      session.session.id,
+      callback.state,
+    );
+    if (savedOrigin) origin = savedOrigin;
+    if (savedOrigin && products.includes(savedOrigin)) {
       try {
         result = await finishShopeeAuthorization(
           { ...callback, userId: session.user.id, sessionId: session.session.id },
@@ -33,7 +47,7 @@ export async function GET(request: Request) {
   }
   // Nenhum código, estado, mensagem externa ou Host recebido é reaproveitado no destino.
   const response = NextResponse.redirect(
-    new URL(`${SHOPEE_CONNECT_PATH}?resultado=${result}`, env.BETTER_AUTH_URL),
+    new URL(`${shopeeConnectionPath(origin)}?resultado=${result}`, env.BETTER_AUTH_URL),
     303,
   );
   response.headers.set('Cache-Control', 'no-store');

@@ -141,26 +141,17 @@ function heroFor(
   }
   if (phase === 4) {
     return {
-      eyebrow: stageEyebrow(3, 'Em breve'),
+      eyebrow: stageEyebrow(3),
       title: current?.title ?? '',
-      text: current?.detail ?? '',
-      action: { href: SHOPEE_CONNECT_PATH, label: 'Ver como funciona a conexão' },
-      note: 'A conexão com a Shopee está em breve. Por enquanto, você pode conferir como ela vai funcionar.',
-    };
-  }
-  if (phase >= STORE_PHASES.length) {
-    return {
-      eyebrow: stageEyebrow(3, 'Em breve'),
-      title: 'Última etapa da sua loja',
-      text: 'A publicação automática e a consulta de vendas ainda estão em preparação.',
-      note: 'Confira a publicação e as vendas na Central do Vendedor da Shopee.',
+      text: 'Confira a disponibilidade e autorize a conexão da sua loja com a plataforma.',
+      action: { href: SHOPEE_CONNECT_PATH, label: 'Conferir a conexão' },
     };
   }
   return {
-    eyebrow: stageEyebrow(3, 'Em breve'),
-    title: current?.title ?? '',
-    text: current?.detail ?? '',
-    note: 'Esta parte está em breve. Você pode rever as etapas já concluídas.',
+    eyebrow: stageEyebrow(3),
+    title: phase >= 6 ? 'Acompanhe os produtos da sua loja' : 'Escolha os cinco primeiros produtos',
+    text: 'Confira os produtos disponíveis e acompanhe a publicação e o período de observação.',
+    action: { href: '/loja-pronta/produtos', label: 'Ver meus produtos' },
   };
 }
 

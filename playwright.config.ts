@@ -6,7 +6,7 @@ if (existsSync('.env.local')) process.loadEnvFile('.env.local');
 
 const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
 const catalogTests =
-  /sll-(method-overview|stage07|stage1|stage10-library|stage2-pilot|welcome)\.spec\.ts/;
+  /(?:sll-(method-overview|stage07|stage1|stage10-library|stage2-pilot|welcome)|assistant)\.spec\.ts/;
 
 export default defineConfig({
   testDir: './e2e',
@@ -29,7 +29,12 @@ export default defineConfig({
     {
       name: 'desktop',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: [/layout\.spec\.ts/, /sll-cache\.spec\.ts/, catalogTests],
+      testIgnore: [
+        /layout\.spec\.ts/,
+        /sll-cache\.spec\.ts/,
+        /assistant-publication\.spec\.ts/,
+        catalogTests,
+      ],
     },
     {
       // Estes cenários publicam o catálogo global: cada arquivo precisa terminar antes do próximo.

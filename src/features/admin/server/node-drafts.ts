@@ -2,6 +2,12 @@ import { and, asc, eq, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
 import {
   learningContentBlocks,
+  learningLessons,
+  learningModules,
+  learningStages,
+  learningTracks,
+  learningBanners,
+  learningResources,
   learningNodeDrafts,
   type LearningDraftBlock,
   type LearningNodeDraftData,
@@ -11,6 +17,9 @@ import type { LearningNodeKind } from '../structure-types';
 export type DraftKind = LearningNodeKind | 'resource' | 'banner';
 export type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Executor = typeof db | DbTransaction;
+
+/** O conteúdo foi arquivado ou alterado enquanto uma operação demorada estava em andamento. */
+export class LearningContentChangedError extends Error {}
 
 /** Chamadores verificam a permissão de admin antes de acessar rascunhos. */
 export async function getNodeDraft(kind: DraftKind, nodeId: string, executor: Executor = db) {
@@ -46,6 +55,18 @@ export async function withNodeDraftLock<T>(
   return db.transaction(async (tx) => {
     await tx.execute(
       sql`select pg_advisory_xact_lock(hashtext(${`node-draft:${kind}:${nodeId}`}))`,
+    );
+    const table = {
+      lesson: learningLessons,
+      module: learningModules,
+      stage: learningStages,
+      track: learningTracks,
+      banner: learningBanners,
+      resource: learningResources,
+    }[kind];
+    // Publicação, arquivo e envios precisam decidir sobre a mesma versão do item.
+    await tx.execute(
+      sql`select ${table.id} from ${table} where ${table.id} = ${nodeId} for update`,
     );
     return run(tx);
   });

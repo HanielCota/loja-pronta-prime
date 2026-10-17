@@ -1,0 +1,2 @@
+ALTER TABLE "shopee_authorization_states" ADD COLUMN "origin" text DEFAULT 'loja-pronta' NOT NULL;--> statement-breakpoint
+ALTER TABLE "shopee_authorization_states" ADD CONSTRAINT "shopee_authorization_states_origin_check" CHECK ("shopee_authorization_states"."origin" in ('sll', 'loja-pronta'));

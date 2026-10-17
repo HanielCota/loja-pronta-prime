@@ -1,11 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
+import { starterPlaybooks } from '@/features/assistant/model';
 import { auth } from '@/server/auth/auth';
 import { assertTestDatabase } from './support/cleanup';
 import { closeDatabase, database, PASSWORD } from './support/students';
 import { expectNoA11yViolations, signIn } from './support/auth';
 
 const run = randomUUID();
+const bookId = randomUUID();
 const email = `e2e-stage2-${run}@teste.com`;
 const trackId = randomUUID();
 const stageOneId = randomUUID();
@@ -34,6 +36,11 @@ test.beforeAll(async () => {
     },
   });
   userId = user.id;
+  const book = starterPlaybooks()[0]!;
+  await database().query(
+    'insert into assistant_playbooks(id,title,strategy,actions,published_at) values($1,$2,$3,$4,now())',
+    [bookId, book.title, book.strategy, JSON.stringify(book.actions)],
+  );
   await database().query('insert into student_products (user_id, product) values ($1, $2)', [
     userId,
     'sll',
@@ -96,6 +103,7 @@ test.afterAll(async () => {
   assertTestDatabase();
   await database().query('delete from learning_tracks where id=$1', [trackId]);
   await database().query('delete from "user" where id=$1 and email=$2', [userId, email]);
+  await database().query('delete from assistant_playbooks where id=$1', [bookId]);
   await closeDatabase();
 });
 
@@ -105,29 +113,30 @@ test('a entrada do plano funciona sem JavaScript', async ({ browser }) => {
   const page = await context.newPage();
   try {
     await signIn(page, email, PASSWORD, `/sll/metodo/etapa/${stageTwoId}`);
-    await expect(
-      page.getByRole('heading', { name: 'Há quanto tempo sua loja está aberta?' }),
-    ).toBeVisible();
-    await page.getByRole('radio', { name: 'Minha loja tem menos de 7 dias' }).check();
-    await page.getByRole('button', { name: 'Continuar para o plano' }).click();
+    await page.getByRole('link', { name: 'Abrir meu plano', exact: true }).click();
+    await page.getByRole('radio', { name: 'Menos de 7 dias', exact: true }).check();
+    await page.getByRole('button', { name: 'Organizar meu plano' }).click();
+    await expect(page.getByRole('heading', { name: 'Sete dias · Orgânico' })).toBeVisible();
+    await page.goto(`/sll/metodo/etapa/${stageTwoId}`);
     await expect(page.getByRole('heading', { name: 'Comece pelo primeiro dia' })).toBeVisible();
   } finally {
     await context.close();
     await database().query('delete from sll_plan_intake where user_id=$1', [userId]);
+    await database().query('delete from assistant_plans where user_id=$1', [userId]);
   }
 });
 
 test('entrada do plano e conclusão do Dia 1 persistem', async ({ page }) => {
   test.setTimeout(90_000);
   await signIn(page, email, PASSWORD, `/sll/metodo/etapa/${stageTwoId}`);
-  await expect(
-    page.getByRole('heading', { name: 'Há quanto tempo sua loja está aberta?' }),
-  ).toBeVisible();
-  await expect(page.getByRole('radio', { name: 'Minha loja tem exatamente 7 dias' })).toBeVisible();
+  await page.getByRole('link', { name: 'Abrir meu plano', exact: true }).click();
+  await expect(page.getByRole('radio', { name: 'Exatamente 7 dias', exact: true })).toBeVisible();
   await expectNoA11yViolations(page);
 
-  await page.getByRole('radio', { name: 'Minha loja tem menos de 7 dias' }).check();
-  await page.getByRole('button', { name: 'Continuar para o plano' }).click();
+  await page.getByRole('radio', { name: 'Menos de 7 dias', exact: true }).check();
+  await page.getByRole('button', { name: 'Organizar meu plano' }).click();
+  await expect(page.getByRole('heading', { name: 'Sete dias · Orgânico' })).toBeVisible();
+  await page.goto(`/sll/metodo/etapa/${stageTwoId}`);
   await expect(page.getByRole('heading', { name: 'Comece pelo primeiro dia' })).toBeVisible();
   await expect(page.getByText('Dia 1 de 2', { exact: true })).toBeVisible();
   await expect(page.getByText('Ações complementares', { exact: true })).toBeVisible();
