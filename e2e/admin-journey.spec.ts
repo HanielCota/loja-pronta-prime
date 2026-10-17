@@ -8,6 +8,7 @@ import { expectNoA11yViolations, signIn } from './support/auth';
 import { closeDatabase, database, PASSWORD } from './support/students';
 
 const createdIds: string[] = [];
+const storedKeys: string[] = [];
 const answers = Object.fromEntries(
   ONBOARDING_QUESTIONS.map((question) => [
     question.id,
@@ -51,12 +52,31 @@ async function seedJourney(id: string) {
   );
 }
 
+async function seedStoreImages(id: string) {
+  const keys: string[] = [];
+  for (const file of ['public/brand/mascote.png', 'src/app/icon.png']) {
+    const key = `logos/${id}/${randomUUID()}.png`;
+    storedKeys.push(key);
+    await storage().put(key, await readFile(file), 'image/png');
+    keys.push(key);
+  }
+  await database().query('insert into logo_studio (user_id, logos) values ($1, $2)', [
+    id,
+    JSON.stringify(keys.map((key, index) => ({ key, ...(index ? { uploaded: true } : {}) }))),
+  ]);
+  await database().query(
+    "update store_brand set logo_image = $2, description = 'Saved store description.' where user_id = $1",
+    [id, keys[0]],
+  );
+}
+
 async function snapshot(id: string) {
   const { rows } = await database().query(
     `select jsonb_build_object(
        'store', (select to_jsonb(s) from stores s where s.user_id = $1),
        'onboarding', (select to_jsonb(o) from store_onboarding o where o.user_id = $1),
        'brand', (select to_jsonb(b) from store_brand b where b.user_id = $1),
+       'studio', (select to_jsonb(l) from logo_studio l where l.user_id = $1),
        'product', (select to_jsonb(p) from student_products p where p.user_id = $1),
        'presence', (select to_jsonb(p) from user_presence p where p.user_id = $1)
      ) as journey`,
@@ -66,7 +86,11 @@ async function snapshot(id: string) {
 }
 
 test.afterEach(async () => {
-  await database().query('delete from "user" where id = any($1::text[])', [createdIds.splice(0)]);
+  try {
+    await Promise.all(storedKeys.splice(0).map((key) => storage().remove(key)));
+  } finally {
+    await database().query('delete from "user" where id = any($1::text[])', [createdIds.splice(0)]);
+  }
 });
 test.afterAll(closeDatabase);
 
@@ -78,6 +102,7 @@ for (const mobile of [false, true]) {
       const admin = await createAccount(true);
       const student = await createAccount();
       await seedJourney(student.id);
+      await seedStoreImages(student.id);
       const before = await snapshot(student.id);
       await page.setViewportSize(
         mobile ? { width: 390, height: 844 } : { width: 1440, height: 1000 },
@@ -100,13 +125,34 @@ for (const mobile of [false, true]) {
       await expect(page.getByRole('region', { name: 'Store brand', exact: true })).toContainText(
         'Phase 2 of 7',
       );
-      await expect(page.getByRole('heading', { name: 'Create or upload the logo' })).toBeVisible();
-      await expect(page.getByText('Saved test store', { exact: true })).toBeVisible();
+      await expect(
+        page.getByRole('heading', { name: 'Review and confirm the brand' }),
+      ).toBeVisible();
+      const appearance = page.getByRole('region', { name: 'Store appearance', exact: true });
+      await expect(appearance.getByText('Saved test store', { exact: true })).toBeVisible();
+      await expect(appearance.getByText('Saved store description.', { exact: true })).toBeVisible();
+      await expect(appearance).toContainText('does not confirm publication on Shopee');
+      const gallery = page.getByRole('region', { name: 'Saved images (2)', exact: true });
+      await expect(gallery.getByRole('img')).toHaveCount(2);
+      await expect(gallery.getByText('Selected logo', { exact: true })).toHaveCount(1);
+      await expect(gallery.getByText('Uploaded', { exact: true })).toHaveCount(1);
+      for (const image of await gallery.getByRole('img').all()) {
+        await image.scrollIntoViewIfNeeded();
+        await expect
+          .poll(() =>
+            image.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth > 0),
+          )
+          .toBe(true);
+      }
+      await expect(
+        gallery.getByRole('link', { name: 'View full image 1 (opens in a new tab)' }),
+      ).toHaveAttribute('target', '_blank');
       await expect(page.getByText('Read-only view.', { exact: false })).toBeVisible();
       await expectNoA11yViolations(page);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
         true,
       );
+      await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({
         path: `.data/admin-journey-${mobile ? 'mobile' : 'desktop'}-${dark ? 'dark' : 'light'}.png`,
         fullPage: true,
@@ -134,9 +180,11 @@ test('anonymous and student requests cannot read another journey or its logo', a
   expect(anonymous.status()).toBe(307);
   expect(anonymous.headers().location).toContain('/entrar');
   expect((await request.get(`${path}/logo`, { maxRedirects: 0 })).status()).toBe(307);
+  expect((await request.get(`${path}/images/0`, { maxRedirects: 0 })).status()).toBe(307);
   await signIn(page, viewer.email, PASSWORD, '/perfil');
   expect((await page.goto(path))?.status()).toBe(404);
   expect((await page.request.get(`${path}/logo`)).status()).toBe(404);
+  expect((await page.request.get(`${path}/images/0`)).status()).toBe(404);
 });
 
 test('saved next steps remain accurate through all phases without changing student data', async ({
@@ -148,6 +196,7 @@ test('saved next steps remain accurate through all phases without changing stude
   await signIn(page, admin.email, PASSWORD, path);
   await expect(page.getByText('The student has not started the conversation.')).toBeVisible();
   await expect(page.getByText('Not answered yet', { exact: true })).toHaveCount(5);
+  await expect(page.getByText('No store images have been saved yet.')).toBeVisible();
   await expect(page.getByText(/does not currently have Loja Pronta access/)).toBeVisible();
   await database().query('insert into stores (user_id, phase) values ($1, 2)', [student.id]);
   await page.reload();
@@ -216,13 +265,59 @@ test('the administrator can read only the selected saved logo through an uncache
     const path = `/admin/contas/${student.id}/journey`;
     await signIn(page, admin.email, PASSWORD, path);
     await expect(page.getByRole('img', { name: 'Saved logo for Saved test store' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Saved images (1)', exact: true })).toBeVisible();
     const response = await page.request.get(`${path}/logo`);
     expect(response.status()).toBe(200);
     expect(response.headers()['cache-control']).toBe('private, no-store');
     expect(response.headers()['content-type']).toBe('image/png');
     expect(await response.body()).toEqual(png);
     expect((await page.request.get(`/admin/contas/${admin.id}/journey/logo`)).status()).toBe(404);
+    await database().query('insert into logo_studio (user_id, logos) values ($1, $2)', [
+      student.id,
+      JSON.stringify([{ key, uploaded: true }]),
+    ]);
+    await page.reload();
+    const gallery = page.getByRole('region', { name: 'Saved images (1)', exact: true });
+    await expect(gallery.getByRole('img')).toHaveAttribute('src', `${path}/images/0`);
+    const savedImage = await page.request.get(`${path}/images/0`);
+    expect(savedImage.status()).toBe(200);
+    expect(savedImage.headers()['cache-control']).toBe('private, no-store');
+    expect(savedImage.headers()['content-type']).toBe('image/png');
+    expect(await savedImage.body()).toEqual(png);
+    for (const index of ['99', '-1', '00', 'image.png']) {
+      expect((await page.request.get(`${path}/images/${index}`)).status()).toBe(404);
+    }
+    expect((await page.request.get(`/admin/contas/${admin.id}/journey/images/0`)).status()).toBe(
+      404,
+    );
   } finally {
     await storage().remove(key);
   }
+});
+
+test('the shared packaging composition remains available in the student studio', async ({
+  page,
+}) => {
+  const student = await createAccount();
+  await seedJourney(student.id);
+  await seedStoreImages(student.id);
+  await signIn(page, student.email, PASSWORD, '/loja-pronta/marca/logo');
+  const scene = page.locator('img[src="/brand/kit-envio-kraft.webp"]');
+  await expect(scene).toBeVisible();
+  await expect
+    .poll(() => scene.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth > 0))
+    .toBe(true);
+  const composition = await scene.evaluate((node) => {
+    const frame = node.parentElement!;
+    const bounds = frame.getBoundingClientRect();
+    return {
+      layers: frame.querySelectorAll('img').length,
+      ratio: bounds.width / bounds.height,
+      fit: getComputedStyle(node).objectFit,
+    };
+  });
+  expect(composition.layers).toBe(4);
+  expect(composition.ratio).toBeCloseTo(1.5, 2);
+  expect(composition.fit).toBe('contain');
+  await expectNoA11yViolations(page);
 });

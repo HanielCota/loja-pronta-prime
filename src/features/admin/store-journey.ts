@@ -12,6 +12,12 @@ export const STORE_PHASE_LABELS = [
   'Store completion',
 ] as const;
 
+export type StoreJourneyImage = {
+  src: string;
+  selected: boolean;
+  uploaded?: boolean;
+};
+
 /** Describe the saved next step without opening a student session or changing their progress. */
 export function currentStoreStep({
   phase,

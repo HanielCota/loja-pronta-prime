@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { Eye } from 'lucide-react';
 import { ONBOARDING_QUESTIONS } from '@/config/onboarding';
 import { AdminShell } from '@/features/admin/components/admin-shell';
+import { StudentStoreAppearance } from '@/features/admin/components/student-store-appearance';
 import { getAccountStoreJourney } from '@/features/admin/server/store-journey';
 import { currentStoreStep, STORE_PHASE_LABELS } from '@/features/admin/store-journey';
 import { answerText, isAnswered } from '@/features/loja-pronta/answers';
@@ -20,7 +21,7 @@ export default async function AdminStoreJourneyPage({
   const { id } = await params;
   const data = await getAccountStoreJourney(id);
   if (!data) notFound();
-  const { session, account, overview, onboarding, brand, hasAccess } = data;
+  const { session, account, overview, onboarding, brand, images, hasAccess } = data;
   const step = currentStoreStep({ phase: overview.phase, answers: onboarding.answers, brand });
   const accountPath = `/admin/contas/${encodeURIComponent(account.id)}`;
   const started = overview.conversation !== 'nao-comecou' || overview.phase > 1;
@@ -49,6 +50,12 @@ export default async function AdminStoreJourneyPage({
               : 'This account does not currently have Loja Pronta access. The saved journey is shown below.'}
           </p>
         ) : null}
+        <StudentStoreAppearance
+          name={brand.name}
+          description={brand.description}
+          logoSrc={brand.logoImage ? `${accountPath}/journey/logo` : null}
+          images={images}
+        />
         <section aria-labelledby="current-stage" className={`${panelCard} gap-4`}>
           <p className="text-sm font-semibold text-progress-text">
             Stage {stageNumber(overview.phase)} of 3 · Phase {overview.phase} of{' '}
