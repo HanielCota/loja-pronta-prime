@@ -367,7 +367,12 @@ test('estúdio do logo pelo teclado: setas escolhem, "Só o nome" pula o desenho
   );
   // Falar em vez de escrever (o Chrome tem reconhecimento de voz).
   await expect(page.getByLabel('Escreva do seu jeito')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Falar em vez de escrever' })).toBeVisible();
+  if (process.env.OPENAI_API_KEY)
+    await expect(page.getByRole('button', { name: 'Falar em vez de escrever' })).toBeVisible();
+  else
+    await expect(
+      page.getByText('Falar em vez de escrever: em breve.', { exact: false }),
+    ).toBeVisible();
   // Voltar pela barra das telas: a escolha feita continua marcada.
   await page.getByRole('button', { name: 'Tipo: Só o nome. Mudar' }).click();
   await expect(page.getByRole('heading', { name: 'Como você imagina o logo?' })).toBeFocused();

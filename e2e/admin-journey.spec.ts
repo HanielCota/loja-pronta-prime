@@ -134,11 +134,11 @@ for (const mobile of [false, true]) {
       });
       await expect(appearance.getByText('Saved test store', { exact: true })).toBeVisible();
       await expect(appearance.getByText('Saved store description.', { exact: true })).toBeVisible();
-      await expect(appearance).toContainText('does not confirm publication on Shopee');
+      await expect(appearance).toContainText('Não quer dizer que a loja já está na Shopee.');
       const gallery = page.getByRole('region', { name: 'Imagens salvas (2)', exact: true });
       await expect(gallery.getByRole('img')).toHaveCount(2);
       await expect(gallery.getByText('Logo escolhido', { exact: true })).toHaveCount(1);
-      await expect(gallery.getByText('Uploaded', { exact: true })).toHaveCount(1);
+      await expect(gallery.getByText('Enviada pela aluna', { exact: true })).toHaveCount(1);
       for (const image of await gallery.getByRole('img').all()) {
         await image.scrollIntoViewIfNeeded();
         await expect
