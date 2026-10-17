@@ -62,7 +62,16 @@ export async function readCategoryExperiments(userId: string) {
       )
       .orderBy(desc(shopeeCollectionRuns.startedAt))
       .limit(1);
-    let result: { status: string; message: string; preferredItemId?: number | null } = {
+    let result: {
+      status: string;
+      message: string;
+      preferredItemId?: number | null;
+      leftCtr?: number | null;
+      rightCtr?: number | null;
+      start?: string;
+      end?: string;
+      source?: string;
+    } = {
       status: 'pending',
       message: 'Aguardando uma nova coleta para comparar o período.',
     };
@@ -113,6 +122,23 @@ export async function readCategoryExperiments(userId: string) {
               message:
                 'A categoria, o contador ou a disponibilidade dos anúncios mudou no período. Comece uma nova comparação.',
             };
+    }
+    const report = latest?.trafficReport;
+    if (report && baseline && Date.parse(report.start) >= baseline.startedAt.getTime()) {
+      const left = report.items.find((row) => row.itemId === experiment.leftItemId);
+      const right = report.items.find((row) => row.itemId === experiment.rightItemId);
+      if (left && right) {
+        result = {
+          ...compareCategories(
+            { ...left, start: report.start, end: report.end },
+            { ...right, start: report.start, end: report.end },
+            experiment.minViews,
+          ),
+          start: report.start,
+          end: report.end,
+          source: report.source,
+        };
+      }
     }
     output.push({ ...experiment, result });
   }

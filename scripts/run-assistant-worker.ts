@@ -1,5 +1,10 @@
 import { setTimeout as delay } from 'node:timers/promises';
 import { db } from '../src/server/db';
+import { randomUUID } from 'node:crypto';
+import { eq } from 'drizzle-orm';
+import { runtimeHeartbeats } from '../src/server/db/schema';
+import { syncSupplierFeeds } from '../src/features/assistant/server/supplier-sync';
+import { processStoreChange } from '../src/features/assistant/server/store-changes';
 import {
   claimAssistantJob,
   processAssistantJob,
@@ -14,8 +19,35 @@ process.on('SIGTERM', () => {
 });
 const once = process.argv.includes('--once');
 async function run() {
+  const id = randomUUID();
+  const heartbeat = async () => {
+    await db
+      .insert(runtimeHeartbeats)
+      .values({ id, service: 'assistant', seenAt: new Date() })
+      .onConflictDoUpdate({ target: runtimeHeartbeats.id, set: { seenAt: new Date() } });
+  };
+  let timer: ReturnType<typeof setInterval> | undefined;
+  let feedSync: Promise<void> | null = null;
   try {
+    await heartbeat();
+    timer = setInterval(() => {
+      void heartbeat().catch(() => {
+        stopping = true;
+        process.exitCode = 1;
+      });
+    }, 15_000);
     for (;;) {
+      if (stopping) break;
+      if (!feedSync)
+        feedSync = syncSupplierFeeds()
+          .catch(() => {
+            console.error('[supplier] Atualização indisponível.');
+          })
+          .finally(() => {
+            feedSync = null;
+          });
+      const changed = await processStoreChange();
+      if (once && changed) break;
       const job = await claimAssistantJob();
       if (job) {
         const status = await processAssistantJob(job);
@@ -24,7 +56,13 @@ async function run() {
       if (once || stopping) break;
     }
   } finally {
-    await db.$client.end();
+    clearInterval(timer);
+    try {
+      await feedSync;
+      await db.delete(runtimeHeartbeats).where(eq(runtimeHeartbeats.id, id));
+    } finally {
+      await db.$client.end();
+    }
   }
 }
 void run().catch(() => {

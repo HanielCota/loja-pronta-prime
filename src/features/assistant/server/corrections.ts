@@ -12,6 +12,7 @@ import { shopeeApplicationId } from '@/features/shopee/authorization';
 import { assertAssistantAccess } from './metrics';
 import { publicationPayloadSchema } from '../model';
 
+import { matchesSupplierOffer } from '../supplier-offer';
 import { publicationOfferFingerprint } from '../publication-selection';
 
 /** Nova confirmação usa dados recentes do mesmo SKU, loja e aplicativo. Nunca cria um sexto item. */
@@ -79,13 +80,11 @@ export async function publicationCorrections(userId: string) {
     const ready = prepareSupplierProduct(catalog.product, new Date());
     const parsed = publicationPayloadSchema.safeParse(mapping.payload);
     if (
+      item.itemId !== null ||
       ready.status !== 'prepared' ||
       !('product' in ready) ||
-      ready.product.variants.length ||
       !parsed.success ||
-      parsed.data.item_sku !== item.sku ||
-      Math.round(parsed.data.original_price * 100) !== ready.product.priceCents ||
-      parsed.data.normal_stock > ready.product.stock
+      !matchesSupplierOffer(parsed.data, ready.product)
     )
       return [];
     return [
@@ -167,11 +166,9 @@ export async function reauthorizePublicationItem(userId: string, itemId: string,
     if (
       ready.status !== 'prepared' ||
       !('product' in ready) ||
-      ready.product.variants.length ||
       !payload.success ||
-      payload.data.item_sku !== item.sku ||
-      Math.round(payload.data.original_price * 100) !== ready.product.priceCents ||
-      payload.data.normal_stock > ready.product.stock ||
+      item.itemId !== null ||
+      !matchesSupplierOffer(payload.data, ready.product) ||
       publicationOfferFingerprint(payload.data, item) !== expected
     )
       return false;

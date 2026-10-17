@@ -8,6 +8,7 @@ const runtimeDirectory = path.resolve('build/runtime');
 await rm(runtimeDirectory, { recursive: true, force: true });
 await cp('.next/standalone', runtimeDirectory, { recursive: true, dereference: true });
 await Promise.all([
+  cp('scripts/start-production.mjs', path.join(runtimeDirectory, 'start-production.mjs')),
   cp('public', path.join(runtimeDirectory, 'public'), { recursive: true }),
   cp('.next/static', path.join(runtimeDirectory, '.next/static'), { recursive: true }),
   cp('drizzle', path.join(runtimeDirectory, 'drizzle'), { recursive: true }),
@@ -39,9 +40,20 @@ const worker = await Bun.build({
   naming: 'assistant-worker.cjs',
   target: 'node',
   format: 'cjs',
-  external: ['pg-native'],
+  external: ['pg-native', 'sharp'],
   minify: true,
 });
 if (!worker.success)
   throw new AggregateError(worker.logs, 'Falha ao preparar a rotina do assistente.');
+const diagnostic = await Bun.build({
+  entrypoints: ['scripts/check-store-automation.ts'],
+  outdir: runtimeDirectory,
+  naming: 'automation-check.cjs',
+  target: 'node',
+  format: 'cjs',
+  external: ['pg-native'],
+  minify: true,
+});
+if (!diagnostic.success)
+  throw new AggregateError(diagnostic.logs, 'Falha ao preparar diagnóstico.');
 console.log('Servidor, arquivos públicos, fontes, migrações e worker preparados em build/runtime.');
