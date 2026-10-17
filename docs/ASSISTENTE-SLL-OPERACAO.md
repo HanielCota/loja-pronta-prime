@@ -17,11 +17,9 @@ liberação das APIs externas. Nenhum anúncio real foi publicado nesta implemen
   lotes podem ter de um a cinquenta produtos. Preço e quantidade autorizados ficam registrados.
 - `/sll/comparar-categorias`: compara dois anúncios existentes de categorias diferentes,
   no mesmo intervalo. O mínimo inicial de 100 visualizações por anúncio é configurável e é
-  somente um filtro de exposição, sem significado de teste estatístico. Não duplica anúncios,
-  muda fotos ou categorias, nem promete que uma categoria causou o resultado.
+  somente um filtro de exposição, sem significado de teste estatístico. Ajustes e novos anúncios para experimento são ações separadas em `/sll/anuncios`, quando habilitadas. A comparação não atribui causalidade à categoria.
 - `/admin/assistente`: edita e publica roteiros; importa catálogo real; prepara publicações para
-  uma loja específica; mostra jobs, falhas e conciliação. Sugestões baseadas nos áudios são
-  **rascunhos**, sem atribuir aprovação a Pri ou Zé. Para disponibilizar uma ação com aula,
+  uma loja específica; mostra jobs, falhas e conciliação. Os roteiros iniciais baseados nos áudios são publicados na inicialização, conforme a autorização do dono. Versões existentes são preservadas, sem atribuir aprovação pessoal a Pri ou Zé. Para disponibilizar uma ação com aula,
   selecione uma aula publicada dentro de módulo, etapa e trilha publicados.
 - `/admin/experts`: mapeia códigos reais Hotmart para Pri/Zé, cadastra variantes Panda com
   rascunho, prévia e publicação, e define experiências de acessos manuais com registro de ator.
@@ -53,25 +51,25 @@ sem chave, regras e comparações continuam disponíveis. Não foi realizada cha
 
 ## Matriz de capacidades e limites atuais
 
-| Operação                                 | Código preparado                                                | Evidência local                                                        | Dependência externa / limite                                                                 |
-| ---------------------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| OAuth SLL/Loja Pronta                    | Estado por dona/sessão/origem, cifra, aplicativo e ambiente     | Integração de sessão, reuso, expiração, revogação, acesso e sandbox    | Credenciais e aplicativo Shopee autorizado; retorno/IPs/loja e escopos reais                 |
-| Listar anúncios e categorias registradas | `get_item_list`, `get_item_base_info`                           | Paginação e validação de respostas no banco                            | Confirmar contrato e permissões do aplicativo real                                           |
-| Visualizações/vendas acumuladas          | `get_item_extra_info`, campos `views`/`sale`                    | Ausência/zero, falha parcial e intervalos                              | Confirmar disponibilidade, significado, atualização e histórico desses campos no Brasil      |
-| Impressões, cliques, CTR                 | Nenhuma coleta habilitada para esses campos                     | CTR só aceita impressões reais do mesmo intervalo                      | Não inferidos de visualizações; indisponíveis nesta integração                               |
-| Publicação simples                       | `product/add_item`, uma escrita por item                        | Cinco itens, parcial, timeout, reexecução, SKU existente e conciliação | Imagens Shopee, categoria/atributos, frete e permissões conferidos; piloto real pendente     |
-| Variações de produto                     | O catálogo preserva opções/SKUs                                 | Produtos com variações ficam fora da publicação                        | Publicação de modelos/variações ainda não implementada                                       |
-| Marca na Shopee                          | Marca/onboarding existentes preservados                         | Regressões da jornada                                                  | Nome/logo/descrição não são enviados automaticamente por este worker                         |
-| Comparar categorias                      | Dois anúncios existentes, período e limiar iguais               | Dona, mudança de categoria, ausência e contador reiniciado             | Resultado descritivo; fotos, preço, tráfego e campanhas não são controlados pelo experimento |
-| IA                                       | Priorização restrita e controle de custo                        | Validação das ações/IDs e dados ausentes                               | Chave, modelo e chamada real ainda pendentes                                                 |
-| Fornecedor                               | Importador JSON real e mapeamentos por loja/aplicativo          | Catálogo recente, preço/estoque e seleção                              | Fornecedor/feed/API não fornecidos; não há atualização automática do fornecedor              |
-| Experts                                  | Origem preservada na compra; variante aplicada após cache comum | Compra, reembolso, legado, duas contas e ausência de vídeo             | Códigos reais das ofertas e vídeos finalizados de Zé não fornecidos                          |
+| Operação                                 | Código preparado                                                                | Evidência local                                                        | Dependência externa / limite                                                                 |
+| ---------------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| OAuth SLL/Loja Pronta                    | Estado por dona/sessão/origem, cifra, aplicativo e ambiente                     | Integração de sessão, reuso, expiração, revogação, acesso e sandbox    | Credenciais e aplicativo Shopee autorizado; retorno/IPs/loja e escopos reais                 |
+| Listar anúncios e categorias registradas | `get_item_list`, `get_item_base_info`                                           | Paginação e validação de respostas no banco                            | Confirmar contrato e permissões do aplicativo real                                           |
+| Visualizações/vendas acumuladas          | `get_item_extra_info`, campos `views`/`sale`                                    | Ausência/zero, falha parcial e intervalos                              | Confirmar disponibilidade, significado, atualização e histórico desses campos no Brasil      |
+| Impressões, cliques, CTR                 | Campos reais retornados pela API e adaptador de relatórios por período          | Período/origem preservados e CTR validado                              | Disponibilidade real depende do aplicativo e da fonte autorizada de relatórios               |
+| Publicação simples                       | `product/add_item`, uma escrita por item                                        | Cinco itens, parcial, timeout, reexecução, SKU existente e conciliação | Imagens Shopee, categoria/atributos, frete e permissões conferidos; piloto real pendente     |
+| Variações de produto                     | Publicação do pai, inicialização dos modelos, leitura de confirmação e ativação | Preços, estoques, combinações, timeout e ID do pai preservados         | Validar limites/contrato no aplicativo Shopee real                                           |
+| Marca na Shopee                          | Upload do logo e envio de nome/descrição após confirmação                       | Fila, acesso, revogação e conciliação do perfil                        | Credenciais e permissões reais de perfil/mídia                                               |
+| Comparar categorias                      | Dois anúncios existentes, período e limiar iguais                               | Dona, mudança de categoria, ausência e contador reiniciado             | Resultado descritivo; fotos, preço, tráfego e campanhas não são controlados pelo experimento |
+| IA                                       | Priorização restrita e controle de custo                                        | Validação das ações/IDs e dados ausentes                               | Chave, modelo e chamada real ainda pendentes                                                 |
+| Fornecedor                               | Feed HTTPS agendado, contrato validado, atualização e preparação por loja       | Dados antigos não substituem novos; ausentes perdem estoque            | Falta o endpoint/contrato e a credencial do fornecedor escolhido                             |
+| Experts                                  | Origem preservada na compra; variante aplicada após cache comum                 | Compra, reembolso, legado, duas contas e ausência de vídeo             | Códigos reais das ofertas e vídeos finalizados de Zé não fornecidos                          |
 
 A consulta de documentação oficial nesta máquina retornou HTTP 403; ela não foi usada como
 prova das capacidades do aplicativo. Antes de ativar escrita, registrar o contrato oficial
 atual e o resultado real por endpoint, escopo, loja e ambiente. `SHOPEE_PUBLICATION_ENABLED`
 permanece desligado por padrão. O limite `SHOPEE_PILOT_USER_IDS` continua válido no servidor,
-inclusive no worker. O modo de duplicação de anúncios não foi habilitado sem validação das regras.
+inclusive no worker. O modo de novos anúncios para comparação está implementado e permanece desativado por padrão (`SHOPEE_DUPLICATION_ENABLED`). Sua ativação depende da validação das regras da Shopee; o código não é evidência de permissão.
 
 ## Catálogo real e preparação da publicação
 
@@ -94,11 +92,9 @@ vira automaticamente um ID Shopee. O importador não faz upload de imagens nem c
 Preço/estoque/SKU são conferidos ao importar, selecionar e antes do envio. A seleção inicial
 inclui a confirmação da oferta exibida e da dona/loja/aplicativo; mudança de oferta entre abrir
 a página e confirmar exige atualizar a seleção. A quantidade do anúncio aparece junto do
-estoque do fornecedor. Variações ficam bloqueadas.
+estoque do fornecedor. Variações precisam das mesmas opções, combinações completas e SKUs distintos. A confirmação inclui os preços e estoques de cada modelo.
 
-É necessário conectar o feed real do fornecedor para manter a oferta atualizada de forma
-automática. Enquanto isso, o importador é uma entrada operacional explícita; não simula uma
-integração contínua ou disponibilidade de estoque em tempo real.
+O caminho automático usa `SUPPLIER_FEEDS`, com leitura HTTPS limitada, destinos permitidos e preparação com a API Shopee. O importador manual continua disponível. O contrato e a ativação estão detalhados em [AUTOMACAO-SLL-ENTREGA-2026-10-17.md](AUTOMACAO-SLL-ENTREGA-2026-10-17.md).
 
 ## Worker, relógio e recuperação
 
@@ -148,20 +144,18 @@ Eles não prometem uma nova análise de cinco dias, reservada ao lote inicial.
 
 ## Produção
 
-`bun run build` também gera `build/runtime/assistant-worker.cjs`, executável com Node 24 e as
-mesmas variáveis privadas do servidor. Configure um processo supervisionado separado usando a
-mesma imagem da aplicação, depois de aplicar as migrações:
+O comando do `railpack.json` inicia `start-production.mjs`. Ele aplica as migrações, disponibiliza os roteiros iniciais ausentes e inicia web e worker sob supervisão no mesmo container. A queda de um dos processos encerra o outro com SIGTERM; após 30 segundos, processos que não terminarem recebem SIGKILL. A hospedagem deve manter a política de reinício.
+
+`GET /api/health` responde 200 somente quando o banco pode ser consultado e existe um heartbeat de worker com menos de 90 segundos. Caso contrário, responde 503. O endpoint não expõe configuração. Configure o health check do Coolify nesse caminho. O `/api/auth/ok` continua sendo apenas o teste HTTP da autenticação.
+
+O pacote inclui `assistant-worker.cjs` e `automation-check.cjs`. O diagnóstico é somente leitura:
 
 ```bash
 cd /app/build/runtime
-node assistant-worker.cjs
+node automation-check.cjs
 ```
 
-Não iniciar o worker durante o build, no navegador ou como processo sem supervisão. O comando web
-existente continua iniciando somente migrações e Next. O worker precisa reiniciar após falhas e
-receber SIGTERM no encerramento; finaliza o job atual antes de fechar o pool. `--once` serve para
-uma execução operacional limitada. Mais de um worker é permitido pela fila, mas os limites da
-Shopee e o tamanho do piloto devem orientar a concorrência.
+Mostra presença de configuração, estratégias publicadas, saúde do worker e contagens de resultados incertos, sem credenciais ou dados pessoais. No desenvolvimento: `bun run assistant:worker` e `bun run assistant:check`. O modo `--once` continua disponível para execução limitada. As migrações adicionais desta entrega são `0054` a `0057`.
 
 ## Conteúdo, compras e o que falta para o piloto real
 

@@ -19,30 +19,30 @@ Depois de integrar o PR de preparação na `main`, abra `LojaPrime` → `product
 Confira se já existe uma aplicação deste repositório antes de criar outra. Preserve recursos,
 bancos e volumes existentes.
 
-| Campo                                                     | Valor                                                                      |
-| --------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Projeto                                                   | `LojaPrime`                                                                |
-| Ambiente                                                  | `production`                                                               |
-| Servidor                                                  | `contabo-prod-01`                                                          |
-| Nome da aplicação                                         | `loja-pronta-prime` (ou o nome da aplicação existente)                     |
-| Source                                                    | GitHub App já conectada                                                    |
-| Repository                                                | `HanielCota/loja-pronta-prime`                                             |
-| Branch                                                    | `main`                                                                     |
-| Build Pack                                                | Railpack                                                                   |
-| Base Directory                                            | `/`                                                                        |
-| Is it a static site?                                      | Desativado                                                                 |
-| Install Command                                           | Vazio: o Railpack já instala com `bun install --frozen-lockfile`           |
-| Build Command                                             | `bun run build`                                                            |
-| Start Command                                             | Vazio: usa o comando versionado em `railpack.json`                         |
-| Ports Exposes                                             | `3000`                                                                     |
-| Port Mappings                                             | Vazio; o proxy encaminha o domínio para a porta interna                    |
-| Publish Directory                                         | Vazio                                                                      |
-| Pre-deployment Command                                    | Vazio                                                                      |
-| Post-deployment Command                                   | Vazio                                                                      |
-| Persistent Storage da aplicação                           | Nenhum volume obrigatório                                                  |
-| Domains                                                   | URL HTTPS do domínio escolhido; preencha com o domínio real                |
-| Health Check                                              | Ativado, `GET`, HTTP, porta `3000`, caminho `/api/auth/ok`, esperado `200` |
-| Health Check: interval / timeout / retries / start period | `10s` / `5s` / `6` / `10s`                                                 |
+| Campo                                                     | Valor                                                                     |
+| --------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Projeto                                                   | `LojaPrime`                                                               |
+| Ambiente                                                  | `production`                                                              |
+| Servidor                                                  | `contabo-prod-01`                                                         |
+| Nome da aplicação                                         | `loja-pronta-prime` (ou o nome da aplicação existente)                    |
+| Source                                                    | GitHub App já conectada                                                   |
+| Repository                                                | `HanielCota/loja-pronta-prime`                                            |
+| Branch                                                    | `main`                                                                    |
+| Build Pack                                                | Railpack                                                                  |
+| Base Directory                                            | `/`                                                                       |
+| Is it a static site?                                      | Desativado                                                                |
+| Install Command                                           | Vazio: o Railpack já instala com `bun install --frozen-lockfile`          |
+| Build Command                                             | `bun run build`                                                           |
+| Start Command                                             | Vazio: usa o comando versionado em `railpack.json`                        |
+| Ports Exposes                                             | `3000`                                                                    |
+| Port Mappings                                             | Vazio; o proxy encaminha o domínio para a porta interna                   |
+| Publish Directory                                         | Vazio                                                                     |
+| Pre-deployment Command                                    | Vazio                                                                     |
+| Post-deployment Command                                   | Vazio                                                                     |
+| Persistent Storage da aplicação                           | Nenhum volume obrigatório                                                 |
+| Domains                                                   | URL HTTPS do domínio escolhido; preencha com o domínio real               |
+| Health Check                                              | Ativado, `GET`, HTTP, porta `3000`, caminho `/api/health`, esperado `200` |
+| Health Check: interval / timeout / retries / start period | `10s` / `5s` / `6` / `10s`                                                |
 
 Em **Advanced**, mantenha **Use Docker build cache** ativado. Não preencha o Install Command:
 um comando personalizado faz o Railpack copiar todas as fontes antes da instalação, invalidando
@@ -66,7 +66,7 @@ aplicação antiga e é pulado no primeiro deploy. Não execute migrações dura
 O build instala as dependências completas. `next build` gera o servidor standalone, e
 `scripts/prepare-runtime.ts` reúne em `build/runtime` o servidor, assets, as seis fontes dos logos,
 SQL e um migrador pequeno. A imagem final copia essa pasta e os runtimes, conforme `railpack.json`.
-O comando de início executa `node migrate.cjs` e só então `node server.js`. O migrador preserva
+O comando de início executa `node start-production.mjs`: migrações primeiro, depois web e worker supervisionados. O migrador preserva
 `drizzle.__drizzle_migrations`, o mesmo histórico usado por `bun run db:migrate` no desenvolvimento.
 Não ative `RAILPACK_PRUNE_DEPS=true` nem use `bun install --production` no build.
 

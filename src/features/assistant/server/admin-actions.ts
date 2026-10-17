@@ -16,7 +16,8 @@ import {
 } from '@/server/db/schema';
 import { supplierProductSchema } from '@/features/shopee/catalog';
 import { publicationPayloadSchema } from '../model';
-import { reconcilePublicationItem } from './operations';
+import { matchesSupplierOffer } from '../supplier-offer';
+import { finishVariationPublication, reconcilePublicationItem } from './operations';
 
 export async function retryAssistantJob(form: FormData): Promise<void> {
   await requireAdmin('/admin/assistente');
@@ -52,10 +53,12 @@ export async function retryAssistantJob(form: FormData): Promise<void> {
       const corrected = publicationPayloadSchema.safeParse(mapping?.payload);
       // A correção não muda o preço, a quantidade ou o SKU que a aluna autorizou.
       if (
+        !item.itemId &&
         corrected.success &&
         corrected.data.item_sku === item.payload.item_sku &&
         corrected.data.original_price === item.payload.original_price &&
-        corrected.data.normal_stock === item.payload.normal_stock
+        corrected.data.normal_stock === item.payload.normal_stock &&
+        isDeepStrictEqual(corrected.data.variations, item.payload.variations)
       )
         await tx
           .update(assistantPublicationItems)
@@ -132,12 +135,7 @@ export async function importSupplierCatalog(form: FormData): Promise<void> {
   if (hasMappings && (!connection || form.get('confirmed') !== 'true'))
     redirect('/admin/assistente?resultado=confirmation-required');
   for (const row of parsed.data)
-    if (
-      row.publication &&
-      (row.publication.item_sku !== row.product.sku ||
-        Math.round(row.publication.original_price * 100) !== row.product.priceCents ||
-        row.publication.normal_stock > row.product.stock)
-    )
+    if (row.publication && !matchesSupplierOffer(row.publication, row.product))
       redirect('/admin/assistente?resultado=invalid');
   const ignored = await db.transaction(async (tx) => {
     let skipped = 0;
@@ -206,4 +204,24 @@ export async function importSupplierCatalog(form: FormData): Promise<void> {
   revalidatePath('/admin/assistente');
   revalidatePath('/loja-pronta/produtos');
   redirect(`/admin/assistente?resultado=${ignored ? 'outdated' : 'saved'}`);
+}
+
+export async function finishAssistantVariations(form: FormData): Promise<void> {
+  await requireAdmin('/admin/assistente');
+  const parsed = z.uuid().safeParse(form.get('itemId'));
+  if (!parsed.success) redirect('/admin/assistente?resultado=invalid');
+  const [item] = await db
+    .select()
+    .from(assistantPublicationItems)
+    .where(eq(assistantPublicationItems.id, parsed.data));
+  let finished = false;
+  if (item)
+    try {
+      finished = await finishVariationPublication(item.userId, item.id);
+    } catch {
+      /* Mantém a conferência pendente. */
+    }
+  revalidatePath('/admin/assistente');
+  revalidatePath('/loja-pronta/produtos');
+  redirect(`/admin/assistente?resultado=${finished ? 'matched' : 'unavailable'}`);
 }

@@ -1,0 +1,1 @@
+ALTER TABLE "supplier_feed_subscriptions" ADD COLUMN "cursor" text;

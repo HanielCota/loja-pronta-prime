@@ -16,6 +16,7 @@ import {
 import { user } from './auth';
 import { learningContentBlocks } from './learning-content';
 import type { ExpertId } from '../../../config/experts';
+import type { TrafficReport } from '../../../features/shopee/traffic-report';
 import type {
   PlanAction,
   PublicationPayload,
@@ -141,6 +142,8 @@ export const shopeeCollectionRuns = pgTable(
       .default('running'),
     itemCount: integer('item_count').notNull().default(0),
     failure: text('failure'),
+    trafficReport: jsonb('traffic_report').$type<TrafficReport>(),
+    trafficFailure: text('traffic_failure'),
     startedAt: timestamp('started_at', { withTimezone: true }).defaultNow().notNull(),
     completedAt: timestamp('completed_at', { withTimezone: true }),
   },

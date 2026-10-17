@@ -1,0 +1,1 @@
+ALTER TABLE "store_automation_jobs" ADD COLUMN "result" jsonb;

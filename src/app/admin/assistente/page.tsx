@@ -21,6 +21,7 @@ import {
   prepareStarterPlaybooks,
 } from '@/features/assistant/server/actions';
 import {
+  finishAssistantVariations,
   importSupplierCatalog,
   retryAssistantJob,
   reconcileAssistantPublication,
@@ -220,6 +221,12 @@ export default async function AssistantAdminPage({
                   <input type="hidden" name="itemId" value={item.id} />
                   <Button variant="soft">Conferir anúncio na Shopee</Button>
                 </form>
+                {item.itemId && item.payload.variations ? (
+                  <form action={finishAssistantVariations}>
+                    <input type="hidden" name="itemId" value={item.id} />
+                    <Button variant="soft">Concluir publicação das variações confirmadas</Button>
+                  </form>
+                ) : null}
               </li>
             ))}
           </ul>

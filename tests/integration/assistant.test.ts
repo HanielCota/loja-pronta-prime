@@ -46,6 +46,7 @@ import {
 import { collectStoreMetrics, readStoreObservations } from '@/features/assistant/server/metrics';
 import { readCategoryExperiments } from '@/features/assistant/server/experiments';
 import { starterPlaybooks, publicationPayloadSchema, DAY_MS } from '@/features/assistant/model';
+import { buildProductVariations } from '@/features/assistant/supplier-offer';
 
 const ids: string[] = [];
 const supplierId = `test-${randomUUID()}`;
@@ -1026,4 +1027,97 @@ test('lote seguinte termina publicado sem aguardar uma análise que só existe p
       .where(and(eq(assistantJobs.userId, id), eq(assistantJobs.kind, 'evaluate'))),
   ).toHaveLength(0);
   await db.update(assistantJobs).set({ status: 'completed' }).where(eq(assistantJobs.userId, id));
+});
+
+test('uma resposta perdida nas variações conserva o ID do pai e não cria outro anúncio', async () => {
+  const id = await account();
+  const keys = await catalog(id);
+  const sku = keys[0]![1];
+  const [source] = await db.select().from(supplierCatalog).where(eq(supplierCatalog.sku, sku));
+  const product = {
+    ...source!.product,
+    variants: [
+      { sku: `${sku}-p`, options: { Tamanho: 'P' }, costCents: 1000, priceCents: 2000, stock: 2 },
+    ],
+  };
+  const mapped = { ...payload(sku), variations: buildProductVariations(product) };
+  const [connection] = await db
+    .select()
+    .from(shopeeConnections)
+    .where(eq(shopeeConnections.userId, id));
+  await db.update(supplierCatalog).set({ product }).where(eq(supplierCatalog.sku, sku));
+  await db
+    .update(supplierPublicationMappings)
+    .set({ payload: mapped })
+    .where(
+      and(eq(supplierPublicationMappings.userId, id), eq(supplierPublicationMappings.sku, sku)),
+    );
+  keys[0]![2] = publicationOfferFingerprint(mapped, {
+    userId: id,
+    shopId: connection!.shopId,
+    applicationId: 'live:123',
+  });
+  await createPublicationBatch(id, keys, 'varied');
+  await db
+    .update(assistantJobs)
+    .set({ runAt: new Date(Date.now() + DAY_MS) })
+    .where(eq(assistantJobs.userId, id));
+  const [item] = await db
+    .select()
+    .from(assistantPublicationItems)
+    .where(and(eq(assistantPublicationItems.userId, id), eq(assistantPublicationItems.sku, sku)));
+  const [job] = await db
+    .update(assistantJobs)
+    .set({ status: 'running', attempts: 1, leaseUntil: new Date(Date.now() + 300_000) })
+    .where(eq(assistantJobs.deduplicationKey, `publish:${item!.id}`))
+    .returning();
+  let parents = 0;
+  let modelWrites = 0;
+  const fetcher = transport((url, init) => {
+    if (url.pathname.endsWith('add_item')) {
+      parents++;
+      const sent = JSON.parse(String(init.body));
+      expect(sent.variations).toBeUndefined();
+      expect(sent.sourceImages).toBeUndefined();
+      expect(sent.item_status).toBe('UNLIST');
+      return envelope({ item_id: 99001 });
+    }
+    if (url.pathname.endsWith('get_model_list')) return envelope({ tier_variation: [], model: [] });
+    if (url.pathname.endsWith('init_tier_variation')) {
+      modelWrites++;
+      throw new Error('Resposta perdida');
+    }
+    return emptyReads(url);
+  });
+  expect(await processAssistantJob(job!, fetcher)).toBe('unknown');
+  const [uncertain] = await db
+    .select()
+    .from(assistantPublicationItems)
+    .where(eq(assistantPublicationItems.id, item!.id));
+  expect(uncertain?.itemId).toBe(99001);
+  expect(uncertain?.status).toBe('unknown');
+  await processAssistantJob(job!, fetcher);
+  expect(parents).toBe(1);
+  expect(modelWrites).toBe(1);
+  const resolved = transport((url) => {
+    if (url.pathname.endsWith('get_item_list'))
+      return envelope({
+        item: url.searchParams.get('item_status') === 'NORMAL' ? [{ item_id: 99001 }] : [],
+        has_next_page: false,
+      });
+    if (url.pathname.endsWith('get_item_base_info'))
+      return envelope({
+        item_list: [
+          { item_id: 99001, item_sku: sku, item_name: mapped.item_name, item_status: 'NORMAL' },
+        ],
+      });
+    if (url.pathname.endsWith('get_model_list'))
+      return envelope({
+        tier_variation: mapped.variations!.tier_variation,
+        model: [{ model_sku: `${sku}-p`, tier_index: [0], price_info: [{ original_price: 20 }] }],
+      });
+    throw new Error('A conciliação não deve escrever');
+  });
+  expect((await reconcilePublicationItem(id, item!.id, resolved)).status).toBe('matched');
+  expect(parents).toBe(1);
 });

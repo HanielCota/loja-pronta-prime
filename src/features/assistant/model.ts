@@ -253,6 +253,34 @@ export const publicationPayloadSchema = z.object({
     brand_id: z.number().int().min(0).safe(),
     original_brand_name: z.string().max(200),
   }),
+  sourceImages: z.array(z.url()).max(9).optional(),
+  variations: z
+    .object({
+      tier_variation: z
+        .array(
+          z.object({
+            name: z.string().min(1).max(14),
+            option_list: z
+              .array(z.object({ option: z.string().min(1).max(20) }))
+              .min(1)
+              .max(50),
+          }),
+        )
+        .min(1)
+        .max(2),
+      model: z
+        .array(
+          z.object({
+            tier_index: z.array(z.number().int().nonnegative()).min(1).max(2),
+            model_sku: z.string().min(1).max(100),
+            original_price: z.number().positive().max(1_000_000),
+            normal_stock: z.number().int().nonnegative().max(1_000_000),
+          }),
+        )
+        .min(1)
+        .max(100),
+    })
+    .optional(),
 });
 export type PublicationPayload = z.infer<typeof publicationPayloadSchema>;
 export type BatchAnalysis = {
@@ -271,19 +299,28 @@ export function starterPlaybooks(): Playbook[] {
     'Prepare os produtos que vai divulgar',
   ];
   const descriptions = [
-    'Confira o cadastro da loja e a autorização na Shopee.',
-    'Anote o que pretende alcançar e quanto tempo ou dinheiro pode dedicar.',
-    'Revise as informações, as fotos e a disponibilidade dos produtos escolhidos.',
+    'Abra Minhas lojas, confira o cadastro de vendedora e conecte a sua loja. Verifique se a conexão foi concluída. Complete nome, foto e descrição do perfil antes de divulgar.',
+    'Defina um objetivo observável para a semana, reserve tempo diário e registre o limite de investimento. Anote as visualizações e vendas disponíveis com a data da consulta; ausência de dados não significa zero.',
+    'Escolha os produtos que vai divulgar e confira estoque, preço, fotos, descrição, categoria e entrega. Na Loja Pronta, confirme somente cinco produtos no primeiro lote. Não amplie esse lote antes da observação de cinco dias.',
   ];
   const paths: Record<Strategy, [string, string][]> = {
     organic: [
       [
         'Prepare um vídeo',
-        'Aprenda a criar um vídeo de produto. Use uma ferramenta gratuita quando esse for seu caminho.',
+        'Assista à aula de vídeos vinculada. Grave uma demonstração, destaque o benefício e mostre o uso real do produto. Use materiais autorizados e uma ferramenta gratuita; confira os fatos antes de publicar conteúdo feito com IA.',
       ],
-      ['Publique no Shopee Vídeos', 'Confira as regras e publique seu conteúdo na própria Shopee.'],
-      ['Organize o Instagram da loja', 'Prepare o perfil e o conteúdo que apresenta os produtos.'],
-      ['Revise o que aconteceu', 'Confira os resultados disponíveis e registre o próximo ajuste.'],
+      [
+        'Publique no Shopee Vídeos',
+        'Revise as regras de conteúdo e publique o vídeo vinculando o produto correto. Registre o anúncio e o horário da publicação para acompanhar os dados depois.',
+      ],
+      [
+        'Organize o Instagram da loja',
+        'Complete o perfil da loja e publique uma versão do conteúdo adequada ao Instagram. Confira o link da loja e responda às dúvidas. Registre o conteúdo publicado.',
+      ],
+      [
+        'Revise o que aconteceu',
+        'Compare somente períodos compatíveis e confira as visualizações e vendas disponíveis. Se faltarem dados, mantenha a observação. Registre uma prioridade para a próxima semana, sem tratar coincidência como causa.',
+      ],
     ],
     hybrid: [
       ['Prepare conteúdo para a loja', 'Organize um vídeo para Shopee Vídeos e Instagram.'],

@@ -9,6 +9,7 @@ import {
 import { prepareSupplierProduct } from '@/features/shopee/catalog';
 import { canUseShopee, shopeeApplicationId } from '@/features/shopee/authorization';
 import { getShopeeConfiguration } from '@/features/shopee/server/client';
+import { matchesSupplierOffer } from '../supplier-offer';
 import { publicationOfferFingerprint } from '../publication-selection';
 import { publicationPayloadSchema } from '../model';
 
@@ -27,7 +28,7 @@ export async function availableSupplierProducts(userId: string, role: string | n
     connection.applicationId !== shopeeApplicationId(config)
   )
     return { status: 'connection' as const, products: [] };
-  if (process.env.SHOPEE_PUBLICATION_ENABLED !== 'true' || config.SHOPEE_ENVIRONMENT !== 'live')
+  if (process.env.SHOPEE_PUBLICATION_ENABLED !== 'true')
     return { status: 'preparing' as const, products: [] };
   const rows = await db
     .select({ catalog: supplierCatalog, mapping: supplierPublicationMappings })
@@ -65,17 +66,11 @@ export async function availableSupplierProducts(userId: string, role: string | n
     if (
       ready.status !== 'prepared' ||
       !('product' in ready) ||
-      ready.product.variants.length ||
       !payload.success ||
       used.some((item) => item.sku === catalog.sku)
     )
       return [];
-    if (
-      payload.data.item_sku !== catalog.sku ||
-      Math.round(payload.data.original_price * 100) !== ready.product.priceCents ||
-      payload.data.normal_stock > ready.product.stock
-    )
-      return [];
+    if (!matchesSupplierOffer(payload.data, ready.product)) return [];
     return [
       {
         ...ready.product,

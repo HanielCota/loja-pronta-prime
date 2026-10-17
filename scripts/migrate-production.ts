@@ -5,6 +5,8 @@ import pandaCatalog from '../data/sll/panda-videos.json';
 import { importInitialSllContent } from '../src/features/sll/server/import-initial-content';
 import { importSllTools } from '../src/features/sll/tools/server/import-tools';
 import { publishToolMaterials } from '../src/features/sll/tools/server/publish-materials';
+import { ensureInitialAssistantPlaybooks } from '../src/features/assistant/server/initial-playbooks';
+import { db } from '../src/server/db';
 
 async function applyMigrations(): Promise<void> {
   const url = process.env.DATABASE_URL;
@@ -22,6 +24,8 @@ async function applyMigrations(): Promise<void> {
     );
     await publishToolMaterials();
     const tools = await importSllTools(pool);
+    await ensureInitialAssistantPlaybooks();
+    console.log('Roteiros iniciais do assistente disponíveis; versões existentes preservadas.');
     console.log(
       `Ferramentas SLL: ${tools.applied ? 'entrega aplicada' : 'entrega já aplicada'}, ${tools.resources} recursos e ${tools.links} ligações. Materiais conferidos no bucket.`,
     );
@@ -45,6 +49,7 @@ async function applyMigrations(): Promise<void> {
     console.log(`Vídeos Panda vinculados a ${videos.rows[0]!.lessons} aulas SLL existentes.`);
   } finally {
     await pool.end();
+    await db.$client.end();
   }
 }
 

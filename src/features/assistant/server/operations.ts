@@ -14,10 +14,20 @@ import {
 } from '@/server/db/schema';
 import { shopeeApplicationId, type ShopeeConfiguration } from '@/features/shopee/authorization';
 import { readShopeeAccess } from '@/features/shopee/server/connection';
-import { addShopeeItem, readShopeeResource } from '@/features/shopee/server/resources';
+import {
+  addShopeeItem,
+  readShopeeResource,
+  writeShopeeResource,
+} from '@/features/shopee/server/resources';
 import { ShopeeApiError } from '@/features/shopee/server/client';
 import { prepareSupplierProduct } from '@/features/shopee/catalog';
 import { z } from 'zod';
+import { matchesSupplierOffer } from '../supplier-offer';
+import {
+  publishProductVariations,
+  readProductModels,
+  modelsMatchPublication,
+} from '@/features/shopee/server/variations';
 import { assertAssistantAccess, collectStoreMetrics } from './metrics';
 import {
   batchObservationState,
@@ -29,6 +39,7 @@ import {
 } from '../model';
 
 import { publicationOfferFingerprint, type PublicationSelection } from '../publication-selection';
+import { startReadyCloneExperiments } from './clone-observation';
 
 type Job = typeof assistantJobs.$inferSelect;
 const COLLECTION_INTERVAL_MS = 6 * 60 * 60 * 1000;
@@ -148,7 +159,6 @@ export async function createPublicationBatch(
       const product = prepareSupplierProduct(catalog.product, new Date());
       if (product.status !== 'prepared' || !('product' in product))
         throw new OperationBlocked('catalog-stale');
-      if (product.product.variants.length) throw new OperationBlocked('variants');
       const payload = publicationPayloadSchema.parse(mapping.payload);
       if (
         publicationOfferFingerprint(payload, {
@@ -158,16 +168,15 @@ export async function createPublicationBatch(
         }) !== expectedOffer
       )
         throw new OperationBlocked('offer-changed');
-      if (
-        payload.item_sku !== sku ||
-        Math.round(payload.original_price * 100) !== product.product.priceCents ||
-        payload.normal_stock > product.product.stock
-      )
+      if (!matchesSupplierOffer(payload, product.product))
         throw new OperationBlocked('catalog-price');
       prepared.push({ supplierId, sku, payload });
     }
-    if (new Set(prepared.map((item) => item.sku)).size !== prepared.length)
-      throw new OperationBlocked('selection');
+    const allSkus = prepared.flatMap((item) => [
+      item.sku,
+      ...(item.payload.variations?.model.map((model) => model.model_sku) ?? []),
+    ]);
+    if (new Set(allSkus).size !== allSkus.length) throw new OperationBlocked('selection');
     const categories = new Set(prepared.map((item) => item.payload.category_id));
     if (
       (strategy === 'niche' && categories.size !== 1) ||
@@ -352,7 +361,7 @@ async function confirmPublishedItem(
   });
 }
 
-async function findSku(
+export async function findSku(
   config: ShopeeConfiguration,
   access: { shopId: number; accessToken: string },
   sku: string,
@@ -433,12 +442,10 @@ async function publishItem(job: Job, fetcher: typeof fetch) {
   if (
     fresh.status !== 'prepared' ||
     !('product' in fresh) ||
-    fresh.product.variants.length ||
-    Math.round(payload.original_price * 100) !== fresh.product.priceCents ||
-    payload.normal_stock > fresh.product.stock
+    !matchesSupplierOffer(payload, fresh.product)
   )
     throw new OperationBlocked('catalog-stale');
-  if ((await findSku(config, access, payload.item_sku, fetcher)).length)
+  if (!item.itemId && (await findSku(config, access, payload.item_sku, fetcher)).length)
     throw new OperationBlocked('sku-exists');
   await assertAssistantAccess(job.userId, 'loja-pronta');
   const sending = await db.transaction(async (tx) => {
@@ -469,9 +476,7 @@ async function publishItem(job: Job, fetcher: typeof fetch) {
     if (
       prepared.status !== 'prepared' ||
       !('product' in prepared) ||
-      prepared.product.variants.length ||
-      Math.round(payload.original_price * 100) !== prepared.product.priceCents ||
-      payload.normal_stock > prepared.product.stock
+      !matchesSupplierOffer(payload, prepared.product)
     )
       throw new OperationBlocked('catalog-stale');
     const [changed] = await tx
@@ -489,7 +494,27 @@ async function publishItem(job: Job, fetcher: typeof fetch) {
   if (!sending) throw new OperationBlocked('reconciliation');
   let itemId: number;
   try {
-    itemId = (await addShopeeItem(config, access, payload, fetcher)).item_id;
+    const { variations, sourceImages: _sourceImages, ...basePayload } = payload;
+    itemId =
+      item.itemId ??
+      (
+        await addShopeeItem(
+          config,
+          access,
+          { ...basePayload, ...(variations ? { item_status: 'UNLIST' } : {}) },
+          fetcher,
+        )
+      ).item_id;
+    if (variations) {
+      // O ID da criação é salvo antes da segunda escrita: uma retomada nunca cria outro pai.
+      await db
+        .update(assistantPublicationItems)
+        .set({ itemId })
+        .where(eq(assistantPublicationItems.id, item.id));
+      await assertAssistantAccess(job.userId, 'loja-pronta');
+      if (!(await renewLease(job))) throw new OperationBlocked('lease-lost');
+      await publishProductVariations(config, access, itemId, variations, fetcher);
+    }
   } catch (error) {
     const uncertain = !(error instanceof ShopeeApiError && error.reason === 'rejected');
     await db
@@ -652,6 +677,7 @@ export async function processAssistantJob(job: Job, fetcher: typeof fetch = fetc
     );
     if (job.kind === 'collect') {
       const runId = await collectStoreMetrics(job.userId, config, fetcher);
+      await startReadyCloneExperiments(job.userId, runId);
       if (!(await renewLease(job))) return 'stale' as const;
       const due = await db
         .select()
@@ -758,12 +784,79 @@ export async function reconcilePublicationItem(
   const matches = await findSku(config, access, item.payload.item_sku, fetcher);
   if (matches.length !== 1 || matches[0]?.item_name !== item.payload.item_name)
     return { status: matches.length ? ('ambiguous' as const) : ('not-found' as const) };
+  if (item.payload.variations) {
+    const models = await readProductModels(config, access, matches[0]!.item_id, fetcher);
+    if (!modelsMatchPublication(models, item.payload.variations))
+      return { status: 'ambiguous' as const };
+    const base = await readShopeeResource(
+      config,
+      access,
+      '/api/v2/product/get_item_base_info',
+      z.object({ item_list: z.array(z.object({ item_id: z.number(), item_status: z.string() })) }),
+      { item_id_list: String(matches[0]!.item_id) },
+      fetcher,
+    );
+    if (
+      !base.item_list.some(
+        (row) => row.item_id === matches[0]!.item_id && row.item_status === 'NORMAL',
+      )
+    )
+      return { status: 'ambiguous' as const };
+  }
   await confirmPublishedItem(item, matches[0]!.item_id);
   await db
     .update(assistantJobs)
     .set({ status: 'completed', failure: null, leaseUntil: null })
     .where(eq(assistantJobs.deduplicationKey, `publish:${item.id}`));
   return { status: 'matched' as const, itemId: matches[0]!.item_id };
+}
+
+/** Ativar é idempotente, mas só depois de conferir pai e todas as variações já criadas. */
+export async function finishVariationPublication(
+  userId: string,
+  itemRecordId: string,
+  fetcher: typeof fetch = fetch,
+) {
+  const config = await assertAssistantAccess(userId, 'loja-pronta');
+  if (process.env.SHOPEE_PUBLICATION_ENABLED !== 'true') return false;
+  const access = await readShopeeAccess(userId, config, fetcher);
+  const [item] = await db
+    .select()
+    .from(assistantPublicationItems)
+    .where(
+      and(
+        eq(assistantPublicationItems.id, itemRecordId),
+        eq(assistantPublicationItems.userId, userId),
+      ),
+    );
+  if (
+    !item ||
+    item.status !== 'unknown' ||
+    !item.itemId ||
+    !item.payload.variations ||
+    !connectionMatches(access, config, item)
+  )
+    return false;
+  const matches = await findSku(config, access, item.payload.item_sku, fetcher);
+  if (
+    matches.length !== 1 ||
+    matches[0]?.item_id !== item.itemId ||
+    matches[0].item_name !== item.payload.item_name
+  )
+    return false;
+  const models = await readProductModels(config, access, item.itemId, fetcher);
+  if (!modelsMatchPublication(models, item.payload.variations)) return false;
+  await assertAssistantAccess(userId, 'loja-pronta');
+  await writeShopeeResource(
+    config,
+    access,
+    '/api/v2/product/update_item',
+    { item_id: item.itemId, item_status: 'NORMAL' },
+    z.object({}),
+    fetcher,
+  );
+  await confirmPublishedItem(item, item.itemId);
+  return true;
 }
 
 export async function publicationOverview(userId: string) {

@@ -24,6 +24,30 @@ export const supplierProductSchema = z
       height: positiveInteger,
     }),
     updatedAt: z.iso.datetime({ offset: true }),
+    marketplace: z
+      .object({
+        categoryId: positiveInteger,
+        brandId: z.number().int().nonnegative().safe().default(0),
+        attributes: z
+          .array(
+            z.object({
+              id: positiveInteger,
+              values: z
+                .array(
+                  z.object({
+                    id: z.number().int().nonnegative().safe(),
+                    name: z.string().max(500),
+                  }),
+                )
+                .min(1)
+                .max(50),
+            }),
+          )
+          .max(100)
+          .default([]),
+        logisticIds: z.array(positiveInteger).max(20).optional(),
+      })
+      .optional(),
     variants: z
       .array(
         z.object({

@@ -17,6 +17,7 @@ import { readShopeeAccess } from '@/features/shopee/server/connection';
 import { ShopeeApiError, getShopeeConfiguration } from '@/features/shopee/server/client';
 import { readShopeeResource } from '@/features/shopee/server/resources';
 import { observationSeries, type MetricObservation } from '../model';
+import { collectTrafficReport } from '@/features/shopee/server/traffic-report';
 
 const identifier = z.number().int().positive().safe();
 const count = z.number().int().nonnegative().safe().nullable().optional();
@@ -35,7 +36,9 @@ const baseResponse = z.object({
   ),
 });
 const extraResponse = z.object({
-  item_list: z.array(z.object({ item_id: identifier, views: count, sale: count })),
+  item_list: z.array(
+    z.object({ item_id: identifier, views: count, sale: count, clicks: count, impressions: count }),
+  ),
 });
 
 export async function assertAssistantAccess(userId: string, product?: 'sll' | 'loja-pronta') {
@@ -123,14 +126,27 @@ export async function collectStoreMetrics(
           categoryId: item.category_id ?? null,
           views: byId.get(item.item_id)?.views ?? null,
           sales: byId.get(item.item_id)?.sale ?? null,
-          clicks: null,
-          impressions: null,
+          clicks: byId.get(item.item_id)?.clicks ?? null,
+          impressions: byId.get(item.item_id)?.impressions ?? null,
         }));
       if (rows.length) await db.insert(shopeeMetricSnapshots).values(rows).onConflictDoNothing();
     }
+    let trafficReport = null;
+    let trafficFailure = null;
+    try {
+      trafficReport = await collectTrafficReport(access.shopId, shopeeApplicationId(config));
+    } catch {
+      trafficFailure = 'report-unavailable';
+    }
     await db
       .update(shopeeCollectionRuns)
-      .set({ status: 'completed', completedAt: new Date(), itemCount: unique.length })
+      .set({
+        status: 'completed',
+        completedAt: new Date(),
+        itemCount: unique.length,
+        trafficReport,
+        trafficFailure,
+      })
       .where(eq(shopeeCollectionRuns.id, run.id));
     return run.id;
   } catch (error) {

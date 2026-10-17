@@ -17,3 +17,4 @@ export * from './leads';
 export * from './shopee';
 export * from './bling';
 export * from './assistant';
+export * from './automation';

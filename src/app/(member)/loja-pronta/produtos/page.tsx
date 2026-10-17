@@ -12,6 +12,10 @@ import {
   confirmPublicationCorrection,
 } from '@/features/assistant/server/publication-actions';
 import { batchObservationState } from '@/features/assistant/model';
+import { configuredSupplierSources } from '@/features/shopee/supplier-feed';
+import { subscribeSupplierFeed } from '@/features/assistant/server/supplier-actions';
+import { storeOperationOverview } from '@/features/assistant/server/store-operation-overview';
+import { checkBrandChange, sendStoreBrand } from '@/features/assistant/server/store-change-actions';
 import { getStorePhase } from '@/features/loja-pronta/server/store';
 import { redirect } from 'next/navigation';
 import { getParam, type SearchParams } from '@/lib/search-params';
@@ -32,11 +36,12 @@ export default async function StoreProductsPage({
 }) {
   const { session, products } = await requireProduct('loja-pronta', '/loja-pronta/produtos');
   if ((await getStorePhase(session.user.id)) < 5) redirect('/loja-pronta/shopee/conectar');
-  const [catalog, overview, params, corrections] = await Promise.all([
+  const [catalog, overview, params, corrections, operations] = await Promise.all([
     availableSupplierProducts(session.user.id, session.user.role),
     publicationOverview(session.user.id),
     searchParams,
     publicationCorrections(session.user.id),
+    storeOperationOverview(session.user.id),
   ]);
   const initial = overview.batches.find((batch) => batch.kind === 'initial');
   const maySelect = !initial || initial.status === 'evaluated';
@@ -50,6 +55,77 @@ export default async function StoreProductsPage({
       title="Produtos da minha loja"
       intro="Comece com cinco produtos. Acompanhe o que acontece antes de ampliar sua seleção."
     >
+      <section className={panelCard} aria-labelledby="store-brand-send">
+        <h2 id="store-brand-send" className="text-title font-semibold">
+          Marca na Shopee
+        </h2>
+        <p className="text-body text-muted-foreground">
+          Envie o nome, o logo e a descrição que você confirmou na montagem da marca.
+        </p>
+        <form action={sendStoreBrand}>
+          {catalog.status === 'ready' ? (
+            <Button variant="soft">Confirmar e enviar minha marca</Button>
+          ) : (
+            <p className="text-body text-muted-foreground">
+              O envio estará disponível quando a conexão e as alterações estiverem liberadas para
+              sua loja.
+            </p>
+          )}
+        </form>
+        {operations.brandJobs.length ? (
+          <ul className="space-y-3">
+            {operations.brandJobs.map((job) => (
+              <li key={job.id} className="rounded-2xl border border-border p-4 text-body">
+                {job.status === 'completed'
+                  ? 'Marca enviada.'
+                  : job.status === 'unknown'
+                    ? 'Resultado a conferir na Shopee.'
+                    : job.status === 'blocked'
+                      ? 'Não foi possível enviar a marca. Confira a conexão e os dados.'
+                      : 'Envio em andamento.'}
+                {job.status === 'unknown' ? (
+                  <form action={checkBrandChange}>
+                    <input type="hidden" name="jobId" value={job.id} />
+                    <Button variant="soft">Conferir envio da marca</Button>
+                  </form>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </section>
+      {configuredSupplierSources().length ? (
+        <section className={panelCard} aria-labelledby="supplier-sync">
+          <h2 id="supplier-sync" className="text-title font-semibold">
+            Catálogo atualizado
+          </h2>
+          <form action={subscribeSupplierFeed} className="space-y-4">
+            <label htmlFor="supplier-feed" className="text-body">
+              Fornecedor
+            </label>
+            <Select id="supplier-feed" name="supplierId">
+              {configuredSupplierSources().map((source) => (
+                <option key={source.id} value={source.id}>
+                  {source.name}
+                </option>
+              ))}
+            </Select>
+            <Button variant="soft">Ativar atualização dos produtos</Button>
+          </form>
+          {operations.feeds.map((feed) => (
+            <p key={feed.supplierId} className="text-body text-muted-foreground">
+              {configuredSupplierSources().find((source) => source.id === feed.supplierId)?.name ??
+                'Fornecedor'}
+              :{' '}
+              {feed.failure
+                ? 'não foi possível concluir a atualização.'
+                : feed.updatedAt
+                  ? `última consulta em ${date(feed.updatedAt)}.`
+                  : 'aguardando a primeira atualização.'}
+            </p>
+          ))}
+        </section>
+      ) : null}
       {result ? (
         <output className="text-body">
           {result === 'queued'
@@ -187,6 +263,16 @@ export default async function StoreProductsPage({
                     />
                     <span className="text-body">
                       <strong>{product.title}</strong>
+                      {product.variants.length ? (
+                        <span className="block text-muted-foreground">
+                          {product.variants
+                            .map(
+                              (variant) =>
+                                `${Object.values(variant.options).join(' / ')}: ${(variant.priceCents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}, ${variant.stock} disponíveis`,
+                            )
+                            .join('; ')}
+                        </span>
+                      ) : null}
                       <span className="block text-muted-foreground">
                         {(product.priceCents / 100).toLocaleString('pt-BR', {
                           style: 'currency',

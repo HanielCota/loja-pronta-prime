@@ -32,6 +32,9 @@ export default async function CategoryPage({
       title="Comparar categorias"
       intro="Acompanhe dois anúncios existentes e veja o que mudou no mesmo período."
     >
+      <Button asChild variant="soft">
+        <Link href="/sll/anuncios">Ajustar anúncios da minha loja</Link>
+      </Button>
       {result ? (
         <output className="text-body">
           {result === 'saved'
@@ -108,6 +111,32 @@ export default async function CategoryPage({
                   Anúncios {experiment.leftItemId} e {experiment.rightItemId}
                 </p>
                 <p className="mt-2 text-body text-muted-foreground">{experiment.result.message}</p>
+                {experiment.result.source ? (
+                  <p className="mt-2 text-body text-muted-foreground">
+                    Fonte: {experiment.result.source}. Período:{' '}
+                    {new Date(experiment.result.start!).toLocaleString('pt-BR', {
+                      timeZone: 'America/Sao_Paulo',
+                    })}{' '}
+                    a{' '}
+                    {new Date(experiment.result.end!).toLocaleString('pt-BR', {
+                      timeZone: 'America/Sao_Paulo',
+                    })}
+                    .
+                  </p>
+                ) : null}
+                {experiment.result.leftCtr != null && experiment.result.rightCtr != null ? (
+                  <p className="mt-2 text-body">
+                    Taxa de cliques:{' '}
+                    {(experiment.result.leftCtr * 100).toLocaleString('pt-BR', {
+                      maximumFractionDigits: 2,
+                    })}
+                    % no primeiro anúncio e{' '}
+                    {(experiment.result.rightCtr * 100).toLocaleString('pt-BR', {
+                      maximumFractionDigits: 2,
+                    })}
+                    % no segundo.
+                  </p>
+                ) : null}
                 {experiment.result.preferredItemId ? (
                   <p className="mt-2 text-body">
                     Mais visualizações observadas: anúncio {experiment.result.preferredItemId}.

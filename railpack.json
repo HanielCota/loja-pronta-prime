@@ -25,6 +25,6 @@
         "include": ["build/runtime"]
       }
     ],
-    "startCommand": "cd /app/build/runtime && node migrate.cjs && HOSTNAME=0.0.0.0 exec node server.js"
+    "startCommand": "cd /app/build/runtime && exec node start-production.mjs"
   }
 }

@@ -200,3 +200,12 @@ na matriz de capacidades. Isso não encerra seus critérios de operação real: 
 continuam dependendo da Shopee, do fornecedor e do conteúdo final. P09 tem o vínculo tarefa/aula
 preparado, mas os três vídeos e a autorização de uso ainda não foram fornecidos. Não se afirma
 que houve cinco publicações reais, uma chamada paga de IA ou liberação para compradoras reais.
+
+## 11. Complementação solicitada após o deploy
+
+A implementação foi estendida para feed automático, preparação de anúncios pela API, imagens,
+variações, envio da marca, ajustes e novos anúncios de experimento com confirmação, relatórios
+de tráfego, roteiros iniciais publicados e inicialização supervisionada do worker. O estado,
+contratos e limites estão em [AUTOMACAO-SLL-ENTREGA-2026-10-17.md](AUTOMACAO-SLL-ENTREGA-2026-10-17.md).
+P01 e P10 ainda exigem evidência externa; P09 exige os vídeos autorizados. Publicação de código
+e HTTP saudável não encerram esses critérios. A duplicação permanece condicionada às regras da Shopee.
