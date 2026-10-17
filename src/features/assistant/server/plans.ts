@@ -1,4 +1,5 @@
 import { and, desc, eq, sql } from 'drizzle-orm';
+import { cache } from 'react';
 import { db } from '@/server/db';
 import {
   assistantPlans,
@@ -108,12 +109,20 @@ export async function setAssistantTask(
   });
 }
 
-export async function hasAssistantLessonReference(userId: string, lessonId: string) {
+// A lista de materiais pode conferir várias aulas. A leitura é compartilhada só nesta
+// renderização, mantendo separadas as contas e as mudanças do plano na próxima requisição.
+const readAssistantLessonReferences = cache(async (userId: string) => {
   const [plan] = await db
     .select({ actions: assistantPlans.actions })
     .from(assistantPlans)
     .where(and(eq(assistantPlans.userId, userId), eq(assistantPlans.active, true)));
-  return plan?.actions.some((action) => action.lessonId === lessonId) ?? false;
+  return new Set(
+    plan?.actions.flatMap((action) => (action.lessonId ? [action.lessonId] : [])) ?? [],
+  );
+});
+
+export async function hasAssistantLessonReference(userId: string, lessonId: string) {
+  return (await readAssistantLessonReferences(userId)).has(lessonId);
 }
 
 export async function publishAssistantPlaybook(input: unknown, actorId: string, publish: boolean) {
