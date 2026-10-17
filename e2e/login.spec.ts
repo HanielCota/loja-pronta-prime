@@ -48,6 +48,26 @@ test('não restaura o email antigo quando a aluna já começou a preencher o cam
   await expect(email).toHaveValue('novo-email@teste.com');
 });
 
+test('editar o email lembrado logo ao abrir não duplica o valor digitado', async ({ page }) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem('lojaprontaprime:auth-email', 'lembrado@teste.com');
+  });
+  for (let attempt = 0; attempt < 5; attempt++) {
+    await page.goto('/entrar');
+    const email = page.getByLabel('Email da compra');
+    await email.fill('outro-email@teste.com');
+    await page.getByLabel('Senha', { exact: true }).fill('senha para continuar');
+    await expect(email).toHaveValue('outro-email@teste.com');
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        ),
+    );
+    await expect(email).toHaveValue('outro-email@teste.com');
+  }
+});
+
 test('valida no navegador e foca o primeiro campo com erro', async ({ page }) => {
   await page.getByRole('button', { name: 'Entrar' }).click();
   await expect(page.getByText('Digite o email que você usou na compra')).toBeVisible();
