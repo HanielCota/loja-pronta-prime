@@ -2,6 +2,10 @@
 
 Data: 6 de outubro de 2026. Branch: `fix/security-performance-review`.
 
+Atualização: a [revisão de 17 de outubro de 2026](REVISAO-SISTEMA-2026-10-17.md) registra as
+correções posteriores e as validações com Postgres e armazenamento ativos. As pendências e os
+resultados abaixo permanecem como histórico daquela execução.
+
 Foram corrigidas lacunas no recebimento de arquivos, na validação de destinos, no consumo de
 memória e no primeiro acesso. As consultas do SLL foram reduzidas sem compartilhar o progresso
 entre alunas. O visual e as regras de desbloqueio continuam iguais. Não houve alteração de schema
