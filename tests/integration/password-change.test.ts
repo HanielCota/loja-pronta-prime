@@ -26,16 +26,14 @@ async function fixture() {
   await db
     .insert(account)
     .values({ id, accountId: id, providerId: 'credential', userId: id, password: hash });
-  await db
-    .insert(session)
-    .values(
-      [keepToken, otherToken].map((token) => ({
-        id: token,
-        token,
-        userId: id,
-        expiresAt: new Date(Date.now() + 86400000),
-      })),
-    );
+  await db.insert(session).values(
+    [keepToken, otherToken].map((token) => ({
+      id: token,
+      token,
+      userId: id,
+      expiresAt: new Date(Date.now() + 86400000),
+    })),
+  );
   return { id, keepToken, otherToken, hash, context };
 }
 test('troca a senha e encerra os outros aparelhos preservando a sessão atual', async () => {
@@ -95,3 +93,39 @@ test('sessão encerrada não pode trocar a senha mesmo conhecendo a atual', asyn
     item.hash,
   );
 });
+
+test('uma troca concorrente invalida a senha conferida antes da espera', async () => {
+  const item = await fixture();
+  const concurrentHash = await item.context.password.hash('senha salva pela outra operação');
+  const blocker = await db.$client.connect();
+  let pending: ReturnType<typeof changeOwnPassword> | undefined;
+  try {
+    await blocker.query('begin');
+    await blocker.query('select id from "user" where id=$1 for update', [item.id]);
+    pending = changeOwnPassword(item.id, item.keepToken, currentPassword, newPassword);
+    const deadline = Date.now() + 5000;
+    let waiting = false;
+    while (Date.now() < deadline) {
+      const result = await db.$client.query(
+        "select 1 from pg_stat_activity where datname=current_database() and wait_event='transactionid'",
+      );
+      if (result.rowCount) {
+        waiting = true;
+        break;
+      }
+      await Bun.sleep(20);
+    }
+    expect(waiting).toBe(true);
+    await blocker.query('update account set password=$1 where id=$2', [concurrentHash, item.id]);
+    await blocker.query('commit');
+    expect(await pending).toBe('wrong_current_password');
+    expect((await db.query.account.findFirst({ where: eq(account.id, item.id) }))?.password).toBe(
+      concurrentHash,
+    );
+    expect(await db.select().from(session).where(eq(session.userId, item.id))).toHaveLength(2);
+  } finally {
+    await blocker.query('rollback');
+    blocker.release();
+    await pending?.catch(() => {});
+  }
+}, 15_000);
