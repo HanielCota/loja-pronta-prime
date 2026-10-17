@@ -114,6 +114,12 @@ through protected administrator routes. The preview is explicitly illustrative: 
 confirm the appearance of a published Shopee storefront. Product images remain unavailable
 until the supplier and publication integrations are delivered.
 
+Administrator image routes accept only saved PNG references inside the selected account's
+logo folder. Invalid studio entries are omitted without changing stored data; an invalid
+selected-logo reference shows an unavailable message and returns HTTP 404. Current session,
+role, blocked status, and first-password requirements are checked again for every page or
+image request.
+
 Também dá pra criar uma conta pelo painel (Contas → Criar conta), para quem não comprou pela Hotmart ou para uma nova administradora: nome, email, função (aluna ou admin) e os produtos liberados, que entram no histórico de acessos como liberação manual. O primeiro acesso é por email (o mesmo link de criar senha da recuperação, que vale 1 hora) ou por uma senha temporária que a admin define e passa pra ela; com a senha temporária, ela cria outra ao entrar.
 
 O painel abre numa visão geral com os números das contas e compras e com quem está online agora: as áreas das alunas avisam a página aberta a cada 30 segundos, só com a aba à vista, e conta como online quem avisou nos últimos 90 segundos. Guarda só a última página de cada conta, sem histórico, IP ou localização. Junto, guarda o aparelho daquele acesso: o user agent e o que o navegador conta (tela, janela, idioma, fuso horário, toque, tema, app instalado, tipo de conexão e, no Chrome, a versão do sistema e o modelo). O admin mostra se é celular, tablet ou computador, o sistema, o navegador e se o link foi aberto dentro de outro app, como o Instagram.
