@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { and, asc, eq, isNull } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import sharp from 'sharp';
 import { z } from 'zod';
@@ -15,14 +15,12 @@ import { storage } from '@/server/storage';
 import { hasTrustedOrigin } from '@/server/request/origin';
 import {
   getEditableLessonBlocks,
+  LearningContentChangedError,
   saveNodeDraft,
   withNodeDraftLock,
 } from '@/features/admin/server/node-drafts';
 import { removeStorageKeyIfUnused } from '@/features/admin/server/storage-references';
 import { readLimitedFormData, RequestBodyTooLargeError } from '@/lib/request-body';
-
-/** O material trocado sumiu (ou mudou de tipo) enquanto o arquivo subia. */
-class MaterialChangedError extends Error {}
 
 const lessonIdSchema = z.uuid();
 const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
@@ -174,118 +172,83 @@ export async function POST(request: Request) {
     await storage().put(key, bytes, contentType);
     saved = true;
 
-    if (draftBlocks) {
-      const blockId = replacing?.id ?? crypto.randomUUID();
-      // O envio ao bucket demora: outra aba pode ter mexido nos materiais nesse meio-tempo.
-      // Relê o rascunho travado e só troca o material enviado, sem desfazer o resto.
-      const previousKey = await withNodeDraftLock('lesson', lesson.id, async (tx) => {
-        const current = await getEditableLessonBlocks(lesson.id, tx);
-        const existing = replacing ? current.find((block) => block.id === replacing.id) : undefined;
-        if (replacing && existing?.kind !== kind) throw new MaterialChangedError();
-        const existingData = (existing?.data ?? {}) as Record<string, unknown>;
-        const keepAttachedTo =
-          typeof existingData.attachedTo === 'string' ? existingData.attachedTo : attachedTo;
-        if (
-          keepAttachedTo &&
-          !current.some(
-            (block) =>
-              block.id === keepAttachedTo && (block.kind === 'link' || block.kind === 'video'),
-          )
+    const result = await withNodeDraftLock('lesson', lesson.id, async (tx) => {
+      // O envio ao bucket demora: o estado de publicação e os materiais podem ter mudado.
+      const [currentLesson] = await tx
+        .select({ status: learningLessons.status })
+        .from(learningLessons)
+        .where(and(eq(learningLessons.id, lesson.id), isNull(learningLessons.archivedAt)))
+        .for('update');
+      if (!currentLesson) throw new LearningContentChangedError();
+      const current =
+        currentLesson.status === 'published'
+          ? await getEditableLessonBlocks(lesson.id, tx)
+          : await tx.query.learningContentBlocks.findMany({
+              columns: { id: true, kind: true, data: true, position: true },
+              where: eq(learningContentBlocks.lessonId, lesson.id),
+              orderBy: [asc(learningContentBlocks.position), asc(learningContentBlocks.id)],
+            });
+      const existing = replacing ? current.find((block) => block.id === replacing.id) : undefined;
+      if (replacing && existing?.kind !== kind) throw new LearningContentChangedError();
+      const existingData = (existing?.data ?? {}) as Record<string, unknown>;
+      const keepAttachedTo =
+        typeof existingData.attachedTo === 'string' ? existingData.attachedTo : attachedTo;
+      if (
+        keepAttachedTo &&
+        !current.some(
+          (block) =>
+            block.id === keepAttachedTo && (block.kind === 'link' || block.kind === 'video'),
         )
-          throw new MaterialChangedError();
-        const data =
-          kind === 'image'
-            ? { storageKey: key, contentType, size: bytes.length, alt: altText! }
-            : {
-                storageKey: key,
-                contentType,
-                size: bytes.length,
-                fileName,
-                ...(keepAttachedTo ? { attachedTo: keepAttachedTo } : {}),
-              };
-        const blocks: LearningDraftBlock[] = existing
-          ? current.map((block) => (block.id === existing.id ? { ...block, data } : block))
-          : [
-              ...current,
-              { id: blockId, kind: kind as 'image' | 'file', data, position: current.length },
-            ];
-        await saveNodeDraft('lesson', lesson.id, { blocks }, tx);
-        return typeof existingData.storageKey === 'string' ? existingData.storageKey : undefined;
-      });
-      // O arquivo trocado pode estar na versão publicada ou na anterior: só sai se ninguém usa.
-      if (previousKey !== key) await removeStorageKeyIfUnused(previousKey, 'learning-media');
-      return NextResponse.json(
-        { id: blockId, fileName, alt: kind === 'image' ? altText : undefined },
-        { headers: { 'Cache-Control': 'no-store' } },
-      );
-    }
-
-    if (replacing) {
+      )
+        throw new LearningContentChangedError();
       const data =
         kind === 'image'
-          ? { ...replacing.data, storageKey: key, contentType, size: bytes.length, alt: altText! }
-          : { ...replacing.data, storageKey: key, contentType, size: bytes.length, fileName };
-      await db
-        .update(learningContentBlocks)
-        .set({ data })
-        .where(
-          and(
-            eq(learningContentBlocks.id, replacing.id),
-            eq(learningContentBlocks.lessonId, lesson.id),
-          ),
-        );
-      const previousKey = replacing.data.storageKey;
-      // A versão anterior guardada pode ainda usar o arquivo trocado: só sai se ninguém usa.
-      if (typeof previousKey === 'string' && previousKey !== key)
-        await removeStorageKeyIfUnused(previousKey, 'learning-media');
-      return NextResponse.json(
-        { id: replacing.id, fileName, alt: kind === 'image' ? altText : undefined },
-        { headers: { 'Cache-Control': 'no-store' } },
-      );
-    }
-
-    const lastBlock = await db.query.learningContentBlocks.findFirst({
-      columns: { position: true },
-      where: eq(learningContentBlocks.lessonId, lesson.id),
-      orderBy: [desc(learningContentBlocks.position)],
+          ? { storageKey: key, contentType, size: bytes.length, alt: altText! }
+          : {
+              storageKey: key,
+              contentType,
+              size: bytes.length,
+              fileName,
+              ...(keepAttachedTo ? { attachedTo: keepAttachedTo } : {}),
+            };
+      const blockId = existing?.id ?? crypto.randomUUID();
+      const position = Math.max(-1, ...current.map((block) => block.position)) + 1;
+      if (currentLesson.status === 'published') {
+        const blocks: LearningDraftBlock[] = existing
+          ? current.map((block) => (block.id === existing.id ? { ...block, data } : block))
+          : [...current, { id: blockId, kind, data, position }];
+        await saveNodeDraft('lesson', lesson.id, { blocks }, tx);
+      } else if (existing) {
+        await tx
+          .update(learningContentBlocks)
+          .set({ data })
+          .where(
+            and(
+              eq(learningContentBlocks.id, blockId),
+              eq(learningContentBlocks.lessonId, lesson.id),
+            ),
+          );
+      } else {
+        await tx
+          .insert(learningContentBlocks)
+          .values({ id: blockId, lessonId: lesson.id, kind, data, position });
+      }
+      return {
+        blockId,
+        previousKey:
+          typeof existingData.storageKey === 'string' ? existingData.storageKey : undefined,
+      };
     });
-    const position = (lastBlock?.position ?? -1) + 1;
-    const [block] =
-      kind === 'image'
-        ? await db
-            .insert(learningContentBlocks)
-            .values({
-              lessonId: lesson.id,
-              kind: 'image',
-              data: { storageKey: key, contentType, size: bytes.length, alt: altText! },
-              position,
-            })
-            .returning({ id: learningContentBlocks.id })
-        : await db
-            .insert(learningContentBlocks)
-            .values({
-              lessonId: lesson.id,
-              kind: 'file',
-              data: {
-                storageKey: key,
-                contentType,
-                size: bytes.length,
-                fileName,
-                ...(attachedTo ? { attachedTo } : {}),
-              },
-              position,
-            })
-            .returning({ id: learningContentBlocks.id });
+    // O arquivo da versão publicada ou anterior continua disponível para restauração.
+    if (result.previousKey !== key)
+      await removeStorageKeyIfUnused(result.previousKey, 'learning-media');
     return NextResponse.json(
-      { id: block!.id, fileName, alt: kind === 'image' ? altText : undefined },
+      { id: result.blockId, fileName, alt: kind === 'image' ? altText : undefined },
       { headers: { 'Cache-Control': 'no-store' } },
     );
   } catch (error) {
-    if (saved)
-      await storage()
-        .remove(key)
-        .catch(() => {});
-    if (error instanceof MaterialChangedError)
+    if (saved) await removeStorageKeyIfUnused(key, 'learning-media');
+    if (error instanceof LearningContentChangedError)
       return jsonError('Os materiais mudaram. Atualize a aula e tente de novo.', 409);
     console.error(`[learning-media] envio falhou: ${error instanceof Error ? error.name : 'erro'}`);
     return jsonError('Não consegui guardar o material agora. Tente de novo.', 500);

@@ -23,6 +23,7 @@ import {
   getNodeDraftForUpdate,
   saveNodeDraft,
   withNodeDraftLock,
+  type DbTransaction,
 } from './node-drafts';
 
 import type { LearningNodeKind, LearningTrackKind, StructureActionState } from '../structure-types';
@@ -207,56 +208,58 @@ export async function saveLearningNode(
   }
 
   if (editing) {
-    const current =
-      nodeKind === 'track'
-        ? await db.query.learningTracks.findFirst({
-            columns: { status: true },
-            where: and(eq(learningTracks.id, rawId), isNull(learningTracks.archivedAt)),
-          })
-        : nodeKind === 'stage'
-          ? await db.query.learningStages.findFirst({
-              columns: { status: true },
-              where: and(eq(learningStages.id, rawId), isNull(learningStages.archivedAt)),
-            })
-          : nodeKind === 'module'
-            ? await db.query.learningModules.findFirst({
-                columns: { status: true },
-                where: and(eq(learningModules.id, rawId), isNull(learningModules.archivedAt)),
-              })
-            : await db.query.learningLessons.findFirst({
-                columns: { status: true },
-                where: and(eq(learningLessons.id, rawId), isNull(learningLessons.archivedAt)),
-              });
-    if (!current) return { message: 'Este conteúdo não está disponível.', saved: false };
-    if (current.status === 'published') {
-      await saveNodeDraft(nodeKind, rawId, {
+    const result = await withNodeDraftLock(nodeKind, rawId, async (tx) => {
+      const table = {
+        track: learningTracks,
+        stage: learningStages,
+        module: learningModules,
+        lesson: learningLessons,
+      }[nodeKind];
+      const [current] = await tx
+        .select({ status: table.status })
+        .from(table)
+        .where(and(eq(table.id, rawId), isNull(table.archivedAt)));
+      if (!current) return { message: 'Este conteúdo não está disponível.', saved: false };
+      const values = {
         title: title.data,
         description: description.data || null,
         ...(nodeKind === 'lesson'
           ? { durationMinutes: duration, countsTowardProgress, relatedLessonId }
           : {}),
-      });
-      revalidatePath('/admin');
-      return { message: 'Rascunho salvo. Publique para mostrar às alunas.', saved: true };
-    }
+      };
+      if (current.status === 'published') {
+        await saveNodeDraft(nodeKind, rawId, values, tx);
+        return { message: 'Rascunho salvo. Publique para mostrar às alunas.', saved: true };
+      }
+      await tx
+        .update(table)
+        .set({
+          ...values,
+          ...(nodeKind === 'track' ? { kind: trackKind as LearningTrackKind } : {}),
+        })
+        .where(eq(table.id, rawId));
+      return { message: 'As alterações foram salvas.', saved: true };
+    });
+    revalidatePath('/admin');
+    return result;
   }
 
   try {
-    if (!editing && nodeKind === 'stage') {
+    if (nodeKind === 'stage') {
       const parent = await db.query.learningTracks.findFirst({
         columns: { id: true },
         where: and(eq(learningTracks.id, parentId!), isNull(learningTracks.archivedAt)),
       });
       if (!parent) return { message: 'A trilha escolhida não está disponível.', saved: false };
     }
-    if (!editing && nodeKind === 'module') {
+    if (nodeKind === 'module') {
       const parent = await db.query.learningStages.findFirst({
         columns: { id: true },
         where: and(eq(learningStages.id, parentId!), isNull(learningStages.archivedAt)),
       });
       if (!parent) return { message: 'A etapa escolhida não está disponível.', saved: false };
     }
-    if (!editing && nodeKind === 'lesson') {
+    if (nodeKind === 'lesson') {
       const parent = await db.query.learningModules.findFirst({
         columns: { id: true },
         where: and(eq(learningModules.id, parentId!), isNull(learningModules.archivedAt)),
@@ -264,90 +267,22 @@ export async function saveLearningNode(
       if (!parent) return { message: 'O módulo escolhido não está disponível.', saved: false };
     }
 
-    const slug = editing ? null : await unusedSlug(nodeKind, parentId, title.data);
-    const position = editing ? null : await nextPosition(nodeKind, parentId);
-
+    const slug = await unusedSlug(nodeKind, parentId, title.data);
+    const position = await nextPosition(nodeKind, parentId);
+    const values = { title: title.data, description: description.data || null, slug, position };
     if (nodeKind === 'track') {
-      if (editing) {
-        const updated = await db
-          .update(learningTracks)
-          .set({
-            kind: trackKind as LearningTrackKind,
-            title: title.data,
-            description: description.data || null,
-          })
-          .where(and(eq(learningTracks.id, rawId), isNull(learningTracks.archivedAt)))
-          .returning({ id: learningTracks.id });
-        if (updated.length === 0)
-          return { message: 'Esta trilha não está disponível.', saved: false };
-      } else {
-        await db.insert(learningTracks).values({
-          kind: trackKind as LearningTrackKind,
-          title: title.data,
-          description: description.data || null,
-          slug: slug!,
-          position: position!,
-        });
-      }
+      await db.insert(learningTracks).values({ ...values, kind: trackKind as LearningTrackKind });
     } else if (nodeKind === 'stage') {
-      if (editing) {
-        const updated = await db
-          .update(learningStages)
-          .set({ title: title.data, description: description.data || null })
-          .where(and(eq(learningStages.id, rawId), isNull(learningStages.archivedAt)))
-          .returning({ id: learningStages.id });
-        if (updated.length === 0)
-          return { message: 'Esta etapa não está disponível.', saved: false };
-      } else {
-        await db.insert(learningStages).values({
-          trackId: parentId!,
-          title: title.data,
-          description: description.data || null,
-          slug: slug!,
-          position: position!,
-        });
-      }
+      await db.insert(learningStages).values({ ...values, trackId: parentId! });
     } else if (nodeKind === 'module') {
-      if (editing) {
-        const updated = await db
-          .update(learningModules)
-          .set({ title: title.data, description: description.data || null })
-          .where(and(eq(learningModules.id, rawId), isNull(learningModules.archivedAt)))
-          .returning({ id: learningModules.id });
-        if (updated.length === 0)
-          return { message: 'Este módulo não está disponível.', saved: false };
-      } else {
-        await db.insert(learningModules).values({
-          stageId: parentId!,
-          title: title.data,
-          description: description.data || null,
-          slug: slug!,
-          position: position!,
-        });
-      }
-    } else if (editing) {
-      const updated = await db
-        .update(learningLessons)
-        .set({
-          title: title.data,
-          description: description.data || null,
-          durationMinutes: duration,
-          countsTowardProgress,
-          relatedLessonId,
-        })
-        .where(and(eq(learningLessons.id, rawId), isNull(learningLessons.archivedAt)))
-        .returning({ id: learningLessons.id });
-      if (updated.length === 0) return { message: 'Esta aula não está disponível.', saved: false };
+      await db.insert(learningModules).values({ ...values, stageId: parentId! });
     } else {
       await db.insert(learningLessons).values({
+        ...values,
         moduleId: parentId!,
-        title: title.data,
-        description: description.data || null,
         durationMinutes: duration,
         countsTowardProgress,
         relatedLessonId,
-        slug: slug!,
-        position: position!,
       });
     }
   } catch {
@@ -356,7 +291,7 @@ export async function saveLearningNode(
 
   revalidatePath('/admin');
   return {
-    message: editing ? 'As alterações foram salvas.' : 'O conteúdo foi adicionado.',
+    message: 'O conteúdo foi adicionado.',
     saved: true,
   };
 }
@@ -664,106 +599,114 @@ export async function setLearningNodePublication(data: FormData): Promise<Struct
   }
 
   const status = nextStatus as 'draft' | 'published';
-  if (status === 'published') {
-    let hasPublishedChild = true;
-    if (kind === 'track') {
-      hasPublishedChild = Boolean(
-        await db.query.learningStages.findFirst({
-          columns: { id: true },
-          where: and(
-            eq(learningStages.trackId, id),
-            eq(learningStages.status, 'published'),
-            isNull(learningStages.archivedAt),
-          ),
-        }),
-      );
-    } else if (kind === 'stage') {
-      hasPublishedChild = Boolean(
-        await db.query.learningModules.findFirst({
-          columns: { id: true },
-          where: and(
-            eq(learningModules.stageId, id),
-            eq(learningModules.status, 'published'),
-            isNull(learningModules.archivedAt),
-          ),
-        }),
-      );
-    } else if (kind === 'module') {
-      hasPublishedChild = Boolean(
-        await db.query.learningLessons.findFirst({
-          columns: { id: true },
-          where: and(
-            eq(learningLessons.moduleId, id),
-            eq(learningLessons.status, 'published'),
-            isNull(learningLessons.archivedAt),
-          ),
-        }),
-      );
-    }
-    if (!hasPublishedChild) {
-      const child = kind === 'track' ? 'etapa' : kind === 'stage' ? 'módulo' : 'aula';
-      return {
-        message: `Publique pelo menos um ${child} desta lista antes de publicar este nível.`,
-        saved: false,
-      };
-    }
-  }
+  const result = await withNodeDraftLock(
+    kind as LearningNodeKind,
+    id,
+    async (tx): Promise<StructureActionState> => {
+      if (status === 'published') {
+        let hasPublishedChild = true;
+        if (kind === 'track') {
+          hasPublishedChild = Boolean(
+            await tx.query.learningStages.findFirst({
+              columns: { id: true },
+              where: and(
+                eq(learningStages.trackId, id),
+                eq(learningStages.status, 'published'),
+                isNull(learningStages.archivedAt),
+              ),
+            }),
+          );
+        } else if (kind === 'stage') {
+          hasPublishedChild = Boolean(
+            await tx.query.learningModules.findFirst({
+              columns: { id: true },
+              where: and(
+                eq(learningModules.stageId, id),
+                eq(learningModules.status, 'published'),
+                isNull(learningModules.archivedAt),
+              ),
+            }),
+          );
+        } else if (kind === 'module') {
+          hasPublishedChild = Boolean(
+            await tx.query.learningLessons.findFirst({
+              columns: { id: true },
+              where: and(
+                eq(learningLessons.moduleId, id),
+                eq(learningLessons.status, 'published'),
+                isNull(learningLessons.archivedAt),
+              ),
+            }),
+          );
+        }
+        if (!hasPublishedChild) {
+          const child = kind === 'track' ? 'etapa' : kind === 'stage' ? 'módulo' : 'aula';
+          return {
+            message: `Publique pelo menos um ${child} desta lista antes de publicar este nível.`,
+            saved: false,
+          };
+        }
+      }
 
-  if (kind === 'lesson' && status === 'published') {
-    const lesson = await db.query.learningLessons.findFirst({
-      columns: { id: true, title: true, description: true, archivedAt: true },
-      where: and(eq(learningLessons.id, id), isNull(learningLessons.archivedAt)),
-      with: {
-        blocks: {
-          columns: { kind: true, data: true },
-          orderBy: [asc(learningContentBlocks.position)],
-        },
-      },
-    });
-    if (!lesson) return { message: 'Esta aula não está disponível.', saved: false };
-    const issue = lessonPublicationIssue(
-      lesson.title,
-      lesson.description,
-      lesson.blocks.map((block) => ({
-        kind: block.kind,
-        data: block.data as Record<string, unknown>,
-      })),
-    );
-    if (issue) return { message: issue, saved: false };
-  }
+      if (kind === 'lesson' && status === 'published') {
+        const lesson = await tx.query.learningLessons.findFirst({
+          columns: { id: true, title: true, description: true, archivedAt: true },
+          where: and(eq(learningLessons.id, id), isNull(learningLessons.archivedAt)),
+          with: {
+            blocks: {
+              columns: { kind: true, data: true },
+              orderBy: [asc(learningContentBlocks.position)],
+            },
+          },
+        });
+        if (!lesson) return { message: 'Esta aula não está disponível.', saved: false };
+        const issue = lessonPublicationIssue(
+          lesson.title,
+          lesson.description,
+          lesson.blocks.map((block) => ({
+            kind: block.kind,
+            data: block.data as Record<string, unknown>,
+          })),
+        );
+        if (issue) return { message: issue, saved: false };
+      }
 
-  // Fora do ar, a edição vai direto para a versão principal. Um rascunho que sobrasse
-  // continuaria na tela do admin e voltaria a valer na próxima publicação.
-  if (status === 'draft' && (await getNodeDraft(kind as LearningNodeKind, id)))
-    await applyNodeDraft(kind as LearningNodeKind, id, { validate: false });
+      // Fora do ar, a edição vai direto para a versão principal. Um rascunho que sobrasse
+      // continuaria na tela do admin e voltaria a valer na próxima publicação.
+      if (status === 'draft' && (await getNodeDraft(kind as LearningNodeKind, id, tx)))
+        await applyNodeDraft(kind as LearningNodeKind, id, { validate: false }, tx);
 
-  let updated: Array<{ id: string }>;
-  if (kind === 'track') {
-    updated = await db
-      .update(learningTracks)
-      .set({ status })
-      .where(and(eq(learningTracks.id, id), isNull(learningTracks.archivedAt)))
-      .returning({ id: learningTracks.id });
-  } else if (kind === 'stage') {
-    updated = await db
-      .update(learningStages)
-      .set({ status })
-      .where(and(eq(learningStages.id, id), isNull(learningStages.archivedAt)))
-      .returning({ id: learningStages.id });
-  } else if (kind === 'module') {
-    updated = await db
-      .update(learningModules)
-      .set({ status })
-      .where(and(eq(learningModules.id, id), isNull(learningModules.archivedAt)))
-      .returning({ id: learningModules.id });
-  } else {
-    updated = await db
-      .update(learningLessons)
-      .set({ status })
-      .where(and(eq(learningLessons.id, id), isNull(learningLessons.archivedAt)))
-      .returning({ id: learningLessons.id });
-  }
-  if (!updated.length) return { message: 'Este conteúdo não está disponível.', saved: false };
+      let updated: Array<{ id: string }>;
+      if (kind === 'track') {
+        updated = await tx
+          .update(learningTracks)
+          .set({ status })
+          .where(and(eq(learningTracks.id, id), isNull(learningTracks.archivedAt)))
+          .returning({ id: learningTracks.id });
+      } else if (kind === 'stage') {
+        updated = await tx
+          .update(learningStages)
+          .set({ status })
+          .where(and(eq(learningStages.id, id), isNull(learningStages.archivedAt)))
+          .returning({ id: learningStages.id });
+      } else if (kind === 'module') {
+        updated = await tx
+          .update(learningModules)
+          .set({ status })
+          .where(and(eq(learningModules.id, id), isNull(learningModules.archivedAt)))
+          .returning({ id: learningModules.id });
+      } else {
+        updated = await tx
+          .update(learningLessons)
+          .set({ status })
+          .where(and(eq(learningLessons.id, id), isNull(learningLessons.archivedAt)))
+          .returning({ id: learningLessons.id });
+      }
+      if (!updated.length) return { message: 'Este conteúdo não está disponível.', saved: false };
+      return { saved: true, message: '' };
+    },
+  );
+  if (!result.saved) return result;
   revalidateSllContent();
   revalidatePath('/admin');
   revalidatePath('/admin/preview');
@@ -838,8 +781,9 @@ async function applyNodeDraft(
   nodeKind: LearningNodeKind,
   id: string,
   { validate, replacement }: { validate: boolean; replacement?: LearningNodeDraftData },
+  executor?: DbTransaction,
 ): Promise<StructureActionState> {
-  return withNodeDraftLock(nodeKind, id, async (tx) => {
+  const apply = async (tx: DbTransaction): Promise<StructureActionState> => {
     const draft = await getNodeDraftForUpdate(tx, nodeKind, id);
     if (replacement && draft)
       return {
@@ -969,7 +913,8 @@ async function applyNodeDraft(
         .delete(learningNodeDrafts)
         .where(and(eq(learningNodeDrafts.kind, nodeKind), eq(learningNodeDrafts.nodeId, id)));
     return { saved: true, message: '' };
-  });
+  };
+  return executor ? apply(executor) : withNodeDraftLock(nodeKind, id, apply);
 }
 
 /** Restaura a última versão publicada, guardando a atual como a nova versão anterior. */

@@ -68,6 +68,16 @@ export async function getLessonLockMessage(
   lessonId: string,
 ) {
   const track = await getTrackStageAccess(userId, trackId);
+  return getLessonLockMessageForTrack(userId, track, stageId, lessonId);
+}
+
+/** A lista de materiais reaproveita a trilha já lida e aplica as mesmas exceções da aula. */
+export async function getLessonLockMessageForTrack(
+  userId: string,
+  track: Awaited<ReturnType<typeof getTrackStageAccess>>,
+  stageId: string,
+  lessonId: string,
+) {
   if (!track) return 'Esta aula não está disponível.';
   const access = track.stages.find((stage) => stage.stageId === stageId);
   if (

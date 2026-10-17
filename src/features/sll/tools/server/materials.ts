@@ -5,7 +5,10 @@ import { and, asc, eq, isNull } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { learningContentBlocks, learningLessons } from '@/server/db/schema';
 import { requireProduct } from '@/features/products/server/access';
-import { getTrackStageAccess } from '@/features/sll/server/stage-lock';
+import {
+  getLessonLockMessageForTrack,
+  getTrackStageAccess,
+} from '@/features/sll/server/stage-lock';
 import { ORIGINAL_MATERIALS } from '../catalog';
 
 // A leitura comum fica em cache; publicação e acesso da aluna são conferidos abaixo.
@@ -64,44 +67,47 @@ export async function getLessonMaterials() {
       trackIds.map(async (id) => [id, await getTrackStageAccess(session.user.id, id)] as const),
     ),
   );
-  return published.flatMap((lesson) => {
-    const access = tracks
-      .get(lesson.module.stage.track.id)
-      ?.stages.find((stage) => stage.stageId === lesson.module.stage.id);
-    const lockMessage = access?.isUnlocked
-      ? null
-      : (access?.lockMessage ?? 'Conclua a etapa anterior para abrir este material.');
-    const files = lesson.blocks.flatMap((block) => {
-      const data = block.data as Record<string, unknown>;
-      if (typeof data.fileName !== 'string' || typeof data.storageKey !== 'string') return [];
-      return [
-        {
-          id: block.id,
-          title: data.fileName,
-          type: data.fileName.split('.').at(-1)?.toUpperCase() ?? 'Arquivo',
+  const materials = await Promise.all(
+    published.map(async (lesson) => {
+      const lockMessage = await getLessonLockMessageForTrack(
+        session.user.id,
+        tracks.get(lesson.module.stage.track.id) ?? null,
+        lesson.module.stage.id,
+        lesson.id,
+      );
+      const files = lesson.blocks.flatMap((block) => {
+        const data = block.data as Record<string, unknown>;
+        if (typeof data.fileName !== 'string' || typeof data.storageKey !== 'string') return [];
+        return [
+          {
+            id: block.id,
+            title: data.fileName,
+            type: data.fileName.split('.').at(-1)?.toUpperCase() ?? 'Arquivo',
+            lessonId: lesson.id,
+            lessonTitle: lesson.title,
+            lockMessage,
+            destination: lockMessage ? null : `/api/sll/material/${block.id}`,
+            pending: false,
+          },
+        ];
+      });
+      const original =
+        lesson.module.stage.track.slug === 'metodo-sll' && lesson.module.stage.slug === 'etapa-3'
+          ? ORIGINAL_MATERIALS.find((item) => item.lessonSlug === lesson.slug)
+          : undefined;
+      if (original && !files.length)
+        files.push({
+          id: `pending-${lesson.id}`,
+          title: original.title,
+          type: original.type,
           lessonId: lesson.id,
           lessonTitle: lesson.title,
           lockMessage,
-          destination: lockMessage ? null : `/api/sll/material/${block.id}`,
-          pending: false,
-        },
-      ];
-    });
-    const original =
-      lesson.module.stage.track.slug === 'metodo-sll' && lesson.module.stage.slug === 'etapa-3'
-        ? ORIGINAL_MATERIALS.find((item) => item.lessonSlug === lesson.slug)
-        : undefined;
-    if (original && !files.length)
-      files.push({
-        id: `pending-${lesson.id}`,
-        title: original.title,
-        type: original.type,
-        lessonId: lesson.id,
-        lessonTitle: lesson.title,
-        lockMessage,
-        destination: null,
-        pending: true,
-      });
-    return files;
-  });
+          destination: null,
+          pending: true,
+        });
+      return files;
+    }),
+  );
+  return materials.flat();
 }

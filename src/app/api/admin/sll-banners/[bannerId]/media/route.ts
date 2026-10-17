@@ -11,6 +11,7 @@ import { hasTrustedOrigin } from '@/server/request/origin';
 import {
   getNodeDraft,
   getNodeDraftForUpdate,
+  LearningContentChangedError,
   saveNodeDraft,
   withNodeDraftLock,
 } from '@/features/admin/server/node-drafts';
@@ -44,6 +45,7 @@ export async function GET(
     columns: { imageStorageKey: true },
     where: and(eq(learningBanners.id, id.data), isNull(learningBanners.archivedAt)),
   });
+  if (!banner) return error('Este banner não está disponível.', 404);
   const draft = await getNodeDraft('banner', id.data);
   const imageStorageKey = draft?.data.imageStorageKey ?? banner?.imageStorageKey;
   if (!imageStorageKey) return error('Este banner ainda não tem imagem.', 404);
@@ -101,24 +103,27 @@ export async function POST(
   const key = `sll/banners/${banner.id}/${crypto.randomUUID()}.webp`;
   try {
     await storage().put(key, bytes, 'image/webp');
-    const oldKey =
-      banner.status === 'published'
-        ? await withNodeDraftLock('banner', banner.id, async (tx) => {
-            const previousDraft = await getNodeDraftForUpdate(tx, 'banner', banner.id);
-            await saveNodeDraft(
-              'banner',
-              banner.id,
-              { imageStorageKey: key, imageAlt: alt.data },
-              tx,
-            );
-            return previousDraft?.data.imageStorageKey;
-          })
-        : banner.imageStorageKey;
-    if (banner.status !== 'published')
-      await db
+    const oldKey = await withNodeDraftLock('banner', banner.id, async (tx) => {
+      const [current] = await tx
+        .select({
+          status: learningBanners.status,
+          imageStorageKey: learningBanners.imageStorageKey,
+        })
+        .from(learningBanners)
+        .where(and(eq(learningBanners.id, banner.id), isNull(learningBanners.archivedAt)))
+        .for('update');
+      if (!current) throw new LearningContentChangedError();
+      if (current.status === 'published') {
+        const previousDraft = await getNodeDraftForUpdate(tx, 'banner', banner.id);
+        await saveNodeDraft('banner', banner.id, { imageStorageKey: key, imageAlt: alt.data }, tx);
+        return previousDraft?.data.imageStorageKey;
+      }
+      await tx
         .update(learningBanners)
         .set({ imageStorageKey: key, imageAlt: alt.data })
         .where(eq(learningBanners.id, banner.id));
+      return current.imageStorageKey;
+    });
     // A imagem trocada sai do bucket só se nenhuma versão (publicada, rascunho ou anterior)
     // ainda a usa.
     if (oldKey !== key) await removeStorageKeyIfUnused(oldKey, 'sll-banners');
@@ -126,10 +131,10 @@ export async function POST(
       { message: 'Imagem do banner salva.' },
       { headers: { 'Cache-Control': 'no-store' } },
     );
-  } catch {
-    await storage()
-      .remove(key)
-      .catch(() => {});
+  } catch (cause) {
+    await removeStorageKeyIfUnused(key, 'sll-banners');
+    if (cause instanceof LearningContentChangedError)
+      return error('O banner mudou. Atualize a página e tente de novo.', 409);
     return error('Não consegui guardar a imagem agora. Tente de novo.', 500);
   }
 }

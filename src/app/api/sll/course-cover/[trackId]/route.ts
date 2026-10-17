@@ -15,6 +15,7 @@ import { hasTrustedOrigin } from '@/server/request/origin';
 import {
   getNodeDraft,
   getNodeDraftForUpdate,
+  LearningContentChangedError,
   saveNodeDraft,
   withNodeDraftLock,
 } from '@/features/admin/server/node-drafts';
@@ -59,11 +60,17 @@ async function replaceCover(
   course: { id: string; status: string; coverStorageKey: string | null },
   values: { coverStorageKey: string | null; coverAlt: string | null },
 ) {
-  if (course.status !== 'published') {
-    await db.update(learningTracks).set(values).where(eq(learningTracks.id, course.id));
-    return course.coverStorageKey;
-  }
   return withNodeDraftLock('track', course.id, async (tx) => {
+    const [current] = await tx
+      .select({ status: learningTracks.status, coverStorageKey: learningTracks.coverStorageKey })
+      .from(learningTracks)
+      .where(and(eq(learningTracks.id, course.id), isNull(learningTracks.archivedAt)))
+      .for('update');
+    if (!current) throw new LearningContentChangedError();
+    if (current.status !== 'published') {
+      await tx.update(learningTracks).set(values).where(eq(learningTracks.id, course.id));
+      return current.coverStorageKey;
+    }
     const previousDraft = await getNodeDraftForUpdate(tx, 'track', course.id);
     await saveNodeDraft('track', course.id, values, tx);
     return previousDraft?.data.coverStorageKey;
@@ -145,10 +152,10 @@ export async function POST(request: Request, context: Context) {
       { message: 'Capa salva.' },
       { headers: { 'Cache-Control': 'no-store' } },
     );
-  } catch {
-    await storage()
-      .remove(key)
-      .catch(() => {});
+  } catch (cause) {
+    await removeStorageKeyIfUnused(key, 'course-cover');
+    if (cause instanceof LearningContentChangedError)
+      return error('O curso mudou. Atualize a página e tente de novo.', 409);
     return error('Não consegui guardar a imagem agora.', 500);
   }
 }
@@ -158,7 +165,14 @@ export async function DELETE(request: Request, context: Context) {
   if (!hasTrustedOrigin(request)) return error('Pedido inválido.', 403);
   const course = await courseFromParams(context);
   if (!course) return error('Este curso não está disponível.', 404);
-  const oldKey = await replaceCover(course, { coverStorageKey: null, coverAlt: null });
+  let oldKey: string | null | undefined;
+  try {
+    oldKey = await replaceCover(course, { coverStorageKey: null, coverAlt: null });
+  } catch (cause) {
+    if (cause instanceof LearningContentChangedError)
+      return error('O curso mudou. Atualize a página e tente de novo.', 409);
+    throw cause;
+  }
   await removeStorageKeyIfUnused(oldKey, 'course-cover');
   revalidateSllContent();
   revalidatePath('/admin');

@@ -121,27 +121,22 @@ export async function saveSllResource(
   try {
     let resourceId = parsed.data.id;
     if (resourceId) {
-      const resource = await db.query.learningResources.findFirst({
-        columns: { id: true, status: true },
-        where: and(eq(learningResources.id, resourceId), isNull(learningResources.archivedAt)),
+      const id = resourceId;
+      const available = await withNodeDraftLock('resource', id, async (tx) => {
+        const resource = await tx.query.learningResources.findFirst({
+          columns: { id: true, status: true },
+          where: and(eq(learningResources.id, id), isNull(learningResources.archivedAt)),
+        });
+        if (!resource) return false;
+        if (resource.status === 'published')
+          await saveNodeDraft('resource', id, { ...values, relatedLessonIds }, tx);
+        else {
+          await tx.update(learningResources).set(values).where(eq(learningResources.id, id));
+          await saveNodeDraft('resource', id, { relatedLessonIds }, tx);
+        }
+        return true;
       });
-      if (!resource) return { message: 'Este recurso não está disponível.', saved: false };
-      if (resource.status === 'published') {
-        await saveNodeDraft('resource', resourceId, { ...values, relatedLessonIds });
-        revalidatePath('/admin/recursos');
-        return {
-          message: 'Rascunho salvo. Publique quando estiver pronto.',
-          saved: true,
-          resourceId,
-        };
-      }
-      const [updated] = await db
-        .update(learningResources)
-        .set(values)
-        .where(and(eq(learningResources.id, resourceId), isNull(learningResources.archivedAt)))
-        .returning({ id: learningResources.id });
-      if (!updated) return { message: 'Este recurso não está disponível.', saved: false };
-      await saveNodeDraft('resource', resourceId, { relatedLessonIds });
+      if (!available) return { message: 'Este recurso não está disponível.', saved: false };
     } else {
       let slug = learningSlugFromTitle(parsed.data.title);
       for (
