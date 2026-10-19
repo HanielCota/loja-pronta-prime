@@ -1,6 +1,6 @@
 # Current student access policy
 
-New Hotmart accounts use `loja1234` and must choose a different personal password at first access. Existing accounts retain their password on subsequent purchases. This policy supersedes the historical email invitation proposal below. See [student password maintenance](STUDENT-PASSWORD.md) for updating existing accounts.
+New Hotmart accounts use `loja1234` without a mandatory password change at first access. Existing accounts retain their password on subsequent purchases. This policy supersedes the historical email invitation proposal below. See [student password maintenance](STUDENT-PASSWORD.md) for updating existing accounts.
 
 # Integração com a Hotmart
 

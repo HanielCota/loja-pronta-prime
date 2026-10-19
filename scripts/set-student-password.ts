@@ -48,7 +48,7 @@ try {
         );
       }
       await client.query(
-        `UPDATE "user" SET must_change_password = true, email_verified = true, updated_at = now()
+        `UPDATE "user" SET must_change_password = false, email_verified = true, updated_at = now()
          WHERE id = $1`,
         [id],
       );
@@ -60,7 +60,7 @@ try {
     }
     await client.query('COMMIT');
     console.info(
-      `Updated ${rows.length} student accounts. A personal password is required at first access.`,
+      `Updated ${rows.length} student accounts. No password change is required at first access.`,
     );
   }
 } catch (error) {

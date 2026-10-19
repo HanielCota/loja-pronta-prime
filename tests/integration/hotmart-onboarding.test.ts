@@ -54,7 +54,7 @@ beforeEach(() => {
   inserted.length = 0;
 });
 
-test('new Hotmart students can use the shared password without an email link', async () => {
+test('new Hotmart students keep the default password without email or mandatory change', async () => {
   await processHotmartEvent(event);
   expect(createUser).toHaveBeenCalledWith({
     body: {
@@ -62,7 +62,7 @@ test('new Hotmart students can use the shared password without an email link', a
       name: 'New Student',
       password: 'loja1234',
       role: 'user',
-      data: { emailVerified: true, mustChangePassword: true },
+      data: { emailVerified: true, mustChangePassword: false },
     },
   });
   expect(inserted).toContainEqual({ userId: 'new-student', product: 'sll' });
