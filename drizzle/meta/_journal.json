@@ -407,6 +407,13 @@
       "when": 1792273833344,
       "tag": "0057_listing-experiment-results",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1792412447194,
+      "tag": "0058_keep-student-default-password",
+      "breakpoints": true
     }
   ]
 }

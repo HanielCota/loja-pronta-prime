@@ -32,7 +32,7 @@ async function findOrCreateBuyer(email: string, name: string) {
         name,
         password: DEFAULT_STUDENT_PASSWORD,
         role: 'user',
-        data: { emailVerified: true, mustChangePassword: true },
+        data: { emailVerified: true, mustChangePassword: false },
       },
     });
     return created.user.id;
