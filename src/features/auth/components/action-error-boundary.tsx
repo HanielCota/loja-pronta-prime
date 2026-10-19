@@ -4,6 +4,7 @@ import { WifiOffIcon } from 'lucide-react';
 import { unstable_rethrow, usePathname } from 'next/navigation';
 import { Component, Fragment, type ReactNode } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 
 type State = { error?: unknown; attempt: number };
 
@@ -48,8 +49,17 @@ class ActionErrorBoundary extends Component<{ children: ReactNode }, State> {
             <WifiOffIcon aria-hidden="true" />
             <AlertTitle>Não deu pra falar com o servidor</AlertTitle>
             <AlertDescription>
-              Pode ser sua internet. Confira a conexão e tente de novo.
+              Check your connection and try again. If this page was open during an update, reload it
+              before trying again.
             </AlertDescription>
+            <Button
+              type="button"
+              variant="soft"
+              className="mt-3 w-fit"
+              onClick={() => window.location.reload()}
+            >
+              Reload page
+            </Button>
           </Alert>
         ) : null}
         {/* Chave nova: os formulários recomeçam limpos (sem o envio que falhou pendurado). */}
