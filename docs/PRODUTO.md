@@ -83,7 +83,7 @@ Os limites de nome (30) e descrição (500) estão em `src/config/brand.ts`. A c
   email ou senha incorretos oferecem “Redefinir minha senha”, que abre a recuperação existente.
 - A recuperação de senha permite criar a primeira senha ou trocar uma senha existente, por link enviado ao email pela Resend. Confirmação de email usa o mesmo provedor. O envio depende do domínio verificado e de `RESEND_API_KEY` e `EMAIL_FROM` configurados no servidor.
 - Contas marcadas com senha temporária precisam criar outra antes de acessar as áreas.
-- O recebimento de compras Hotmart já verifica o token, cria a conta e libera o produto mapeado. Uma conta nova recebe uma senha aleatória que não é enviada. **O convite automático de primeiro acesso ainda precisa ser concluído**, assim como a configuração real da Hotmart e do email.
+- Hotmart purchase notifications verify the token, create the account and grant the mapped product. New students use `loja1234` and choose a different personal password at first access, without an email link. Existing accounts keep their current password. See [student password maintenance](STUDENT-PASSWORD.md) for the one-time update of existing accounts.
 - Reembolso e contestação recalculam o acesso daquele produto, preservando outra compra ativa ou concessão manual. A política para cancelamento de assinatura continua pendente.
 
 Detalhes atuais e fluxo de convite planejado: `docs/INTEGRACAO-HOTMART.md`. Contas de desenvolvimento são criadas com `bun run dev:aluna`; não representam compras reais.

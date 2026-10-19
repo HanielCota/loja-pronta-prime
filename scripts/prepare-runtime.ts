@@ -56,4 +56,23 @@ const diagnostic = await Bun.build({
 });
 if (!diagnostic.success)
   throw new AggregateError(diagnostic.logs, 'Falha ao preparar diagnóstico.');
-console.log('Servidor, arquivos públicos, fontes, migrações e worker preparados em build/runtime.');
+
+// Include the one-time maintenance command without running it during deployment.
+const passwordMaintenance = await Bun.build({
+  entrypoints: ['scripts/set-student-password.ts'],
+  outdir: runtimeDirectory,
+  naming: 'set-student-password.mjs',
+  target: 'node',
+  format: 'esm',
+  external: ['pg-native'],
+  minify: true,
+});
+if (!passwordMaintenance.success)
+  throw new AggregateError(
+    passwordMaintenance.logs,
+    'Failed to prepare student password maintenance.',
+  );
+
+console.log(
+  'Server, assets, fonts, migrations, worker and maintenance commands prepared in build/runtime.',
+);
