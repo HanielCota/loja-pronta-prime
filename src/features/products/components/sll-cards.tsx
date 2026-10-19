@@ -104,7 +104,7 @@ export function SllToolsCard({ copy }: { copy: SllCopy }) {
   );
 }
 
-/** Explica a indisponibilidade real da conexão, sem simular lojas ou métricas. */
+/** Direct students to their actual connection status without inventing store metrics. */
 export function SllStoreStatusCard() {
   return (
     <section
@@ -116,14 +116,14 @@ export function SllStoreStatusCard() {
       </span>
       <div className="min-w-0 flex-1">
         <span className="mb-2 inline-flex rounded-full border border-border px-3 py-1 text-sm font-medium text-muted-foreground">
-          Shopee · Em breve
+          Shopee
         </span>
         <h2 id="sll-store-status-title" className={sectionTitleClass}>
           Situação da sua loja
         </h2>
         <p className="mt-1 text-body text-pretty text-muted-foreground">
-          A conexão com a Shopee ainda não está disponível no SLL. Por isso, esta área ainda não
-          mostra dados da sua loja nem métricas de venda.
+          Check your store connection and the next steps in My stores. Sales data is available only
+          after a connection is confirmed.
         </p>
       </div>
       <Button asChild className="w-full sm:w-auto sm:max-w-52" variant="default">

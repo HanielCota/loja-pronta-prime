@@ -42,8 +42,8 @@ try {
       );
       if (!updated.rowCount) {
         await client.query(
-          `INSERT INTO account (id, account_id, provider_id, user_id, password)
-           VALUES ($1, $2, 'credential', $2, $3)`,
+          `INSERT INTO account (id, account_id, provider_id, user_id, password, updated_at)
+           VALUES ($1, $2, 'credential', $2, $3, now())`,
           [randomUUID(), id, password],
         );
       }
