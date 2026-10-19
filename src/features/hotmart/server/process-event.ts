@@ -1,8 +1,8 @@
 import { revalidateAdminOverview } from '@/features/admin/server/overview-cache';
-import { randomBytes } from 'node:crypto';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { auth } from '@/server/auth/auth';
+import { DEFAULT_STUDENT_PASSWORD } from '@/server/auth/student-password';
 import {
   hotmartEvents,
   hotmartProductMappings,
@@ -30,9 +30,9 @@ async function findOrCreateBuyer(email: string, name: string) {
       body: {
         email,
         name,
-        password: randomBytes(48).toString('base64url'),
+        password: DEFAULT_STUDENT_PASSWORD,
         role: 'user',
-        data: { emailVerified: true, mustChangePassword: false },
+        data: { emailVerified: true, mustChangePassword: true },
       },
     });
     return created.user.id;
