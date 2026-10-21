@@ -92,10 +92,10 @@ async function storeCard(userId: string) {
   if (previousStores.length && phase === 1 && conversation === 'nao-comecou') {
     return {
       status: {
-        caption: 'Previous stores',
-        label: `${previousStores.length} saved ${previousStores.length === 1 ? 'store' : 'stores'}`,
-        detail: 'Review recorded deliveries, store details and products.',
-        cta: 'View my stores',
+        caption: 'Lojas anteriores',
+        label: `${previousStores.length} ${previousStores.length === 1 ? 'loja salva' : 'lojas salvas'}`,
+        detail: 'Veja as entregas registradas, os dados das lojas e os produtos.',
+        cta: 'Ver minhas lojas',
       },
       waitsOnStudent: true,
     };

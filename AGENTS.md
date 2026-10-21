@@ -31,6 +31,10 @@ mudança de design).
 
 ## Acessibilidade e texto
 
+- The platform interface must be entirely in Brazilian Portuguese, including administrator
+  screens, page titles, accessible labels, errors, empty states, and currency formatting.
+  This explicitly overrides any general English repository-content preference for user-facing
+  strings. Keep code identifiers, internal documentation, and GitHub activity in English.
 - WCAG 2.2 AA nos dois temas: teclado, foco visível, alvos de 44px, `prefers-reduced-motion`,
   alto contraste (`forced-colors:`), leitor de tela. Formulários funcionam sem JavaScript.
 - Português do Brasil simples, sem jargão, frases curtas. O público é muito iniciante.

@@ -63,7 +63,7 @@ export default async function AdminStoreJourneyPage({
           basePath={`/admin/contas/${encodeURIComponent(id)}/previous-stores`}
         />
         {previousStores.length ? (
-          <h2 className="text-title font-semibold">Current store setup</h2>
+          <h2 className="text-title font-semibold">Montagem atual da loja</h2>
         ) : null}
         <StudentStoreAppearance
           name={brand.name}

@@ -33,7 +33,7 @@ export async function saveHotmartSettings(
       return {
         saved: false,
         message:
-          'Esse código já está cadastrado em Experts e vídeos. Preserve a origem e use os códigos principais deste formulário.',
+          'Esse código já está cadastrado em Especialistas e vídeos. Preserve a origem e use os códigos principais deste formulário.',
       };
     const changedMappings = currentMappings
       .filter((item) => item.primary)

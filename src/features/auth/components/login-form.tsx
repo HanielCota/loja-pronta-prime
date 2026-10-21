@@ -57,7 +57,7 @@ export function LoginForm({ next, initialError }: LoginFormProps) {
         meta={fields.password}
         label="Senha"
         autoComplete="current-password"
-        hint="First access? Use the password provided with your access. You do not need to create another one."
+        hint="É seu primeiro acesso? Use a senha que você recebeu para entrar. Não precisa criar outra."
         below={
           <div className="-my-1 flex justify-end">
             <Button asChild variant="link" size="inline" className="text-sm">
@@ -65,7 +65,7 @@ export function LoginForm({ next, initialError }: LoginFormProps) {
                 href={authHref('/recuperar-senha', next)}
                 onClick={() => rememberEmail(fields.email.value ?? '')}
               >
-                Forgot your password?
+                Esqueceu ou não recebeu a senha?
               </Link>
             </Button>
           </div>

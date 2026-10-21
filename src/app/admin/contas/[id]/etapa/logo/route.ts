@@ -13,9 +13,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     where: eq(storeBrand.userId, id),
   });
   const key = brand?.logoImage;
-  if (!isStoreLogoKey(id, key)) return new Response('Not found', { status: 404 });
+  if (!isStoreLogoKey(id, key)) return new Response('Imagem não encontrada', { status: 404 });
   const png = await storage().get(key);
-  if (!png) return new Response('Not found', { status: 404 });
+  if (!png) return new Response('Imagem não encontrada', { status: 404 });
   return new Response(new Uint8Array(png), {
     headers: {
       'Content-Type': 'image/png',

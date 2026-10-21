@@ -5,7 +5,7 @@ import { getAccountStoreJourney } from '@/features/admin/server/store-journey';
 import { LegacyStoreDetail } from '@/features/legacy-stores/components/store-detail';
 import { getLegacyStoreForUser } from '@/features/legacy-stores/server/queries';
 
-export const metadata: Metadata = { title: 'Previous store · Administration' };
+export const metadata: Metadata = { title: 'Loja anterior · Administração' };
 
 export default async function AdminPreviousStorePage({
   params,
@@ -28,8 +28,8 @@ export default async function AdminPreviousStorePage({
     <AdminShell
       account={journey.session.user}
       current="accounts"
-      backLink={{ href: `${accountPath}/etapa`, label: 'Back to student stores' }}
-      title={data.record.nome || data.record.shopee_nome || 'Previous store'}
+      backLink={{ href: `${accountPath}/etapa`, label: 'Voltar às lojas da aluna' }}
+      title={data.record.nome || data.record.shopee_nome || 'Loja anterior'}
       intro={journey.account.email}
     >
       <LegacyStoreDetail
