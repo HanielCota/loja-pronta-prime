@@ -414,6 +414,13 @@
       "when": 1792412447194,
       "tag": "0058_keep-student-default-password",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1792616226976,
+      "tag": "0059_import-legacy-stores",
+      "breakpoints": true
     }
   ]
 }

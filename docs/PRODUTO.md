@@ -90,6 +90,8 @@ Detalhes atuais e fluxo de convite planejado: `docs/INTEGRACAO-HOTMART.md`. Cont
 
 ## Painel administrativo disponível
 
+Legacy store history is available per account after the Supabase migration. It preserves original customer contact details, Hotmart references, every saved store, delivery states and product records. Students review their own stores in Loja Pronta; administrators use the existing account stage view, including blocked accounts. Historical records do not advance the current setup or establish a live Shopee connection. See [legacy store migration](LEGACY-STORE-MIGRATION.md).
+
 O painel de Leads, em `/leads` e preparado para `leads.lojaprontaprime.com`, permite cadastrar
 e importar contatos por CSV, acompanhar etapas de venda, registrar conversas, marcar retornos,
 filtrar e exportar contatos, arquivar e restaurar. Os indicadores usam apenas os contatos reais.
