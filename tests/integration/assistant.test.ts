@@ -456,6 +456,7 @@ test('reinício de worker marca escrita como incerta e recupera somente leituras
       deduplicationKey: randomUUID(),
       status: 'running',
       leaseUntil: past,
+      runAt: past,
     },
     {
       userId: id,
@@ -463,6 +464,7 @@ test('reinício de worker marca escrita como incerta e recupera somente leituras
       deduplicationKey: randomUUID(),
       status: 'running',
       leaseUntil: past,
+      runAt: past,
     },
   ]);
   const claimed = await claimAssistantJob();
@@ -950,7 +952,12 @@ test('uma falha temporária mantém a próxima coleta e o agendamento não conto
   const id = await account('sll');
   await db
     .insert(assistantJobs)
-    .values({ userId: id, kind: 'collect', deduplicationKey: randomUUID() });
+    .values({
+      userId: id,
+      kind: 'collect',
+      deduplicationKey: randomUUID(),
+      runAt: new Date(Date.now() - 1000),
+    });
   const job = await claimAssistantJob();
   expect(
     await processAssistantJob(
