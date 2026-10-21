@@ -43,7 +43,7 @@ export function RememberedGroup({
         }
       }}
     >
-      <summary className="mb-2 flex min-h-11 cursor-pointer items-center justify-between gap-2 rounded-2xl px-3 text-sm font-semibold text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+      <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-2 rounded-2xl px-3 text-sm font-semibold text-muted-foreground outline-none group-open/menu:mb-2 hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
         {label}
         <ChevronDownIcon
           aria-hidden="true"
