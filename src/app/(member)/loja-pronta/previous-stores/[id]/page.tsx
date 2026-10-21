@@ -8,7 +8,7 @@ import { requireProduct } from '@/features/products/server/access';
 import { LegacyStoreDetail } from '@/features/legacy-stores/components/store-detail';
 import { getLegacyStoreForUser } from '@/features/legacy-stores/server/queries';
 
-export const metadata: Metadata = { title: 'Previous store' };
+export const metadata: Metadata = { title: 'Loja anterior' };
 
 export default async function PreviousStorePage({
   params,
@@ -30,13 +30,13 @@ export default async function PreviousStorePage({
       account={session.user}
       hasChoice={products.length > 1}
       area="loja-pronta"
-      crumb="Previous store"
-      title={data.record.nome || data.record.shopee_nome || 'Previous store'}
+      crumb="Loja anterior"
+      title={data.record.nome || data.record.shopee_nome || 'Loja anterior'}
     >
       <Button asChild variant="soft" size="inline" className="w-fit px-5">
         <Link href="/loja-pronta">
           <ArrowLeft aria-hidden="true" />
-          Back to my stores
+          Voltar às minhas lojas
         </Link>
       </Button>
       <LegacyStoreDetail

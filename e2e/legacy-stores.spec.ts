@@ -107,7 +107,7 @@ for (const mobile of [false, true])
         dark ? 'dark' : 'light',
       );
       await signIn(page, student.email, PASSWORD, '/loja-pronta');
-      await expect(page.getByRole('heading', { name: 'Your stores', exact: true })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Suas lojas', exact: true })).toBeVisible();
       await expect(
         page.getByRole('heading', { name: 'Previous test store', exact: true }),
       ).toBeVisible();
@@ -116,27 +116,27 @@ for (const mobile of [false, true])
       ).toBeVisible();
       await expectNoA11yViolations(page);
       await page
-        .getByRole('link', { name: 'View store', exact: true })
+        .getByRole('link', { name: 'Ver loja', exact: true })
         .and(page.locator(`[href="/loja-pronta/previous-stores/${id}"]`))
         .click();
       await expect(page).toHaveURL(new RegExp(`/loja-pronta/previous-stores/${id}$`));
       await expect(
         page.getByRole('heading', { name: 'Previous test store', exact: true }),
       ).toBeVisible();
-      await expect(page.getByText('Partial delivery recorded', { exact: true })).toBeVisible();
+      await expect(page.getByText('Entrega parcial registrada', { exact: true })).toBeVisible();
       await expect(
-        page.getByRole('link', { name: 'Open store on Shopee', exact: true }),
+        page.getByRole('link', { name: 'Abrir loja na Shopee', exact: true }),
       ).toHaveAttribute('href', 'https://shopee.com.br/shop/123456');
       await expect(
         page
-          .getByRole('region', { name: 'Saved products (31)', exact: true })
+          .getByRole('region', { name: 'Produtos salvos (31)', exact: true })
           .getByRole('listitem'),
       ).toHaveCount(30);
       await expectNoA11yViolations(page);
-      await page.getByRole('link', { name: 'Next', exact: true }).click();
+      await page.getByRole('link', { name: 'Próxima', exact: true }).click();
       await expect(
         page
-          .getByRole('region', { name: 'Saved products (31)', exact: true })
+          .getByRole('region', { name: 'Produtos salvos (31)', exact: true })
           .getByRole('listitem'),
       ).toHaveCount(1);
       await page.screenshot({
@@ -162,9 +162,7 @@ test('student ownership and blocked account administration preserve current setu
   ]);
   await page.context().clearCookies();
   await signIn(page, admin.email, PASSWORD, `/admin/contas/${owner.id}/etapa`);
-  await expect(
-    page.getByRole('heading', { name: 'Previous membership', exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Cadastro anterior', exact: true })).toBeVisible();
   await expect(
     page.getByRole('heading', { name: 'Protected original store', exact: true }),
   ).toBeVisible();

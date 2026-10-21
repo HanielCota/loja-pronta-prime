@@ -28,8 +28,8 @@ export default async function Page() {
         hasChoice={products.length > 1}
         area="loja-pronta"
         crumb="Loja Pronta"
-        title="Your stores"
-        intro="Review your saved stores and recorded deliveries."
+        title="Suas lojas"
+        intro="Veja suas lojas salvas e as entregas registradas."
       >
         <LegacyStoreHistory stores={previousStores} basePath="/loja-pronta/previous-stores" />
       </AreaShell>

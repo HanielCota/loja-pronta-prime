@@ -17,10 +17,10 @@ export function LegacyStoreHistory({
     <section aria-labelledby="previous-stores" className={`${panelCard} gap-5`}>
       <div>
         <h2 id="previous-stores" className="text-title font-semibold text-balance">
-          Previous stores
+          Lojas anteriores
         </h2>
         <p className="mt-2 text-body text-muted-foreground">
-          Review your saved store details and recorded deliveries.
+          Veja os dados salvos das suas lojas e as entregas registradas.
         </p>
       </div>
       <ul className="divide-y divide-border">
@@ -31,20 +31,20 @@ export function LegacyStoreHistory({
           >
             <div className="flex min-w-0 flex-col gap-1">
               <h3 className="text-body font-semibold wrap-anywhere">
-                {store.record.nome || store.record.shopee_nome || 'Store name unavailable'}
+                {store.record.nome || store.record.shopee_nome || 'Nome da loja não informado'}
               </h3>
               <p className="text-body text-muted-foreground">
                 {legacyDeliveryLabel(store.record.situacao_entrega)}
               </p>
               <p className="text-sm text-muted-foreground">
                 {store.record.loja_shopee_vinculada_id
-                  ? 'Products linked to another saved store'
-                  : `${store.products} saved products`}
+                  ? 'Produtos ligados a outra loja salva'
+                  : `${store.products} produtos salvos`}
               </p>
             </div>
             <Button asChild variant="soft" size="inline" className="w-fit px-5">
               <Link href={`${basePath}/${store.id}`}>
-                View store
+                Ver loja
                 <ArrowRight aria-hidden="true" />
               </Link>
             </Button>

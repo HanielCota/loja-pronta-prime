@@ -32,7 +32,7 @@ import {
 import { getParam, type SearchParams } from '@/lib/search-params';
 import { cn } from '@/lib/utils';
 
-export const metadata: Metadata = { title: 'Leads', robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: 'Contatos', robots: { index: false, follow: false } };
 const linkClass =
   'inline-flex min-h-11 items-center gap-2 rounded-full px-2 text-body text-link outline-none hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
 
@@ -95,7 +95,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
     <AdminShell
       account={session.user}
       current="leads"
-      title="Leads"
+      title="Contatos"
       intro="Acompanhe os contatos e saiba com quem falar a seguir."
       actions={
         <Button asChild className="sm:w-auto">

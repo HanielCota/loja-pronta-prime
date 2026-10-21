@@ -112,11 +112,11 @@ export function legacyDeliveryLabel(status: string | null): string {
   return (
     (
       {
-        entrega_registrada: 'Delivery recorded',
-        entrega_parcial_registrada: 'Partial delivery recorded',
-        sem_entrega_registrada: 'No delivery recorded',
+        entrega_registrada: 'Entrega registrada',
+        entrega_parcial_registrada: 'Entrega parcial registrada',
+        sem_entrega_registrada: 'Sem entrega registrada',
       } as Record<string, string>
-    )[status ?? ''] ?? 'Delivery status unavailable'
+    )[status ?? ''] ?? 'Situação da entrega não informada'
   );
 }
 
@@ -128,12 +128,12 @@ export function legacyPublicationLabel(status: string | null): string {
   return (
     (
       {
-        publicado: 'Published',
-        nao_publicado: 'Not published',
-        requer_conferencia: 'Needs review',
-        publicacao_em_andamento: 'Publication in progress',
+        publicado: 'Publicado',
+        nao_publicado: 'Não publicado',
+        requer_conferencia: 'Precisa de conferência',
+        publicacao_em_andamento: 'Publicação em andamento',
       } as Record<string, string>
-    )[status ?? ''] ?? 'Unavailable'
+    )[status ?? ''] ?? 'Não informado'
   );
 }
 
@@ -141,14 +141,14 @@ export function legacyListingLabel(status: string | null): string {
   return (
     (
       {
-        NORMAL: 'Active',
-        REVIEWING: 'Under review',
-        SELLER_DELETE: 'Deleted by seller',
-        UNLIST: 'Unlisted',
-        SHOPEE_DELETE: 'Deleted by Shopee',
-        BANNED: 'Blocked',
+        NORMAL: 'Ativo',
+        REVIEWING: 'Em análise',
+        SELLER_DELETE: 'Excluído pela vendedora',
+        UNLIST: 'Oculto',
+        SHOPEE_DELETE: 'Excluído pela Shopee',
+        BANNED: 'Bloqueado',
       } as Record<string, string>
-    )[status ?? ''] ?? 'Unavailable'
+    )[status ?? ''] ?? 'Não informado'
   );
 }
 
@@ -156,15 +156,16 @@ export function legacyPendingLabel(code: string): string {
   return (
     (
       {
-        confirmacao_de_entrega_nao_identificada: 'Delivery confirmation was not identified.',
-        produtos_nao_identificados: 'No products were identified in the saved records.',
-        vinculo_shopee_nao_identificado: 'A Shopee store link was not identified.',
-        produtos_sem_publicacao: 'Some products have no recorded publication.',
-        publicacao_requer_conferencia: 'Product publication needs review.',
-        vinculo_shopee_requer_conferencia: 'The Shopee store link needs review.',
-        vinculo_transacao_requer_conferencia: 'The purchase reference link needs review.',
+        confirmacao_de_entrega_nao_identificada: 'Não foi encontrada uma confirmação de entrega.',
+        produtos_nao_identificados: 'Não foram encontrados produtos nos registros salvos.',
+        vinculo_shopee_nao_identificado: 'Não foi encontrada uma ligação com a loja na Shopee.',
+        produtos_sem_publicacao: 'Alguns produtos estão sem publicação registrada.',
+        publicacao_requer_conferencia: 'A publicação dos produtos precisa de conferência.',
+        vinculo_shopee_requer_conferencia: 'A ligação com a loja na Shopee precisa de conferência.',
+        vinculo_transacao_requer_conferencia:
+          'A ligação com a referência da compra precisa de conferência.',
       } as Record<string, string>
-    )[code] ?? 'A saved pending item needs review.'
+    )[code] ?? 'Uma pendência salva precisa de conferência.'
   );
 }
 

@@ -9,11 +9,11 @@ export async function GET(
 ) {
   const { id, image } = await params;
   await requireAdmin(`/admin/contas/${encodeURIComponent(id)}/etapa`);
-  if (!/^(0|[1-9]\d?)$/.test(image)) return new Response('Not found', { status: 404 });
+  if (!/^(0|[1-9]\d?)$/.test(image)) return new Response('Imagem não encontrada', { status: 404 });
   const studio = await getLogoStudio(id);
   const saved = studio.logos.filter((logo) => isStoreLogoKey(id, logo.key))[Number(image)];
   const png = saved ? await storage().get(saved.key) : null;
-  if (!png) return new Response('Not found', { status: 404 });
+  if (!png) return new Response('Imagem não encontrada', { status: 404 });
   return new Response(new Uint8Array(png), {
     headers: {
       'Content-Type': 'image/png',

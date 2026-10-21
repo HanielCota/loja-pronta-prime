@@ -42,10 +42,15 @@ const groups = [
     label: 'Painel',
     links: [
       { href: '/admin', label: 'Visão geral', section: 'overview', Icon: LayoutDashboard },
-      { href: '/leads', label: 'Leads', section: 'leads', Icon: UsersRound },
+      { href: '/leads', label: 'Contatos', section: 'leads', Icon: UsersRound },
       { href: '/admin/online', label: 'Online agora', section: 'online', Icon: Radio },
       { href: '/admin/assistente', label: 'Planos e operação', section: 'assistant', Icon: Wrench },
-      { href: '/admin/experts', label: 'Experts e vídeos', section: 'experts', Icon: UsersRound },
+      {
+        href: '/admin/experts',
+        label: 'Especialistas e vídeos',
+        section: 'experts',
+        Icon: UsersRound,
+      },
       { href: '/admin/bling', label: 'Conexão Bling', section: 'bling', Icon: Wrench },
     ],
   },

@@ -7,7 +7,7 @@ import { leadOptions } from '@/features/leads/server/queries';
 import { EMPTY_LEAD } from '@/features/leads/model';
 import { cn } from '@/lib/utils';
 
-export const metadata: Metadata = { title: 'Novo contato · Leads', robots: { index: false } };
+export const metadata: Metadata = { title: 'Novo contato · Contatos', robots: { index: false } };
 export default async function NewLeadPage() {
   const session = await requireAdmin('/leads/novo');
   const { owners } = await leadOptions();
@@ -17,7 +17,7 @@ export default async function NewLeadPage() {
       current="leads"
       title="Novo contato"
       intro="Guarde os dados para continuar a conversa depois."
-      backLink={{ href: '/leads', label: 'Voltar aos leads' }}
+      backLink={{ href: '/leads', label: 'Voltar aos contatos' }}
     >
       <section aria-label="Cadastro de contato" className={cn(panelCard, 'max-w-3xl')}>
         <LeadForm owners={owners} initial={{ ...EMPTY_LEAD, ownerId: session.user.id }} />

@@ -8,7 +8,10 @@ import { ImportForm } from '@/features/leads/components/import-form';
 import { leadOptions } from '@/features/leads/server/queries';
 import { cn } from '@/lib/utils';
 
-export const metadata: Metadata = { title: 'Importar contatos · Leads', robots: { index: false } };
+export const metadata: Metadata = {
+  title: 'Importar contatos · Contatos',
+  robots: { index: false },
+};
 export default async function ImportLeadsPage() {
   const session = await requireAdmin('/leads/importar');
   const { owners } = await leadOptions();
@@ -18,7 +21,7 @@ export default async function ImportLeadsPage() {
       current="leads"
       title="Importar contatos"
       intro="Envie sua planilha e confira a prévia antes de adicionar os contatos."
-      backLink={{ href: '/leads', label: 'Voltar aos leads' }}
+      backLink={{ href: '/leads', label: 'Voltar aos contatos' }}
     >
       <section className={cn(panelCard, 'max-w-3xl gap-6')} aria-label="Importação por planilha">
         <div className="flex flex-col gap-3">

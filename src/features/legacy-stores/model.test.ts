@@ -105,15 +105,15 @@ describe('legacy records', () => {
     expect(legacyShopUrl('https://attacker.example')).toBeNull();
     expect(legacyProductUrl('123', '../settings')).toBeNull();
     expect(legacyProductUrl(null, '456')).toBeNull();
-    expect(legacyDeliveryLabel('entrega_registrada')).toBe('Delivery recorded');
-    expect(legacyDeliveryLabel('unknown')).toBe('Delivery status unavailable');
-    expect(legacyPublicationLabel('publicado')).toBe('Published');
-    expect(legacyPublicationLabel(null)).toBe('Unavailable');
-    expect(legacyListingLabel('NORMAL')).toBe('Active');
-    expect(legacyListingLabel('future')).toBe('Unavailable');
+    expect(legacyDeliveryLabel('entrega_registrada')).toBe('Entrega registrada');
+    expect(legacyDeliveryLabel('unknown')).toBe('Situação da entrega não informada');
+    expect(legacyPublicationLabel('publicado')).toBe('Publicado');
+    expect(legacyPublicationLabel(null)).toBe('Não informado');
+    expect(legacyListingLabel('NORMAL')).toBe('Ativo');
+    expect(legacyListingLabel('future')).toBe('Não informado');
     expect(legacyPendingLabel('produtos_sem_publicacao')).toBe(
-      'Some products have no recorded publication.',
+      'Alguns produtos estão sem publicação registrada.',
     );
-    expect(legacyPendingLabel('unknown')).toBe('A saved pending item needs review.');
+    expect(legacyPendingLabel('unknown')).toBe('Uma pendência salva precisa de conferência.');
   });
 });

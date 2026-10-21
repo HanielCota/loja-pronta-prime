@@ -14,7 +14,7 @@ import { interestLabels } from '@/features/leads/model';
 import { formatWhatsapp, whatsappLink } from '@/features/loja-pronta/whatsapp';
 import { cn } from '@/lib/utils';
 
-export const metadata: Metadata = { title: 'Contato · Leads', robots: { index: false } };
+export const metadata: Metadata = { title: 'Contato · Contatos', robots: { index: false } };
 const date = new Intl.DateTimeFormat('pt-BR', {
   dateStyle: 'short',
   timeStyle: 'short',
@@ -51,7 +51,7 @@ export default async function LeadPage({
       current="leads"
       title={lead.name}
       intro={`${interestLabels[lead.product]} · ${lead.source}`}
-      backLink={{ href: '/leads', label: 'Voltar aos leads' }}
+      backLink={{ href: '/leads', label: 'Voltar aos contatos' }}
     >
       {search.salvo === 'sim' ? (
         <output className="rounded-2xl bg-muted p-4 text-body text-progress-text">

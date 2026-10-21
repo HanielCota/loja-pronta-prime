@@ -22,7 +22,7 @@ import {
 } from '@/features/sll/server/experience-actions';
 import { getParam, type SearchParams } from '@/lib/search-params';
 
-export const metadata: Metadata = { title: 'Experts e vídeos · Administração' };
+export const metadata: Metadata = { title: 'Especialistas e vídeos · Administração' };
 
 export default async function ExpertsPage({
   searchParams,
@@ -42,7 +42,7 @@ export default async function ExpertsPage({
   ]);
   const result = getParam((await searchParams).resultado);
   return (
-    <AdminShell account={session.user} current="experts" title="Experts e vídeos">
+    <AdminShell account={session.user} current="experts" title="Especialistas e vídeos">
       {result ? (
         <output className="text-body">
           {result === 'saved'
@@ -57,8 +57,8 @@ export default async function ExpertsPage({
           Origem das compras
         </h2>
         <p className="text-body text-muted-foreground">
-          Cadastre o código real do produto Hotmart vendido por cada expert. A compra define os
-          vídeos disponíveis, mantendo a mesma plataforma. Um código cadastrado não troca de
+          Cadastre o código real do produto Hotmart vendido por cada especialista. A compra define
+          os vídeos disponíveis, mantendo a mesma plataforma. Um código cadastrado não troca de
           experiência.
         </p>
         <ul className="space-y-2 text-body">
@@ -85,7 +85,7 @@ export default async function ExpertsPage({
             </Select>
           </label>
           <label htmlFor="expert-expert-1" className="flex flex-col gap-2 text-body">
-            Expert
+            Especialista
             <Select id="expert-expert-1" name="expert">
               {EXPERT_IDS.map((expert) => (
                 <option key={expert} value={expert}>
@@ -99,7 +99,7 @@ export default async function ExpertsPage({
       </section>
       <section className={`${panelCard} mt-6`} aria-labelledby="expert-videos">
         <h2 id="expert-videos" className="text-title font-semibold">
-          Vídeos por expert
+          Vídeos por especialista
         </h2>
         <p className="text-body text-muted-foreground">
           As aulas e o progresso continuam compartilhados. A versão da Pri mantém o vídeo atual
@@ -120,7 +120,7 @@ export default async function ExpertsPage({
               </Select>
             </label>
             <label htmlFor="expert-expert-2" className="flex flex-col gap-2 text-body">
-              Expert
+              Especialista
               <Select id="expert-expert-2" name="expert">
                 {EXPERT_IDS.map((expert) => (
                   <option key={expert} value={expert}>
@@ -174,7 +174,7 @@ export default async function ExpertsPage({
                     Prévia do rascunho
                   </summary>
                   <SllLessonVideo
-                    title="Prévia do expert"
+                    title="Prévia da especialista"
                     data={{ provider: 'pandavideo', videoId: variant.draftVideoId }}
                   />
                 </details>
@@ -200,7 +200,7 @@ export default async function ExpertsPage({
             maxLength={200}
           />
           <label htmlFor="expert-expert-3" className="flex flex-col gap-2 text-body">
-            Expert
+            Especialista
             <Select id="expert-expert-3" name="expert">
               {EXPERT_IDS.map((expert) => (
                 <option key={expert} value={expert}>
