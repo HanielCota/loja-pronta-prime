@@ -262,7 +262,7 @@ o tema escuro e o alto contraste.
 
 - Moldura própria (`AdminShell`), com a mesma composição do SLL: no computador, **sem barra no
   topo**, menu lateral fixo de 288px de ponta a ponta (`bg-card` com linha à direita), com a marca
-  e o tema no alto, as seções no meio (Painel, Contas e compras, Conteúdo das alunas) e, no pé,
+  e o tema no alto, as seções no meio (Painel, Alunas e vendas, Conteúdo das alunas, Operação) e, no pé,
   "Ver a área das alunas" e a conta. O conteúdo vai até 1400px. No celular, volta a barra do topo
   e as seções abrem por "Seções do painel", acima do título. O que fica preso ao rolar usa
   `top-10`. A seção atual fica em `bg-primary-soft` com texto `text-link`.
@@ -274,11 +274,16 @@ o tema escuro e o alto contraste.
   preso e devolvido à ação ao fechar. O email completo no pé do admin usa uma dica estilizada
   ao passar o mouse ou focar pelo teclado. Os erros de formulário aparecem nos avisos e campos
   do painel, validados no servidor, sem os balões nativos. Estes ajustes ficam restritos ao admin.
-- No menu do admin, "Conteúdo das alunas" (o grupo mais longo) abre e fecha pelo título, com a
-  seta que gira, e lembra a escolha no aparelho; abre sozinho quando a página atual é dele.
-  "Online agora" mostra quantas pessoas estão online (ponto verde e número numa pílula
-  `bg-muted`), atualizado a cada 30s. Os cursos aparecem só como "Cursos" no menu, pra caber numa
-  linha. O email no pé mostra o endereço inteiro ao passar o mouse.
+- Admin sidebar organization (updated at the owner's request): keep Overview and Online now
+  in the first group; place Accounts, Student access, Contacts, and Hotmart purchases under
+  "Alunas e vendas". "Conteúdo das alunas" includes specialists and videos alongside courses
+  and page content. "Operação" contains plans and the Bling connection. Both secondary groups
+  collapse independently, remember their state, and open for their active page. Mobile navigation
+  shows the current section before opening and closes when changing sections. Keep the existing
+  shell, tokens, typography, touch targets, and scrolling behavior. Use compact group spacing
+  and reserve the summary bottom gap for expanded groups.
+- "Online agora" retains its automatically refreshed count in a neutral badge. The course link
+  remains "Cursos" to fit on one line, and the account email remains available in full on hover.
 - Nos menus laterais fixos (admin e SLL), a lista que não cabe na altura esmaece a borda que tem
   itens escondidos (`ScrollFade`), do tamanho do que está escondido, até 2,5rem: avisa que tem
   mais mesmo onde a barra de rolagem não aparece. As barras de rolagem do app são finas, na cor

@@ -42,23 +42,15 @@ const groups = [
     label: 'Painel',
     links: [
       { href: '/admin', label: 'Visão geral', section: 'overview', Icon: LayoutDashboard },
-      { href: '/leads', label: 'Contatos', section: 'leads', Icon: UsersRound },
       { href: '/admin/online', label: 'Online agora', section: 'online', Icon: Radio },
-      { href: '/admin/assistente', label: 'Planos e operação', section: 'assistant', Icon: Wrench },
-      {
-        href: '/admin/experts',
-        label: 'Especialistas e vídeos',
-        section: 'experts',
-        Icon: UsersRound,
-      },
-      { href: '/admin/bling', label: 'Conexão Bling', section: 'bling', Icon: Wrench },
     ],
   },
   {
-    label: 'Contas e compras',
+    label: 'Alunas e vendas',
     links: [
       { href: '/admin/contas', label: 'Contas', section: 'accounts', Icon: UsersRound },
       { href: '/admin/acessos', label: 'Acessos das alunas', section: 'access', Icon: KeyRound },
+      { href: '/leads', label: 'Contatos', section: 'leads', Icon: UsersRound },
       {
         href: '/admin/hotmart',
         label: 'Compras da Hotmart',
@@ -69,8 +61,9 @@ const groups = [
   },
   {
     label: 'Conteúdo das alunas',
-    // O grupo mais longo e menos usado no dia a dia: abre e fecha, e lembra a escolha.
+    // Secondary sections remember their state and open when their current page is active.
     collapsible: true,
+    storageKey: 'admin-menu-content',
     links: [
       { href: '/admin?area=welcome', label: 'Comece aqui', section: 'welcome', Icon: Rocket },
       { href: '/admin?area=method', label: 'Método SLL', section: 'method', Icon: BookOpen },
@@ -81,11 +74,26 @@ const groups = [
         section: 'courses',
         Icon: LibraryBig,
       },
+      {
+        href: '/admin/experts',
+        label: 'Especialistas e vídeos',
+        section: 'experts',
+        Icon: UsersRound,
+      },
       { href: '/admin/banners', label: 'Banners do painel', section: 'banners', Icon: Images },
       { href: '/admin/textos', label: 'Textos das páginas', section: 'texts', Icon: FileText },
       { href: '/admin/recursos', label: 'Recursos', section: 'resources', Icon: Wrench },
       // Ícone próprio: o de livros já é dos cursos.
       { href: '/admin/arquivados', label: 'Itens arquivados', section: 'archived', Icon: Archive },
+    ],
+  },
+  {
+    label: 'Operação',
+    collapsible: true,
+    storageKey: 'admin-menu-operations',
+    links: [
+      { href: '/admin/assistente', label: 'Planos e operação', section: 'assistant', Icon: Wrench },
+      { href: '/admin/bling', label: 'Conexão Bling', section: 'bling', Icon: Wrench },
     ],
   },
 ] as const;
@@ -124,14 +132,14 @@ function NavLinks({
 
 function Navigation({ current }: { current: AdminSection | undefined }) {
   return (
-    <nav aria-label="Seções da administração" className="flex flex-col gap-5">
+    <nav aria-label="Seções da administração" className="flex flex-col gap-4">
       {groups.map((group) =>
         'collapsible' in group ? (
           <RememberedGroup
             containsCurrent={group.links.some((link) => link.section === current)}
             key={group.label}
             label={group.label}
-            storageKey="admin-menu-content"
+            storageKey={group.storageKey}
           >
             <NavLinks current={current} links={group.links} />
           </RememberedGroup>
@@ -158,12 +166,23 @@ export function AdminSidebar({
   variant: 'rail' | 'disclosure';
 }) {
   if (variant === 'rail') return <Navigation current={current} />;
+  const currentLabel = groups
+    .map((group) => group.links.find((link) => link.section === current)?.label)
+    .find((label) => label !== undefined);
   return (
-    <details className="group/sections rounded-card bg-card p-4 shadow-card forced-colors:border forced-colors:border-[CanvasText]">
+    <details
+      key={current}
+      className="group/sections rounded-card bg-card p-4 shadow-card forced-colors:border forced-colors:border-[CanvasText]"
+    >
       <summary className="flex min-h-11 cursor-pointer items-center gap-3 text-body font-semibold text-foreground outline-none hover:text-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-safe:transition-colors motion-safe:duration-150">
         {/* Abre a lista de seções (a do lado esquerdo no computador). */}
         <PanelLeft aria-hidden="true" className="size-5 text-link" />
-        Seções do painel
+        <span className="flex min-w-0 flex-1 flex-col gap-1">
+          Seções do painel
+          {currentLabel ? (
+            <span className="text-sm font-normal text-muted-foreground">{currentLabel}</span>
+          ) : null}
+        </span>
         <ChevronDown
           aria-hidden="true"
           className="ml-auto size-5 shrink-0 text-muted-foreground group-open/sections:rotate-180 motion-safe:transition-transform motion-safe:duration-150"
