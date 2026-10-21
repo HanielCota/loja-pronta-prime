@@ -382,6 +382,10 @@ o tema escuro e o alto contraste.
 
 ## Assistente e experts (17/10/2026)
 
+### Previous store records (October 21, 2026)
+
+Imported store history uses the existing `AreaShell` and `AdminShell`, `panelCard`, `Button`, brand tokens and typography. Members with previous stores and no current setup see their saved stores first. Administrators see the same history above the current setup in the existing account stage view. Store details show the recorded delivery, description, pending items and paginated products. Historical states are explicitly identified as saved records; external Shopee links use validated numeric identifiers. This adds no new visual system and does not change current setup progress.
+
 As páginas Meu plano, Comparar categorias e Conectar minha loja usam `SllAreaShell`, os tokens e
 os componentes existentes. Tarefas do plano mostram dia, estado escrito e aula relacionada,
 com ações independentes da conclusão das aulas. Produtos usa `AreaShell`, com seleção por

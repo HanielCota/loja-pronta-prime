@@ -10,6 +10,12 @@ import { answerText, isAnswered } from '@/features/loja-pronta/answers';
 import { stageNumber } from '@/features/loja-pronta/stages';
 import { formatWhatsapp } from '@/features/loja-pronta/whatsapp';
 import { panelCard } from '@/features/member/components/area-shell';
+import {
+  listLegacyStoresForUser,
+  getLegacyMembershipForUser,
+} from '@/features/legacy-stores/server/queries';
+import { LegacyStoreHistory } from '@/features/legacy-stores/components/store-history';
+import { LegacyMembershipHistory } from '@/features/legacy-stores/components/membership-history';
 
 export const metadata: Metadata = { title: 'Etapa da aluna · Administração' };
 
@@ -21,6 +27,10 @@ export default async function AdminStoreJourneyPage({
   const { id } = await params;
   const data = await getAccountStoreJourney(id);
   if (!data) notFound();
+  const [previousStores, previousMembership] = await Promise.all([
+    listLegacyStoresForUser(id),
+    getLegacyMembershipForUser(id),
+  ]);
   const { session, account, overview, onboarding, brand, logoSrc, images, hasAccess } = data;
   const step = currentStoreStep({ phase: overview.phase, answers: onboarding.answers, brand });
   const accountPath = `/admin/contas/${encodeURIComponent(account.id)}`;
@@ -46,6 +56,14 @@ export default async function AdminStoreJourneyPage({
               ? 'Esta conta está bloqueada. O que a aluna salvou aparece abaixo.'
               : 'Esta conta está sem acesso à Loja Pronta agora. O que a aluna salvou aparece abaixo.'}
           </p>
+        ) : null}
+        <LegacyMembershipHistory membership={previousMembership} />
+        <LegacyStoreHistory
+          stores={previousStores}
+          basePath={`/admin/contas/${encodeURIComponent(id)}/previous-stores`}
+        />
+        {previousStores.length ? (
+          <h2 className="text-title font-semibold">Current store setup</h2>
         ) : null}
         <StudentStoreAppearance
           name={brand.name}

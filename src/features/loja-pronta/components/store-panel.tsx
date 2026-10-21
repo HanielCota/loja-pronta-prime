@@ -7,6 +7,7 @@ import {
   MessageCircleIcon,
 } from 'lucide-react';
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import { Mascot } from '@/components/brand/mascot';
 import { Button } from '@/components/ui/button';
 import { STORE_PHASES, STORE_STAGES } from '@/config/store-phases';
@@ -34,6 +35,7 @@ type StorePanelProps = {
    * imagem do logo salvo (brandLogoSrc), quando já tem.
    */
   brand: { name: string | null; logoSrc: string | null; started: boolean; confirmed: boolean };
+  previousStores?: ReactNode;
 };
 
 /**
@@ -42,7 +44,14 @@ type StorePanelProps = {
  * simples, em vez de várias listas contando a mesma jornada. No celular, o caminho fica na
  * vertical. Com a marca pronta, o título é o nome da loja.
  */
-export function StorePanel({ user, hasChoice, phase, conversation, brand }: StorePanelProps) {
+export function StorePanel({
+  user,
+  hasChoice,
+  phase,
+  conversation,
+  brand,
+  previousStores,
+}: StorePanelProps) {
   // Quem ainda não respondeu vê o plano primeiro; respostas salvas continuam abrindo a retomada.
   if (phase === 1 && conversation === 'nao-comecou') {
     return <StoreWelcome user={user} hasChoice={hasChoice} />;
@@ -60,6 +69,7 @@ export function StorePanel({ user, hasChoice, phase, conversation, brand }: Stor
       }
       intro={brand.name ? 'Sua loja na Shopee' : undefined}
     >
+      {previousStores}
       <NextStep phase={phase} conversation={conversation} brand={brand} />
       <Path
         stages={storeStages(phase)}

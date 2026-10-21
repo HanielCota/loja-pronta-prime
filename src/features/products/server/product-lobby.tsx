@@ -17,6 +17,7 @@ import { storeChooserCard } from '@/features/loja-pronta/store-card';
 import { greetingName } from '@/features/products/names';
 import { PRODUCTS } from '@/features/products/catalog';
 import { requireStudent } from '@/features/products/server/access';
+import { listLegacyStoresForUser } from '@/features/legacy-stores/server/queries';
 
 type ProductLobbyProps = {
   /** Só a página inicial entra direto quando a aluna tem um único produto. */
@@ -83,7 +84,22 @@ export async function ProductLobby({ enterSingleProduct = false }: ProductLobbyP
 
 /** O cartão da Loja Pronta, com a mesma regra do painel pro logo que falta. */
 async function storeCard(userId: string) {
-  const [{ phase }, brand] = await Promise.all([getStoreOverview(userId), getBrand(userId)]);
+  const [{ phase, conversation }, brand, previousStores] = await Promise.all([
+    getStoreOverview(userId),
+    getBrand(userId),
+    listLegacyStoresForUser(userId),
+  ]);
+  if (previousStores.length && phase === 1 && conversation === 'nao-comecou') {
+    return {
+      status: {
+        caption: 'Previous stores',
+        label: `${previousStores.length} saved ${previousStores.length === 1 ? 'store' : 'stores'}`,
+        detail: 'Review recorded deliveries, store details and products.',
+        cta: 'View my stores',
+      },
+      waitsOnStudent: true,
+    };
+  }
   return storeChooserCard(phase, {
     missingLogo: Boolean(brand.completedAt) && !brand.logoImage,
   });

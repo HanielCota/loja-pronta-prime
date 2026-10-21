@@ -73,6 +73,18 @@ if (!passwordMaintenance.success)
     'Failed to prepare student password maintenance.',
   );
 
+const legacyImport = await Bun.build({
+  entrypoints: ['scripts/import-legacy-stores.ts'],
+  outdir: runtimeDirectory,
+  naming: 'import-legacy-stores.mjs',
+  target: 'node',
+  format: 'esm',
+  external: ['pg-native'],
+  minify: true,
+});
+if (!legacyImport.success)
+  throw new AggregateError(legacyImport.logs, 'Failed to prepare legacy store import.');
+
 console.log(
   'Server, assets, fonts, migrations, worker and maintenance commands prepared in build/runtime.',
 );
