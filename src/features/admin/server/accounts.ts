@@ -1,4 +1,5 @@
-import { desc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
+import { and, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
+import { effectiveProductAccess } from '@/features/products/server/eligibility';
 import { db } from '@/server/db';
 import { session, studentProducts, user } from '@/server/db/schema';
 import { getStoreOverview } from '@/features/loja-pronta/server/overview';
@@ -40,9 +41,12 @@ export async function listAccounts({ query, page }: { query: string; page: numbe
         .select({ userId: studentProducts.userId, product: studentProducts.product })
         .from(studentProducts)
         .where(
-          inArray(
-            studentProducts.userId,
-            rows.map((row) => row.id),
+          and(
+            effectiveProductAccess(),
+            inArray(
+              studentProducts.userId,
+              rows.map((row) => row.id),
+            ),
           ),
         )
     : [];
@@ -63,7 +67,10 @@ export async function getAccount(id: string) {
   if (!account) return null;
 
   const [products, overview, [opened]] = await Promise.all([
-    db.query.studentProducts.findMany({ where: eq(studentProducts.userId, id) }),
+    db
+      .select()
+      .from(studentProducts)
+      .where(and(eq(studentProducts.userId, id), effectiveProductAccess())),
     getStoreOverview(id),
     db
       .select({ sessions: sql<number>`count(*)::int` })

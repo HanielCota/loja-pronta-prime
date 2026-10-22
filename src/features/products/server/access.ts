@@ -12,6 +12,7 @@ import {
 import { db } from '@/server/db';
 import { studentProducts } from '@/server/db/schema';
 import { PRODUCTS } from '../catalog';
+import { effectiveProductAccess } from './eligibility';
 
 type StudentProducts = {
   /** Produtos da aluna, sempre na mesma ordem (a do catálogo). */
@@ -31,7 +32,7 @@ export const getStudentProducts = cache(async (userId: string): Promise<StudentP
       lastVisitedAt: studentProducts.lastVisitedAt,
     })
     .from(studentProducts)
-    .where(eq(studentProducts.userId, userId));
+    .where(and(eq(studentProducts.userId, userId), effectiveProductAccess()));
 
   const visits = rows.filter((row) => row.lastVisitedAt !== null);
   const latest = visits.toSorted((a, b) => Number(b.lastVisitedAt) - Number(a.lastVisitedAt))[0];

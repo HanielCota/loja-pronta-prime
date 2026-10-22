@@ -23,6 +23,7 @@ const database = {
     },
     hotmartProductMappings: { findMany: async () => [{ access: 'sll', productUcode: 'course' }] },
     manualProductGrants: { findFirst: async () => undefined },
+    historicalSllPurchases: { findFirst: async () => undefined },
   },
   select: () => ({
     from: () => ({
@@ -52,7 +53,7 @@ const event: HotmartPurchaseEvent = {
   data: {
     buyer: { email: 'new-student@example.invalid', name: 'New Student' },
     product: { ucode: 'course' },
-    purchase: { transaction: 'purchase' },
+    purchase: { transaction: 'purchase', order_date: Date.now() - 1000 },
   },
 };
 

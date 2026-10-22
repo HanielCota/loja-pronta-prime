@@ -20,14 +20,12 @@ const priCode = randomUUID(),
   zeCode = randomUUID();
 beforeAll(async () => {
   for (const id of [userId, otherId])
-    await db
-      .insert(user)
-      .values({
-        id,
-        name: 'Compradora',
-        email: `${id}@example.invalid`,
-        mustChangePassword: false,
-      });
+    await db.insert(user).values({
+      id,
+      name: 'Compradora',
+      email: `${id}@example.invalid`,
+      mustChangePassword: false,
+    });
   await db.insert(hotmartProductMappings).values([
     { productUcode: priCode, access: 'sll', expert: 'pri', primary: false },
     { productUcode: zeCode, access: 'sll', expert: 'ze', primary: false },
@@ -58,7 +56,7 @@ const purchase = (
   data: {
     buyer: { email: `${id}@example.invalid` },
     product: { ucode: code },
-    purchase: { transaction },
+    purchase: { transaction, order_date: Date.now() - 1000 },
   },
 });
 

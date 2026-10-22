@@ -85,6 +85,18 @@ const legacyImport = await Bun.build({
 if (!legacyImport.success)
   throw new AggregateError(legacyImport.logs, 'Failed to prepare legacy store import.');
 
+const salesImport = await Bun.build({
+  entrypoints: ['scripts/import-sales-history.ts'],
+  outdir: runtimeDirectory,
+  naming: 'import-sales-history.mjs',
+  target: 'node',
+  format: 'esm',
+  external: ['pg-native'],
+  minify: true,
+});
+if (!salesImport.success)
+  throw new AggregateError(salesImport.logs, 'Failed to prepare historical sales import.');
+
 console.log(
   'Server, assets, fonts, migrations, worker and maintenance commands prepared in build/runtime.',
 );

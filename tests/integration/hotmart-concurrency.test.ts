@@ -25,7 +25,7 @@ const event = (time: number) => ({
   data: {
     buyer: { email: `${userId}@example.invalid` },
     product: { ucode: code },
-    purchase: { transaction },
+    purchase: { transaction, order_date: Date.now() - 1000 },
   },
 });
 beforeAll(async () => {

@@ -1,4 +1,4 @@
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, gt, isNull, lte } from 'drizzle-orm';
 import type { db } from '@/server/db';
 import {
   hotmartProductMappings,
@@ -6,6 +6,7 @@ import {
   hotmartPurchaseAccessRevocations,
   manualProductGrants,
   studentProducts,
+  historicalSllPurchases,
 } from '@/server/db/schema';
 import type { ProductId } from '@/config/products';
 
@@ -38,11 +39,26 @@ export async function reconcileProductAccess(tx: Transaction, userId: string, pr
       and(
         eq(hotmartPurchases.userId, userId),
         eq(hotmartPurchases.active, true),
+        gt(hotmartPurchases.expiresAt, new Date()),
+        lte(hotmartPurchases.purchasedAt, new Date()),
         isNull(hotmartPurchaseAccessRevocations.transaction),
       ),
     )
     .limit(1);
-  if (manual || purchase) {
+  const historical =
+    product === 'sll'
+      ? await tx.query.historicalSllPurchases.findFirst({
+          columns: { transaction: true },
+          where: and(
+            eq(historicalSllPurchases.userId, userId),
+            eq(historicalSllPurchases.active, true),
+            isNull(historicalSllPurchases.revokedAt),
+            lte(historicalSllPurchases.purchasedAt, new Date()),
+            gt(historicalSllPurchases.expiresAt, new Date()),
+          ),
+        })
+      : undefined;
+  if (manual || purchase || historical) {
     await tx.insert(studentProducts).values({ userId, product }).onConflictDoNothing();
   } else {
     await tx

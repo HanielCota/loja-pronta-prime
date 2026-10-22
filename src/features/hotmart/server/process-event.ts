@@ -3,6 +3,8 @@ import { eq, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { auth } from '@/server/auth/auth';
 import { DEFAULT_STUDENT_PASSWORD } from '@/server/auth/student-password';
+import { purchaseExpiresAt } from '@/features/products/access-term';
+import { historicalSllPurchases } from '@/server/db/schema';
 import { hotmartEvents, hotmartProductMappings, hotmartPurchases, user } from '@/server/db/schema';
 import { reconcileProductAccess } from './product-access';
 import {
@@ -11,6 +13,10 @@ import {
   transactionMismatch,
   type HotmartPurchaseEvent,
 } from '../event';
+
+const missingDateResult = 'Compra sem data original; acesso não liberado.';
+const retryableResult = (result: string) =>
+  result === 'Produto sem acesso configurado.' || result === missingDateResult;
 
 async function findOrCreateBuyer(email: string, name: string) {
   const existing = await db.query.user.findFirst({
@@ -47,13 +53,15 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
   const productUcode = event.data.product.ucode;
   const transaction = event.data.purchase.transaction;
   const createdAt = new Date(event.creation_date);
+  const orderDate = event.data.purchase.order_date
+    ? new Date(event.data.purchase.order_date)
+    : null;
   if (Number.isNaN(createdAt.getTime())) throw new Error('Data inválida no aviso da Hotmart.');
   const received = await db.query.hotmartEvents.findFirst({
     columns: { result: true },
     where: eq(hotmartEvents.id, event.id),
   });
-  if (received && received.result !== 'Produto sem acesso configurado.')
-    return 'Aviso já recebido.';
+  if (received && !retryableResult(received.result)) return 'Aviso já recebido.';
   const preliminaryMapping = await db.query.hotmartProductMappings.findMany({
     where: eq(hotmartProductMappings.productUcode, productUcode),
   });
@@ -64,11 +72,23 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
     where: eq(hotmartPurchases.transaction, transaction),
   });
   const knownMismatch = transactionMismatch(known, { buyerEmail: email, productUcode });
+  const knownHistorical = await db.query.historicalSllPurchases.findFirst({
+    columns: { transaction: true },
+    where: eq(historicalSllPurchases.transaction, transaction),
+  });
   const keepsKnownAccount =
     knownMismatch === 'product' || (knownMismatch === 'email' && Boolean(known?.userId));
 
   let buyerId: string | null = null;
-  if (effect === 'grant' && preliminaryMapping.length && !keepsKnownAccount) {
+  if (
+    effect === 'grant' &&
+    !knownHistorical &&
+    orderDate &&
+    orderDate <= new Date() &&
+    purchaseExpiresAt(orderDate) > new Date() &&
+    preliminaryMapping.length &&
+    !keepsKnownAccount
+  ) {
     buyerId = await findOrCreateBuyer(
       email,
       event.data.buyer.name?.trim() || email.split('@')[0] || 'Aluna',
@@ -86,8 +106,44 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
       columns: { id: true, result: true },
       where: eq(hotmartEvents.id, event.id),
     });
-    if (duplicate && duplicate.result !== 'Produto sem acesso configurado.')
-      return 'Aviso já recebido.';
+    if (duplicate && !retryableResult(duplicate.result)) return 'Aviso já recebido.';
+    const historical = await tx.query.historicalSllPurchases.findFirst({
+      where: eq(historicalSllPurchases.transaction, transaction),
+    });
+    if (historical) {
+      let result = 'Compra histórica preservada; validade original mantida.';
+      if (event.data.product.id && String(event.data.product.id) !== historical.sourceProductId) {
+        result = 'Transação histórica com outro produto; acesso mantido.';
+      } else if (historical.userId) {
+        await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${historical.userId}))`);
+        if (effect === 'revoke') {
+          await tx
+            .update(historicalSllPurchases)
+            .set({ active: false })
+            .where(eq(historicalSllPurchases.transaction, transaction));
+          result = 'Reembolso histórico recebido; acesso recalculado.';
+        }
+        await reconcileProductAccess(tx, historical.userId, 'sll');
+      } else if (effect === 'revoke') {
+        await tx
+          .update(historicalSllPurchases)
+          .set({ active: false })
+          .where(eq(historicalSllPurchases.transaction, transaction));
+        result = 'Reembolso histórico registrado.';
+      }
+      await tx
+        .insert(hotmartEvents)
+        .values({
+          id: event.id,
+          event: event.event,
+          transaction,
+          buyerEmail: email,
+          productUcode,
+          result,
+        })
+        .onConflictDoUpdate({ target: hotmartEvents.id, set: { result, receivedAt: new Date() } });
+      return result;
+    }
     const mapping = await tx.query.hotmartProductMappings.findMany({
       where: eq(hotmartProductMappings.productUcode, productUcode),
     });
@@ -119,7 +175,13 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
               null);
         // O código pode ter sido configurado depois da leitura inicial, que só evita criar
         // contas sem necessidade. A decisão de conceder usa o mapeamento sob a trava.
-        if (!linkedUserId && active) {
+        if (
+          !linkedUserId &&
+          active &&
+          orderDate &&
+          orderDate <= new Date() &&
+          purchaseExpiresAt(orderDate) > new Date()
+        ) {
           linkedUserId = await findOrCreateBuyer(
             email,
             event.data.buyer.name?.trim() || email.split('@')[0] || 'Aluna',
@@ -133,7 +195,20 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
             where: eq(hotmartPurchases.transaction, transaction),
           });
         }
-        if (shouldApplyEvent(previous, { createdAt, active })) {
+        if (
+          shouldApplyEvent(previous, { createdAt, active }) ||
+          (active &&
+            previous?.active &&
+            !previous.purchasedAt &&
+            orderDate &&
+            createdAt >= previous.lastEventAt)
+        ) {
+          // Later completion/replay events can shorten a corrected term but never renew it.
+          const purchasedAt =
+            previous?.purchasedAt && (!orderDate || previous.purchasedAt <= orderDate)
+              ? previous.purchasedAt
+              : orderDate;
+          const expiresAt = purchasedAt ? purchaseExpiresAt(purchasedAt) : null;
           await tx
             .insert(hotmartPurchases)
             .values({
@@ -146,11 +221,20 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
                 'pri',
               userId: linkedUserId,
               active,
+              purchasedAt,
+              expiresAt,
               lastEventAt: createdAt,
             })
             .onConflictDoUpdate({
               target: hotmartPurchases.transaction,
-              set: { userId: linkedUserId, active, lastEventAt: createdAt, updatedAt: new Date() },
+              set: {
+                userId: linkedUserId,
+                active,
+                purchasedAt,
+                expiresAt,
+                lastEventAt: createdAt,
+                updatedAt: new Date(),
+              },
             });
           if (linkedUserId) {
             for (const { access } of mapping) {
@@ -158,7 +242,11 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
             }
           }
           result = active
-            ? 'Compra aprovada; acesso liberado.'
+            ? expiresAt && purchasedAt && purchasedAt <= new Date() && expiresAt > new Date()
+              ? 'Compra aprovada; acesso liberado.'
+              : !purchasedAt
+                ? missingDateResult
+                : 'Compra fora do prazo válido; acesso não liberado.'
             : 'Reembolso recebido; acesso recalculado.';
         } else result = 'Aviso antigo; acesso mantido.';
       }

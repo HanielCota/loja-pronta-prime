@@ -144,6 +144,11 @@ export async function changeStudentProductAccess(
               eq(manualProductGrants.product, product),
             ),
           );
+        if (product === 'sll')
+          await tx.execute(sql`
+          update historical_sll_purchases set revoked_at = now()
+          where user_id = ${target.id} and revoked_at is null
+        `);
         // Preserve the paid transaction and exclude only the selected area from its grants.
         const purchases = await tx
           .select({ transaction: hotmartPurchases.transaction })

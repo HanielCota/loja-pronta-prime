@@ -17,7 +17,7 @@ const purchaseEvent = z.object({
   creation_date: z.number().int().positive().max(253_402_300_799_999),
   version: z.string().startsWith('2.').max(20),
   data: z.object({
-    product: z.object({ ucode: identifier }),
+    product: z.object({ ucode: identifier, id: z.number().int().positive().optional() }),
     buyer: z.object({
       email: z.email().max(254),
       // O nome vem do que a compradora digitou no checkout: uma quebra de linha colada ali não
@@ -26,7 +26,10 @@ const purchaseEvent = z.object({
       // continua barrando corpo gigante.
       name: z.string().max(2000).transform(cleanBuyerName).optional(),
     }),
-    purchase: z.object({ transaction: identifier }),
+    purchase: z.object({
+      transaction: identifier,
+      order_date: z.number().int().positive().max(253_402_300_799_999).optional(),
+    }),
   }),
 });
 
