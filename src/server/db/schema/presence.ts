@@ -24,3 +24,12 @@ export const userPresence = pgTable(
   },
   (table) => [index('user_presence_last_seen_idx').on(table.lastSeenAt)],
 );
+
+/** Visibility is separate from heartbeats so future activity cannot undo an owner's choice. */
+export const hiddenUserPresence = pgTable('hidden_user_presence', {
+  userId: text('user_id')
+    .primaryKey()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  hiddenBy: text('hidden_by').references(() => user.id, { onDelete: 'set null' }),
+  hiddenAt: timestamp('hidden_at').defaultNow().notNull(),
+});

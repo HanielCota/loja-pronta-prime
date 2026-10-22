@@ -6,15 +6,27 @@ import { PresenceTable } from '@/features/admin/components/presence-table';
 import { requireAdmin } from '@/features/admin/server/access';
 import { getOnlineStudents } from '@/features/admin/server/online';
 import { cn } from '@/lib/utils';
+import { canManagePresenceVisibility } from '@/features/admin/presence-visibility';
+import { getHiddenPresenceAccounts } from '@/features/admin/server/presence-visibility';
+import { PresenceVisibilityManager } from '@/features/admin/components/presence-visibility-manager';
 
 export const metadata: Metadata = { title: 'Online agora · Administração' };
 
 const REFRESH_MS = 15_000;
 
 /** Quem está com uma área aberta agora e em que página. */
-export default async function AdminOnlinePage() {
+export default async function AdminOnlinePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ visibility?: string }>;
+}) {
   const session = await requireAdmin('/admin/online');
-  const { now, rows } = await getOnlineStudents();
+  const owner = canManagePresenceVisibility(session.user);
+  const [{ now, rows }, hiddenAccounts, params] = await Promise.all([
+    getOnlineStudents(),
+    owner ? getHiddenPresenceAccounts() : Promise.resolve([]),
+    searchParams,
+  ]);
   // "2 no celular · 1 no computador": quantas pessoas em cada tipo de aparelho.
   const byKind = (['mobile', 'tablet', 'desktop'] as const)
     .map((kind) => ({
@@ -59,6 +71,9 @@ export default async function AdminOnlinePage() {
           Conta como online quem está com a aba aberta e à vista nos últimos 90 segundos.
         </p>
       </section>
+      {owner ? (
+        <PresenceVisibilityManager accounts={hiddenAccounts} result={params.visibility} />
+      ) : null}
     </AdminShell>
   );
 }

@@ -398,3 +398,10 @@ checkbox e confirmação explícita antes da fila de publicação. Dados ausente
 preparação e publicação incerta aparecem com texto próprio. Admin usa `AdminShell`, cartões,
 campos existentes e detalhes expansíveis para roteiros e prévia de variantes. Nenhuma nova
 linguagem visual, fonte ou cor foi introduzida.
+
+### Owner-managed online visibility (October 21, 2026)
+
+The existing online administration page includes an additional `panelCard` only for the designated
+owner administrator. It uses `FloatingLabelInput` and `Button` to hide an account by email and restore
+it from a plain list. No new layout, colors, or component library is introduced. Hidden accounts
+are excluded on the server from presence lists, counts, and account activity details for every viewer.

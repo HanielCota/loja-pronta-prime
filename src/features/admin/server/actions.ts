@@ -7,6 +7,8 @@ import { revalidatePath } from 'next/cache';
 import { revalidateAdminOverview } from './overview-cache';
 import { getAdminOverview } from './overview';
 import { getOnlineStudents } from './online';
+import { visiblePresenceCondition } from './presence-visibility';
+import { changePresenceVisibility } from './presence-visibility-actions';
 import { revalidateSllContent } from '@/features/sll/server/content-cache';
 import { z } from 'zod';
 import { requireAdmin } from './access';
@@ -759,7 +761,12 @@ export async function getOnlineCount(): Promise<number> {
   const [row] = await db
     .select({ total: sql<number>`count(*)::int` })
     .from(userPresence)
-    .where(gte(userPresence.lastSeenAt, new Date(Date.now() - ONLINE_WINDOW_MS)));
+    .where(
+      and(
+        gte(userPresence.lastSeenAt, new Date(Date.now() - ONLINE_WINDOW_MS)),
+        visiblePresenceCondition(),
+      ),
+    );
   return row?.total ?? 0;
 }
 
@@ -770,4 +777,8 @@ export async function getAdminDashboard() {
     getOnlineStudents(),
   ]);
   return { overview, now, online };
+}
+
+export async function changeStudentPresenceVisibility(form: FormData): Promise<void> {
+  return changePresenceVisibility(form);
 }

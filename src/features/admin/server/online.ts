@@ -1,4 +1,4 @@
-import { desc, eq, gte, inArray } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { learningLessons, user, userPresence } from '@/server/db/schema';
 import { describeDevice } from '@/features/presence/device';
@@ -6,6 +6,7 @@ import { describePresence, ONLINE_WINDOW_MS } from '@/features/presence/presence
 import type { DeviceClient } from '@/features/presence/device';
 import type { PresenceRow } from '../components/presence-table';
 import { requireAdmin } from './access';
+import { visiblePresenceCondition } from './presence-visibility';
 
 /** Põe o título da aula nas linhas que estão numa aula (uma consulta só pra todas). */
 async function withLessonTitles(
@@ -61,7 +62,12 @@ export async function getOnlineStudents(): Promise<{ now: Date; rows: PresenceRo
     .select(presenceColumns)
     .from(userPresence)
     .innerJoin(user, eq(userPresence.userId, user.id))
-    .where(gte(userPresence.lastSeenAt, new Date(now.getTime() - ONLINE_WINDOW_MS)))
+    .where(
+      and(
+        gte(userPresence.lastSeenAt, new Date(now.getTime() - ONLINE_WINDOW_MS)),
+        visiblePresenceCondition(),
+      ),
+    )
     .orderBy(desc(userPresence.lastSeenAt))
     .limit(500);
   return { now, rows: await withLessonTitles(rows) };
@@ -76,7 +82,7 @@ export async function getLastPresence(
     .select(presenceColumns)
     .from(userPresence)
     .innerJoin(user, eq(userPresence.userId, user.id))
-    .where(eq(userPresence.userId, userId))
+    .where(and(eq(userPresence.userId, userId), visiblePresenceCondition()))
     .limit(1);
   const [row] = await withLessonTitles(rows);
   return { now: new Date(), presence: row ?? null };
