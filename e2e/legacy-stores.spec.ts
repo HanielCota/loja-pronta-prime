@@ -109,6 +109,9 @@ for (const mobile of [false, true])
       await signIn(page, student.email, PASSWORD, '/loja-pronta');
       await expect(page.getByRole('heading', { name: 'Suas lojas', exact: true })).toBeVisible();
       await expect(
+        page.getByRole('link', { name: 'Começar minha loja', exact: true }),
+      ).toHaveAttribute('href', '/loja-pronta/conversa');
+      await expect(
         page.getByRole('heading', { name: 'Previous test store', exact: true }),
       ).toBeVisible();
       await expect(

@@ -1,4 +1,7 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
+import { ArrowRightIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { brandLogoSrc } from '@/features/brand/steps';
 import { getBrand } from '@/features/brand/server/brand';
 import { StorePanel } from '@/features/loja-pronta/components/store-panel';
@@ -7,7 +10,8 @@ import { PRODUCTS } from '@/features/products/catalog';
 import { requireProduct } from '@/features/products/server/access';
 import { listLegacyStoresForUser } from '@/features/legacy-stores/server/queries';
 import { LegacyStoreHistory } from '@/features/legacy-stores/components/store-history';
-import { AreaShell } from '@/features/member/components/area-shell';
+import { AreaShell, panelCard } from '@/features/member/components/area-shell';
+import { CONVERSATION_PATH } from '@/features/loja-pronta/steps';
 
 export const metadata: Metadata = {
   title: PRODUCTS['loja-pronta'].title,
@@ -31,6 +35,24 @@ export default async function Page() {
         title="Suas lojas"
         intro="Veja suas lojas salvas e as entregas registradas."
       >
+        {/* Sem isso, quem tinha loja no sistema antigo ficava presa no histórico, sem conseguir
+            começar a loja aqui. */}
+        <section aria-labelledby="new-store" className={`${panelCard} gap-5`}>
+          <div>
+            <h2 id="new-store" className="text-title font-semibold text-balance">
+              Montar sua loja aqui
+            </h2>
+            <p className="mt-2 text-body text-muted-foreground">
+              Comece do início neste site. Suas lojas anteriores continuam salvas logo abaixo.
+            </p>
+          </div>
+          <Button asChild className="w-fit">
+            <Link href={CONVERSATION_PATH}>
+              Começar minha loja
+              <ArrowRightIcon aria-hidden="true" />
+            </Link>
+          </Button>
+        </section>
         <LegacyStoreHistory stores={previousStores} basePath="/loja-pronta/previous-stores" />
       </AreaShell>
     );
