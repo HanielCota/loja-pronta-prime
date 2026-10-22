@@ -4,7 +4,7 @@ import { parseWhatsapp } from '@/features/loja-pronta/whatsapp';
 import { ONBOARDING_BLOCKS, ONBOARDING_QUESTIONS } from './onboarding';
 import { PRODUCT_IDS } from './products';
 import { STORE_PHASES } from './store-phases';
-import { TEAM_WHATSAPP } from './support';
+import { DATA_CONTROLLER, PRIVACY_EMAIL, TEAM_WHATSAPP } from './support';
 
 describe('configuração', () => {
   test('7 fases da loja (o banco confere 1 a 7 com essa mesma lista)', () => {
@@ -27,5 +27,10 @@ describe('configuração', () => {
 
   test('WhatsApp do suporte: vazio, ou só os dígitos com DDD', () => {
     if (TEAM_WHATSAPP) expect(parseWhatsapp(TEAM_WHATSAPP)).toBe(TEAM_WHATSAPP);
+  });
+
+  test('contato da privacidade: um email e o CNPJ formatado', () => {
+    expect(PRIVACY_EMAIL).toMatch(/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/);
+    expect(DATA_CONTROLLER.cnpj).toMatch(/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/);
   });
 });
