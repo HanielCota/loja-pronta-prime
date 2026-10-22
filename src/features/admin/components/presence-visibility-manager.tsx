@@ -4,9 +4,9 @@ import { panelCard } from '@/features/member/components/area-shell';
 import { changeStudentPresenceVisibility } from '../server/actions';
 
 const messages: Record<string, string> = {
-  saved: 'Online visibility updated.',
-  missing: 'No account was found with that email.',
-  invalid: 'Enter a valid email address.',
+  saved: 'Visibilidade online atualizada.',
+  missing: 'Não encontrei uma conta com esse email.',
+  invalid: 'Digite um email válido.',
 };
 
 export function PresenceVisibilityManager({
@@ -20,12 +20,12 @@ export function PresenceVisibilityManager({
     <section className={`${panelCard} mt-6 gap-5`} aria-labelledby="presence-visibility-title">
       <div>
         <h2 id="presence-visibility-title" className="text-title font-semibold">
-          Online visibility
+          Visibilidade online
         </h2>
         <p className="mt-2 text-body text-muted-foreground">
-          Hidden accounts do not appear in online lists, counts, or last activity details for
-          anyone. Their sign-in and product access stay the same. Only your account can manage this
-          list.
+          As alunas ocultas não aparecem para ninguém nas listas de pessoas online, nos contadores
+          nem nos detalhes da última atividade. Elas continuam entrando e acessando os produtos
+          normalmente. Só sua conta pode alterar esta lista.
         </p>
       </div>
       <form
@@ -37,14 +37,14 @@ export function PresenceVisibilityManager({
             id="presence-hide-email"
             name="email"
             type="email"
-            label="Student email"
+            label="Email da aluna"
             autoComplete="off"
             maxLength={254}
             required
           />
         </div>
         <Button name="visibility" value="hidden" size="inline" variant="soft">
-          Hide online presence
+          Ocultar presença online
         </Button>
       </form>
       {result && messages[result] ? (
@@ -52,7 +52,7 @@ export function PresenceVisibilityManager({
           {messages[result]}
         </output>
       ) : null}
-      <h3 className="text-body font-semibold">Hidden accounts</h3>
+      <h3 className="text-body font-semibold">Alunas ocultas</h3>
       {accounts.length ? (
         <ul className="divide-y divide-border">
           {accounts.map((account) => (
@@ -71,16 +71,16 @@ export function PresenceVisibilityManager({
                   value="visible"
                   size="inline"
                   variant="soft"
-                  aria-label={`Show online presence for ${account.name}`}
+                  aria-label={`Mostrar presença online de ${account.name}`}
                 >
-                  Show again
+                  Mostrar novamente
                 </Button>
               </form>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-body text-muted-foreground">No accounts are hidden.</p>
+        <p className="text-body text-muted-foreground">Nenhuma aluna está oculta.</p>
       )}
     </section>
   );
