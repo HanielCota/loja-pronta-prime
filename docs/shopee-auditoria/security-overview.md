@@ -117,8 +117,8 @@ Seller's browser ──HTTPS (TLS 1.2/1.3)──> Cloudflare (proxy)
   decrypted.
 - Partner Key and encryption key live only in server runtime variables. They are never in the
   source code, the repository, the browser bundle or logs.
-- Every Open API request is signed with HMAC-SHA256, has a 10-second timeout, does not follow
-  redirects and does not automatically retry single-use codes.
+- Every Open API request is signed with HMAC-SHA256, has a 10–20 second timeout, does not
+  follow redirects and does not automatically retry single-use codes.
 - Token refresh is serialized per account to avoid two refreshes racing each other.
 - Tokens are never sent to the browser.
 
