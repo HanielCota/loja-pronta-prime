@@ -1,5 +1,6 @@
 import { CircleCheckIcon } from 'lucide-react';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { BrandCard } from '@/components/brand/brand-card';
 import { CardHeading } from '@/components/brand/card-heading';
@@ -53,6 +54,14 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         next={next}
         initialError={parseLoginReason(getParam(params.motivo), getParam(params.error))}
       />
+      <p className="mt-6 text-center">
+        <Link
+          href="/privacidade"
+          className="inline-flex min-h-11 items-center text-sm font-medium text-link underline underline-offset-4 hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        >
+          Política de Privacidade
+        </Link>
+      </p>
     </BrandCard>
   );
 }
