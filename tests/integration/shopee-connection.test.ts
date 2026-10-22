@@ -6,6 +6,7 @@ import {
   user,
   stores,
   studentProducts,
+  manualProductGrants,
   shopeeAuthorizationStates,
   shopeeConnections,
 } from '@/server/db/schema';
@@ -33,6 +34,7 @@ beforeAll(async () => {
     await db.insert(user).values({ id, name: 'Teste Shopee', email: `${id}@example.invalid` });
     await db.insert(stores).values({ userId: id, phase: 4 });
     await db.insert(studentProducts).values({ userId: id, product: 'loja-pronta' });
+    await db.insert(manualProductGrants).values({ userId: id, product: 'loja-pronta' });
   }
 });
 afterAll(async () => {
@@ -68,6 +70,7 @@ test('SLL conecta sem Loja Pronta e não avança uma montagem existente', async 
   await db.insert(user).values({ id, name: 'Somente SLL', email: `${id}@example.invalid` });
   try {
     await db.insert(studentProducts).values({ userId: id, product: 'sll' });
+    await db.insert(manualProductGrants).values({ userId: id, product: 'sll' });
     const authorize = async () => {
       const url = new URL(
         await beginShopeeAuthorization(id, 'session', config, 'https://example.invalid', 'sll'),
@@ -78,6 +81,7 @@ test('SLL conecta sem Loja Pronta e não avança uma montagem existente', async 
     expect(await db.select().from(stores).where(eq(stores.userId, id))).toHaveLength(0);
     await db.insert(stores).values({ userId: id, phase: 4 });
     await db.insert(studentProducts).values({ userId: id, product: 'loja-pronta' });
+    await db.insert(manualProductGrants).values({ userId: id, product: 'loja-pronta' });
     expect(await finishShopeeAuthorization(await authorize(), config, accepted)).toBe('connected');
     expect((await db.select().from(stores).where(eq(stores.userId, id)))[0]?.phase).toBe(4);
     const pending = await authorize();

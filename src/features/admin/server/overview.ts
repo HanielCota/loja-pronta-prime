@@ -12,6 +12,7 @@ import {
 } from '@/server/db/schema';
 import type { AdminOverviewData } from '../components/admin-overview';
 import { requireAdmin } from './access';
+import { effectiveProductAccess } from '@/features/products/server/eligibility';
 
 /** Os números e as listas curtas da visão geral do painel, lidos de uma vez. */
 const readAdminOverview = unstable_cache(
@@ -30,6 +31,7 @@ const readAdminOverview = unstable_cache(
         db
           .select({ product: studentProducts.product, total: sql<number>`count(*)::int` })
           .from(studentProducts)
+          .where(effectiveProductAccess())
           .groupBy(studentProducts.product),
         db
           .select({ active: sql<number>`count(*) filter (where ${hotmartPurchases.active})::int` })

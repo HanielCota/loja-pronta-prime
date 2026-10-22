@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { effectiveProductAccess } from '@/features/products/server/eligibility';
 import { and, eq, gt, isNull, lt, ne } from 'drizzle-orm';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { db } from '@/server/db';
@@ -113,6 +114,7 @@ export async function finishShopeeAuthorization(
           and(
             eq(studentProducts.userId, input.userId),
             eq(studentProducts.product, pending.origin),
+            effectiveProductAccess(),
           ),
         );
       if (!access) return 'expired';

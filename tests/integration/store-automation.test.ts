@@ -5,6 +5,7 @@ import { db } from '@/server/db';
 import {
   user,
   studentProducts,
+  manualProductGrants,
   shopeeConnections,
   storeAutomationJobs,
   runtimeHeartbeats,
@@ -62,6 +63,10 @@ async function account() {
     .insert(user)
     .values({ id, email: `${id}@example.invalid`, name: 'Teste', mustChangePassword: false });
   await db.insert(studentProducts).values([
+    { userId: id, product: 'sll' },
+    { userId: id, product: 'loja-pronta' },
+  ]);
+  await db.insert(manualProductGrants).values([
     { userId: id, product: 'sll' },
     { userId: id, product: 'loja-pronta' },
   ]);

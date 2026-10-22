@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { effectiveProductAccess } from '@/features/products/server/eligibility';
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import { db } from '@/server/db';
 import {
@@ -49,7 +50,7 @@ export async function assertAssistantAccess(userId: string, product?: 'sll' | 'l
   const grants = await db
     .select({ product: studentProducts.product })
     .from(studentProducts)
-    .where(eq(studentProducts.userId, userId));
+    .where(and(eq(studentProducts.userId, userId), effectiveProductAccess()));
   if (
     !account ||
     account.banned ||

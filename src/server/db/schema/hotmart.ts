@@ -31,10 +31,37 @@ export const hotmartPurchases = pgTable(
     expert: text('expert').$type<ExpertId>().notNull().default('pri'),
     userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
     active: boolean('active').notNull(),
+    purchasedAt: timestamp('purchased_at', { withTimezone: true }),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
     lastEventAt: timestamp('last_event_at').notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [index('hotmart_purchases_user_idx').on(table.userId)],
+);
+
+export const salesHistoryImports = pgTable('sales_history_imports', {
+  sourceSha256: text('source_sha256').primaryKey(),
+  preparedSha256: text('prepared_sha256').notNull(),
+  importedAt: timestamp('imported_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+/** Numeric report IDs remain numeric report IDs, never invented webhook ucodes. */
+export const historicalSllPurchases = pgTable(
+  'historical_sll_purchases',
+  {
+    transaction: text('transaction').primaryKey(),
+    sourceSha256: text('source_sha256')
+      .notNull()
+      .references(() => salesHistoryImports.sourceSha256),
+    sourceProductId: text('source_product_id').notNull(),
+    buyerEmail: text('buyer_email').notNull(),
+    userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
+    purchasedAt: timestamp('purchased_at', { withTimezone: true }).notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    active: boolean('active').notNull().default(true),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  },
+  (table) => [index('historical_sll_purchases_user_idx').on(table.userId)],
 );
 
 /** ID do evento é a chave de idempotência; não guardamos o payload completo com dados pessoais. */

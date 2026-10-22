@@ -49,7 +49,7 @@ function event(id: string, code: string, transaction: string, kind = 'PURCHASE_A
     data: {
       buyer: { email: `${id}@example.invalid` },
       product: { ucode: code },
-      purchase: { transaction },
+      purchase: { transaction, order_date: Date.now() - 1000 },
     },
   };
 }

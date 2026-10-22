@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, eq, gt, inArray, isNull, lte } from 'drizzle-orm';
 import { db } from '@/server/db';
 import {
   hotmartProductMappings,
@@ -8,13 +8,14 @@ import {
   studentExperiences,
   learningVideoVariants,
   manualProductGrants,
+  historicalSllPurchases,
 } from '@/server/db/schema';
 import { isExpertId, type ExpertId } from '@/config/experts';
 import { expertContentData } from '../experience';
 import type { ContentPreviewKind } from '@/features/admin/content-preview';
 
 export const getStudentExperience = cache(async (userId: string) => {
-  const [settings, purchases, manual] = await Promise.all([
+  const [settings, purchases, manual, historical] = await Promise.all([
     db.select().from(studentExperiences).where(eq(studentExperiences.userId, userId)).limit(1),
     db
       .select({ expert: hotmartPurchases.expert })
@@ -35,6 +36,8 @@ export const getStudentExperience = cache(async (userId: string) => {
           isNull(hotmartPurchaseAccessRevocations.transaction),
           eq(hotmartPurchases.userId, userId),
           eq(hotmartPurchases.active, true),
+          gt(hotmartPurchases.expiresAt, new Date()),
+          lte(hotmartPurchases.purchasedAt, new Date()),
           eq(hotmartProductMappings.access, 'sll'),
         ),
       )
@@ -43,9 +46,22 @@ export const getStudentExperience = cache(async (userId: string) => {
       .select({ product: manualProductGrants.product })
       .from(manualProductGrants)
       .where(and(eq(manualProductGrants.userId, userId), eq(manualProductGrants.product, 'sll'))),
+    db
+      .select({ transaction: historicalSllPurchases.transaction })
+      .from(historicalSllPurchases)
+      .where(
+        and(
+          eq(historicalSllPurchases.userId, userId),
+          eq(historicalSllPurchases.active, true),
+          isNull(historicalSllPurchases.revokedAt),
+          lte(historicalSllPurchases.purchasedAt, new Date()),
+          gt(historicalSllPurchases.expiresAt, new Date()),
+        ),
+      )
+      .limit(1),
   ]);
   const allowed: ExpertId[] = [...new Set(purchases.map((row) => row.expert).filter(isExpertId))];
-  if (manual.length && !allowed.includes('pri')) allowed.push('pri');
+  if ((manual.length || historical.length) && !allowed.includes('pri')) allowed.push('pri');
   const profile = settings[0];
   if (profile?.manualExpert && !allowed.includes(profile.manualExpert))
     allowed.push(profile.manualExpert);

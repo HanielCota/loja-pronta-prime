@@ -20,6 +20,25 @@ describe('avisos da Hotmart', () => {
     },
   };
 
+  test('accepts documented numeric-string purchase dates without using event arrival time', () => {
+    const timestamp = 1791475200000;
+    for (const order_date of [timestamp, String(timestamp)]) {
+      const parsed = parseHotmartEvent({
+        ...validEvent,
+        data: { ...validEvent.data, purchase: { transaction: 'HP123', order_date } },
+      });
+      expect(parsed.success).toBe(true);
+      if (parsed.success) expect(parsed.data.data.purchase.order_date).toBe(timestamp);
+    }
+    for (const order_date of ['', 'tomorrow', true, -1, Infinity])
+      expect(
+        parseHotmartEvent({
+          ...validEvent,
+          data: { ...validEvent.data, purchase: { transaction: 'HP123', order_date } },
+        }).success,
+      ).toBe(false);
+  });
+
   test('aceita aviso válido e ignora campos extras do provedor', () => {
     const parsed = parseHotmartEvent({ ...validEvent, extra: 'não guardar' });
     expect(parsed.success).toBe(true);

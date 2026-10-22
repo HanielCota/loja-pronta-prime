@@ -12,6 +12,7 @@ import { db } from '@/server/db';
 import {
   user,
   studentProducts,
+  manualProductGrants,
   stores,
   shopeeConnections,
   supplierCatalog,
@@ -81,6 +82,7 @@ async function account(product: 'sll' | 'loja-pronta' = 'loja-pronta') {
     .insert(user)
     .values({ id, email: `${id}@example.invalid`, name: 'Integração', mustChangePassword: false });
   await db.insert(studentProducts).values({ userId: id, product });
+  await db.insert(manualProductGrants).values({ userId: id, product });
   await db.insert(stores).values({ userId: id, phase: 5 });
   const owner = shopeeTokenOwner(id, shop, config);
   await db.insert(shopeeConnections).values({
@@ -950,14 +952,12 @@ test('a resposta aceita após a expiração é persistida sem deixar um job ince
 
 test('uma falha temporária mantém a próxima coleta e o agendamento não contorna acesso removido', async () => {
   const id = await account('sll');
-  await db
-    .insert(assistantJobs)
-    .values({
-      userId: id,
-      kind: 'collect',
-      deduplicationKey: randomUUID(),
-      runAt: new Date(Date.now() - 1000),
-    });
+  await db.insert(assistantJobs).values({
+    userId: id,
+    kind: 'collect',
+    deduplicationKey: randomUUID(),
+    runAt: new Date(Date.now() - 1000),
+  });
   const job = await claimAssistantJob();
   expect(
     await processAssistantJob(
