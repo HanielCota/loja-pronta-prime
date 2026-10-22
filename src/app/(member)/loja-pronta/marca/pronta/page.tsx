@@ -71,6 +71,9 @@ export default async function BrandDonePage() {
           volta para continuar aqui.
         </p>
       </div>
+      <Button asChild variant="soft">
+        <Link href="/loja-pronta/marca/banners">Preparar meus banners</Link>
+      </Button>
       <section aria-labelledby="proximo-passo" className={cn(panelCard, 'gap-3')}>
         <h2 id="proximo-passo" className={sectionTitleClass}>
           {next.title}

@@ -12,6 +12,7 @@ import type { BrandDraft } from '../steps';
 /** `updatedAt`: muda a cada escolha salva, pra imagem do logo salvo não vir velha do cache. */
 export type Brand = BrandDraft & {
   completedAt: Date | null;
+  publicationFingerprint: string | null;
   updatedAt: Date | null;
 };
 
@@ -20,6 +21,7 @@ const EMPTY: Brand = {
   logoImage: null,
   description: null,
   completedAt: null,
+  publicationFingerprint: null,
   updatedAt: null,
 };
 
@@ -31,6 +33,7 @@ export const getBrand = cache(async (userId: string): Promise<Brand> => {
       logoImage: storeBrand.logoImage,
       description: storeBrand.description,
       completedAt: storeBrand.completedAt,
+      publicationFingerprint: storeBrand.publicationFingerprint,
       updatedAt: storeBrand.updatedAt,
     })
     .from(storeBrand)
@@ -49,6 +52,9 @@ export type BrandPatch = Partial<
 export async function saveBrand(userId: string, patch: BrandPatch) {
   await db
     .insert(storeBrand)
-    .values({ userId, ...patch })
-    .onConflictDoUpdate({ target: storeBrand.userId, set: patch });
+    .values({ userId, ...patch, publicationFingerprint: null })
+    .onConflictDoUpdate({
+      target: storeBrand.userId,
+      set: { ...patch, publicationFingerprint: null },
+    });
 }

@@ -15,7 +15,13 @@ import { batchObservationState } from '@/features/assistant/model';
 import { configuredSupplierSources } from '@/features/shopee/supplier-feed';
 import { subscribeSupplierFeed } from '@/features/assistant/server/supplier-actions';
 import { storeOperationOverview } from '@/features/assistant/server/store-operation-overview';
-import { checkBrandChange, sendStoreBrand } from '@/features/assistant/server/store-change-actions';
+import {
+  checkBrandChange,
+  sendStoreBrand,
+  retryBrandPublication,
+} from '@/features/assistant/server/store-change-actions';
+import { brandPublicationEnabled } from '@/features/brand/server/publication-settings';
+import { getBrand } from '@/features/brand/server/brand-store';
 import { getStorePhase } from '@/features/loja-pronta/server/store';
 import { redirect } from 'next/navigation';
 import { getParam, type SearchParams } from '@/lib/search-params';
@@ -36,12 +42,13 @@ export default async function StoreProductsPage({
 }) {
   const { session, products } = await requireProduct('loja-pronta', '/loja-pronta/produtos');
   if ((await getStorePhase(session.user.id)) < 5) redirect('/loja-pronta/shopee/conectar');
-  const [catalog, overview, params, corrections, operations] = await Promise.all([
+  const [catalog, overview, params, corrections, operations, brand] = await Promise.all([
     availableSupplierProducts(session.user.id, session.user.role),
     publicationOverview(session.user.id),
     searchParams,
     publicationCorrections(session.user.id),
     storeOperationOverview(session.user.id),
+    getBrand(session.user.id),
   ]);
   const initial = overview.batches.find((batch) => batch.kind === 'initial');
   const maySelect = !initial || initial.status === 'evaluated';
@@ -60,11 +67,12 @@ export default async function StoreProductsPage({
           Marca na Shopee
         </h2>
         <p className="text-body text-muted-foreground">
-          Envie o nome, o logo e a descrição que você confirmou na montagem da marca.
+          O nome, o logo e a descrição confirmados são enviados automaticamente quando a conexão e o
+          envio da marca estão liberados. Os banners são aplicados por você na Shopee.
         </p>
         <form action={sendStoreBrand}>
-          {catalog.status === 'ready' ? (
-            <Button variant="soft">Confirmar e enviar minha marca</Button>
+          {brandPublicationEnabled() ? (
+            <Button variant="soft">Conferir preparação do envio</Button>
           ) : (
             <p className="text-body text-muted-foreground">
               O envio estará disponível quando a conexão e as alterações estiverem liberadas para
@@ -72,6 +80,17 @@ export default async function StoreProductsPage({
             </p>
           )}
         </form>
+        <Button asChild variant="soft">
+          <Link href="/loja-pronta/marca/publication">Conferir e confirmar minha marca</Link>
+        </Button>
+        <Button asChild variant="soft">
+          <Link href="/loja-pronta/marca/banners">Ver meus banners</Link>
+        </Button>
+        {!brand.publicationFingerprint ? (
+          <p className="text-body text-muted-foreground">
+            Confirme sua marca atual para autorizar o envio automático.
+          </p>
+        ) : null}
         {operations.brandJobs.length ? (
           <ul className="space-y-3">
             {operations.brandJobs.map((job) => (
@@ -83,6 +102,14 @@ export default async function StoreProductsPage({
                     : job.status === 'blocked'
                       ? 'Não foi possível enviar a marca. Confira a conexão e os dados.'
                       : 'Envio em andamento.'}
+                {job.status === 'blocked' &&
+                job.sourceFingerprint === brand.publicationFingerprint &&
+                brandPublicationEnabled() ? (
+                  <form action={retryBrandPublication}>
+                    <input type="hidden" name="jobId" value={job.id} />
+                    <Button variant="soft">Tentar envio da marca novamente</Button>
+                  </form>
+                ) : null}
                 {job.status === 'unknown' ? (
                   <form action={checkBrandChange}>
                     <input type="hidden" name="jobId" value={job.id} />
@@ -94,6 +121,19 @@ export default async function StoreProductsPage({
           </ul>
         ) : null}
       </section>
+      {result === 'brand-approved' ? (
+        <output className="text-body text-progress-text">
+          Marca confirmada. O envio será preparado automaticamente quando a conexão e o recurso
+          estiverem liberados.
+        </output>
+      ) : null}
+      {result === 'brand-queued' || result === 'brand-unavailable' ? (
+        <output className="text-body">
+          {result === 'brand-queued'
+            ? 'Preparação da marca conferida. Acompanhe o resultado em Marca na Shopee.'
+            : 'Não foi possível preparar o envio da marca. Confira se ela está confirmada e se a conexão está disponível.'}
+        </output>
+      ) : null}
       {configuredSupplierSources().length ? (
         <section className={panelCard} aria-labelledby="supplier-sync">
           <h2 id="supplier-sync" className="text-title font-semibold">
@@ -126,7 +166,7 @@ export default async function StoreProductsPage({
           ))}
         </section>
       ) : null}
-      {result ? (
+      {result && !result.startsWith('brand-') ? (
         <output className="text-body">
           {result === 'queued'
             ? 'Sua seleção foi salva. A publicação será acompanhada nesta página.'

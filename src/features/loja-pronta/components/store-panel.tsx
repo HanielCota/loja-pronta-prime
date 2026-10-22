@@ -71,6 +71,11 @@ export function StorePanel({
     >
       {previousStores}
       <NextStep phase={phase} conversation={conversation} brand={brand} />
+      {brand.confirmed && brand.logoSrc ? (
+        <Button asChild variant="soft">
+          <Link href="/loja-pronta/marca/banners">Meus banners</Link>
+        </Button>
+      ) : null}
       <Path
         stages={storeStages(phase)}
         reviewHrefs={

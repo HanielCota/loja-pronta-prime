@@ -22,6 +22,7 @@ export const storeBrand = pgTable(
     logoImage: text('logo_image'),
     description: text('description'),
     completedAt: timestamp('completed_at'),
+    publicationFingerprint: text('publication_fingerprint'),
     updatedAt: timestamp('updated_at')
       .defaultNow()
       .$onUpdate(() => new Date())
@@ -72,3 +73,17 @@ export const logoStudio = pgTable(
     check('logo_studio_uploads_check', sql`${table.uploads} >= 0`),
   ],
 );
+
+/** Approval belongs to an exact draft and brand snapshot. */
+export const storeBannerKits = pgTable('store_banner_kits', {
+  userId: text('user_id')
+    .primaryKey()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  revision: text('revision').notNull(),
+  brandFingerprint: text('brand_fingerprint').notNull(),
+  title: text('title').notNull(),
+  subtitle: text('subtitle').notNull(),
+  palette: text('palette', { enum: ['violet', 'rose', 'ocean', 'forest'] }).notNull(),
+  approvedAt: timestamp('approved_at'),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
