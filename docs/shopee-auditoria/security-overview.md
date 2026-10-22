@@ -2,33 +2,32 @@
 
 Prepared for the Shopee Open Platform review team. **Unsigned draft for representative review.**
 
-**Execution status, 22 October 2026:** the partner profile is rejected. The owner confirmed
-that its existing CNPJ belongs to the same business with outdated registration details and
-authorized correction. Updated legal name, address, representative and reviewer access are
-prepared in the form draft, and the CNPJ certificate and articles of association were uploaded.
-The profile has not been resubmitted: required telephone validation, seller-count confirmation
-and action-time policy acceptance are pending. No new Loja Pronta Prime app has been created
-or submitted. The reviewer account signs in successfully, but its connection page shows a
-preparation notice without an authorization button. This document is not evidence of new-app
-approval or sandbox testing.
+**Execution status, 22 October 2026:** the corrected MSL partner profile has been successfully
+resubmitted after the owner confirmed the legal entity details, contact number, supported
+seller range and Data Protection Policy acceptance. Shopee shows **Profile Under Review**.
+The persisted profile includes the company registration documents and reviewer access fields.
+App creation is currently gated by partner-profile review. No new Loja Pronta Prime app has
+been created or submitted for Go Live. The reviewer account signs in successfully, but its
+connection page shows a preparation notice without an authorization button. This document is
+not evidence of new-app approval or sandbox testing.
 
 Implementation descriptions below refer to existing repository code. Infrastructure checks
 reported for 22 October come from the preparatory notes and were not rerun in this execution.
 Statements marked as policy are commitments; they are not evidence of completed configuration.
 
-| Item                        | Value                                                                                                                   |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Company (legal name)        | Mentalidade Sem Limite Ltda (trade name: MSL)                                                                           |
-| CNPJ                        | 46.419.797/0001-67                                                                                                      |
-| Registered address          | Alameda Rio Negro, 503, Sala 2020, Alphaville, Barueri/SP, 06454-000, Brazil                                            |
-| Legal representative        | Guilherme Mendes Flauzino, Administrator                                                                                |
-| Open Platform account type  | Third-party Partner Platform (ISV), Brazil                                                                              |
-| App name                    | Loja Pronta Prime                                                                                                       |
-| Live product URL            | https://lojaprontaprime.com/                                                                                            |
-| Authorization callback      | https://lojaprontaprime.com/api/shopee/callback                                                                         |
-| Security Officer (DPP §4.3) | Guilherme Mendes Flauzino, Administrator — +55 (37) 8805-2023                                                           |
-| Security contact for Shopee | Guilherme Mendes Flauzino — +55 (37) 8805-2023 — or the e-mail of this Open Platform account (Mon–Fri, 09:00–18:00 BRT) |
-| Document date               | 22 October 2026                                                                                                         |
+| Item                        | Value                                                                                                                    |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Company (legal name)        | Mentalidade Sem Limite Ltda (trade name: MSL)                                                                            |
+| CNPJ                        | 46.419.797/0001-67                                                                                                       |
+| Registered address          | Alameda Rio Negro, 503, Sala 2020, Alphaville, Barueri/SP, 06454-000, Brazil                                             |
+| Legal representative        | Guilherme Mendes Flauzino, Administrator                                                                                 |
+| Open Platform account type  | Third-party Partner Platform (ISV), Brazil                                                                               |
+| App name                    | Loja Pronta Prime                                                                                                        |
+| Live product URL            | https://lojaprontaprime.com/                                                                                             |
+| Authorization callback      | https://lojaprontaprime.com/api/shopee/callback                                                                          |
+| Security Officer (DPP §4.3) | Guilherme Mendes Flauzino, Administrator — +55 (37) 98805-2023                                                           |
+| Security contact for Shopee | Guilherme Mendes Flauzino — +55 (37) 98805-2023 — or the e-mail of this Open Platform account (Mon–Fri, 09:00–18:00 BRT) |
+| Document date               | 22 October 2026                                                                                                          |
 
 ## 1. What the application does
 

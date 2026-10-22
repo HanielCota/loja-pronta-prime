@@ -3,24 +3,28 @@
 Prepared on 22 October 2026 for **Loja Pronta Prime**, operated by Mentalidade Sem Limite Ltda
 (trade name: MSL). This package concerns a **new app**, separate from Escala Shop.
 
-## Execution status: corrected draft awaiting required information
+## Execution status: partner profile submitted and under review
 
-The authenticated console was inspected on 22 October 2026. Its Third-party enterprise profile
-shows **Verification failed**. The owner subsequently confirmed that the existing registration
-number identifies the same business and that its legal name, address and contact are outdated.
-The owner explicitly authorized correcting those details from the MSL documents.
+On 22 October 2026, the owner confirmed that the existing CNPJ identifies the same business
+with outdated registration details, authorized their correction and explicitly confirmed the
+Data Protection Policy acceptance. The owner also confirmed telephone **+55 (37) 98805-2023**
+and the **1,001–10,000** supported-seller range.
 
-The form draft now identifies **MENTALIDADE SEM LIMITE LTDA** (trade name **MSL**) as the legal
-entity and **Loja Pronta Prime** as the product. The address and representative were corrected,
-and a combined CNPJ certificate and articles of association was uploaded successfully.
-**These are draft edits; the profile has not been resubmitted.**
+The corrected profile was successfully resubmitted. Shopee redirected to App List and showed
+**Profile Under Review**: the submission is being reviewed and an email will be sent when
+processed. Reopening the profile confirmed the persisted legal name, address, representative,
+reviewer access fields, company-document attachment and seller range.
 
-The form rejects the supplied telephone number. The existing seller-count range is unverified.
-The owner was asked for the current contact number and supported seller range, together with
-action-time confirmation of the Data Protection Policy acceptance included in submission.
-No replacement digits or seller figures have been invented.
+The legal entity is **MENTALIDADE SEM LIMITE LTDA** (trade name **MSL**); the product and new
+app are **Loja Pronta Prime**. The registration attachment combines the CNPJ certificate and
+articles of association. No identity documents beyond those required were uploaded.
 
-Shopee's rejection says the test account does not provide enough information for validation
+App List is currently gated by partner-profile review and exposes no app-creation action.
+Creating the new app, obtaining its sandbox credentials and submitting its Go Live therefore
+require Shopee to complete this review first. Do not confuse partner-profile submission with
+new-app Go Live submission. No new app ID has been issued in this workflow.
+
+The earlier rejection said the test account does not provide enough information for validation
 and requires a functional environment with active integrations. It also says products without
 active integrations cannot proceed. The original message and a screenshot are preserved only
 in the private execution record.
@@ -30,8 +34,8 @@ The designated reviewer account successfully signs in and opens
 connection preparation notice, without an authorization button. A 1280 × 800 screenshot was
 saved privately. A successful login alone does **not** resolve the rejection.
 
-No new app has been created, no new sandbox credentials have been issued, and no Go Live
-submission has been made in this execution. Escala Shop and production configuration have
+The partner profile has been submitted; no new app has been created, no new sandbox
+credentials have been issued, and no app Go Live submission has been made in this execution. Escala Shop and production configuration have
 not been changed. Phase B is not eligible. Do not describe this package as approval or as
 proof that the new app's sandbox integration works.
 
@@ -57,7 +61,7 @@ an explicitly requested upload; never fabricate a signature.
 | CNPJ                              | 46.419.797/0001-67                                                             |
 | Registered address                | Alameda Rio Negro, 503, Sala 2020, Alphaville, Barueri/SP, 06454-000, Brazil   |
 | Representative                    | Guilherme Mendes Flauzino, Administrator                                       |
-| Contact telephone                 | +55 (37) 8805-2023                                                             |
+| Contact telephone                 | +55 (37) 98805-2023                                                            |
 | Contact email                     | Email of the authenticated Open Platform account                               |
 | Profile                           | Third-party Partner Platform (ISV), Brazil                                     |
 | New app name                      | Loja Pronta Prime                                                              |
@@ -130,8 +134,12 @@ records the company's intended commitments; the legal representative must review
 
 ## Resuming safely
 
-Complete the required telephone and seller-count information, confirm the policy acceptance,
-and resolve functional integration evidence first. Resume the runbook using the corrected MSL profile. Record status and errors privately, and
-verify actual submission in the console. Run Phase B only when the new app is Online; it
-requires a database backup, preservation of the existing token encryption key, credentials
-from the new app and a pilot limited to explicitly authorized test accounts.
+Wait for Shopee's partner-profile decision. Resume the runbook once the corrected MSL profile
+is approved and App List permits creating the new app. If rejected, preserve the exact reason
+and correct only fields supported by evidence before retrying as authorized. The previous
+rejection concerned functional integration evidence; do not assume registration corrections
+alone satisfy that requirement. Record actual statuses privately.
+
+Run Phase B only when the **new app** is Online. It requires a database backup, preservation
+of the existing token encryption key, credentials from the new app and a pilot limited to
+explicitly authorized test accounts. No Phase B action was performed during profile submission.

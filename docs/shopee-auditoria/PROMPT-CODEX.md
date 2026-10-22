@@ -33,6 +33,15 @@ and **Loja Pronta Prime** for the product and new app name. Do not substitute th
 for the legal company name. Missing required information and browser action-time confirmations
 still require the corresponding human input.
 
+## Latest execution status on 22 October 2026
+
+The owner confirmed telephone **+55 (37) 98805-2023**, seller range **1,001–10,000**, and the
+Data Protection Policy acceptance. The corrected MSL partner profile was successfully
+resubmitted and now shows **Profile Under Review**. App List currently offers no app-creation
+action while that review is pending. On resumption, inspect the current review status first;
+do not resubmit an unchanged pending profile. Continue with a new app only after the console
+permits it. Partner-profile submission is not app creation or Go Live submission.
+
 ## Non-negotiable rules
 
 1. **Do not use or change Escala Shop.** Do not change its domain, IPs, keys, name or status,
@@ -55,7 +64,7 @@ still require the corresponding human input.
 | Legal name                     | Mentalidade Sem Limite Ltda (trade name: MSL)                                |
 | CNPJ                           | 46.419.797/0001-67                                                           |
 | Address                        | Alameda Rio Negro, 503, Sala 2020, Alphaville, Barueri/SP, 06454-000, Brazil |
-| Representative/contact         | Guilherme Mendes Flauzino, Administrator, +55 (37) 8805-2023                 |
+| Representative/contact         | Guilherme Mendes Flauzino, Administrator, +55 (37) 98805-2023                |
 | Contact email                  | Email of the authenticated Open Platform account                             |
 | Profile                        | Third-party Partner Platform (ISV), Brazil                                   |
 | App name                       | Loja Pronta Prime                                                            |
