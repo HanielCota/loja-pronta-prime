@@ -40,6 +40,7 @@ import {
 
 import { publicationOfferFingerprint, type PublicationSelection } from '../publication-selection';
 import { startReadyCloneExperiments } from './clone-observation';
+import { publicationObservationStart } from '../publication-observation';
 
 type Job = typeof assistantJobs.$inferSelect;
 const COLLECTION_INTERVAL_MS = 6 * 60 * 60 * 1000;
@@ -586,7 +587,26 @@ export async function evaluatePublicationBatch(userId: string, batchId: string, 
       ),
     )
     .orderBy(asc(shopeeCollectionRuns.startedAt));
-  const first = runs[0];
+  const snapshots = runs.length
+    ? await db
+        .select()
+        .from(shopeeMetricSnapshots)
+        .where(
+          inArray(
+            shopeeMetricSnapshots.runId,
+            runs.map((run) => run.id),
+          ),
+        )
+    : [];
+  const byRunAndItem = new Map(snapshots.map((row) => [`${row.runId}:${row.itemId}`, row]));
+  const samples = runs.map((run) =>
+    items.map((item) => {
+      const snapshot = byRunAndItem.get(`${run.id}:${item.itemId}`);
+      return snapshot ? { ...snapshot, collectedAt: run.startedAt.toISOString() } : undefined;
+    }),
+  );
+  const start = publicationObservationStart(samples);
+  const first = runs[start];
   const last = runs.at(-1);
   let analysis: BatchAnalysis = {
     status: 'insufficient',
@@ -596,25 +616,9 @@ export async function evaluatePublicationBatch(userId: string, batchId: string, 
     runIds: [],
   };
   if (first && last && last.startedAt.getTime() - first.startedAt.getTime() >= 5 * DAY_MS) {
-    const snapshots = await db
-      .select()
-      .from(shopeeMetricSnapshots)
-      .where(
-        inArray(
-          shopeeMetricSnapshots.runId,
-          runs.map((run) => run.id),
-        ),
-      );
-    const windows = items.map((item) => {
-      return observationSeries(
-        runs.map((run) => {
-          const snapshot = snapshots.find(
-            (row) => row.runId === run.id && row.itemId === item.itemId,
-          );
-          return snapshot ? { ...snapshot, collectedAt: run.startedAt.toISOString() } : undefined;
-        }),
-      );
-    });
+    const windows = items.map((_, index) =>
+      observationSeries(samples.slice(start).map((sample) => sample[index])),
+    );
     if (windows.every((window) => window && window.views !== null && window.categoryId !== null)) {
       const observed = windows.map((window) => ({
         itemId: window!.itemId,

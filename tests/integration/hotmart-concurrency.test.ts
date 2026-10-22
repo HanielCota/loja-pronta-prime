@@ -44,14 +44,14 @@ afterAll(async () => {
   await pool.end();
 });
 
-test('um aviso em andamento não desfaz a revogação manual da mesma compra', async () => {
+test('an in-flight event cannot undo a manual area revocation', async () => {
   const time = Date.now();
   await processHotmartEvent(event(time));
   const blocker = await pool.connect();
   let incoming: Promise<string> | undefined;
   try {
     await blocker.query('begin');
-    // A ação administrativa usa esta trava antes de encerrar compras e remover o acesso.
+    // The administrative action holds this lock while excluding an area and removing access.
     await blocker.query('select pg_advisory_xact_lock(hashtext($1))', [userId]);
     await blocker.query(
       'select transaction from hotmart_purchases where transaction=$1 for update',
@@ -72,18 +72,19 @@ test('um aviso em andamento não desfaz a revogação manual da mesma compra', a
       await Bun.sleep(20);
     }
     expect(waiting).toBe(true);
-    await blocker.query('update hotmart_purchases set active=false where transaction=$1', [
-      transaction,
-    ]);
+    await blocker.query(
+      "insert into hotmart_purchase_access_revocations (transaction,product) values ($1,'sll')",
+      [transaction],
+    );
     await blocker.query("delete from student_products where user_id=$1 and product='sll'", [
       userId,
     ]);
     await blocker.query('commit');
-    expect(await incoming).toBe('Aviso antigo; acesso mantido.');
+    expect(await incoming).toBe('Compra aprovada; acesso liberado.');
     expect(
       (await pool.query('select active from hotmart_purchases where transaction=$1', [transaction]))
         .rows[0]?.active,
-    ).toBe(false);
+    ).toBe(true);
     expect(
       (await pool.query('select 1 from student_products where user_id=$1', [userId])).rowCount,
     ).toBe(0);

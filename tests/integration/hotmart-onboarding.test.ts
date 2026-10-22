@@ -24,6 +24,15 @@ const database = {
     hotmartProductMappings: { findMany: async () => [{ access: 'sll', productUcode: 'course' }] },
     manualProductGrants: { findFirst: async () => undefined },
   },
+  select: () => ({
+    from: () => ({
+      innerJoin: () => ({
+        leftJoin: () => ({
+          where: () => ({ limit: async () => [{ transaction: 'purchase' }] }),
+        }),
+      }),
+    }),
+  }),
   execute: async () => {},
   insert: () => write,
   transaction: async (run: (tx: unknown) => Promise<unknown>) => run(database),

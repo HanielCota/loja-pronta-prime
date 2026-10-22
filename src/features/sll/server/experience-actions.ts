@@ -1,11 +1,12 @@
 'use server';
 
-import { eq, sql } from 'drizzle-orm';
+import { asc, eq, and, isNotNull, sql } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/server/db';
 import {
   hotmartProductMappings,
+  hotmartPurchases,
   learningContentBlocks,
   learningVideoVariants,
   studentExperiences,
@@ -16,6 +17,8 @@ import { requireProductAction } from '@/features/products/server/access';
 import { requireAdmin } from '@/features/admin/server/access';
 import { revalidateSllContent } from './content-cache';
 import { getStudentExperience } from './experience';
+import { reconcileProductAccess } from '@/features/hotmart/server/product-access';
+import { revalidateAdminOverview } from '@/features/admin/server/overview-cache';
 import { pandaVideoId } from '../panda-video';
 import { isProgressId } from '../progress-rules';
 
@@ -67,8 +70,27 @@ export async function saveExpertOffer(form: FormData): Promise<void> {
         target: [hotmartProductMappings.productUcode, hotmartProductMappings.access],
         set: { expert },
       });
+    // Reconcile existing buyers atomically with the new mapping; event replay stays idempotent.
+    const buyers = await tx
+      .selectDistinct({ userId: hotmartPurchases.userId })
+      .from(hotmartPurchases)
+      .where(
+        and(
+          eq(hotmartPurchases.productUcode, code),
+          eq(hotmartPurchases.active, true),
+          isNotNull(hotmartPurchases.userId),
+        ),
+      )
+      .orderBy(asc(hotmartPurchases.userId));
+    for (const { userId } of buyers) {
+      if (!userId) continue;
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);
+      await reconcileProductAccess(tx, userId, access);
+    }
     return true;
   });
+  revalidateAdminOverview();
+  revalidatePath('/', 'layout');
   revalidatePath('/admin/experts');
   redirect(`/admin/experts?resultado=${outcome ? 'saved' : 'offer-used'}`);
 }
