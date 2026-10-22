@@ -28,7 +28,16 @@ const purchaseEvent = z.object({
     }),
     purchase: z.object({
       transaction: identifier,
-      order_date: z.number().int().positive().max(253_402_300_799_999).optional(),
+      order_date: z
+        .union([
+          z.number(),
+          z
+            .string()
+            .regex(/^\d{1,15}$/)
+            .transform(Number),
+        ])
+        .pipe(z.number().int().positive().max(253_402_300_799_999))
+        .optional(),
     }),
   }),
 });

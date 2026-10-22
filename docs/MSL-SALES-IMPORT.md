@@ -101,7 +101,8 @@ on each request. Membership cache rows cannot extend access. The same condition 
 pages, actions, protected materials, assistant jobs, OAuth callbacks and administrator account
 listings. A manual grant remains an explicit administrative override.
 
-New Hotmart notifications use `data.purchase.order_date`, not notification arrival time. Missing
+New Hotmart notifications use `data.purchase.order_date`, not notification arrival time. Both
+numeric and numeric-string timestamps are accepted, matching the [official purchase webhook examples](https://developers.hotmart.com/docs/en/2.0.0/webhook/purchase-webhook/). Missing
 dates remain pending, and a corrected notification can supply the original date. Later completion
 events cannot extend an existing term. Refunds for imported transactions disable the historical
 purchase without removing another valid purchase or a manual grant. Administrative SLL removal
