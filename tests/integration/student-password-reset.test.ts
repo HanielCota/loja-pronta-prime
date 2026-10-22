@@ -9,7 +9,11 @@ import { account, session, user, verification } from '@/server/db/schema';
 
 const users: string[] = [];
 afterAll(async () => {
-  if (users.length) await db.delete(user).where(inArray(user.id, users));
+  if (users.length) {
+    // Os links de troca de senha não apontam para a conta por chave estrangeira.
+    await db.delete(verification).where(inArray(verification.value, users));
+    await db.delete(user).where(inArray(user.id, users));
+  }
   await db.$client.end();
 });
 
@@ -75,6 +79,13 @@ test('conta de admin não muda', async () => {
   expect(await resetStudentToInitialPassword(id)).toBe('not_student');
   expect(await initialPasswordWorks(id)).toBe(false);
   expect(await db.select().from(session).where(eq(session.userId, id))).toHaveLength(1);
+  expect(await db.select().from(verification).where(eq(verification.value, id))).toHaveLength(1);
+});
+
+test('conta com função personalizada não muda', async () => {
+  const id = await fixture({ role: 'suporte' });
+  expect(await resetStudentToInitialPassword(id)).toBe('not_student');
+  expect(await initialPasswordWorks(id)).toBe(false);
 });
 
 test('conta que não existe', async () => {

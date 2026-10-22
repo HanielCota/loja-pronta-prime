@@ -12,7 +12,7 @@ import {
   AccountSessionsForm,
 } from '@/features/admin/components/account-forms';
 import { ProductAccessManager } from '@/features/admin/components/product-access-manager';
-import { hasAdminRole } from '@/features/admin/access';
+import { hasAdminRole, isStudentRole } from '@/features/admin/access';
 import { productLabel } from '@/features/admin/account-labels';
 import { requireAdmin } from '@/features/admin/server/access';
 import { getAccount } from '@/features/admin/server/accounts';
@@ -178,12 +178,14 @@ export default async function AdminAccountPage({
                   Acesso à plataforma
                 </h2>
                 <p className="mt-2 text-body text-muted-foreground">
-                  Se ela não consegue entrar, volte para a senha inicial ({DEFAULT_STUDENT_PASSWORD}
-                  ). Bloquear desconecta a conta e impede que ela entre de novo até ser
-                  desbloqueada.
+                  {isStudentRole(account.role)
+                    ? `Se ela não consegue entrar, volte para a senha inicial (${DEFAULT_STUDENT_PASSWORD}). `
+                    : null}
+                  Bloquear desconecta a conta e impede que ela entre de novo até ser desbloqueada.
                 </p>
               </div>
-              {hasAdminRole(account.role) ? null : <AccountPasswordResetForm id={account.id} />}
+              {/* Mesma regra do servidor: só aluna volta para a senha inicial. */}
+              {isStudentRole(account.role) ? <AccountPasswordResetForm id={account.id} /> : null}
               <AccountSessionsForm id={account.id} />
               <AccountBlockForm blocked={account.banned ?? false} id={account.id} />
             </section>

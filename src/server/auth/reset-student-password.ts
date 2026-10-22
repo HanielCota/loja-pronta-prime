@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, like } from 'drizzle-orm';
 import { hashPassword } from 'better-auth/crypto';
+import { isStudentRole } from '@/features/admin/access';
 import { db } from '@/server/db';
 import { account, session, user, verification } from '@/server/db/schema';
 import { DEFAULT_STUDENT_PASSWORD } from './student-password';
@@ -24,7 +25,7 @@ export async function resetStudentToInitialPassword(
       .where(eq(user.id, userId))
       .for('update');
     if (!target) return 'missing';
-    if ((target.role ?? 'user') !== 'user') return 'not_student';
+    if (!isStudentRole(target.role)) return 'not_student';
 
     const updated = await tx
       .update(account)
