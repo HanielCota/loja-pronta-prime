@@ -13,6 +13,10 @@ const database = drizzle(pool, { schema });
 mock.module('@/server/db', () => ({ db: database }));
 mock.module('@/features/admin/server/access', () => ({
   requireAdmin: async () => ({ user: { id: randomUUID() } }),
+  requireStaff: async () => ({
+    user: { id: randomUUID(), role: 'admin' },
+    staff: 'admin' as const,
+  }),
 }));
 mock.module('next/cache', () => ({
   revalidatePath: () => {},
