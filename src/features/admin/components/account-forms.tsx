@@ -1,6 +1,6 @@
 'use client';
 
-import { LockKeyhole, LockKeyholeOpen, LogOut, Save } from 'lucide-react';
+import { KeyRound, LockKeyhole, LockKeyholeOpen, LogOut, Save } from 'lucide-react';
 
 import { useActionState, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
 import {
   endAccountSessionsForm as endAccountSessions,
+  resetStudentPasswordForm as resetStudentPassword,
   saveAccountForm as saveAccount,
   setAccountBlockedForm as setAccountBlocked,
   type AccountActionState,
@@ -163,6 +164,21 @@ export function AccountSessionsForm({ id }: { id: string }) {
       <Button disabled={pending} loading={pending} type="submit" variant="soft">
         <LogOut aria-hidden="true" data-icon="inline-start" />
         Desconectar de todos os aparelhos
+      </Button>
+      <Result state={state} />
+    </form>
+  );
+}
+
+export function AccountPasswordResetForm({ id }: { id: string }) {
+  const [state, formAction, pending] = useActionState(resetStudentPassword, initialState);
+
+  return (
+    <form noValidate action={formAction} className="flex flex-col gap-4">
+      <input name="id" type="hidden" value={id} />
+      <Button disabled={pending} loading={pending} type="submit" variant="soft">
+        <KeyRound aria-hidden="true" data-icon="inline-start" />
+        Voltar para a senha inicial
       </Button>
       <Result state={state} />
     </form>

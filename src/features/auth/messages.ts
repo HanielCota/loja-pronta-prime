@@ -32,7 +32,7 @@ type AuthMessage = {
 export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, AuthMessage> = {
   invalid_credentials: {
     title: 'Email ou senha incorretos',
-    hint: 'Confira o email usado na compra e a senha que você recebeu para acessar. Se já trocou a senha, use a nova ou redefina abaixo.',
+    hint: 'Confira o email usado na compra. A senha do site antigo não vale aqui. Se a senha que você recebeu não entrar, toque em "Redefinir minha senha" para criar uma nova.',
   },
   email_not_confirmed: {
     title: 'Confirme seu email primeiro',

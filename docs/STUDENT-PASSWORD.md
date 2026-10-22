@@ -4,6 +4,12 @@ New Hotmart student accounts use `loja1234` and have a verified email. No passwo
 
 The shared initial password allows anyone who knows a student's email to attempt access until the student replaces it. Distribute access instructions directly to students.
 
+## One student cannot sign in
+
+On the account page in the admin panel, **Voltar para a senha inicial** sets that student's password back to `loja1234`. It applies only to accounts with the `user` role or no role, verifies the email, disables the mandatory password change, and revokes sessions and outstanding password reset links in one transaction (`src/server/auth/reset-student-password.ts`).
+
+Passwords from the previous delivery system were never imported: that system had no login accounts. Accounts that existed here before the legacy import keep the password they already had, which for older Hotmart accounts is a random one. Use this button, or the student's own **Redefinir minha senha** link, in those cases. If the email is not found at all, the account does not exist yet; check the purchase email before creating one.
+
 ## Existing accounts
 
 Use the maintenance script against the intended database. It previews the number of eligible accounts by default; it does not print student emails or password hashes.
