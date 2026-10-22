@@ -2,11 +2,15 @@
 
 Prepared for the Shopee Open Platform review team. **Unsigned draft for representative review.**
 
-**Execution status, 22 October 2026:** the partner profile is rejected and its registered
-company details do not match the supplied MSL documents. Registration was stopped under the
-owner's runbook. No new Loja Pronta Prime app has been created or submitted. The reviewer
-account signs in successfully, but its connection page shows a preparation notice without
-an authorization button. This document is not evidence of new-app approval or sandbox testing.
+**Execution status, 22 October 2026:** the partner profile is rejected. The owner confirmed
+that its existing CNPJ belongs to the same business with outdated registration details and
+authorized correction. Updated legal name, address, representative and reviewer access are
+prepared in the form draft, and the CNPJ certificate and articles of association were uploaded.
+The profile has not been resubmitted: required telephone validation, seller-count confirmation
+and action-time policy acceptance are pending. No new Loja Pronta Prime app has been created
+or submitted. The reviewer account signs in successfully, but its connection page shows a
+preparation notice without an authorization button. This document is not evidence of new-app
+approval or sandbox testing.
 
 Implementation descriptions below refer to existing repository code. Infrastructure checks
 reported for 22 October come from the preparatory notes and were not rerun in this execution.

@@ -21,6 +21,18 @@ approval. Re-run this workflow for Phase B after the new app is Online.
 - Company documents in `/run/media/haniel/Developer/MSL/`: CNPJ certificate, articles of
   association, partner documents, driver's license and identity card.
 
+## Owner clarification on 22 October 2026
+
+The owner confirmed that the current CNPJ identifies the same business and that the old
+company name, address and contact are outdated. Correcting this existing profile from the MSL
+documents is explicitly authorized. This resolves the earlier identity-mismatch blocker;
+do not treat the old legal name alone as proof of another company. Keep Escala Shop untouched.
+
+Use **MENTALIDADE SEM LIMITE LTDA** for the legal company name, **MSL** for its trade name,
+and **Loja Pronta Prime** for the product and new app name. Do not substitute the product name
+for the legal company name. Missing required information and browser action-time confirmations
+still require the corresponding human input.
+
 ## Non-negotiable rules
 
 1. **Do not use or change Escala Shop.** Do not change its domain, IPs, keys, name or status,

@@ -21,6 +21,8 @@ const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><style>
   pre { background: #f4f4f4; padding: 8pt; font-size: 8.5pt; overflow: hidden; }
   pre code { background: none; }
   h2, table, pre { break-inside: avoid; }
+  h2 { break-after: avoid; }
+  p { orphans: 3; widows: 3; }
 </style></head><body>${body}</body></html>`;
 
 // Prefer the project Chromium version, falling back to an installed headless shell.

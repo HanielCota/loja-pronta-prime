@@ -3,13 +3,22 @@
 Prepared on 22 October 2026 for **Loja Pronta Prime**, operated by Mentalidade Sem Limite Ltda
 (trade name: MSL). This package concerns a **new app**, separate from Escala Shop.
 
-## Execution status: blocked before submission
+## Execution status: corrected draft awaiting required information
 
 The authenticated console was inspected on 22 October 2026. Its Third-party enterprise profile
-shows **Verification failed**. The registered legal name, address and contact differ from the
-MSL documents, although the registration number matches. The runbook explicitly prohibits
-changing a profile registered to another company. The owner must resolve this identity
-mismatch with Shopee before the profile can be resubmitted.
+shows **Verification failed**. The owner subsequently confirmed that the existing registration
+number identifies the same business and that its legal name, address and contact are outdated.
+The owner explicitly authorized correcting those details from the MSL documents.
+
+The form draft now identifies **MENTALIDADE SEM LIMITE LTDA** (trade name **MSL**) as the legal
+entity and **Loja Pronta Prime** as the product. The address and representative were corrected,
+and a combined CNPJ certificate and articles of association was uploaded successfully.
+**These are draft edits; the profile has not been resubmitted.**
+
+The form rejects the supplied telephone number. The existing seller-count range is unverified.
+The owner was asked for the current contact number and supported seller range, together with
+action-time confirmation of the Data Protection Policy acceptance included in submission.
+No replacement digits or seller figures have been invented.
 
 Shopee's rejection says the test account does not provide enough information for validation
 and requires a functional environment with active integrations. It also says products without
@@ -121,8 +130,8 @@ records the company's intended commitments; the legal representative must review
 
 ## Resuming safely
 
-Resolve the company identity mismatch and functional integration evidence first. Resume the
-runbook using the correctly registered MSL profile. Record status and errors privately, and
+Complete the required telephone and seller-count information, confirm the policy acceptance,
+and resolve functional integration evidence first. Resume the runbook using the corrected MSL profile. Record status and errors privately, and
 verify actual submission in the console. Run Phase B only when the new app is Online; it
 requires a database backup, preservation of the existing token encryption key, credentials
 from the new app and a pilot limited to explicitly authorized test accounts.
