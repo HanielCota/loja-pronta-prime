@@ -8,6 +8,7 @@ import { AdminShell } from '@/features/admin/components/admin-shell';
 import {
   AccountBlockForm,
   AccountDetailsForm,
+  AccountPasswordResetForm,
   AccountSessionsForm,
 } from '@/features/admin/components/account-forms';
 import { ProductAccessManager } from '@/features/admin/components/product-access-manager';
@@ -16,6 +17,7 @@ import { productLabel } from '@/features/admin/account-labels';
 import { requireAdmin } from '@/features/admin/server/access';
 import { getAccount } from '@/features/admin/server/accounts';
 import { RESET_LINK_TTL_HOURS } from '@/config/auth';
+import { DEFAULT_STUDENT_PASSWORD } from '@/server/auth/student-password';
 import { getLastPresence } from '@/features/admin/server/online';
 import { deviceDetails } from '@/features/presence/device';
 import { formatLastSeen, isOnline } from '@/features/presence/presence';
@@ -176,9 +178,12 @@ export default async function AdminAccountPage({
                   Acesso à plataforma
                 </h2>
                 <p className="mt-2 text-body text-muted-foreground">
-                  Bloquear desconecta a conta e impede que ela entre de novo até ser desbloqueada.
+                  Se ela não consegue entrar, volte para a senha inicial ({DEFAULT_STUDENT_PASSWORD}
+                  ). Bloquear desconecta a conta e impede que ela entre de novo até ser
+                  desbloqueada.
                 </p>
               </div>
+              {hasAdminRole(account.role) ? null : <AccountPasswordResetForm id={account.id} />}
               <AccountSessionsForm id={account.id} />
               <AccountBlockForm blocked={account.banned ?? false} id={account.id} />
             </section>

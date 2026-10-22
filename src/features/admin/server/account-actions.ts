@@ -9,6 +9,8 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/server/auth/auth';
 import { reportAuthError } from '@/server/auth/report-error';
 import { db } from '@/server/db';
+import { resetStudentToInitialPassword } from '@/server/auth/reset-student-password';
+import { DEFAULT_STUDENT_PASSWORD } from '@/server/auth/student-password';
 import {
   manualProductGrants,
   productAccessEvents,
@@ -234,5 +236,26 @@ export async function endAccountSessions(
       ? 'Sessões encerradas. A pessoa vai precisar entrar de novo.'
       : 'Essa conta não tinha nenhuma sessão aberta.',
     saved: removed.length > 0,
+  };
+}
+
+/** Volta a senha da aluna para a senha inicial, para quem não consegue entrar. */
+export async function resetStudentPassword(
+  _previous: AccountActionState,
+  data: FormData,
+): Promise<AccountActionState> {
+  const id = accountId(data);
+  await requireAdmin(id ? `/admin/contas/${id}` : '/admin/contas');
+  if (!id) return { message: 'Conta não encontrada.', saved: false };
+
+  const result = await resetStudentToInitialPassword(id);
+  if (result === 'missing') return { message: 'Essa conta não existe mais.', saved: false };
+  if (result === 'not_student') {
+    return { message: 'Só contas de aluna podem voltar para a senha inicial.', saved: false };
+  }
+  refresh(id);
+  return {
+    message: `Pronto. Ela já pode entrar com o email dela e a senha ${DEFAULT_STUDENT_PASSWORD}.`,
+    saved: true,
   };
 }

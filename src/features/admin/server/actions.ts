@@ -58,6 +58,7 @@ import { runSllCopyAction, saveSllCopy } from './copy-actions';
 import {
   createAccount,
   endAccountSessions,
+  resetStudentPassword,
   saveAccount,
   setAccountBlocked,
   type AccountActionState,
@@ -754,6 +755,10 @@ export async function setAccountBlockedForm(previous: AccountActionState, data: 
 
 export async function endAccountSessionsForm(previous: AccountActionState, data: FormData) {
   return endAccountSessions(previous, data);
+}
+
+export async function resetStudentPasswordForm(previous: AccountActionState, data: FormData) {
+  return resetStudentPassword(previous, data);
 }
 
 /** Quantas pessoas estão online agora (o número ao lado de "Online agora" no menu). */
