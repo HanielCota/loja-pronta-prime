@@ -409,3 +409,7 @@ are excluded on the server from presence lists, counts, and account activity det
 ### Brand publication and banner kit (October 22, 2026)
 
 The banner kit uses `AreaShell`, `panelCard`, `Button`, `FloatingLabelInput` and `Select`, with the existing tokens, typography and responsive layout. Draft editing, preview/approval and Seller Centre instructions are separate cards. Exported PNG artwork has its own palettes; those colors never style the application interface. Previews show the actual protected PNG files and identify the exported dimensions without claiming an exact Shopee layout. Approval reveals downloads, while edits or a changed brand require a new preview and approval. The existing brand review explains automatic publication authorization and requires confirmation again after an edit.
+
+### Support contact (October 22, 2026)
+
+The shared account menu includes a WhatsApp support link for both member areas. The profile also provides a support card with the configured number, using the existing `panelCard`, `Button`, typography and theme tokens. External links announce that they open a new tab. Existing store-waiting and email-change links use the same configured contact.

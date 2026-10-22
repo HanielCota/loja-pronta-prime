@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDownIcon, LogOutIcon, UserRoundIcon } from 'lucide-react';
+import { ChevronDownIcon, LogOutIcon, MessageCircleIcon, UserRoundIcon } from 'lucide-react';
 import Link from 'next/link';
 import { DropdownMenu, Tooltip } from 'radix-ui';
 import { useRef, type ReactNode } from 'react';
@@ -8,6 +8,8 @@ import { useFormStatus } from 'react-dom';
 import { Avatar } from '@/components/ui/avatar';
 import { Spinner } from '@/components/ui/spinner';
 import { signOut } from '@/features/auth/server/sign-out';
+import { TEAM_WHATSAPP } from '@/config/support';
+import { whatsappLink } from '@/features/loja-pronta/whatsapp';
 import { cn } from '@/lib/utils';
 
 const itemClass =
@@ -112,6 +114,23 @@ export function AccountMenu({
           </DropdownMenu.Item>
 
           <DropdownMenu.Separator className="mx-3 my-1 h-px bg-border" />
+
+          {TEAM_WHATSAPP ? (
+            <DropdownMenu.Item asChild className={itemClass}>
+              <a
+                href={whatsappLink(
+                  TEAM_WHATSAPP,
+                  'Oi! Sou aluna da Loja Pronta Prime e preciso de ajuda.',
+                )}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <MessageCircleIcon aria-hidden="true" className="size-5 text-muted-foreground" />
+                Suporte no WhatsApp
+                <span className="sr-only"> (abre em outra aba)</span>
+              </a>
+            </DropdownMenu.Item>
+          ) : null}
 
           {/* Formulário de verdade, como o sair das outras telas. O menu fica aberto enquanto sai,
               pra o "Saindo…" ter onde aparecer. */}
