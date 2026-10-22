@@ -428,6 +428,13 @@
       "when": 1792627202382,
       "tag": "0060_hide-student-presence",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1792632216288,
+      "tag": "0061_purchase-area-revocations",
+      "breakpoints": true
     }
   ]
 }

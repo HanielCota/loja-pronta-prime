@@ -1,6 +1,6 @@
 'use server';
 
-import { and, eq, gte, inArray, isNull, sql } from 'drizzle-orm';
+import { and, eq, gte, isNull, sql } from 'drizzle-orm';
 import { desc } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
@@ -22,6 +22,7 @@ import {
   learningLessons,
   hotmartProductMappings,
   hotmartPurchases,
+  hotmartPurchaseAccessRevocations,
   productAccessEvents,
   manualProductGrants,
   studentProducts,
@@ -108,6 +109,9 @@ export async function changeStudentProductAccess(
   const outcome = await db.transaction(
     async (tx): Promise<'changed' | 'purchase' | 'unchanged'> => {
       let result: 'changed' | 'purchase' = 'changed';
+      await tx.execute(
+        sql`select pg_advisory_xact_lock_shared(hashtext('hotmart-product-mappings'))`,
+      );
       // Mesma trava do aviso da Hotmart, para os dois não recalcularem o acesso ao mesmo tempo.
       await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${target.id}))`);
       if (action === 'granted') {
@@ -139,26 +143,23 @@ export async function changeStudentProductAccess(
               eq(manualProductGrants.product, product),
             ),
           );
-        // Encerra as compras da Hotmart que davam este acesso. Sem isso, um aviso seguinte da
-        // mesma compra (como o fim da garantia) liberaria o acesso de novo.
-        const mappedCodes = await tx.query.hotmartProductMappings.findMany({
-          columns: { productUcode: true },
-          where: eq(hotmartProductMappings.access, product),
-        });
-        if (mappedCodes.length)
+        // Preserve the paid transaction and exclude only the selected area from its grants.
+        const purchases = await tx
+          .select({ transaction: hotmartPurchases.transaction })
+          .from(hotmartPurchases)
+          .innerJoin(
+            hotmartProductMappings,
+            and(
+              eq(hotmartProductMappings.productUcode, hotmartPurchases.productUcode),
+              eq(hotmartProductMappings.access, product),
+            ),
+          )
+          .where(and(eq(hotmartPurchases.userId, target.id), eq(hotmartPurchases.active, true)));
+        if (purchases.length)
           await tx
-            .update(hotmartPurchases)
-            .set({ active: false, updatedAt: new Date() })
-            .where(
-              and(
-                eq(hotmartPurchases.userId, target.id),
-                eq(hotmartPurchases.active, true),
-                inArray(
-                  hotmartPurchases.productUcode,
-                  mappedCodes.map((item) => item.productUcode),
-                ),
-              ),
-            );
+            .insert(hotmartPurchaseAccessRevocations)
+            .values(purchases.map(({ transaction }) => ({ transaction, product })))
+            .onConflictDoNothing();
       }
 
       await tx.insert(productAccessEvents).values({

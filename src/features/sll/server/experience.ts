@@ -1,9 +1,10 @@
 import { cache } from 'react';
-import { and, asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '@/server/db';
 import {
   hotmartProductMappings,
   hotmartPurchases,
+  hotmartPurchaseAccessRevocations,
   studentExperiences,
   learningVideoVariants,
   manualProductGrants,
@@ -22,8 +23,16 @@ export const getStudentExperience = cache(async (userId: string) => {
         hotmartProductMappings,
         eq(hotmartPurchases.productUcode, hotmartProductMappings.productUcode),
       )
+      .leftJoin(
+        hotmartPurchaseAccessRevocations,
+        and(
+          eq(hotmartPurchaseAccessRevocations.transaction, hotmartPurchases.transaction),
+          eq(hotmartPurchaseAccessRevocations.product, 'sll'),
+        ),
+      )
       .where(
         and(
+          isNull(hotmartPurchaseAccessRevocations.transaction),
           eq(hotmartPurchases.userId, userId),
           eq(hotmartPurchases.active, true),
           eq(hotmartProductMappings.access, 'sll'),

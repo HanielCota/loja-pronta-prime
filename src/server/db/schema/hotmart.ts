@@ -63,3 +63,15 @@ export const manualProductGrants = pgTable(
   },
   (table) => [primaryKey({ columns: [table.userId, table.product] })],
 );
+
+/** Administrative exclusions apply to one area of a purchase, never to the payment itself. */
+export const hotmartPurchaseAccessRevocations = pgTable(
+  'hotmart_purchase_access_revocations',
+  {
+    transaction: text('transaction')
+      .notNull()
+      .references(() => hotmartPurchases.transaction, { onDelete: 'cascade' }),
+    product: text('product', { enum: ['sll', 'loja-pronta'] }).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.transaction, table.product] })],
+);

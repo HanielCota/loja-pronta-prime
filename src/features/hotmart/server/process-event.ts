@@ -1,17 +1,10 @@
 import { revalidateAdminOverview } from '@/features/admin/server/overview-cache';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { auth } from '@/server/auth/auth';
 import { DEFAULT_STUDENT_PASSWORD } from '@/server/auth/student-password';
-import {
-  hotmartEvents,
-  hotmartProductMappings,
-  hotmartPurchases,
-  manualProductGrants,
-  studentProducts,
-  user,
-} from '@/server/db/schema';
-import type { ProductId } from '@/config/products';
+import { hotmartEvents, hotmartProductMappings, hotmartPurchases, user } from '@/server/db/schema';
+import { reconcileProductAccess } from './product-access';
 import {
   purchaseEffect,
   shouldApplyEvent,
@@ -161,43 +154,7 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
             });
           if (linkedUserId) {
             for (const { access } of mapping) {
-              const mappedCodes = await tx.query.hotmartProductMappings.findMany({
-                columns: { productUcode: true },
-                where: eq(hotmartProductMappings.access, access),
-              });
-              const activePurchases = await tx.query.hotmartPurchases.findMany({
-                columns: { transaction: true },
-                where: and(
-                  eq(hotmartPurchases.userId, linkedUserId),
-                  eq(hotmartPurchases.active, true),
-                  inArray(
-                    hotmartPurchases.productUcode,
-                    mappedCodes.map((item) => item.productUcode),
-                  ),
-                ),
-              });
-              const manual = await tx.query.manualProductGrants.findFirst({
-                columns: { userId: true },
-                where: and(
-                  eq(manualProductGrants.userId, linkedUserId),
-                  eq(manualProductGrants.product, access),
-                ),
-              });
-              if (activePurchases.length || manual) {
-                await tx
-                  .insert(studentProducts)
-                  .values({ userId: linkedUserId, product: access as ProductId })
-                  .onConflictDoNothing();
-              } else {
-                await tx
-                  .delete(studentProducts)
-                  .where(
-                    and(
-                      eq(studentProducts.userId, linkedUserId),
-                      eq(studentProducts.product, access),
-                    ),
-                  );
-              }
+              await reconcileProductAccess(tx, linkedUserId, access);
             }
           }
           result = active
