@@ -63,4 +63,23 @@ describe('chooseSllNextStep', () => {
     ];
     expect(chooseSllNextStep(steps, null)).toBeNull();
   });
+
+  test('link vazio conta como em breve e não esconde o passo seguinte', () => {
+    const steps: SllPathStepInput[] = [
+      { id: 'welcome', href: '' },
+      { id: 'method', href: '' },
+      { id: 'courses', href: '/sll/cursos' },
+    ];
+    expect(chooseSllNextStep(steps, { completed: 6, total: 6 })).toEqual({
+      id: 'courses',
+      href: '/sll/cursos',
+      mode: 'open',
+    });
+  });
+
+  test('progresso inválido não conclui as boas-vindas e manda começar', () => {
+    expect(chooseSllNextStep(allOpen, { completed: Number.NaN, total: 6 })?.mode).toBe('start');
+    expect(chooseSllNextStep(allOpen, { completed: -1, total: 6 })?.mode).toBe('start');
+    expect(chooseSllNextStep(allOpen, { completed: 6, total: Number.NaN })?.id).toBe('welcome');
+  });
 });

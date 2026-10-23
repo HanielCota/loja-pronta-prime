@@ -18,15 +18,30 @@ export type SllNextStep = {
   mode: 'start' | 'continue' | 'review' | 'open';
 };
 
+type OpenSllPathStep = SllPathStepInput & { href: string };
+
+// Passo sem link (null ou vazio) é "em breve": nunca vira destaque.
+function isOpen(step: SllPathStepInput | undefined): step is OpenSllPathStep {
+  return Boolean(step?.href);
+}
+
+// Contagem quebrada (NaN, negativa) vale como zero: melhor mandar começar do que travar.
+function safeCount(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  if (value < 0) return 0;
+  return value;
+}
+
 function isWelcomeDone(progress: SllWelcomeProgress | null): boolean {
   if (!progress) return false;
-  if (progress.total === 0) return false;
-  return progress.completed >= progress.total;
+  const total = safeCount(progress.total);
+  if (total === 0) return false;
+  return safeCount(progress.completed) >= total;
 }
 
 function welcomeMode(progress: SllWelcomeProgress | null): SllNextStep['mode'] {
   if (!progress) return 'start';
-  if (progress.completed === 0) return 'start';
+  if (safeCount(progress.completed) === 0) return 'start';
   return 'continue';
 }
 
@@ -41,14 +56,14 @@ export function chooseSllNextStep(
   const welcome = steps.find((step) => step.id === 'welcome');
   const welcomeDone = isWelcomeDone(welcomeProgress);
 
-  if (welcome?.href && !welcomeDone) {
+  if (isOpen(welcome) && !welcomeDone) {
     return { id: 'welcome', href: welcome.href, mode: welcomeMode(welcomeProgress) };
   }
 
-  const nextOpen = steps.find((step) => step.id !== 'welcome' && step.href !== null);
-  if (nextOpen?.href) return { id: nextOpen.id, href: nextOpen.href, mode: 'open' };
+  const nextOpen = steps.find((step) => step.id !== 'welcome' && isOpen(step));
+  if (isOpen(nextOpen)) return { id: nextOpen.id, href: nextOpen.href, mode: 'open' };
 
-  if (welcome?.href) return { id: 'welcome', href: welcome.href, mode: 'review' };
+  if (isOpen(welcome)) return { id: 'welcome', href: welcome.href, mode: 'review' };
 
   return null;
 }
