@@ -17,7 +17,7 @@ const purchaseEvent = z.object({
   creation_date: z.number().int().positive().max(253_402_300_799_999),
   version: z.string().startsWith('2.').max(20),
   data: z.object({
-    product: z.object({ ucode: identifier, id: z.number().int().positive().optional() }),
+    product: z.object({ ucode: identifier, id: z.number().int().positive().safe().optional() }),
     buyer: z.object({
       email: z.email().max(254),
       // O nome vem do que a compradora digitou no checkout: uma quebra de linha colada ali não
@@ -79,11 +79,13 @@ export function shouldApplyEvent(
  * conta de antes. Produto diferente é estranho demais para mexer em acesso.
  */
 export function transactionMismatch(
-  current: { buyerEmail: string; productUcode: string } | undefined,
-  next: { buyerEmail: string; productUcode: string },
+  current:
+    { buyerEmail: string; productUcode: string; productId?: number | null | undefined } | undefined,
+  next: { buyerEmail: string; productUcode: string; productId?: number | null | undefined },
 ): 'product' | 'email' | null {
   if (!current) return null;
   if (current.productUcode !== next.productUcode) return 'product';
+  if (current.productId && next.productId && current.productId !== next.productId) return 'product';
   if (current.buyerEmail !== next.buyerEmail) return 'email';
   return null;
 }

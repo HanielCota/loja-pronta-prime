@@ -7,6 +7,7 @@ import { purchaseExpiresAt } from '@/features/products/access-term';
 import { historicalSllPurchases } from '@/server/db/schema';
 import { hotmartEvents, hotmartProductMappings, hotmartPurchases, user } from '@/server/db/schema';
 import { reconcileProductAccess } from './product-access';
+import { productIdentityConflict, resolveProductIdentity } from './product-identity';
 import {
   purchaseEffect,
   shouldApplyEvent,
@@ -16,7 +17,9 @@ import {
 
 const missingDateResult = 'Compra sem data original; acesso não liberado.';
 const retryableResult = (result: string) =>
-  result === 'Produto sem acesso configurado.' || result === missingDateResult;
+  result === 'Produto sem acesso configurado.' ||
+  result === missingDateResult ||
+  result === productIdentityConflict;
 
 async function findOrCreateBuyer(email: string, name: string) {
   const existing = await db.query.user.findFirst({
@@ -62,16 +65,30 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
     where: eq(hotmartEvents.id, event.id),
   });
   if (received && !retryableResult(received.result)) return 'Aviso já recebido.';
-  const preliminaryMapping = await db.query.hotmartProductMappings.findMany({
-    where: eq(hotmartProductMappings.productUcode, productUcode),
-  });
+  // Resolve numeric identities before account creation without holding a pooled
+  // transaction connection while better-auth acquires its own connection.
+  const preliminaryMapping =
+    event.data.product.id === undefined
+      ? await db.query.hotmartProductMappings.findMany({
+          where: eq(hotmartProductMappings.productUcode, productUcode),
+        })
+      : await db.transaction(async (tx) => {
+          await tx.execute(
+            sql`select pg_advisory_xact_lock_shared(hashtext('hotmart-product-mappings'))`,
+          );
+          return (await resolveProductIdentity(tx, event.data.product)).mapping;
+        });
 
-  // Leitura prévia, fora do bloqueio, só para não criar conta à toa; a decisão é refeita abaixo.
+  // Revalidate the mapping inside the purchase transaction before granting access.
   const known = await db.query.hotmartPurchases.findFirst({
-    columns: { buyerEmail: true, productUcode: true, userId: true },
+    columns: { buyerEmail: true, productUcode: true, productId: true, userId: true },
     where: eq(hotmartPurchases.transaction, transaction),
   });
-  const knownMismatch = transactionMismatch(known, { buyerEmail: email, productUcode });
+  const knownMismatch = transactionMismatch(known, {
+    buyerEmail: email,
+    productUcode,
+    productId: event.data.product.id,
+  });
   const knownHistorical = await db.query.historicalSllPurchases.findFirst({
     columns: { transaction: true },
     where: eq(historicalSllPurchases.transaction, transaction),
@@ -100,6 +117,7 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
     await tx.execute(
       sql`select pg_advisory_xact_lock_shared(hashtext('hotmart-product-mappings'))`,
     );
+    const { mapping, conflict } = await resolveProductIdentity(tx, event.data.product);
     // Serializa eventos da mesma transação e, depois, a recomputação dos acessos da aluna.
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${transaction}))`);
     const duplicate = await tx.query.hotmartEvents.findFirst({
@@ -112,7 +130,12 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
     });
     if (historical) {
       let result = 'Compra histórica preservada; validade original mantida.';
-      if (event.data.product.id && String(event.data.product.id) !== historical.sourceProductId) {
+      if (conflict) {
+        result = productIdentityConflict;
+      } else if (
+        event.data.product.id &&
+        String(event.data.product.id) !== historical.sourceProductId
+      ) {
         result = 'Transação histórica com outro produto; acesso mantido.';
       } else if (historical.userId) {
         await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${historical.userId}))`);
@@ -139,23 +162,29 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
           transaction,
           buyerEmail: email,
           productUcode,
+          productId: event.data.product.id,
           result,
         })
-        .onConflictDoUpdate({ target: hotmartEvents.id, set: { result, receivedAt: new Date() } });
+        .onConflictDoUpdate({
+          target: hotmartEvents.id,
+          set: { result, productId: event.data.product.id, receivedAt: new Date() },
+        });
       return result;
     }
-    const mapping = await tx.query.hotmartProductMappings.findMany({
-      where: eq(hotmartProductMappings.productUcode, productUcode),
-    });
     let result = 'Aviso sem mudança de acesso.';
-    if (!mapping.length) result = 'Produto sem acesso configurado.';
+    if (conflict) result = productIdentityConflict;
+    else if (!mapping.length) result = 'Produto sem acesso configurado.';
     else if (effect !== 'ignore') {
       let previous = await tx.query.hotmartPurchases.findFirst({
         where: eq(hotmartPurchases.transaction, transaction),
       });
       // Erro aqui faria a Hotmart reenviar para sempre e o reembolso nunca seria aplicado;
       // por isso a diferença fica registrada no histórico em vez de virar falha.
-      const mismatch = transactionMismatch(previous, { buyerEmail: email, productUcode });
+      const mismatch = transactionMismatch(previous, {
+        buyerEmail: email,
+        productUcode,
+        productId: event.data.product.id,
+      });
       const active = effect === 'grant';
       if (mismatch === 'product') {
         result = 'Transação já registrada com outro produto; acesso mantido.';
@@ -173,8 +202,7 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
                 })
               )?.id ??
               null);
-        // O código pode ter sido configurado depois da leitura inicial, que só evita criar
-        // contas sem necessidade. A decisão de conceder usa o mapeamento sob a trava.
+        // Validate the product under the mapping lock before creating an account.
         if (
           !linkedUserId &&
           active &&
@@ -215,6 +243,7 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
               transaction,
               buyerEmail: email,
               productUcode,
+              productId: event.data.product.id,
               expert:
                 mapping.find((item) => item.access === 'sll')?.expert ??
                 mapping[0]?.expert ??
@@ -228,6 +257,7 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
             .onConflictDoUpdate({
               target: hotmartPurchases.transaction,
               set: {
+                productId: event.data.product.id,
                 userId: linkedUserId,
                 active,
                 purchasedAt,
@@ -261,9 +291,13 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
         transaction,
         buyerEmail: email,
         productUcode,
+        productId: event.data.product.id,
         result,
       })
-      .onConflictDoUpdate({ target: hotmartEvents.id, set: { result, receivedAt: new Date() } });
+      .onConflictDoUpdate({
+        target: hotmartEvents.id,
+        set: { result, productId: event.data.product.id, receivedAt: new Date() },
+      });
     return result;
   });
   revalidateAdminOverview();

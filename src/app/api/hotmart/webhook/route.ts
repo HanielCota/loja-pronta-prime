@@ -4,6 +4,7 @@ import { db } from '@/server/db';
 import { hotmartSettings } from '@/server/db/schema';
 import { parseHotmartEvent } from '@/features/hotmart/event';
 import { decryptHottok, verifyHottok } from '@/features/hotmart/server/secret';
+import { productIdentityConflict } from '@/features/hotmart/server/product-identity';
 import { processHotmartEvent } from '@/features/hotmart/server/process-event';
 import { readLimitedBody, RequestBodyTooLargeError } from '@/lib/request-body';
 
@@ -41,7 +42,12 @@ export async function POST(request: Request) {
     const result = await processHotmartEvent(parsed.data);
     return NextResponse.json(
       { result },
-      { status: result === 'Produto sem acesso configurado.' ? 503 : 200 },
+      {
+        status:
+          result === 'Produto sem acesso configurado.' || result === productIdentityConflict
+            ? 503
+            : 200,
+      },
     );
   } catch (error) {
     console.error(
