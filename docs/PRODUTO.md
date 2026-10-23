@@ -49,7 +49,7 @@ A própria aluna monta sua marca e prepara a conta. A interface tem uma decisão
 
 O nome, o logo e o texto ficam salvos antes da conexão para a futura publicação automática. Baixar o logo é opcional, para guardar uma cópia; aplicar a marca manualmente na Shopee não é uma etapa obrigatória da Loja Pronta. A conta de vendedora continua sendo criada pela aluna no site da Shopee. O guia de cadastro tem um espaço de vídeo (`conta-na-shopee`, enviado com `bun run dev:video`), que só aparece depois do envio de um arquivo real e não bloqueia o passo a passo escrito.
 
-A plataforma só registra anúncio publicado após resposta confirmada ou conciliação na Shopee. Não houve piloto de publicação real nesta entrega. O catálogo permanece em preparação sem fornecedor atualizado ou liberação da integração. A marca ainda não é enviada automaticamente. Não há botões que simulam essas operações.
+A plataforma só registra anúncio publicado após resposta confirmada ou conciliação na Shopee. Não houve piloto de publicação real nesta entrega. O catálogo permanece em preparação sem fornecedor atualizado ou liberação da integração. Automatic brand publication is now implemented behind a separate disabled-by-default flag; real profile/media permissions and a controlled live-shop pilot remain pending. Não há botões que simulam essas operações.
 
 #### Conversa inicial
 
@@ -152,3 +152,9 @@ Não conecta contas das alunas nem publica anúncios. Ver `docs/INTEGRACAO-BLING
 - **Shopee:** plataforma onde a aluna abre a conta e vende.
 - **Dropshipping:** venda sem estoque próprio, com envio pelo fornecedor; integração pendente.
 - **Senha temporária:** senha inicial de uma conta marcada para troca obrigatória.
+
+## Automatic brand publication and banner kit (October 22, 2026)
+
+The confirmed name, logo and description can now be queued automatically after a live Shopee connection, independently of the supplier catalog. The worker requires `SHOPEE_BRAND_PUBLICATION_ENABLED`, an eligible account and a confirmed current brand snapshot. Editing the brand requires confirmation again; existing brands require a one-time confirmation. Real Shopee permissions and the controlled live pilot remain unverified by this implementation.
+
+The banner kit provides two editable PNG compositions, protected previews, approval tied to the exact draft and brand, and approved downloads. The dashboard and brand-completion page link to the kit. Seller Centre instructions explain manual upload, preview and publication while an official decoration API remains unconfirmed. This does not publish banners automatically. See [implementation and operating limits](BRAND-AND-BANNERS.md).

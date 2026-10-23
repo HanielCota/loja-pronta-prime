@@ -1,6 +1,6 @@
 'use server';
 
-import { and, eq, isNull, lte } from 'drizzle-orm';
+import { and, eq, lte } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { SHOPEE_STORE } from '@/config/onboarding';
 import { db } from '@/server/db';
@@ -8,6 +8,7 @@ import { storeBrand, stores } from '@/server/db/schema';
 import { parseBrandDescription, parseBrandName } from '../fields';
 import { BRAND_DONE_PATH, brandStepPath } from '../steps';
 import { requireBrandAction } from './brand';
+import { brandFingerprint } from './fingerprint';
 import { saveBrand } from './brand-store';
 
 /** Resposta pra tela quando algo não passa (sem erro, a action redireciona). */
@@ -65,19 +66,32 @@ export async function saveBrandDescription(
  * Confirma a marca: a loja passa pra fase 3 (abrir a conta na Shopee) ou, pra quem já tem loja
  * na Shopee (respondeu na conversa), direto pra 4 (conectar a loja).
  */
-export async function finishBrand(): Promise<BrandResult> {
+export async function finishBrand(_state: BrandResult, formData: FormData): Promise<BrandResult> {
   const { userId, brand, revising, answers } = await requireBrandAction();
-  // Revendo, a marca já foi confirmada e cada mudança já está salva: só volta pro painel.
-  if (revising) redirect('/loja-pronta');
+
   if (!brand.name || !brand.logoImage || !brand.description) {
     redirect(brandStepPath(!brand.name ? 'nome' : !brand.logoImage ? 'logo' : 'descricao'));
   }
+  if (formData.get('fingerprint') !== brandFingerprint(brand))
+    return { error: 'Sua marca mudou em outra página. Atualize a revisão antes de confirmar.' };
   const next = answers.vendas === SHOPEE_STORE ? 4 : 3;
-  await db.transaction(async (tx) => {
-    await tx
+  const confirmed = await db.transaction(async (tx) => {
+    const [approved] = await tx
       .update(storeBrand)
-      .set({ completedAt: new Date() })
-      .where(and(eq(storeBrand.userId, userId), isNull(storeBrand.completedAt)));
+      .set({
+        completedAt: brand.completedAt ?? new Date(),
+        publicationFingerprint: brandFingerprint(brand),
+      })
+      .where(
+        and(
+          eq(storeBrand.userId, userId),
+          eq(storeBrand.name, brand.name!),
+          eq(storeBrand.description, brand.description!),
+          eq(storeBrand.logoImage, brand.logoImage!),
+        ),
+      )
+      .returning({ userId: storeBrand.userId });
+    if (!approved) return false;
     // Só avança quem está na fase da marca (a 1 conta: a conversa enviada já é a fase 2).
     await tx
       .insert(stores)
@@ -87,6 +101,8 @@ export async function finishBrand(): Promise<BrandResult> {
         set: { phase: next },
         setWhere: lte(stores.phase, 2),
       });
+    return true;
   });
-  redirect(BRAND_DONE_PATH);
+  if (!confirmed) redirect(brandStepPath('revisao'));
+  redirect(revising ? '/loja-pronta' : BRAND_DONE_PATH);
 }

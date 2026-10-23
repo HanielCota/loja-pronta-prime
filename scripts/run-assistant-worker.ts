@@ -3,6 +3,7 @@ import { db } from '../src/server/db';
 import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { runtimeHeartbeats } from '../src/server/db/schema';
+import { queueAutomaticBrands } from '../src/features/brand/server/publication';
 import { syncSupplierFeeds } from '../src/features/assistant/server/supplier-sync';
 import { processStoreChange } from '../src/features/assistant/server/store-changes';
 import {
@@ -27,6 +28,7 @@ async function run() {
       .onConflictDoUpdate({ target: runtimeHeartbeats.id, set: { seenAt: new Date() } });
   };
   let timer: ReturnType<typeof setInterval> | undefined;
+  let nextBrandScan = 0;
   let feedSync: Promise<void> | null = null;
   try {
     await heartbeat();
@@ -46,6 +48,12 @@ async function run() {
           .finally(() => {
             feedSync = null;
           });
+      if (Date.now() >= nextBrandScan) {
+        nextBrandScan = Date.now() + 60_000;
+        await queueAutomaticBrands().catch(() =>
+          console.error('[brand] Automatic preparation unavailable.'),
+        );
+      }
       const changed = await processStoreChange();
       if (once && changed) break;
       const job = await claimAssistantJob();

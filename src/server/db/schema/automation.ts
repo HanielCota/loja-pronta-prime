@@ -34,6 +34,7 @@ export const storeAutomationJobs = pgTable(
     applicationId: text('application_id').notNull(),
     kind: text('kind', { enum: ['brand', 'edit', 'clone'] }).notNull(),
     payload: jsonb('payload').$type<Record<string, unknown>>().notNull(),
+    sourceFingerprint: text('source_fingerprint'),
     baseline: jsonb('baseline').$type<Record<string, unknown>>(),
     result: jsonb('result').$type<{ itemId: number }>(),
     status: text('status', { enum: ['pending', 'running', 'completed', 'blocked', 'unknown'] })

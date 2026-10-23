@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { expectNoA11yViolations, signIn } from './support/auth';
-import { PASSWORD, studentEmail } from './support/students';
+import { PASSWORD, studentEmail, database, closeDatabase } from './support/students';
 
 test('conversa enviada: ela revê e muda uma resposta, sem voltar de fase', async ({ page }) => {
   await signIn(page, studentEmail('revisaconversa'), PASSWORD, '/loja-pronta');
@@ -36,6 +36,11 @@ test('conversa enviada: ela revê e muda uma resposta, sem voltar de fase', asyn
 });
 
 test('marca confirmada: ela muda o nome e volta pro painel na mesma fase', async ({ page }) => {
+  // This fixture predates entitlement-backed access; explicitly grant its existing test product.
+  await database().query(
+    `insert into manual_product_grants (user_id, product) select p.user_id, p.product from student_products p join "user" u on u.id = p.user_id where u.email = $1 on conflict do nothing`,
+    [studentEmail('revisamarca')],
+  );
   await signIn(page, studentEmail('revisamarca'), PASSWORD, '/loja-pronta');
   await expect(page.getByRole('heading', { level: 1, name: 'Patinhas da Ana' })).toBeVisible();
   await expect(page.getByRole('link', { name: /^Ver e editar/ })).toHaveCount(2);
@@ -54,7 +59,7 @@ test('marca confirmada: ela muda o nome e volta pro painel na mesma fase', async
   await expect(page).toHaveURL(/\/marca\/revisao$/);
   await expect(page.getByText('Patinhas & Cia', { exact: true })).toBeVisible();
 
-  await page.getByRole('link', { name: 'Voltar pra Loja Pronta' }).click();
+  await page.getByRole('button', { name: 'Confirmar alterações da marca' }).click();
   await expect(page).toHaveURL(/\/loja-pronta$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Patinhas & Cia' })).toBeVisible();
   await expect(page.getByText('Etapa 3 de 3', { exact: false }).first()).toBeVisible();
@@ -70,3 +75,5 @@ test('loja publicada: as fases feitas não reabrem', async ({ page }) => {
   await page.goto('/loja-pronta/marca/revisao');
   await expect(page).toHaveURL(/\/loja-pronta$/);
 });
+
+test.afterAll(closeDatabase);

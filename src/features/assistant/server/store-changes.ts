@@ -1,7 +1,14 @@
 import { and, asc, eq, gt, lte, sql, inArray } from 'drizzle-orm';
 import { z } from 'zod';
+import { brandPublicationEnabled } from '@/features/brand/server/publication-settings';
+import { brandFingerprint } from '@/features/brand/server/fingerprint';
 import { db } from '@/server/db';
-import { shopeeConnections, storeAutomationJobs, assistantJobs } from '@/server/db/schema';
+import {
+  shopeeConnections,
+  storeAutomationJobs,
+  assistantJobs,
+  storeBrand,
+} from '@/server/db/schema';
 import { shopeeApplicationId } from '@/features/shopee/authorization';
 import { readShopeeAccess } from '@/features/shopee/server/connection';
 import {
@@ -29,6 +36,7 @@ export async function queueStoreChange(
   userId: string,
   kind: 'brand' | 'edit' | 'clone',
   input: unknown,
+  sourceFingerprint?: string,
 ) {
   const payload =
     kind === 'brand'
@@ -39,11 +47,52 @@ export async function queueStoreChange(
   if (kind === 'clone' && process.env.SHOPEE_DUPLICATION_ENABLED !== 'true')
     throw new Error('Experimentos com novos anúncios indisponíveis.');
   const config = await assertAssistantAccess(userId, kind === 'brand' ? 'loja-pronta' : 'sll');
-  if (process.env.SHOPEE_PUBLICATION_ENABLED !== 'true')
+  if (
+    kind === 'brand'
+      ? !brandPublicationEnabled()
+      : process.env.SHOPEE_PUBLICATION_ENABLED !== 'true'
+  )
     throw new Error('Alterações indisponíveis.');
   const access = await readShopeeAccess(userId, config);
   return db.transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`store-change:${userId}`}))`);
+    if (kind === 'brand' && sourceFingerprint) {
+      const [brand] = await tx
+        .select()
+        .from(storeBrand)
+        .where(eq(storeBrand.userId, userId))
+        .for('share');
+      if (
+        !brand ||
+        brand.publicationFingerprint !== sourceFingerprint ||
+        brandFingerprint(brand) !== sourceFingerprint
+      )
+        throw new Error('Marca alterada.');
+      const [previous] = await tx
+        .select({ id: storeAutomationJobs.id })
+        .from(storeAutomationJobs)
+        .where(
+          and(
+            eq(storeAutomationJobs.userId, userId),
+            eq(storeAutomationJobs.shopId, String(access.shopId)),
+            eq(storeAutomationJobs.applicationId, shopeeApplicationId(config)),
+            eq(storeAutomationJobs.kind, 'brand'),
+            eq(storeAutomationJobs.sourceFingerprint, sourceFingerprint),
+          ),
+        );
+      if (previous) return previous.id;
+      const [unresolved] = await tx
+        .select({ id: storeAutomationJobs.id })
+        .from(storeAutomationJobs)
+        .where(
+          and(
+            eq(storeAutomationJobs.userId, userId),
+            eq(storeAutomationJobs.kind, 'brand'),
+            inArray(storeAutomationJobs.status, ['pending', 'running', 'unknown']),
+          ),
+        );
+      if (unresolved) throw new Error('Confira o envio anterior.');
+    }
     const [existing] = await tx
       .select({ id: storeAutomationJobs.id })
       .from(storeAutomationJobs)
@@ -70,6 +119,7 @@ export async function queueStoreChange(
         applicationId: shopeeApplicationId(config),
         kind,
         payload,
+        sourceFingerprint,
       })
       .returning({ id: storeAutomationJobs.id });
     return created!.id;
@@ -105,6 +155,7 @@ export async function processStoreChange(fetcher: typeof fetch = fetch) {
   });
   if (!job) return false;
   let sent = false;
+  let brandWriteAcknowledged = false;
   try {
     const config = await assertAssistantAccess(
       job.userId,
@@ -114,7 +165,9 @@ export async function processStoreChange(fetcher: typeof fetch = fetch) {
     if (
       String(access.shopId) !== job.shopId ||
       shopeeApplicationId(config) !== job.applicationId ||
-      process.env.SHOPEE_PUBLICATION_ENABLED !== 'true'
+      (job.kind === 'brand'
+        ? !brandPublicationEnabled()
+        : process.env.SHOPEE_PUBLICATION_ENABLED !== 'true')
     )
       throw new Error('Conexão alterada.');
     const payload =
@@ -211,10 +264,25 @@ export async function processStoreChange(fetcher: typeof fetch = fetch) {
         connection.revokedAt ||
         String(connection.shopId) !== job.shopId ||
         connection.applicationId !== job.applicationId ||
-        process.env.SHOPEE_PUBLICATION_ENABLED !== 'true' ||
+        (job.kind === 'brand'
+          ? !brandPublicationEnabled()
+          : process.env.SHOPEE_PUBLICATION_ENABLED !== 'true') ||
         (job.kind === 'clone' && process.env.SHOPEE_DUPLICATION_ENABLED !== 'true')
       )
         return false;
+      if (job.kind === 'brand' && job.sourceFingerprint) {
+        const [brand] = await tx
+          .select()
+          .from(storeBrand)
+          .where(eq(storeBrand.userId, job.userId))
+          .for('share');
+        if (
+          !brand ||
+          brand.publicationFingerprint !== job.sourceFingerprint ||
+          brandFingerprint(brand) !== job.sourceFingerprint
+        )
+          return false;
+      }
       const [owned] = await tx
         .update(storeAutomationJobs)
         .set({ baseline })
@@ -271,6 +339,18 @@ export async function processStoreChange(fetcher: typeof fetch = fetch) {
         z.object({}),
         fetcher,
       );
+    if (job.kind === 'brand') {
+      brandWriteAcknowledged = true;
+      const profile = await readShopeeResource(
+        config,
+        access,
+        '/api/v2/shop/get_profile',
+        z.record(z.string(), z.unknown()),
+        {},
+        fetcher,
+      );
+      if (!changeMatches(profile, payload)) throw new Error('Perfil ainda não confirmado.');
+    }
     await db
       .update(storeAutomationJobs)
       .set({ status: 'completed', completedAt: new Date(), failure: null, leaseUntil: null })
@@ -285,7 +365,9 @@ export async function processStoreChange(fetcher: typeof fetch = fetch) {
         })
         .onConflictDoNothing();
   } catch (error) {
-    const uncertain = sent && !(error instanceof ShopeeApiError && error.reason === 'rejected');
+    const uncertain =
+      brandWriteAcknowledged ||
+      (sent && !(error instanceof ShopeeApiError && error.reason === 'rejected'));
     await db
       .update(storeAutomationJobs)
       .set({

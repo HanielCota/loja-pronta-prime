@@ -21,6 +21,7 @@ mock.module('next/navigation', () => ({
 const adminId = randomUUID();
 mock.module('@/features/admin/server/access', () => ({
   requireAdmin: async () => ({ user: { id: adminId } }),
+  requireStaff: async () => ({ user: { id: adminId, role: 'admin' }, staff: 'admin' as const }),
 }));
 const { processHotmartEvent } = await import('@/features/hotmart/server/process-event');
 const { changeStudentProductAccess } = await import('@/features/admin/server/actions');
