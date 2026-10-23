@@ -8,8 +8,6 @@ import { useFormStatus } from 'react-dom';
 import { Avatar } from '@/components/ui/avatar';
 import { Spinner } from '@/components/ui/spinner';
 import { signOut } from '@/features/auth/server/sign-out';
-import { TEAM_WHATSAPP } from '@/config/support';
-import { whatsappLink } from '@/features/loja-pronta/whatsapp';
 import { cn } from '@/lib/utils';
 
 const itemClass =
@@ -115,22 +113,12 @@ export function AccountMenu({
 
           <DropdownMenu.Separator className="mx-3 my-1 h-px bg-border" />
 
-          {TEAM_WHATSAPP ? (
-            <DropdownMenu.Item asChild className={itemClass}>
-              <a
-                href={whatsappLink(
-                  TEAM_WHATSAPP,
-                  'Oi! Sou aluna da Loja Pronta Prime e preciso de ajuda.',
-                )}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <MessageCircleIcon aria-hidden="true" className="size-5 text-muted-foreground" />
-                Suporte no WhatsApp
-                <span className="sr-only"> (abre em outra aba)</span>
-              </a>
-            </DropdownMenu.Item>
-          ) : null}
+          <DropdownMenu.Item asChild className={itemClass}>
+            <Link href="/perfil#suporte">
+              <MessageCircleIcon aria-hidden="true" className="size-5 text-muted-foreground" />
+              Suporte no WhatsApp
+            </Link>
+          </DropdownMenu.Item>
 
           {/* Formulário de verdade, como o sair das outras telas. O menu fica aberto enquanto sai,
               pra o "Saindo…" ter onde aparecer. */}

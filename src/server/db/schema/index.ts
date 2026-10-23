@@ -19,3 +19,4 @@ export * from './bling';
 export * from './assistant';
 export * from './automation';
 export * from './legacy-stores';
+export * from './support';
