@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test';
 import { PRODUCTS } from '@/features/products/catalog';
-import { parseWhatsapp } from '@/features/loja-pronta/whatsapp';
 import { ONBOARDING_BLOCKS, ONBOARDING_QUESTIONS } from './onboarding';
 import { PRODUCT_IDS } from './products';
 import { STORE_PHASES } from './store-phases';
@@ -25,8 +24,8 @@ describe('configuração', () => {
     }
   });
 
-  test('WhatsApp do suporte: vazio, ou só os dígitos com DDD', () => {
-    if (TEAM_WHATSAPP) expect(parseWhatsapp(TEAM_WHATSAPP)).toBe(TEAM_WHATSAPP);
+  test('support WhatsApp is empty or contains 10 to 11 digits including the area code', () => {
+    if (TEAM_WHATSAPP) expect(TEAM_WHATSAPP).toMatch(/^[1-9]\d{9,10}$/);
   });
 
   test('contato da privacidade: um email e o CNPJ formatado', () => {
