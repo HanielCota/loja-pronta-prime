@@ -1,4 +1,4 @@
-import { boolean, index, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core';
+import { bigint, boolean, index, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core';
 import { user } from './auth';
 import type { ExpertId } from '../../../config/experts';
 
@@ -21,6 +21,14 @@ export const hotmartProductMappings = pgTable(
   (table) => [primaryKey({ columns: [table.productUcode, table.access] })],
 );
 
+/** Numeric identities learn their immutable ucode only from authenticated webhooks. */
+export const hotmartProductIds = pgTable('hotmart_product_ids', {
+  productId: bigint('product_id', { mode: 'number' }).primaryKey(),
+  productUcode: text('product_ucode').unique(),
+  access: text('access', { enum: ['sll', 'loja-pronta'] }).notNull(),
+  expert: text('expert').$type<ExpertId>().notNull(),
+});
+
 /** Uma compra pode liberar mais de uma área; cada transação mantém seu estado independente. */
 export const hotmartPurchases = pgTable(
   'hotmart_purchases',
@@ -28,6 +36,7 @@ export const hotmartPurchases = pgTable(
     transaction: text('transaction').primaryKey(),
     buyerEmail: text('buyer_email').notNull(),
     productUcode: text('product_ucode').notNull(),
+    productId: bigint('product_id', { mode: 'number' }),
     expert: text('expert').$type<ExpertId>().notNull().default('pri'),
     userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
     active: boolean('active').notNull(),
@@ -73,6 +82,7 @@ export const hotmartEvents = pgTable(
     transaction: text('transaction').notNull(),
     buyerEmail: text('buyer_email').notNull(),
     productUcode: text('product_ucode').notNull(),
+    productId: bigint('product_id', { mode: 'number' }),
     result: text('result').notNull(),
     receivedAt: timestamp('received_at').defaultNow().notNull(),
   },

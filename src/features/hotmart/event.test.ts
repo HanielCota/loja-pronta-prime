@@ -20,6 +20,32 @@ describe('avisos da Hotmart', () => {
     },
   };
 
+  test('preserves numeric product IDs and rejects unsafe or nonnumeric IDs', () => {
+    const parsed = parseHotmartEvent({
+      ...validEvent,
+      data: { ...validEvent.data, product: { ucode: 'course', id: 8781486 } },
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data.data.product.id).toBe(8781486);
+    for (const id of ['8781486', 0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1])
+      expect(
+        parseHotmartEvent({
+          ...validEvent,
+          data: { ...validEvent.data, product: { ucode: 'course', id } },
+        }).success,
+      ).toBe(false);
+  });
+
+  test('a transaction cannot switch numeric products even when its ucode is unchanged', () => {
+    const purchase = {
+      buyerEmail: 'buyer@example.invalid',
+      productUcode: 'course',
+      productId: 8781486,
+    };
+    expect(transactionMismatch(purchase, { ...purchase, productId: 8781449 })).toBe('product');
+    expect(transactionMismatch(purchase, { ...purchase, productId: undefined })).toBeNull();
+  });
+
   test('accepts documented numeric-string purchase dates without using event arrival time', () => {
     const timestamp = 1791475200000;
     for (const order_date of [timestamp, String(timestamp)]) {
