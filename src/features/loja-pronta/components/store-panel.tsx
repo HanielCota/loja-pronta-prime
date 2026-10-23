@@ -11,7 +11,6 @@ import type { ReactNode } from 'react';
 import { Mascot } from '@/components/brand/mascot';
 import { Button } from '@/components/ui/button';
 import { STORE_PHASES, STORE_STAGES } from '@/config/store-phases';
-import { TEAM_WHATSAPP } from '@/config/support';
 import { SHOPEE_CONNECT_PATH, SHOPEE_PATH } from '@/config/shopee';
 import { BRAND_PATH, brandStepPath } from '@/features/brand/steps';
 import { AreaShell, panelCard } from '@/features/member/components/area-shell';
@@ -21,7 +20,6 @@ import { storeStages, type StageView } from '../stages';
 import { canReviseDonePhases } from '../editing';
 import { CONVERSATION_PATH, REVIEW_STEP, stepPath } from '../steps';
 import type { ConversationStatus } from '../store-phase';
-import { whatsappLink } from '../whatsapp';
 import { StoreWelcome } from './store-welcome';
 
 type StorePanelProps = {
@@ -241,23 +239,14 @@ function NextStep({
   );
 }
 
-/**
- * Enquanto a próxima fase não abre, a tela não pede nada dela: este é o caminho pra tirar uma
- * dúvida. Só aparece com o número do suporte configurado (config/support.ts).
- */
+/** Keeps help available while members wait for the next stage. */
 function TalkToTeam() {
-  if (!TEAM_WHATSAPP) return null;
   return (
     <Button asChild variant="soft" className="sm:w-auto sm:px-8">
-      <a
-        href={whatsappLink(TEAM_WHATSAPP, 'Oi! Sou aluna da Loja Pronta e tenho uma dúvida.')}
-        target="_blank"
-        rel="noreferrer"
-      >
+      <Link href="/perfil#suporte">
         <MessageCircleIcon aria-hidden="true" />
-        Chamar no WhatsApp
-        <span className="sr-only"> (abre em outra aba)</span>
-      </a>
+        Suporte no WhatsApp
+      </Link>
     </Button>
   );
 }

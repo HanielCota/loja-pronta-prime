@@ -35,7 +35,8 @@ export type AdminSection =
   | 'hotmart'
   | 'bling'
   | 'experts'
-  | 'assistant';
+  | 'assistant'
+  | 'support';
 
 const groups = [
   {
@@ -94,6 +95,7 @@ const groups = [
     links: [
       { href: '/admin/assistente', label: 'Planos e operação', section: 'assistant', Icon: Wrench },
       { href: '/admin/bling', label: 'Conexão Bling', section: 'bling', Icon: Wrench },
+      { href: '/admin/suporte', label: 'Suporte', section: 'support', Icon: UsersRound },
     ],
   },
 ] as const;

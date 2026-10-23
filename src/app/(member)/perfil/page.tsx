@@ -1,13 +1,12 @@
 import type { Metadata } from 'next';
-import { MessageCircleIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
-import { TEAM_WHATSAPP } from '@/config/support';
+import { SupportContacts } from '@/features/support/components/support-contacts';
+import { getSupportPhones } from '@/features/support/server/contacts';
 import { ProfileSettings } from '@/features/auth/components/profile-forms';
 import { SignOutRow } from '@/features/auth/components/sign-out-button';
-import { whatsappLink, formatWhatsapp } from '@/features/loja-pronta/whatsapp';
+import { whatsappLink } from '@/features/loja-pronta/whatsapp';
 import { greetingName } from '@/features/products/names';
-import { AreaShell, panelCard } from '@/features/member/components/area-shell';
+import { AreaShell } from '@/features/member/components/area-shell';
 import { requireStudent } from '@/features/products/server/access';
 
 export const metadata: Metadata = {
@@ -22,6 +21,7 @@ export const metadata: Metadata = {
 export default async function ProfilePage() {
   const { session } = await requireStudent('/perfil');
   const { user } = session;
+  const phones = await getSupportPhones();
   const name = greetingName(user);
   const profileName = user.preferredName?.trim() || user.name;
 
@@ -52,9 +52,9 @@ export default async function ProfilePage() {
         emailHelp={
           <>
             Pra trocar o email,{' '}
-            {TEAM_WHATSAPP ? (
+            {phones.technical ? (
               <a
-                href={whatsappLink(TEAM_WHATSAPP, 'Oi! Quero trocar o email da minha conta.')}
+                href={whatsappLink(phones.technical, 'Oi! Quero trocar o email da minha conta.')}
                 target="_blank"
                 rel="noreferrer"
                 className="font-semibold text-link underline underline-offset-4"
@@ -69,30 +69,7 @@ export default async function ProfilePage() {
           </>
         }
       />
-      {TEAM_WHATSAPP ? (
-        <section className={panelCard} aria-labelledby="profile-support">
-          <h2 id="profile-support" className="text-title font-semibold">
-            Precisa de ajuda?
-          </h2>
-          <p className="mt-2 text-body text-muted-foreground">
-            Fale com o suporte pelo WhatsApp: {formatWhatsapp(TEAM_WHATSAPP)}.
-          </p>
-          <Button asChild variant="soft" className="mt-4">
-            <a
-              href={whatsappLink(
-                TEAM_WHATSAPP,
-                'Oi! Sou aluna da Loja Pronta Prime e preciso de ajuda.',
-              )}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <MessageCircleIcon aria-hidden="true" />
-              Suporte no WhatsApp
-              <span className="sr-only"> (abre em outra aba)</span>
-            </a>
-          </Button>
-        </section>
-      ) : null}
+      <SupportContacts phones={phones} />
       <SignOutRow />
     </AreaShell>
   );
