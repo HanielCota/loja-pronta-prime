@@ -149,10 +149,10 @@ export function LogoStudio({
           setSelectedId(result.studio.logos.at(-1)?.imageId);
           go({ kind: 'result' });
           setAnnouncement(`Logo ${result.studio.logos.length} pronto.`);
-        } else {
-          if (back) go(back);
-          setError(result.error);
+          return;
         }
+        if (back) go(back);
+        setError(result.error);
       } catch {
         if (back) go(back);
         setError(
