@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { and, asc, desc, eq, gt, inArray, lte, ne, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, gte, inArray, lt, lte, ne, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
 import {
   assistantJobs,
@@ -210,6 +210,12 @@ export async function createPublicationBatch(
   });
 }
 
+/**
+ * Quantas vezes uma leitura interrompida (o worker caiu no meio) volta pra fila. Sem teto, uma
+ * coleta que derruba o worker voltava na hora pra sempre, e as tarefas das outras alunas esperavam.
+ */
+export const MAX_INTERRUPTED_ATTEMPTS = 3;
+
 /** Nenhum timeout de escrita volta automaticamente à fila de publicação. */
 export async function claimAssistantJob(now = new Date()) {
   return db.transaction(async (tx) => {
@@ -259,16 +265,22 @@ export async function claimAssistantJob(now = new Date()) {
         })
         .where(eq(assistantJobs.id, job.id));
     }
+    const expiredRead = and(
+      eq(assistantJobs.status, 'running'),
+      ne(assistantJobs.kind, 'publish'),
+      lte(assistantJobs.leaseUntil, now),
+    );
+    const exhausted = await tx
+      .update(assistantJobs)
+      .set({ status: 'blocked', leaseUntil: null, failure: 'interrupted' })
+      .where(and(expiredRead, gte(assistantJobs.attempts, MAX_INTERRUPTED_ATTEMPTS)))
+      .returning();
+    // A coleta parada não pode encerrar as próximas: a da vez seguinte continua agendada.
+    for (const job of exhausted) if (job.kind === 'collect') await scheduleNextCollection(job, tx);
     await tx
       .update(assistantJobs)
       .set({ status: 'pending', leaseUntil: null })
-      .where(
-        and(
-          eq(assistantJobs.status, 'running'),
-          ne(assistantJobs.kind, 'publish'),
-          lte(assistantJobs.leaseUntil, now),
-        ),
-      );
+      .where(and(expiredRead, lt(assistantJobs.attempts, MAX_INTERRUPTED_ATTEMPTS)));
     const [job] = await tx
       .select()
       .from(assistantJobs)
