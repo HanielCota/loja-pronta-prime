@@ -10,6 +10,7 @@ import { productLabel } from '@/features/admin/account-labels';
 import { requireAdmin } from '@/features/admin/server/access';
 import { ACCOUNTS_PAGE_SIZE, listAccounts } from '@/features/admin/server/accounts';
 import { RowCellLink } from '@/features/admin/components/row-cell-link';
+import { parsePageNumber } from '@/lib/search-params';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Contas · Administração' };
@@ -43,7 +44,7 @@ export default async function AdminAccountsPage({
 }) {
   const session = await requireAdmin('/admin/contas');
   const { q = '', pagina } = await searchParams;
-  const page = Math.max(1, Number.parseInt(pagina ?? '1', 10) || 1);
+  const page = parsePageNumber(pagina);
   const { accounts, total } = await listAccounts({ query: q, page });
   const pages = Math.max(1, Math.ceil(total / ACCOUNTS_PAGE_SIZE));
   const pageHref = (target: number) =>

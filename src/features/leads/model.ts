@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { parseWhatsapp } from '@/features/loja-pronta/whatsapp';
+import { parsePageNumber } from '@/lib/search-params';
 
 export const LEAD_STAGES = ['new', 'contacted', 'qualified', 'proposal', 'won', 'lost'] as const;
 export const LEAD_PRODUCTS = ['undecided', 'loja-pronta', 'sll', 'both'] as const;
@@ -137,6 +138,6 @@ export function parseLeadFilters(params: URLSearchParams): LeadFilters {
     owner: (params.get('responsavel') ?? '').slice(0, 100),
     due: params.get('retornos') === 'hoje',
     archived: params.get('arquivados') === 'sim',
-    page: Math.min(100000, Math.max(1, Number.parseInt(params.get('pagina') ?? '', 10) || 1)),
+    page: parsePageNumber(params.get('pagina') ?? undefined),
   };
 }

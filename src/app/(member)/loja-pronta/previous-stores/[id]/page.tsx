@@ -6,7 +6,11 @@ import { Button } from '@/components/ui/button';
 import { AreaShell } from '@/features/member/components/area-shell';
 import { requireProduct } from '@/features/products/server/access';
 import { LegacyStoreDetail } from '@/features/legacy-stores/components/store-detail';
-import { getLegacyStoreForUser } from '@/features/legacy-stores/server/queries';
+import {
+  getLegacyStoreForUser,
+  LEGACY_PRODUCTS_PAGE_SIZE,
+} from '@/features/legacy-stores/server/queries';
+import { parsePageNumber } from '@/lib/search-params';
 
 export const metadata: Metadata = { title: 'Loja anterior' };
 
@@ -19,12 +23,11 @@ export default async function PreviousStorePage({
 }) {
   const { id } = await params;
   const { page: requestedPage } = await searchParams;
-  const parsed = Number(requestedPage);
-  const page = Number.isSafeInteger(parsed) && parsed > 0 && parsed <= 100000 ? parsed : 1;
+  const page = parsePageNumber(requestedPage);
   const basePath = `/loja-pronta/previous-stores/${encodeURIComponent(id)}`;
   const { session, products } = await requireProduct('loja-pronta', basePath);
   const data = await getLegacyStoreForUser(session.user.id, id, page);
-  if (!data || (page > 1 && (page - 1) * 30 >= data.total)) notFound();
+  if (!data || (page > 1 && (page - 1) * LEGACY_PRODUCTS_PAGE_SIZE >= data.total)) notFound();
   return (
     <AreaShell
       account={session.user}
