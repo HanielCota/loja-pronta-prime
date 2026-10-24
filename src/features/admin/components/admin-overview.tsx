@@ -133,11 +133,14 @@ const hotmartEventLabels: Record<string, string> = {
 export function AdminOverview({
   overview,
   online,
+  onlineTotal,
   now,
 }: {
   overview: AdminOverviewData;
   /** Quem está online agora (a lista completa fica em /admin/online). */
   online: PresenceRow[];
+  /** Quantas pessoas estão online de verdade (a lista tem teto). */
+  onlineTotal: number;
   now: Date;
 }) {
   const { totals, recentAccounts, recentAccess, recentHotmart } = overview;
@@ -208,7 +211,7 @@ export function AdminOverview({
         href="/admin/online"
         id="online-now"
         linkLabel="Ver todas"
-        title={`Online agora (${online.length})`}
+        title={`Online agora (${onlineTotal})`}
       >
         <ul className="grid gap-x-8 lg:grid-cols-2 [&>li]:border-b [&>li]:border-border">
           {online.slice(0, 6).map((row) => (

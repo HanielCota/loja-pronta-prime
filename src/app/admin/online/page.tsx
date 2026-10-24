@@ -22,7 +22,7 @@ export default async function AdminOnlinePage({
 }) {
   const session = await requireAdmin('/admin/online');
   const owner = canManagePresenceVisibility(session.user);
-  const [{ now, rows }, hiddenAccounts, params] = await Promise.all([
+  const [{ now, rows, total }, hiddenAccounts, params] = await Promise.all([
     getOnlineStudents(),
     owner ? getHiddenPresenceAccounts() : Promise.resolve([]),
     searchParams,
@@ -53,10 +53,15 @@ export default async function AdminOnlinePage({
       <section aria-labelledby="online-list" className={cn(panelCard, 'gap-5 !p-5 sm:!p-6')}>
         <div>
           <h2 className="text-title font-semibold text-foreground" id="online-list">
-            {rows.length === 1 ? '1 pessoa online' : `${rows.length} pessoas online`}
+            {total === 1 ? '1 pessoa online' : `${total} pessoas online`}
           </h2>
           {byKind.length ? (
             <p className="mt-1 text-body text-muted-foreground">{byKind.join(' · ')}</p>
+          ) : null}
+          {rows.length < total ? (
+            <p className="mt-1 text-body text-muted-foreground">
+              A lista mostra as {rows.length} pessoas com o aviso mais recente.
+            </p>
           ) : null}
         </div>
         {rows.length ? (
