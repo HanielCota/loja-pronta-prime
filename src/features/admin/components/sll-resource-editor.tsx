@@ -18,6 +18,7 @@ import { LiveRegion } from '@/components/ui/live-region';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
 import { panelCard } from '@/features/member/components/area-shell';
+import { draftOrLive } from '../draft-value';
 import { saveSllResourceForm } from '../server/actions';
 import type { ResourceActionState } from '../structure-types';
 import { AdminSelect as Select } from './admin-select';
@@ -65,11 +66,11 @@ export function SllResourceEditor({
 }) {
   const [state, formAction, pending] = useActionState(saveSllResourceForm, initialState);
   const initial = {
-    groupTitle: resource?.draft?.groupTitle ?? resource?.groupTitle ?? '',
-    title: resource?.draft?.title ?? resource?.title ?? '',
-    description: resource?.draft?.description ?? resource?.description ?? '',
-    buttonLabel: resource?.draft?.buttonLabel ?? resource?.buttonLabel ?? '',
-    destination: resource?.draft?.destination ?? resource?.destination ?? '',
+    groupTitle: draftOrLive(resource?.draft?.groupTitle, resource?.groupTitle) ?? '',
+    title: draftOrLive(resource?.draft?.title, resource?.title) ?? '',
+    description: draftOrLive(resource?.draft?.description, resource?.description) ?? '',
+    buttonLabel: draftOrLive(resource?.draft?.buttonLabel, resource?.buttonLabel) ?? '',
+    destination: draftOrLive(resource?.draft?.destination, resource?.destination) ?? '',
   };
   const [preview, setPreview] = useState(initial);
   const [dirty, setDirty] = useState(false);
