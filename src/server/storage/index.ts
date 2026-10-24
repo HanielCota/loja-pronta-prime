@@ -32,8 +32,11 @@ export type Storage = {
 
 export type StoredStream = {
   body: ReadableStream;
-  /** Bytes deste pedaço. */
-  length: number;
+  /**
+   * Bytes deste pedaço. Ausente quando o provedor não informa: um 0 inventado viraria
+   * `Content-Length: 0` com corpo, e o navegador receberia o arquivo vazio.
+   */
+  length: number | undefined;
   /** "bytes 0-999/5000", quando é um pedaço. */
   contentRange: string | undefined;
   contentType: string | undefined;
@@ -90,7 +93,7 @@ function s3Storage(): Storage {
         if (!object.Body) return null;
         return {
           body: object.Body.transformToWebStream(),
-          length: object.ContentLength ?? 0,
+          length: object.ContentLength,
           contentRange: object.ContentRange,
           contentType: object.ContentType,
         };

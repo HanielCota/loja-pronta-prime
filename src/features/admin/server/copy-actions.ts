@@ -1,5 +1,6 @@
 'use server';
 
+import { wholeNumberField } from '@/lib/form-number';
 import { eq, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { revalidateSllContent } from '@/features/sll/server/content-cache';
@@ -17,8 +18,8 @@ export async function saveSllCopy(
   form: FormData,
 ): Promise<{ saved: boolean; message: string }> {
   await requireAdmin();
-  const groupIndex = Number(form.get('groupIndex'));
-  const group = Number.isInteger(groupIndex) ? SLL_COPY_GROUPS[groupIndex] : undefined;
+  const groupIndex = wholeNumberField(form.get('groupIndex'));
+  const group = groupIndex === undefined ? undefined : SLL_COPY_GROUPS[groupIndex];
   if (!group) return { saved: false, message: 'Escolha um grupo de textos.' };
   const values = group.fields.map(({ key }) => ({ key, value: form.get(key) }));
   if (
@@ -49,8 +50,8 @@ type CopyGroup = (typeof SLL_COPY_GROUPS)[number];
 const noGroup = { saved: false, message: 'Atualize a página e tente de novo.' };
 
 function copyGroup(form: FormData): CopyGroup | undefined {
-  const groupIndex = Number(form.get('groupIndex'));
-  return Number.isInteger(groupIndex) ? SLL_COPY_GROUPS[groupIndex] : undefined;
+  const groupIndex = wholeNumberField(form.get('groupIndex'));
+  return groupIndex === undefined ? undefined : SLL_COPY_GROUPS[groupIndex];
 }
 
 /**

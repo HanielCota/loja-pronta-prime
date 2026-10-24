@@ -187,6 +187,14 @@ export function ContentNodeForm({
                   {...describedBy('relatedLessonId')}
                 >
                   <option value="">Nenhuma aula relacionada</option>
+                  {/* A aula ligada pode ter sido arquivada: sem esta opção, a lista mostraria
+                      "Nenhuma" e salvar apagaria o vínculo sem a admin pedir. */}
+                  {initial?.relatedLessonId &&
+                  !lessonChoices.some((choice) => choice.id === initial.relatedLessonId) ? (
+                    <option value={initial.relatedLessonId}>
+                      Aula indisponível (vínculo mantido)
+                    </option>
+                  ) : null}
                   {lessonChoices.map((choice) => (
                     <option key={choice.id} value={choice.id}>
                       {choice.title}

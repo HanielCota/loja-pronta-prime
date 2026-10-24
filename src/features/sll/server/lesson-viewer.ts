@@ -30,6 +30,7 @@ const readPublishedLesson = unstable_cache(
         description: true,
         sourceNumber: true,
         durationMinutes: true,
+        countsTowardProgress: true,
         status: true,
       },
       where: and(
@@ -201,6 +202,7 @@ export async function getSllLessonViewer(lessonId: string) {
         ? null
         : getSllExpectedMaterial(lesson.sourceNumber),
       durationMinutes: lesson.durationMinutes,
+      countsTowardProgress: lesson.countsTowardProgress,
       completed:
         currentProgress?.completedAt !== null && currentProgress?.completedAt !== undefined,
       previousId: adjacent.previous?.id ?? null,

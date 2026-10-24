@@ -13,6 +13,7 @@ import {
   stores,
 } from '@/server/db/schema';
 import { shopeeApplicationId, type ShopeeConfiguration } from '@/features/shopee/authorization';
+import { shopeeItemListPageSchema } from '@/features/shopee/item-list';
 import { readShopeeAccess } from '@/features/shopee/server/connection';
 import {
   addShopeeItem,
@@ -376,11 +377,7 @@ export async function findSku(
         config,
         access,
         '/api/v2/product/get_item_list',
-        z.object({
-          item: z.array(z.object({ item_id: z.number().int().positive().safe() })),
-          has_next_page: z.boolean(),
-          next_offset: z.number().int().nonnegative().optional(),
-        }),
+        shopeeItemListPageSchema,
         { offset: String(offset), page_size: '100', item_status: status },
         fetcher,
       );
@@ -418,12 +415,15 @@ async function publishItem(job: Job, fetcher: typeof fetch) {
   const config = await assertAssistantAccess(job.userId, 'loja-pronta');
   if (process.env.SHOPEE_PUBLICATION_ENABLED !== 'true')
     throw new OperationBlocked('publication-disabled');
+  // Sem item, '' comparado a uma coluna uuid viraria erro do Postgres (22P02) em vez de bloqueio.
+  const publicationItemId = job.payload.itemId;
+  if (!publicationItemId) throw new OperationBlocked('item');
   const [item] = await db
     .select()
     .from(assistantPublicationItems)
     .where(
       and(
-        eq(assistantPublicationItems.id, job.payload.itemId ?? ''),
+        eq(assistantPublicationItems.id, publicationItemId),
         eq(assistantPublicationItems.userId, job.userId),
       ),
     );

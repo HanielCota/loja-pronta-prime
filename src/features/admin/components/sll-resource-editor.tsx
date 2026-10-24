@@ -18,6 +18,7 @@ import { LiveRegion } from '@/components/ui/live-region';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
 import { panelCard } from '@/features/member/components/area-shell';
+import { draftOrLive } from '../draft-value';
 import { saveSllResourceForm } from '../server/actions';
 import type { ResourceActionState } from '../structure-types';
 import { AdminSelect as Select } from './admin-select';
@@ -65,11 +66,11 @@ export function SllResourceEditor({
 }) {
   const [state, formAction, pending] = useActionState(saveSllResourceForm, initialState);
   const initial = {
-    groupTitle: resource?.draft?.groupTitle ?? resource?.groupTitle ?? '',
-    title: resource?.draft?.title ?? resource?.title ?? '',
-    description: resource?.draft?.description ?? resource?.description ?? '',
-    buttonLabel: resource?.draft?.buttonLabel ?? resource?.buttonLabel ?? '',
-    destination: resource?.draft?.destination ?? resource?.destination ?? '',
+    groupTitle: draftOrLive(resource?.draft?.groupTitle, resource?.groupTitle) ?? '',
+    title: draftOrLive(resource?.draft?.title, resource?.title) ?? '',
+    description: draftOrLive(resource?.draft?.description, resource?.description) ?? '',
+    buttonLabel: draftOrLive(resource?.draft?.buttonLabel, resource?.buttonLabel) ?? '',
+    destination: draftOrLive(resource?.draft?.destination, resource?.destination) ?? '',
   };
   const [preview, setPreview] = useState(initial);
   const [dirty, setDirty] = useState(false);
@@ -81,6 +82,11 @@ export function SllResourceEditor({
     if (state.saved) setDirty(false);
   }
   const [lessonIds, setLessonIds] = useState(resource?.relatedLessonIds ?? []);
+  // Aula arquivada não está nas opções: sem nome de curso, a linha começava com " · ".
+  const lessonLabel = (id: string) => {
+    const lesson = lessonOptions.find((item) => item.id === id);
+    return lesson ? `${lesson.trackTitle} · ${lesson.title}` : 'Aula indisponível';
+  };
   const [lessonChoice, setLessonChoice] = useState('');
   const [trackChoice, setTrackChoice] = useState('');
   const trackOptions = Array.from(
@@ -161,26 +167,29 @@ export function SllResourceEditor({
           </p>
           {lessonIds.length ? (
             <ul className="flex flex-col gap-2">
-              {lessonIds.map((id) => (
-                <li
-                  className="flex min-h-11 items-center justify-between gap-3 rounded-xl bg-muted px-3 text-body text-foreground"
-                  key={id}
-                >
-                  <span className="min-w-0">
-                    {lessonOptions.find((item) => item.id === id)?.trackTitle} ·{' '}
-                    {lessonOptions.find((item) => item.id === id)?.title ?? 'Aula indisponível'}
-                  </span>
-                  <Button
-                    aria-label={`Remover aula ${lessonOptions.find((item) => item.id === id)?.title ?? ''}`}
-                    onClick={() => setLessonIds((current) => current.filter((item) => item !== id))}
-                    size="icon"
-                    type="button"
-                    variant="ghost"
+              {lessonIds.map((id) => {
+                const lesson = lessonOptions.find((item) => item.id === id);
+                const label = lesson ? lessonLabel(id) : 'Aula indisponível (remova para salvar)';
+                return (
+                  <li
+                    className="flex min-h-11 items-center justify-between gap-3 rounded-xl bg-muted px-3 text-body text-foreground"
+                    key={id}
                   >
-                    <X aria-hidden="true" />
-                  </Button>
-                </li>
-              ))}
+                    <span className="min-w-0">{label}</span>
+                    <Button
+                      aria-label={`Remover ${lesson ? `aula ${lesson.title}` : 'aula indisponível'}`}
+                      onClick={() =>
+                        setLessonIds((current) => current.filter((item) => item !== id))
+                      }
+                      size="icon"
+                      type="button"
+                      variant="ghost"
+                    >
+                      <X aria-hidden="true" />
+                    </Button>
+                  </li>
+                );
+              })}
             </ul>
           ) : null}
           <Label htmlFor={`resource-track-${resource?.id ?? 'new'}`}>Escolher curso</Label>
@@ -351,10 +360,7 @@ export function SllResourceEditor({
               <p className="text-body font-semibold text-foreground">Aparece também nestas aulas</p>
               <ul className="mt-2 list-inside list-disc text-body text-muted-foreground">
                 {lessonIds.map((id) => (
-                  <li key={id}>
-                    {lessonOptions.find((item) => item.id === id)?.trackTitle} ·{' '}
-                    {lessonOptions.find((item) => item.id === id)?.title ?? 'Aula indisponível'}
-                  </li>
+                  <li key={id}>{lessonLabel(id)}</li>
                 ))}
               </ul>
             </div>

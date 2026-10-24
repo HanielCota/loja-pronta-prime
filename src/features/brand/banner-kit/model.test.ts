@@ -23,3 +23,16 @@ test('downloads require approval of the current brand snapshot', () => {
   expect(kitIsApproved({ approvedAt: new Date(), brandFingerprint: 'a' }, 'b')).toBe(false);
   expect(kitIsApproved({ approvedAt: new Date(), brandFingerprint: 'a' }, 'a')).toBe(true);
 });
+
+test('banner title and subtitle made only of invisible characters are refused', () => {
+  for (const title of ['', '   ', '\u200B', '\uFEFF\u00A0'])
+    expect(
+      bannerDraftSchema.safeParse({ title, subtitle: 'Bem-vinda', palette: 'violet' }).success,
+    ).toBe(false);
+  const parsed = bannerDraftSchema.parse({
+    title: ' Loja\u200B ',
+    subtitle: 'Bem-vinda',
+    palette: 'violet',
+  });
+  expect(parsed.title).toBe('Loja');
+});

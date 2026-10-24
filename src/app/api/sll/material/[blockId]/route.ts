@@ -90,7 +90,7 @@ export async function GET(_request: Request, context: RouteContext) {
       headers: {
         'Content-Type':
           data.contentType === 'image/webp' ? 'image/webp' : 'application/octet-stream',
-        'Content-Length': String(stored.length),
+        ...(stored.length === undefined ? {} : { 'Content-Length': String(stored.length) }),
         'Cache-Control': 'private, no-store',
         'X-Content-Type-Options': 'nosniff',
         'Content-Disposition': 'inline',
@@ -104,7 +104,7 @@ export async function GET(_request: Request, context: RouteContext) {
   return new Response(stored.body, {
     headers: {
       'Content-Type': contentType,
-      'Content-Length': String(stored.length),
+      ...(stored.length === undefined ? {} : { 'Content-Length': String(stored.length) }),
       'Cache-Control': 'private, no-store',
       'X-Content-Type-Options': 'nosniff',
       'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`,
