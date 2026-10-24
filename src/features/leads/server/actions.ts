@@ -16,7 +16,7 @@ import {
   type LeadInput,
   type LeadValues,
 } from '../model';
-import { MAX_IMPORT_ROWS, readLeadCsv } from '../csv';
+import { decodeLeadCsv, MAX_IMPORT_ROWS, readLeadCsv } from '../csv';
 
 export type LeadFormState = {
   attempt: number;
@@ -207,7 +207,7 @@ export async function importLeads(_state: ImportState, form: FormData): Promise<
     )
       return { message: 'Escolha um arquivo CSV de até 2 MB.' };
     try {
-      const parsed = readLeadCsv(await file.text());
+      const parsed = readLeadCsv(decodeLeadCsv(new Uint8Array(await file.arrayBuffer())));
       if (parsed.errors.length)
         return {
           message: 'Corrija a planilha e envie de novo. Nenhum contato foi importado.',
