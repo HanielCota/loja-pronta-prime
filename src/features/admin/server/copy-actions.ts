@@ -48,6 +48,21 @@ export async function saveSllCopy(
 type CopyGroup = (typeof SLL_COPY_GROUPS)[number];
 const noGroup = { saved: false, message: 'Atualize a página e tente de novo.' };
 
+type CopyKey = CopyGroup['fields'][number]['key'];
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+// Texto igual ao padrão não precisa de linha própria: apagar volta ao texto do código.
+async function publishCopyText(tx: Transaction, key: CopyKey, value: string) {
+  if (value === SLL_COPY[key]) {
+    await tx.delete(learningTexts).where(eq(learningTexts.key, key));
+    return;
+  }
+  await tx
+    .insert(learningTexts)
+    .values({ key, value })
+    .onConflictDoUpdate({ target: learningTexts.key, set: { value } });
+}
+
 function copyGroup(form: FormData): CopyGroup | undefined {
   const groupIndex = Number(form.get('groupIndex'));
   return Number.isInteger(groupIndex) ? SLL_COPY_GROUPS[groupIndex] : undefined;
@@ -93,12 +108,7 @@ async function publishCopyGroup(
         .insert(learningTextHistory)
         .values({ key, value: previous })
         .onConflictDoUpdate({ target: learningTextHistory.key, set: { value: previous } });
-      if (value === SLL_COPY[key]) await tx.delete(learningTexts).where(eq(learningTexts.key, key));
-      else
-        await tx
-          .insert(learningTexts)
-          .values({ key, value })
-          .onConflictDoUpdate({ target: learningTexts.key, set: { value } });
+      await publishCopyText(tx, key, value);
       await tx.delete(learningTextDrafts).where(eq(learningTextDrafts.key, key));
     }
     return { saved: true, message: '' };

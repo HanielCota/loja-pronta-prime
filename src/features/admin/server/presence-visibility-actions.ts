@@ -13,6 +13,19 @@ const visibilityInput = z.object({
   visibility: z.enum(['hidden', 'visible']),
 });
 
+// Esconder grava uma linha; mostrar de novo é só apagar essa linha.
+async function savePresenceVisibility(
+  userId: string,
+  hiddenBy: string,
+  visibility: z.infer<typeof visibilityInput>['visibility'],
+) {
+  if (visibility === 'hidden') {
+    await db.insert(hiddenUserPresence).values({ userId, hiddenBy }).onConflictDoNothing();
+    return;
+  }
+  await db.delete(hiddenUserPresence).where(eq(hiddenUserPresence.userId, userId));
+}
+
 export async function changePresenceVisibility(form: FormData): Promise<void> {
   const session = await requirePresenceVisibilityOwner();
   const parsed = visibilityInput.safeParse(Object.fromEntries(form));
@@ -23,14 +36,7 @@ export async function changePresenceVisibility(form: FormData): Promise<void> {
     .where(eq(user.email, parsed.data.email))
     .limit(1);
   if (!account) redirect('/admin/online?visibility=missing');
-  if (parsed.data.visibility === 'hidden') {
-    await db
-      .insert(hiddenUserPresence)
-      .values({ userId: account.id, hiddenBy: session.user.id })
-      .onConflictDoNothing();
-  } else {
-    await db.delete(hiddenUserPresence).where(eq(hiddenUserPresence.userId, account.id));
-  }
+  await savePresenceVisibility(account.id, session.user.id, parsed.data.visibility);
   revalidatePath('/admin', 'layout');
   redirect('/admin/online?visibility=saved');
 }

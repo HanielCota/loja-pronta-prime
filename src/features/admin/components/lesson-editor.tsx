@@ -216,8 +216,11 @@ export function LessonEditor({
     startBlockTransition(async () => {
       const result = await reorderLessonBlocks(data);
       setBlockMessage(result.message);
-      if (result.saved) router.refresh();
-      else setBlockOrder(previous);
+      if (result.saved) {
+        router.refresh();
+        return;
+      }
+      setBlockOrder(previous);
     });
   }
   const confirmation = useAdminConfirmation();

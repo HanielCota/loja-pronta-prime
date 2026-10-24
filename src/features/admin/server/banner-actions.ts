@@ -88,8 +88,23 @@ export async function saveSllBanner(
     destination: parsed.data.destination,
     imageAlt: parsed.data.imageAlt || null,
   };
+  // Banner novo: acha um endereço livre a partir do título e entra como rascunho.
+  const createDraftBanner = async () => {
+    let slug = learningSlugFromTitle(parsed.data.title);
+    for (
+      let suffix = 2;
+      await db.query.learningBanners.findFirst({ where: eq(learningBanners.slug, slug) });
+      suffix++
+    ) {
+      slug = `${learningSlugFromTitle(parsed.data.title)}-${suffix}`;
+    }
+    const [created] = await db
+      .insert(learningBanners)
+      .values({ ...values, position: parsed.data.position, slug, status: 'draft' })
+      .returning({ id: learningBanners.id });
+    return created?.id;
+  };
   try {
-    let bannerId = existing?.id;
     if (existing) {
       const available = await withNodeDraftLock('banner', existing.id, async (tx) => {
         const current = await tx.query.learningBanners.findFirst({
@@ -97,27 +112,16 @@ export async function saveSllBanner(
           where: and(eq(learningBanners.id, existing.id), isNull(learningBanners.archivedAt)),
         });
         if (!current) return false;
-        if (current.status === 'published') await saveNodeDraft('banner', existing.id, values, tx);
-        else
-          await tx.update(learningBanners).set(values).where(eq(learningBanners.id, existing.id));
+        if (current.status === 'published') {
+          await saveNodeDraft('banner', existing.id, values, tx);
+          return true;
+        }
+        await tx.update(learningBanners).set(values).where(eq(learningBanners.id, existing.id));
         return true;
       });
       if (!available) return { message: 'Este banner não está disponível.', saved: false };
-    } else {
-      let slug = learningSlugFromTitle(parsed.data.title);
-      for (
-        let suffix = 2;
-        await db.query.learningBanners.findFirst({ where: eq(learningBanners.slug, slug) });
-        suffix++
-      ) {
-        slug = `${learningSlugFromTitle(parsed.data.title)}-${suffix}`;
-      }
-      const [created] = await db
-        .insert(learningBanners)
-        .values({ ...values, position: parsed.data.position, slug, status: 'draft' })
-        .returning({ id: learningBanners.id });
-      bannerId = created?.id;
     }
+    const bannerId = existing ? existing.id : await createDraftBanner();
     if (!bannerId) return { message: 'Não consegui guardar este banner.', saved: false };
     revalidatePath('/admin/banners');
     revalidatePath('/sll');
