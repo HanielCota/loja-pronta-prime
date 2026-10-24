@@ -26,33 +26,38 @@ export function parseCsv(content: string): string[][] {
   for (let i = 0; i < text.length; i++) {
     const char = text[i]!;
     if (quoted) {
-      if (char === '"') {
-        if (text[i + 1] === '"') {
-          cell += '"';
-          i++;
-        } else {
-          quoted = false;
-          closed = true;
-        }
-      } else cell += char;
-    } else if (char === '"') {
+      if (char !== '"') {
+        cell += char;
+        continue;
+      }
+      if (text[i + 1] === '"') {
+        cell += '"';
+        i++;
+        continue;
+      }
+      quoted = false;
+      closed = true;
+      continue;
+    }
+    if (char === '"') {
       if (cell || closed) throw new Error('Aspas fora do lugar na planilha.');
       quoted = true;
-    } else if (char === delimiter || char === '\n' || char === '\r') {
+      continue;
+    }
+    if (char === delimiter || char === '\n' || char === '\r') {
       row.push(cell);
       cell = '';
       closed = false;
-      if (char !== delimiter) {
-        if (row.some((value) => value.trim())) rows.push(row);
-        row = [];
-        if (char === '\r' && text[i + 1] === '\n') i++;
-        if (rows.length > MAX_IMPORT_ROWS + 1)
-          throw new Error(`Envie até ${MAX_IMPORT_ROWS} contatos por vez.`);
-      }
-    } else {
-      if (closed) throw new Error('Há texto depois das aspas na planilha.');
-      cell += char;
+      if (char === delimiter) continue;
+      if (row.some((value) => value.trim())) rows.push(row);
+      row = [];
+      if (char === '\r' && text[i + 1] === '\n') i++;
+      if (rows.length > MAX_IMPORT_ROWS + 1)
+        throw new Error(`Envie até ${MAX_IMPORT_ROWS} contatos por vez.`);
+      continue;
     }
+    if (closed) throw new Error('Há texto depois das aspas na planilha.');
+    cell += char;
   }
   if (quoted) throw new Error('Faltou fechar as aspas na planilha.');
   row.push(cell);
@@ -95,11 +100,13 @@ export function readLeadCsv(content: string): { leads: LeadInput[]; errors: stri
       tags: values.etiquetas ?? '',
       lostReason: values.motivo_perda ?? '',
     });
-    if (parsed.success) leads.push(parsed.data);
-    else
-      errors.push(
-        `Linha ${index + 2}: ${parsed.error.issues.map((issue) => issue.message).join(' ')}`,
-      );
+    if (parsed.success) {
+      leads.push(parsed.data);
+      return;
+    }
+    errors.push(
+      `Linha ${index + 2}: ${parsed.error.issues.map((issue) => issue.message).join(' ')}`,
+    );
   });
   return { leads, errors };
 }
