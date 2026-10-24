@@ -11,7 +11,7 @@ export function formatMoney(cents: number) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100);
 }
 
-/** O mínimo para não perder dinheiro é arredondado para cima. */
+/** Só formata: o ROAS já chega arredondado pra cima no centésimo (ver roasRoundedUp). */
 export function formatRoas(value: number) {
-  return (Math.ceil(value * 100) / 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+  return value.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
 }

@@ -147,6 +147,23 @@ export function simulateDiscount(
   };
 }
 
+/**
+ * Quantas vezes o preço cobre a verba (ROAS), arredondado pra cima no centésimo. A conta é feita em
+ * inteiros: em ponto flutuante, 1100 / 1000 * 100 dá 110,00000000000001 e o arredondamento pra
+ * cima mostrava 1,11× em vez de 1,10×.
+ */
+export function roasRoundedUp(priceCents: number, budgetCents: number): number | null {
+  if (!Number.isSafeInteger(priceCents) || !Number.isSafeInteger(budgetCents)) return null;
+  if (priceCents < 0 || budgetCents <= 0) return null;
+  const scaled = priceCents * 100;
+  let hundredths = Math.floor(scaled / budgetCents);
+  // A divisão em ponto flutuante pode errar por um; o resto em inteiros confirma.
+  while (hundredths * budgetCents > scaled) hundredths--;
+  while ((hundredths + 1) * budgetCents <= scaled) hundredths++;
+  if (hundredths * budgetCents < scaled) hundredths++;
+  return hundredths / 100;
+}
+
 export function advertisingLimits(priceCents: number, costs: SaleCosts, targetMarginBps: number) {
   if (!Number.isInteger(targetMarginBps) || targetMarginBps < 0 || targetMarginBps >= 10_000)
     throw new Error('Confira a margem desejada.');
@@ -159,7 +176,7 @@ export function advertisingLimits(priceCents: number, costs: SaleCosts, targetMa
     breakEvenBudgetCents: Math.max(0, remainingCents),
     targetBudgetCents,
     targetProfitCents,
-    breakEvenRoas: remainingCents > 0 ? priceCents / remainingCents : null,
-    targetRoas: targetBudgetCents > 0 ? priceCents / targetBudgetCents : null,
+    breakEvenRoas: roasRoundedUp(priceCents, remainingCents),
+    targetRoas: roasRoundedUp(priceCents, targetBudgetCents),
   };
 }

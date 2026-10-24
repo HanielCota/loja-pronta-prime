@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   advertisingLimits,
+  roasRoundedUp,
   calculateSale,
   simulateDiscount,
   suggestPrice,
@@ -101,11 +102,36 @@ describe('simulações SLL', () => {
     const limits = advertisingLimits(5000, { ...costs, advertisingCents: 1500 }, 2000);
     expect(limits.breakEvenBudgetCents).toBe(1350);
     expect(limits.targetBudgetCents).toBe(350);
-    expect(limits.breakEvenRoas).toBeCloseTo(5000 / 1350);
-    expect(formatRoas(2.714)).toBe('2,72');
-    expect(formatRoas(5000 / 350)).toBe('14,29');
+    expect(limits.breakEvenRoas).toBe(3.71);
+    expect(limits.targetRoas).toBe(14.29);
+    expect(formatRoas(3.71)).toBe('3,71');
+    expect(formatRoas(1.1)).toBe('1,1');
     expect(advertisingLimits(1000, costs, 2000).breakEvenRoas).toBeNull();
     expect(advertisingLimits(5000, costs, 5000).targetRoas).toBeNull();
+  });
+  test('o ROAS arredonda pra cima no centésimo sem erro de ponto flutuante', () => {
+    // 1100 / 1000 * 100 em ponto flutuante dá 110,00000000000001: mostrava 1,11×.
+    expect(roasRoundedUp(1100, 1000)).toBe(1.1);
+    expect(roasRoundedUp(2200, 1000)).toBe(2.2);
+    expect(roasRoundedUp(1001, 1000)).toBe(1.01);
+    expect(roasRoundedUp(10_001, 10_000)).toBe(1.01);
+    expect(roasRoundedUp(2714, 1000)).toBe(2.72);
+    expect(roasRoundedUp(5000, 350)).toBe(14.29);
+    expect(roasRoundedUp(1, 1)).toBe(1);
+    expect(roasRoundedUp(0, 1)).toBe(0);
+    expect(roasRoundedUp(100_000_000, 1)).toBe(100_000_000);
+    expect(roasRoundedUp(100_000_000, 99_999_999)).toBe(1.01);
+    expect(roasRoundedUp(1000, 0)).toBeNull();
+    expect(roasRoundedUp(1000, -1)).toBeNull();
+    expect(roasRoundedUp(1000, 0.5)).toBeNull();
+    for (let price = 1; price <= 3000; price += 7)
+      for (let budget = 1; budget <= price; budget += 13) {
+        const roas = roasRoundedUp(price, budget)!;
+        const hundredths = Math.round(roas * 100);
+        // Cobre a verba e é o menor centésimo que cobre.
+        expect(hundredths * budget).toBeGreaterThanOrEqual(price * 100);
+        expect((hundredths - 1) * budget).toBeLessThan(price * 100);
+      }
   });
   test('considera o primeiro preço da faixa do CPF quando a estimativa é menor', () => {
     for (const moreThan450Orders of [false, true]) {
