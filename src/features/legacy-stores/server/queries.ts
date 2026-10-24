@@ -1,6 +1,7 @@
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { cache } from 'react';
 import { z } from 'zod';
+import { parsePageNumber } from '@/lib/search-params';
 import { db } from '@/server/db';
 import {
   legacyCustomers,
@@ -71,7 +72,7 @@ export async function getLegacyStoreForUser(userId: string, id: string, page = 1
       .where(eq(legacyStoreProducts.storeId, productStoreId))
       .orderBy(asc(legacyStoreProducts.id))
       .limit(LEGACY_PRODUCTS_PAGE_SIZE)
-      .offset((Math.max(1, Math.trunc(page)) - 1) * LEGACY_PRODUCTS_PAGE_SIZE),
+      .offset((parsePageNumber(String(page)) - 1) * LEGACY_PRODUCTS_PAGE_SIZE),
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(legacyStoreProducts)

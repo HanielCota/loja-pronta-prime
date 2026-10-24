@@ -3,11 +3,15 @@ import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '@/config/auth';
 import { VALIDATION_MESSAGES } from './messages';
 import { cleanTypedText } from '@/lib/text';
 
+/** O maior email que o padrão permite (RFC 5321), o mesmo teto dos leads e das contas do admin. */
+export const EMAIL_MAX_LENGTH = 254;
+
 /** Regras compartilhadas entre o navegador e o servidor. */
 export const emailSchema = z
   .string({ error: VALIDATION_MESSAGES.emailRequired })
   .trim()
   .toLowerCase()
+  .max(EMAIL_MAX_LENGTH, { error: VALIDATION_MESSAGES.emailInvalid })
   .pipe(z.email({ error: VALIDATION_MESSAGES.emailInvalid }));
 
 const password = z

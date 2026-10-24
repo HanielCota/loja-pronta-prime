@@ -76,13 +76,17 @@ async function draw(
   try {
     png = await drawLogo(brief, storeName, tweak);
   } catch (error) {
-    // A imagem não saiu: a criação volta pra ela (nada foi pago).
-    await releaseGeneration(userId);
+    // A criação só volta pra ela quando com certeza nada foi pago. Num tempo esgotado a OpenAI
+    // pode ter cobrado a imagem: devolver ali deixava gerar imagens pagas sem limite.
+    const billed = error instanceof AiUnavailableError && error.mayHaveBilled;
+    if (!billed) await releaseGeneration(userId);
     if (!(error instanceof AiUnavailableError)) throw error;
     console.error('[logo]', error.message);
     return {
       studio: view(await getLogoStudio(userId)),
-      error: 'Não consegui criar o logo agora. Tente de novo daqui a pouco.',
+      error: billed
+        ? 'Não consegui criar o logo agora. Esta tentativa contou como uma criação. Tente de novo daqui a pouco.'
+        : 'Não consegui criar o logo agora. Tente de novo daqui a pouco.',
     };
   }
   // Daqui pra frente a imagem já foi paga: uma falha ao guardar não devolve a criação.
@@ -149,17 +153,20 @@ export async function uploadLogo(form: FormData): Promise<StudioResult> {
   if (file.size > MAX_UPLOAD_BYTES) {
     return { studio: view(studio), error: 'Essa imagem é grande demais. Tente outra.' };
   }
-  const png = await normalizeUploadedLogo(new Uint8Array(await file.arrayBuffer()));
-  if (!png) {
-    return {
-      studio: view(studio),
-      error: 'Não consegui abrir essa imagem. Mande uma foto ou imagem (PNG ou JPG).',
-    };
-  }
+  // A vaga vem antes de abrir a imagem: abrir até 40 megapixels custa CPU, e quem já usou todas
+  // as vagas podia mandar imagens sem parar só pra serem abertas e recusadas.
   if (!(await reserveUpload(userId, MAX_UPLOADS))) {
     return {
       studio: view(studio),
       error: 'Você já mandou muitas imagens. Escolha uma das que estão aqui.',
+    };
+  }
+  const png = await normalizeUploadedLogo(new Uint8Array(await file.arrayBuffer()));
+  if (!png) {
+    await releaseUpload(userId);
+    return {
+      studio: view(studio),
+      error: 'Não consegui abrir essa imagem. Mande uma foto ou imagem (PNG ou JPG).',
     };
   }
   let key: string;

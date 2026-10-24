@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { readLimitedBody } from '@/lib/request-body';
 import { signShopeeRequest } from '@/lib/shopee-protocol';
 import {
   shopeeApiOrigin,
@@ -31,7 +32,13 @@ export function reportShopeeFailure(stage: 'authorize' | 'refresh', error: unkno
 const tokenResponse = z.object({
   access_token: z.string().min(1),
   refresh_token: z.string().min(1),
-  expire_in: z.number().int().positive(),
+  // Teto igual ao do Bling: um valor absurdo virava data inválida e a gravação falhava depois de
+  // o código de autorização, que só vale uma vez, já ter sido gasto.
+  expire_in: z
+    .number()
+    .int()
+    .positive()
+    .max(366 * 24 * 60 * 60),
 });
 
 export class ShopeeApiError extends Error {
@@ -45,6 +52,20 @@ export class ShopeeApiError extends Error {
       }[reason],
     );
     this.name = 'ShopeeApiError';
+  }
+}
+
+/**
+ * Lê o JSON da Shopee contando bytes enquanto chegam. `response.text()` e `response.json()`
+ * guardavam a resposta inteira antes de qualquer conferência de tamanho: o tempo tinha teto, a
+ * memória não. Qualquer falha (grande demais, texto quebrado) vira resposta inválida.
+ */
+export async function readShopeeJson(response: Response, maxBytes: number): Promise<unknown> {
+  try {
+    const bytes = await readLimitedBody(response, maxBytes);
+    return JSON.parse(new TextDecoder().decode(bytes));
+  } catch {
+    throw new ShopeeApiError('response');
   }
 }
 
@@ -96,12 +117,8 @@ export async function requestShopeeTokens(
     throw new ShopeeApiError(
       response.status >= 500 || response.status === 429 ? 'unavailable' : 'rejected',
     );
-  let body: unknown;
-  try {
-    body = await response.json();
-  } catch {
-    throw new ShopeeApiError('response');
-  }
+  // Tokens cabem em poucos KB.
+  const body = await readShopeeJson(response, 64_000);
   if (
     typeof body !== 'object' ||
     body === null ||

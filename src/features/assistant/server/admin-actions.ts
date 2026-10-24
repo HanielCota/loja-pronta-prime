@@ -67,9 +67,11 @@ export async function retryAssistantJob(form: FormData): Promise<void> {
           .set({ payload: corrected.data })
           .where(eq(assistantPublicationItems.id, item.id));
     }
+    // As tentativas recomeçam: sem isso, uma leitura parada no teto de interrupções voltava a ser
+    // bloqueada na primeira queda, sem as novas chances que a equipe acabou de dar.
     await tx
       .update(assistantJobs)
-      .set({ status: 'pending', runAt: new Date(), leaseUntil: null, failure: null })
+      .set({ status: 'pending', runAt: new Date(), leaseUntil: null, failure: null, attempts: 0 })
       .where(eq(assistantJobs.id, id.data));
   });
   revalidatePath('/admin/assistente');

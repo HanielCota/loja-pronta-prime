@@ -24,7 +24,11 @@ import { formatLastSeen, isOnline } from '@/features/presence/presence';
 
 export const metadata: Metadata = { title: 'Conta · Administração' };
 
-const dateFormat = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium', timeStyle: 'short' });
+const dateFormat = new Intl.DateTimeFormat('pt-BR', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+  timeZone: 'America/Sao_Paulo',
+});
 
 /** Uma conta: cada coisa que dá pra mudar num cartão próprio, com o resumo ao lado. */
 const CREATED_NOTICES: Record<string, string> = {

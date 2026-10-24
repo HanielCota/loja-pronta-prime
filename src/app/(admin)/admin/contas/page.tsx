@@ -10,11 +10,16 @@ import { productLabel } from '@/features/admin/account-labels';
 import { requireAdmin } from '@/features/admin/server/access';
 import { ACCOUNTS_PAGE_SIZE, listAccounts } from '@/features/admin/server/accounts';
 import { RowCellLink } from '@/features/admin/components/row-cell-link';
+import { parsePageNumber } from '@/lib/search-params';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Contas · Administração' };
 
-const dateFormat = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' });
+// Hora do Brasil: o servidor roda em UTC e uma conta criada às 22h aparecia no dia seguinte.
+const dateFormat = new Intl.DateTimeFormat('pt-BR', {
+  dateStyle: 'short',
+  timeZone: 'America/Sao_Paulo',
+});
 
 const pageLinkClass =
   'inline-flex min-h-11 items-center text-body text-link outline-none hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
@@ -43,7 +48,7 @@ export default async function AdminAccountsPage({
 }) {
   await requireAdmin('/admin/contas');
   const { q = '', pagina } = await searchParams;
-  const page = Math.max(1, Number.parseInt(pagina ?? '1', 10) || 1);
+  const page = parsePageNumber(pagina);
   const { accounts, total } = await listAccounts({ query: q, page });
   const pages = Math.max(1, Math.ceil(total / ACCOUNTS_PAGE_SIZE));
   const pageHref = (target: number) =>

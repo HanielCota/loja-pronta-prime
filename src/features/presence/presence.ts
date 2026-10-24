@@ -67,9 +67,11 @@ export function formatLastSeen(lastSeenAt: Date, now: Date): string {
   if (minutes < 60) return `Há ${minutes} min`;
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `Há ${hours} h`;
-  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(
-    lastSeenAt,
-  );
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'America/Sao_Paulo',
+  }).format(lastSeenAt);
 }
 
 export function isOnline(lastSeenAt: Date, now: Date): boolean {

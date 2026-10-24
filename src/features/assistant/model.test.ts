@@ -9,6 +9,7 @@ import {
   observationSeries,
   planNeedsHistory,
   playbookSchema,
+  shopeeIdSchema,
   starterPlaybooks,
   validateInitialSelection,
   type MetricWindow,
@@ -115,4 +116,16 @@ test('uma queda intermediária ou um sumiço não fica escondido pela coleta fin
   expect(observationSeries([first, undefined, last])).toBeNull();
   expect(observationSeries([first, { ...middle, categoryId: 8 }, last])).toBeNull();
   expect(observationWindow(first, { ...last, collectedAt: 'data inválida' })).toBeNull();
+});
+
+describe('shopeeIdSchema', () => {
+  test('accepts real Shopee ids up to the largest safe integer', () => {
+    for (const id of [1, 25_000_000_000, 120_000_000_000, Number.MAX_SAFE_INTEGER])
+      expect(shopeeIdSchema.safeParse(id).success).toBe(true);
+  });
+
+  test('rejects ids the JSON parser may have rounded, and non-ids', () => {
+    for (const id of [Number.MAX_SAFE_INTEGER + 1, 2 ** 63, 0, -1, 1.5, Number.NaN, Infinity, '1'])
+      expect(shopeeIdSchema.safeParse(id).success).toBe(false);
+  });
 });

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { parseWhatsapp } from '@/features/loja-pronta/whatsapp';
+import { parsePageNumber } from '@/lib/search-params';
 
 export const LEAD_STAGES = ['new', 'contacted', 'qualified', 'proposal', 'won', 'lost'] as const;
 export const LEAD_PRODUCTS = ['undecided', 'loja-pronta', 'sll', 'both'] as const;
@@ -17,6 +18,14 @@ export const interestLabels: Record<(typeof LEAD_PRODUCTS)[number], string> = {
   sll: 'Curso SLL',
   both: 'Os dois',
 };
+
+/**
+ * Faixa aceita pro próximo contato. "0000-01-01" passava pela conferência do JavaScript mas o
+ * Postgres recusa o ano zero: a gravação falhava com erro genérico e, na importação, derrubava a
+ * planilha inteira. Comparar texto funciona porque o formato é sempre AAAA-MM-DD.
+ */
+export const NEXT_CONTACT_MIN = '2000-01-01';
+export const NEXT_CONTACT_MAX = '2100-12-31';
 
 export const leadSchema = z
   .object({
@@ -46,6 +55,8 @@ export const leadSchema = z
         (value) =>
           !value ||
           (/^\d{4}-\d{2}-\d{2}$/.test(value) &&
+            value >= NEXT_CONTACT_MIN &&
+            value <= NEXT_CONTACT_MAX &&
             !Number.isNaN(Date.parse(value)) &&
             new Date(value).toISOString().slice(0, 10) === value),
         'Escolha uma data válida.',
@@ -137,6 +148,6 @@ export function parseLeadFilters(params: URLSearchParams): LeadFilters {
     owner: (params.get('responsavel') ?? '').slice(0, 100),
     due: params.get('retornos') === 'hoje',
     archived: params.get('arquivados') === 'sim',
-    page: Math.min(100000, Math.max(1, Number.parseInt(params.get('pagina') ?? '', 10) || 1)),
+    page: parsePageNumber(params.get('pagina') ?? undefined),
   };
 }

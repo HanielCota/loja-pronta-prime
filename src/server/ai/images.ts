@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { env } from '@/config/env';
-import { AiUnavailableError, describe } from './errors';
+import { AiUnavailableError, describe, rejectedByApi } from './errors';
 
 /** Um gerador de imagem: recebe a descrição e devolve um PNG quadrado. */
 export type ImageGenerator = (prompt: string) => Promise<Uint8Array>;
@@ -47,9 +47,12 @@ export const openAiImage: ImageGenerator = async (prompt) => {
     });
   } catch (error) {
     // A mensagem pode explicar (ex.: pedido barrado pela moderação), mas não vai pra tela.
-    throw new AiUnavailableError(`OpenAI falhou: ${describe(error)}`, { cause: error });
+    throw new AiUnavailableError(`OpenAI falhou: ${describe(error)}`, {
+      cause: error,
+      mayHaveBilled: !rejectedByApi(error),
+    });
   }
   const base64 = response.data?.[0]?.b64_json;
-  if (!base64) throw new AiUnavailableError('OpenAI respondeu sem imagem');
+  if (!base64) throw new AiUnavailableError('OpenAI respondeu sem imagem', { mayHaveBilled: true });
   return new Uint8Array(Buffer.from(base64, 'base64'));
 };

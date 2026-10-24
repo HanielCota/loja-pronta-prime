@@ -206,6 +206,12 @@ export function validateInitialSelection(keys: string[]) {
   );
 }
 
+/**
+ * Id da Shopee (anúncio, categoria, loja): inteiro positivo que o JavaScript guarda sem perder
+ * dígitos. Acima de 2^53 o JSON.parse arredonda e a comparação com o id pedido erra em silêncio.
+ */
+export const shopeeIdSchema = z.number().int().positive().safe();
+
 /** Anúncios simples já precisam chegar com imagens, categoria e logística reais conferidas. */
 export const publicationPayloadSchema = z.object({
   item_name: z.string().trim().min(1).max(120),

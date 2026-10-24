@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { signShopeeRequest } from '@/lib/shopee-protocol';
 import { shopeeApiOrigin, type ShopeeConfiguration } from '../authorization';
-import { ShopeeApiError } from './client';
+import { readShopeeJson, ShopeeApiError } from './client';
 
 const READ_PATHS = [
   '/api/v2/shop/get_shop_info',
@@ -61,14 +61,8 @@ export async function requestShopeeResource<T>(
     throw new ShopeeApiError(
       response.status >= 500 || response.status === 429 ? 'unavailable' : 'rejected',
     );
-  let decoded: unknown;
-  try {
-    const text = await response.text();
-    if (text.length > 2_000_000) throw new Error('Resposta grande demais.');
-    decoded = JSON.parse(text);
-  } catch {
-    throw new ShopeeApiError('response');
-  }
+  // Uma página de 100 anúncios fica bem abaixo de 2 MB.
+  const decoded = await readShopeeJson(response, 2_000_000);
   const envelope = z
     .object({ error: z.string(), response: z.unknown().optional() })
     .safeParse(decoded);
@@ -171,7 +165,7 @@ export async function uploadShopeeMedia(
         })
         .optional(),
     })
-    .safeParse(await response.json());
+    .safeParse(await readShopeeJson(response, 64_000));
   if (!decoded.success || decoded.data.error || !decoded.data.response)
     throw new ShopeeApiError('response');
   const info = decoded.data.response.image_info;

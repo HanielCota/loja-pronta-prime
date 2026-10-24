@@ -27,13 +27,13 @@ export default async function AdminHomePage({
   await requireAdmin();
   const { area } = await searchParams;
   if (area !== 'welcome' && area !== 'method' && area !== 'courses') {
-    const [overview, { now, rows: online }] = await Promise.all([
+    const [overview, { now, rows: online, total: onlineTotal }] = await Promise.all([
       getAdminOverview(),
       getOnlineStudents(),
     ]);
     return (
       <AdminPage title="Visão geral" intro="Os números da plataforma e o que mudou por último.">
-        <AdminLiveOverview initial={{ now, online, overview }} />
+        <AdminLiveOverview initial={{ now, online, onlineTotal, overview }} />
       </AdminPage>
     );
   }
