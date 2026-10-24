@@ -13,6 +13,7 @@ import {
   stores,
 } from '@/server/db/schema';
 import { shopeeApplicationId, type ShopeeConfiguration } from '@/features/shopee/authorization';
+import { shopeeItemListPageSchema } from '@/features/shopee/item-list';
 import { readShopeeAccess } from '@/features/shopee/server/connection';
 import {
   addShopeeItem,
@@ -376,11 +377,7 @@ export async function findSku(
         config,
         access,
         '/api/v2/product/get_item_list',
-        z.object({
-          item: z.array(z.object({ item_id: z.number().int().positive().safe() })),
-          has_next_page: z.boolean(),
-          next_offset: z.number().int().nonnegative().optional(),
-        }),
+        shopeeItemListPageSchema,
         { offset: String(offset), page_size: '100', item_status: status },
         fetcher,
       );
