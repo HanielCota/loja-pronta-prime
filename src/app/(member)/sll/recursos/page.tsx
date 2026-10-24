@@ -28,8 +28,11 @@ export default async function SllResourcesPage() {
   const groups = resources.reduce<Array<{ key: string; title: string; items: typeof resources }>>(
     (result, resource) => {
       const group = result.find((item) => item.key === resource.groupKey);
-      if (group) group.items.push(resource);
-      else result.push({ key: resource.groupKey, title: resource.groupTitle, items: [resource] });
+      if (group) {
+        group.items.push(resource);
+        return result;
+      }
+      result.push({ key: resource.groupKey, title: resource.groupTitle, items: [resource] });
       return result;
     },
     [],

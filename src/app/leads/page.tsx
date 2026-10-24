@@ -56,8 +56,11 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
     const next = new URLSearchParams(params);
     next.delete('pagina');
     for (const [key, value] of Object.entries(updates)) {
-      if (value) next.set(key, value);
-      else next.delete(key);
+      if (value) {
+        next.set(key, value);
+        continue;
+      }
+      next.delete(key);
     }
     return `/leads?${next}`;
   };

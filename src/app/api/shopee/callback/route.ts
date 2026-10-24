@@ -10,8 +10,43 @@ import {
   getShopeeAuthorizationOrigin,
 } from '@/features/shopee/server/connection';
 
+type CallbackOutcome = { result: string; origin: ShopeeEntry };
+
+// Resultado à parte pra cada saída retornar cedo; sem conexão concluída, volta o que já se sabia.
+async function authorizationResult(
+  session: Awaited<ReturnType<typeof getActiveSession>>,
+  config: ReturnType<typeof getShopeeConfiguration>,
+  callback: ReturnType<typeof parseShopeeCallback>,
+  current: CallbackOutcome,
+): Promise<CallbackOutcome> {
+  if (!config || config.SHOPEE_ENABLED !== 'true') return { ...current, result: 'unavailable' };
+  if (
+    !session ||
+    needsFirstPassword(session.user) ||
+    !callback ||
+    !canUseShopee(config, session.user.id, session.user.role)
+  )
+    return current;
+  const { products } = await getStudentProducts(session.user.id);
+  const savedOrigin = await getShopeeAuthorizationOrigin(
+    session.user.id,
+    session.session.id,
+    callback.state,
+  );
+  if (!savedOrigin) return current;
+  if (!products.includes(savedOrigin)) return { ...current, origin: savedOrigin };
+  try {
+    const result = await finishShopeeAuthorization(
+      { ...callback, userId: session.user.id, sessionId: session.session.id },
+      config,
+    );
+    return { result, origin: savedOrigin };
+  } catch {
+    return { result: 'failed', origin: savedOrigin };
+  }
+}
+
 export async function GET(request: Request) {
-  let result = 'expired';
   let origin: ShopeeEntry = 'loja-pronta';
   const session = await getActiveSession();
   const config = getShopeeConfiguration();
@@ -20,34 +55,16 @@ export async function GET(request: Request) {
     origin =
       (await getShopeeAuthorizationOrigin(session.user.id, session.session.id, callback.state)) ??
       origin;
-  if (!config || config.SHOPEE_ENABLED !== 'true') result = 'unavailable';
-  else if (
-    session &&
-    !needsFirstPassword(session.user) &&
-    callback &&
-    canUseShopee(config, session.user.id, session.user.role)
-  ) {
-    const { products } = await getStudentProducts(session.user.id);
-    const savedOrigin = await getShopeeAuthorizationOrigin(
-      session.user.id,
-      session.session.id,
-      callback.state,
-    );
-    if (savedOrigin) origin = savedOrigin;
-    if (savedOrigin && products.includes(savedOrigin)) {
-      try {
-        result = await finishShopeeAuthorization(
-          { ...callback, userId: session.user.id, sessionId: session.session.id },
-          config,
-        );
-      } catch {
-        result = 'failed';
-      }
-    }
-  }
+  const outcome = await authorizationResult(session, config, callback, {
+    result: 'expired',
+    origin,
+  });
   // Nenhum código, estado, mensagem externa ou Host recebido é reaproveitado no destino.
   const response = NextResponse.redirect(
-    new URL(`${shopeeConnectionPath(origin)}?resultado=${result}`, env.BETTER_AUTH_URL),
+    new URL(
+      `${shopeeConnectionPath(outcome.origin)}?resultado=${outcome.result}`,
+      env.BETTER_AUTH_URL,
+    ),
     303,
   );
   response.headers.set('Cache-Control', 'no-store');

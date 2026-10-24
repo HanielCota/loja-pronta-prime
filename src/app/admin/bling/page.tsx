@@ -11,6 +11,27 @@ import { consumeAttempt } from '@/server/auth/rate-limit';
 
 export const metadata: Metadata = { title: 'Conexão com o Bling' };
 
+type BlingConsultation = {
+  preview?: Awaited<ReturnType<typeof readBlingPreview>> | undefined;
+  error?: string | undefined;
+};
+
+// Consulta à parte pra sair cedo quando as tentativas acabam, sem chamar o Bling.
+async function consultBling(userId: string): Promise<BlingConsultation> {
+  if (!(await consumeAttempt('blingPerUser', userId)))
+    return { error: BLING_RESULT_MESSAGES.limited };
+  try {
+    return { preview: await readBlingPreview() };
+  } catch (caught) {
+    return {
+      error:
+        caught instanceof BlingError
+          ? caught.message
+          : 'Não foi possível consultar o Bling. Tente mais tarde.',
+    };
+  }
+}
+
 export default async function BlingPage({
   searchParams,
 }: {
@@ -18,21 +39,10 @@ export default async function BlingPage({
 }) {
   const session = await requireAdmin(BLING_PATH);
   const [status, params] = await Promise.all([getBlingStatus(), searchParams]);
-  let preview: Awaited<ReturnType<typeof readBlingPreview>> | undefined;
-  let error: string | undefined;
-  if (params.consultar === '1' && status.status === 'connected') {
-    if (!(await consumeAttempt('blingPerUser', session.user.id)))
-      error = BLING_RESULT_MESSAGES.limited;
-    else
-      try {
-        preview = await readBlingPreview();
-      } catch (caught) {
-        error =
-          caught instanceof BlingError
-            ? caught.message
-            : 'Não foi possível consultar o Bling. Tente mais tarde.';
-      }
-  }
+  const { preview, error }: BlingConsultation =
+    params.consultar === '1' && status.status === 'connected'
+      ? await consultBling(session.user.id)
+      : {};
   const message = params.resultado ? BLING_RESULT_MESSAGES[params.resultado] : undefined;
   return (
     <AdminShell
