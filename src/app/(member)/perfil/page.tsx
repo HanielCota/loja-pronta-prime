@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Avatar } from '@/components/ui/avatar';
-import { SupportContacts } from '@/features/support/components/support-contacts';
 import { getSupportPhones } from '@/features/support/server/contacts';
 import { SUPPORT_EMAIL } from '@/config/support';
 import {
@@ -70,7 +69,12 @@ export default async function ProfilePage() {
           <AccessGroup products={products} validity={validity.byProduct} now={validity.checkedAt} />
         }
         devices={<DevicesGroup devices={devices} />}
-        help={<HelpGroup />}
+        help={
+          // A âncora "/perfil#suporte" (menu da conta e painel da loja) cai direto aqui.
+          <div id="suporte" className="scroll-mt-24">
+            <HelpGroup phones={phones} />
+          </div>
+        }
         emailHelp={
           <>
             Pra trocar o email,{' '}
@@ -99,7 +103,6 @@ export default async function ProfilePage() {
           </>
         }
       />
-      <SupportContacts phones={phones} />
       <SignOutRow />
     </AreaShell>
   );

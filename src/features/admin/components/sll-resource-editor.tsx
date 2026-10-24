@@ -20,7 +20,7 @@ import { Label } from '@/components/ui/label';
 import { panelCard } from '@/features/member/components/area-shell';
 import { saveSllResourceForm } from '../server/actions';
 import type { ResourceActionState } from '../structure-types';
-import { AdminSelect as Select } from './admin-select';
+import { SelectMenu as Select } from '@/components/ui/select-menu';
 import { Textarea } from '@/components/ui/textarea';
 type ResourceDraft = {
   groupTitle?: string;

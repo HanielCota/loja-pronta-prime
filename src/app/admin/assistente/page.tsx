@@ -11,7 +11,7 @@ import { AdminShell } from '@/features/admin/components/admin-shell';
 import { requireAdmin } from '@/features/admin/server/access';
 import { panelCard } from '@/features/member/components/area-shell';
 import { Button } from '@/components/ui/button';
-import { Select } from '@/components/ui/select';
+import { SelectMenu } from '@/components/ui/select-menu';
 import { Textarea } from '@/components/ui/textarea';
 import { FileField } from '@/components/ui/file-field';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
@@ -144,7 +144,7 @@ export default async function AssistantAdminPage({
                       className="flex flex-col gap-2 text-body"
                     >
                       Aula que ajuda a executar
-                      <Select
+                      <SelectMenu
                         id={`action-lesson-${strategy}-${action.day}`}
                         name={`lesson-${action.day}`}
                         defaultValue={action.lessonId ?? ''}
@@ -155,7 +155,7 @@ export default async function AssistantAdminPage({
                             {lesson.title}
                           </option>
                         ))}
-                      </Select>
+                      </SelectMenu>
                     </label>
                   </fieldset>
                 ))}

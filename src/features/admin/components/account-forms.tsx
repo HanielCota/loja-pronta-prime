@@ -13,19 +13,23 @@ import {
   setAccountBlockedForm as setAccountBlocked,
   type AccountActionState,
 } from '../server/actions';
-import { AdminSelect as Select } from './admin-select';
+import { SelectMenu as Select } from '@/components/ui/select-menu';
 import { Textarea } from '@/components/ui/textarea';
 
 const initialState: AccountActionState = { message: '', saved: false };
 
+/**
+ * Retorno da ação, lido pelo leitor de tela. Vazio, não ocupa lugar: a margem negativa desfaz o
+ * espaço entre os itens do formulário, e o aviso continua na página pra ser anunciado.
+ */
 function Result({ state }: { state: AccountActionState }) {
   return (
     <output
       aria-live="polite"
       className={
         state.message && !state.saved
-          ? 'min-h-6 text-body text-destructive'
-          : 'min-h-6 text-body text-muted-foreground'
+          ? 'text-body text-destructive'
+          : 'text-body text-muted-foreground empty:-mt-4'
       }
     >
       {state.message}
@@ -142,7 +146,12 @@ export function AccountBlockForm({ id, blocked }: { id: string; blocked: boolean
           />
         </div>
       )}
-      <Button disabled={pending} loading={pending} type="submit" variant="soft">
+      <Button
+        disabled={pending}
+        loading={pending}
+        type="submit"
+        variant={blocked ? 'soft' : 'destructive'}
+      >
         {blocked ? (
           <LockKeyholeOpen aria-hidden="true" data-icon="inline-start" />
         ) : (

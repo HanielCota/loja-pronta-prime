@@ -23,7 +23,7 @@ export const metadata: Metadata = { title: 'Adicionar ou conectar loja · SLL' }
 
 const FLOW_PATH = '/sll/minhas-lojas/adicionar';
 const SHOPEE_QUERY = `${FLOW_PATH}?plataforma=shopee`;
-const cardTitleClass = 'text-xl font-semibold text-foreground';
+const cardTitleClass = 'text-headline font-semibold text-foreground';
 
 /**
  * Entrada única para os dois caminhos de loja. A plataforma fica na URL para o retorno funcionar

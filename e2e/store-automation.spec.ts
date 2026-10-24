@@ -66,10 +66,12 @@ test('prepara um novo anúncio com os valores conferidos e preserva o original',
 }) => {
   const account = accounts.get('desktop-light')!;
   await signIn(page, account.email, PASSWORD, '/sll/anuncios?categoria=20');
-  await page.getByLabel('O que deseja fazer?').selectOption('clone');
+  await page.getByRole('combobox', { name: 'O que deseja fazer?' }).click();
+  await page.getByRole('option', { name: 'Criar novos anúncios para comparar' }).click();
   await page.getByLabel('Camiseta azul', { exact: true }).check();
   await page.getByLabel('Novo título (opcional)').fill('Camiseta para comparar');
-  await page.getByLabel('Material (obrigatório)').selectOption('30');
+  await page.getByRole('combobox', { name: 'Material (obrigatório)' }).click();
+  await page.getByRole('option', { name: 'Algodão' }).click();
   const buffer = await sharp({
     create: { width: 12, height: 12, channels: 3, background: '#ffffff' },
   })
@@ -113,7 +115,8 @@ for (const size of [
       await page.getByLabel('Camiseta azul', { exact: true }).check();
       await page.getByLabel('Camiseta verde', { exact: true }).check();
       await page.getByLabel('Novo título (opcional)').fill('Camiseta de algodão');
-      await page.getByLabel('Material (obrigatório)').selectOption('30');
+      await page.getByRole('combobox', { name: 'Material (obrigatório)' }).click();
+      await page.getByRole('option', { name: 'Algodão' }).click();
       await expectNoA11yViolations(page);
       await page.screenshot({
         path: `.data/store-automation-screens/edit-${size.name}-${theme}.png`,

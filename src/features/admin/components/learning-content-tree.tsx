@@ -483,12 +483,10 @@ function SortableContentRow({
             <span className="shrink-0 text-muted-foreground">{row.icon}</span>
             <span className="min-w-0">
               <span className="block text-body font-semibold text-foreground">{row.title}</span>
-              <span className="block text-base font-normal text-muted-foreground">
-                {row.detail}
-              </span>
+              <span className="block text-sm font-normal text-muted-foreground">{row.detail}</span>
             </span>
           </span>
-          <span className="flex shrink-0 items-center gap-2 text-base font-medium text-link">
+          <span className="flex shrink-0 items-center gap-2 text-sm font-medium text-link">
             {row.action ? <span>{row.action}</span> : null}
             <ChevronRight aria-hidden="true" className="size-5" />
           </span>
@@ -693,7 +691,7 @@ function CollectionScreen({
           Voltar
         </Button>
       ) : null}
-      {context ? <p className="text-base text-muted-foreground">{context}</p> : null}
+      {context ? <p className="text-sm text-muted-foreground">{context}</p> : null}
       <h2
         className="text-title font-semibold text-balance text-foreground"
         id="content-level-heading"
@@ -834,7 +832,7 @@ function LessonScreen({
         <ArrowLeft aria-hidden="true" />
         Voltar
       </Button>
-      <p className="text-base text-muted-foreground">{context}</p>
+      <p className="text-sm text-muted-foreground">{context}</p>
       <h2
         className="text-title font-semibold text-balance text-foreground"
         id="content-level-heading"
@@ -843,7 +841,7 @@ function LessonScreen({
       >
         {lesson.title}
       </h2>
-      <p className="mt-2 text-base text-muted-foreground">
+      <p className="mt-2 text-sm text-muted-foreground">
         {lesson.durationMinutes ? `${lesson.durationMinutes} min · ` : ''}
         {statusText(lesson.status)}
         {lesson.hasDraft ? ' · Alterações em rascunho' : ''}

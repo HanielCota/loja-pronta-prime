@@ -8,7 +8,9 @@ import {
   ArrowRight,
   Download,
   ExternalLink,
+  FileText,
   Image as ImageIcon,
+  MessageCircle,
   RotateCcw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,6 +22,7 @@ import { SllProgress } from './sll-progress';
 import { SllLessonVideo } from './sll-lesson-video';
 import { sllLessonHref, sllLibraryReturnHref } from '../lesson-navigation';
 import { describeSllMaterial } from '../material-format';
+import { formatDuration } from '../duration';
 import type { SllExpectedMaterial } from '../material-catalog';
 import { setSllLessonCompletionForm } from '../server/actions';
 
@@ -206,7 +209,9 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
                 {data.lesson.sourceNumber
                   ? `Aula ${data.lesson.sourceNumber}`
                   : `Aula ${data.lesson.number} de ${data.lesson.total}`}
-                {data.lesson.durationMinutes ? ` · ${data.lesson.durationMinutes} min` : ''}
+                {data.lesson.durationMinutes
+                  ? ` · ${formatDuration(data.lesson.durationMinutes)}`
+                  : ''}
               </p>
               <h2
                 id="lesson-title"
@@ -232,38 +237,74 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
               {data.resources.length ? (
                 <section aria-label="Recursos desta aula" className="border-t border-border pt-5">
                   <h3 className="text-body font-semibold text-foreground">Recursos desta aula</h3>
+                  {/* A linha inteira é o link, com folga dos dois lados: o botão dentro de uma
+                      faixa cinza encostava nas bordas. */}
                   <ul className="mt-3 flex flex-col gap-3">
-                    {data.resources.map((resource) => (
-                      <li
-                        className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-muted p-4"
-                        key={resource.id}
-                      >
-                        <span className="text-body font-semibold text-foreground">
-                          {resource.title}
-                        </span>
-                        {resource.destination ? (
-                          <Button asChild size="inline" variant="soft">
+                    {data.resources.map((resource) => {
+                      const external = Boolean(
+                        resource.destination && !resource.destination.startsWith('/'),
+                      );
+                      const Icon = external ? MessageCircle : FileText;
+                      const content = (
+                        <>
+                          <span
+                            aria-hidden="true"
+                            className={cn(
+                              'grid size-10 shrink-0 place-items-center rounded-xl',
+                              resource.destination
+                                ? 'bg-primary-soft text-link'
+                                : 'bg-muted text-muted-foreground',
+                            )}
+                          >
+                            <Icon className="size-5" />
+                          </span>
+                          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                            <span className="text-body font-semibold text-foreground">
+                              {resource.title}
+                            </span>
+                            <span className="text-body text-pretty text-muted-foreground">
+                              {resource.destination
+                                ? `${resource.buttonLabel || 'Abrir recurso'}${external ? ' · abre em outra aba' : ''}`
+                                : 'Em breve'}
+                            </span>
+                          </span>
+                          {resource.destination ? (
+                            external ? (
+                              <ExternalLink
+                                aria-hidden="true"
+                                className="size-5 shrink-0 text-link"
+                              />
+                            ) : (
+                              <ArrowRight
+                                aria-hidden="true"
+                                className="size-5 shrink-0 text-link"
+                              />
+                            )
+                          ) : null}
+                        </>
+                      );
+                      const rowClass =
+                        'flex min-h-16 items-center gap-4 rounded-2xl border border-border px-4 py-3 sm:px-5';
+                      return (
+                        <li key={resource.id}>
+                          {resource.destination ? (
                             <a
+                              className={cn(
+                                rowClass,
+                                'outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid active:scale-[0.99] motion-safe:transition-colors motion-reduce:active:scale-100',
+                              )}
                               href={resource.destination}
-                              rel={
-                                resource.destination.startsWith('/')
-                                  ? undefined
-                                  : 'noopener noreferrer'
-                              }
-                              target={resource.destination.startsWith('/') ? undefined : '_blank'}
+                              rel={external ? 'noopener noreferrer' : undefined}
+                              target={external ? '_blank' : undefined}
                             >
-                              {resource.buttonLabel || 'Abrir recurso'}
-                              <ExternalLink aria-hidden="true" className="size-5" />
-                              {!resource.destination.startsWith('/') ? (
-                                <span className="sr-only"> (abre em outra aba)</span>
-                              ) : null}
+                              {content}
                             </a>
-                          </Button>
-                        ) : (
-                          <span className="text-body text-muted-foreground">Em breve</span>
-                        )}
-                      </li>
-                    ))}
+                          ) : (
+                            <div className={rowClass}>{content}</div>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                 </section>
               ) : null}

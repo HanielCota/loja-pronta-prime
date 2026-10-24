@@ -59,7 +59,7 @@ export function ProductChooser({ products, lastArea, status, primary }: ProductC
                   Recomendado agora.
                 </span>
               ) : null}
-              <h2 className="text-xl font-semibold tracking-tight text-foreground">{title}</h2>
+              <h2 className="text-headline font-semibold text-foreground">{title}</h2>
               <span id={`${id}-tag`} className="text-body text-muted-foreground">
                 {tag}
               </span>

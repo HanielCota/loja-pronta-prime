@@ -7,6 +7,7 @@ import { SllAreaShell } from '@/features/sll/sll-area-shell';
 import { getSllPublishedCourse } from '@/features/sll/server/catalog';
 import { requireProduct } from '@/features/products/server/access';
 import { SllProgress } from '@/features/sll/components/sll-progress';
+import { formatDuration } from '@/features/sll/duration';
 
 export const metadata: Metadata = { title: 'Curso complementar · SLL' };
 
@@ -59,7 +60,7 @@ export default async function ComplementaryCoursePage({
                     <span className="block font-medium">{lesson.title}</span>
                     {lesson.durationMinutes ? (
                       <span className="text-sm text-muted-foreground">
-                        {lesson.durationMinutes} min
+                        {formatDuration(lesson.durationMinutes)}
                       </span>
                     ) : null}
                   </span>

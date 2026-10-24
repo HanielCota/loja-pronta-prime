@@ -47,12 +47,14 @@ export default async function SllResourcesPage() {
       intro={copy.resourcesIntro}
     >
       {groups.length ? (
-        <div className="grid items-start gap-8 lg:grid-cols-2">
+        // Colunas que se encaixam (como num mural): um grupo curto não deixa buraco ao lado do
+        // grupo comprido. Cada grupo fica inteiro numa coluna.
+        <div className="gap-8 lg:columns-2">
           {groups.map((group) => (
             <section
               key={group.key}
               aria-labelledby={`resource-group-${group.key}`}
-              className="flex flex-col gap-3"
+              className="mb-8 flex break-inside-avoid flex-col gap-3 last:mb-0"
             >
               <SllGroupTitle id={`resource-group-${group.key}`}>{group.title}</SllGroupTitle>
               <SllGroupedList>

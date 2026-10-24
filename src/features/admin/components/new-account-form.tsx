@@ -7,7 +7,7 @@ import { Field, FieldError } from '@/components/ui/field';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
 import { PasswordInput } from '@/components/ui/password-input';
-import { AdminSelect as Select } from './admin-select';
+import { SelectMenu as Select } from '@/components/ui/select-menu';
 import { PASSWORD_MIN_LENGTH } from '@/config/auth';
 import { PRODUCTS } from '@/features/products/catalog';
 import { PRODUCT_IDS } from '@/config/products';

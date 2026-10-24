@@ -50,7 +50,7 @@ export function CalculatorResult({ result }: { result: Result }) {
       <h2
         id="calculator-result-title"
         tabIndex={-1}
-        className="text-xl font-semibold text-foreground"
+        className="text-headline font-semibold text-foreground"
       >
         Seu resultado
       </h2>

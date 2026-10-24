@@ -37,7 +37,7 @@ export default async function SllLessonPage({
       currentSection={currentSection}
       hasChoice={data.hasChoice}
       title={data.track.title}
-      intro="Assista à aula e acompanhe seu progresso."
+      // Sem frase genérica embaixo do título: a trilha da aula e o vídeo já dizem onde ela está.
       backLink={
         returnHref
           ? {

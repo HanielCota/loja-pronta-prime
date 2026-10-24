@@ -1,7 +1,7 @@
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import type { CalculatorKind } from '../form-input';
 import type { CalculatorState } from '../state';
-import { Select } from '@/components/ui/select';
+import { SelectMenu } from '@/components/ui/select-menu';
 import { ChevronDownIcon } from 'lucide-react';
 
 function NumberField({
@@ -56,13 +56,15 @@ export function CalculatorFields({
   return (
     <>
       <fieldset className="flex min-w-0 flex-col gap-4">
-        <legend className="mb-4 text-xl font-semibold text-foreground">Sua conta na Shopee</legend>
+        <legend className="mb-4 text-headline font-semibold text-foreground">
+          Sua conta na Shopee
+        </legend>
         <label
           className="flex flex-col gap-2 text-body text-foreground"
           htmlFor="calculator-policy"
         >
           Tipo de conta e taxas
-          <Select
+          <SelectMenu
             id="calculator-policy"
             name="policy"
             defaultValue={state.values.policy ?? 'cnpj'}
@@ -72,7 +74,7 @@ export function CalculatorFields({
             <option value="cpf">Pessoa física (CPF): até 450 pedidos em 90 dias</option>
             <option value="cpf-volume">Pessoa física (CPF): mais de 450 pedidos em 90 dias</option>
             <option value="custom">Taxas personalizadas da minha loja</option>
-          </Select>
+          </SelectMenu>
         </label>
         <p id="calculator-policy-help" className="text-sm text-muted-foreground">
           CPF: para preços abaixo de R$ 9,00 (ou R$ 12,00 com mais de 450 pedidos), use taxas
@@ -109,7 +111,7 @@ export function CalculatorFields({
         </details>
       </fieldset>
       <fieldset className="flex min-w-0 flex-col gap-4">
-        <legend className="mb-4 text-xl font-semibold text-foreground">
+        <legend className="mb-4 text-headline font-semibold text-foreground">
           Custos de uma unidade
         </legend>
         <NumberField name="product" label="Custo do produto (R$)" state={state} required />
@@ -129,7 +131,7 @@ export function CalculatorFields({
         </p>
       </fieldset>
       <fieldset className="flex min-w-0 flex-col gap-4">
-        <legend className="mb-4 text-xl font-semibold text-foreground">
+        <legend className="mb-4 text-headline font-semibold text-foreground">
           {kind === 'discount'
             ? 'Sua promoção'
             : kind === 'ads'

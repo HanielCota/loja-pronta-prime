@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Select } from '@/components/ui/select';
+import { SelectMenu } from '@/components/ui/select-menu';
 import { AreaShell, panelCard } from '@/features/member/components/area-shell';
 import { requireProduct } from '@/features/products/server/access';
 import { availableSupplierProducts } from '@/features/assistant/server/catalog';
@@ -143,13 +143,13 @@ export default async function StoreProductsPage({
             <label htmlFor="supplier-feed" className="text-body">
               Fornecedor
             </label>
-            <Select id="supplier-feed" name="supplierId">
+            <SelectMenu id="supplier-feed" name="supplierId">
               {configuredSupplierSources().map((source) => (
                 <option key={source.id} value={source.id}>
                   {source.name}
                 </option>
               ))}
-            </Select>
+            </SelectMenu>
             <Button variant="soft">Ativar atualização dos produtos</Button>
           </form>
           {operations.feeds.map((feed) => (
@@ -279,10 +279,10 @@ export default async function StoreProductsPage({
               <label htmlFor="product-strategy" className="text-body">
                 Como quer organizar sua seleção?
               </label>
-              <Select id="product-strategy" name="strategy">
+              <SelectMenu id="product-strategy" name="strategy">
                 <option value="varied">Produtos de categorias variadas</option>
                 <option value="niche">Produtos do mesmo nicho</option>
-              </Select>
+              </SelectMenu>
               <fieldset className="space-y-3">
                 <legend className="mb-3 text-body">
                   {initial

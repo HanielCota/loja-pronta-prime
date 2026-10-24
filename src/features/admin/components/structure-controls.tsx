@@ -42,7 +42,7 @@ import type {
   LearningNodeKind,
   StructureActionState,
 } from '../structure-types';
-import { AdminSelect as Select } from './admin-select';
+import { SelectMenu as Select } from '@/components/ui/select-menu';
 import { Textarea } from '@/components/ui/textarea';
 import { FileField } from '@/components/ui/file-field';
 

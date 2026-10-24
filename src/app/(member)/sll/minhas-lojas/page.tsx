@@ -139,7 +139,7 @@ function StoreCard({
         <div className="min-w-0 flex-1">
           <h2
             id="store-title"
-            className="text-xl font-semibold text-pretty break-words text-foreground"
+            className="text-headline font-semibold text-pretty break-words text-foreground"
           >
             {summary.assembly?.name ?? 'Sua loja na Shopee'}
           </h2>
@@ -202,7 +202,7 @@ function StoreLoadFailure() {
         <SllRowIcon tone="muted">
           <StoreIcon />
         </SllRowIcon>
-        <h2 id="store-failure-title" className="text-xl font-semibold text-foreground">
+        <h2 id="store-failure-title" className="text-headline font-semibold text-foreground">
           Não foi possível carregar suas lojas
         </h2>
       </div>

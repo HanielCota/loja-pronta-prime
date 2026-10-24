@@ -16,6 +16,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { ProductId } from '@/config/products';
 import { SUPPORT_EMAIL, TEAM_WHATSAPP } from '@/config/support';
+import { SUPPORT_TOPICS, type SupportPhones } from '@/features/support/contacts';
 import { whatsappLink } from '@/features/loja-pronta/whatsapp';
 import {
   accessValidityLabel,
@@ -212,23 +213,39 @@ function DeviceRow({ device }: { device: AccountDevice }) {
 }
 
 /**
- * Precisa de ajuda?: os caminhos de contato num lugar só, no fim do perfil. O WhatsApp só aparece
- * quando o número está configurado; o email do suporte sempre.
+ * Precisa de ajuda?: os caminhos de contato num lugar só, no fim do perfil. Cada assunto leva à
+ * pessoa certa no WhatsApp quando o número está configurado no admin; sem número, a linha diz
+ * "Em breve" (sem botão que finge). O email do suporte e a política aparecem sempre.
  */
-export function HelpGroup() {
+export function HelpGroup({ phones }: { phones: SupportPhones }) {
   return (
     <SettingsGroup id="perfil-ajuda" title="Precisa de ajuda?">
-      {TEAM_WHATSAPP ? (
-        <LinkRow
-          href={whatsappLink(TEAM_WHATSAPP, 'Oi! Preciso de ajuda com a minha conta.')}
-          external
-          icon={<MessageCircleIcon />}
-          label="WhatsApp do suporte"
-          value="Tire suas dúvidas por mensagem"
-          action="Chamar"
-          actionLabel="Chamar o suporte no WhatsApp"
-        />
-      ) : null}
+      {SUPPORT_TOPICS.map((topic) =>
+        phones[topic.id] ? (
+          <LinkRow
+            key={topic.id}
+            href={whatsappLink(
+              phones[topic.id],
+              `Oi, ${topic.name}! Sou aluna da Loja Pronta Prime e preciso de ajuda com: ${topic.title}.`,
+            )}
+            external
+            icon={<MessageCircleIcon />}
+            label={topic.title}
+            value={`Falar com ${topic.name}`}
+            action="Chamar"
+            actionLabel={`Falar com ${topic.name} sobre ${topic.title} no WhatsApp`}
+          />
+        ) : (
+          <li key={topic.id}>
+            <div className="grid w-full grid-cols-[auto_1fr] items-center gap-4 px-5 py-4 sm:px-6">
+              <RowIcon>
+                <MessageCircleIcon />
+              </RowIcon>
+              <RowText label={topic.title} value={`${topic.name} · Em breve`} />
+            </div>
+          </li>
+        ),
+      )}
       <LinkRow
         href={`mailto:${SUPPORT_EMAIL}`}
         icon={<MailIcon />}

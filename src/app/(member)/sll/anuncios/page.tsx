@@ -18,7 +18,7 @@ import {
 import { panelCard } from '@/features/member/components/area-shell';
 import { SllFlashMessage } from '@/features/sll/components/sll-flash-message';
 import { Button } from '@/components/ui/button';
-import { Select } from '@/components/ui/select';
+import { SelectMenu } from '@/components/ui/select-menu';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Textarea } from '@/components/ui/textarea';
 import { FileField } from '@/components/ui/file-field';
@@ -119,7 +119,7 @@ export default async function ListingsPage({
               <label htmlFor="edit-category" className="text-body">
                 Categoria para usar
               </label>
-              <Select
+              <SelectMenu
                 id="edit-category"
                 name="categoria"
                 defaultValue={selectedCategory > 0 ? String(selectedCategory) : ''}
@@ -130,7 +130,7 @@ export default async function ListingsPage({
                     {category.original_category_name}
                   </option>
                 ))}
-              </Select>
+              </SelectMenu>
               <Button variant="soft">Conferir requisitos da categoria</Button>
             </form>
           </section>
@@ -144,10 +144,10 @@ export default async function ListingsPage({
                   <label htmlFor="listing-mode" className="text-body">
                     O que deseja fazer?
                   </label>
-                  <Select id="listing-mode" name="mode">
+                  <SelectMenu id="listing-mode" name="mode">
                     <option value="edit">Alterar os anúncios selecionados</option>
                     <option value="clone">Criar novos anúncios para comparar</option>
-                  </Select>
+                  </SelectMenu>
                   <input type="hidden" name="cloneIntent" value={cloneIntent} />
                   {cloneOffers.map((offer) => (
                     <input
@@ -218,7 +218,7 @@ export default async function ListingsPage({
                         {attribute.original_attribute_name}
                         {attribute.is_mandatory ? ' (obrigatório)' : ''}
                       </label>
-                      <Select
+                      <SelectMenu
                         id={`attribute-${attribute.attribute_id}`}
                         name={`attribute-${attribute.attribute_id}`}
                         required={attribute.is_mandatory}
@@ -229,7 +229,7 @@ export default async function ListingsPage({
                             {value.original_value_name}
                           </option>
                         ))}
-                      </Select>
+                      </SelectMenu>
                     </>
                   ) : (
                     <FloatingLabelInput

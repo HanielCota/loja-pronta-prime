@@ -40,7 +40,7 @@ export default async function AssistantPage({ params }: { params: Promise<{ slug
       backLink={{ href: '/sll/recursos', label: 'Voltar aos recursos' }}
     >
       <section className={cn(panelCard, 'gap-4')}>
-        <h2 className="text-xl font-semibold text-foreground">Como usar</h2>
+        <h2 className="text-headline font-semibold text-foreground">Como usar</h2>
         <ol className="ml-6 list-decimal space-y-3 text-body text-foreground">
           {guide.instructions.map((instruction) => (
             <li key={instruction}>{instruction}</li>

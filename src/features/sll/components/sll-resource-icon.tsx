@@ -9,7 +9,8 @@ import {
   MessageCircle,
   Palette,
   Receipt,
-  Sparkles,
+  Globe,
+  Wrench,
   Truck,
   type LucideIcon,
 } from 'lucide-react';
@@ -25,7 +26,8 @@ const BY_SLUG: Record<string, LucideIcon> = {
   'fotografo-profissional': Camera,
   'anuncio-lucrativo': FileText,
   'envio-velox': Truck,
-  'chatgpt-plus': Sparkles,
+  // Página externa de assinatura: o globo, não o "brilho" que lembra IA.
+  'chatgpt-plus': Globe,
   bling: Receipt,
 };
 
@@ -33,11 +35,11 @@ const BY_SLUG: Record<string, LucideIcon> = {
 const BY_GROUP: Record<string, LucideIcon> = {
   calculadora: Calculator,
   materiais: FolderOpen,
-  assistentes: Sparkles,
+  assistentes: MessageCircle,
   parceiros: Handshake,
 };
 
 export function SllResourceIcon({ slug, groupKey }: { slug: string; groupKey: string }) {
-  const Icon = BY_SLUG[slug] ?? BY_GROUP[groupKey] ?? Sparkles;
+  const Icon = BY_SLUG[slug] ?? BY_GROUP[groupKey] ?? Wrench;
   return <Icon aria-hidden="true" />;
 }

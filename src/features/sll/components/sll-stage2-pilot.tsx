@@ -247,7 +247,9 @@ function PlanLessonContent({
       <p className="text-sm font-semibold text-muted-foreground">
         {optional ? 'Ação complementar' : 'Ação principal'}
       </p>
-      <h3 className="mt-1 text-xl font-semibold text-balance text-foreground">{lesson.title}</h3>
+      <h3 className="mt-1 text-headline font-semibold text-balance text-foreground">
+        {lesson.title}
+      </h3>
       {lesson.description ? (
         <p className="mt-3 text-body whitespace-pre-line text-foreground">{lesson.description}</p>
       ) : null}
