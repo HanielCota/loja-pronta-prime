@@ -17,6 +17,20 @@ const config = shopeeConfigurationSchema.parse({
 const state = 'cd'.repeat(32);
 const params = () => new URLSearchParams({ state, code: 'test-code', shop_id: '456' });
 
+describe('Shopee configuration with a broken redirect address', () => {
+  test('an empty or malformed SHOPEE_REDIRECT_URI fails validation instead of throwing', () => {
+    for (const SHOPEE_REDIRECT_URI of ['', ' ', 'nope', '/api/shopee/callback'])
+      expect(
+        shopeeConfigurationSchema.safeParse({
+          SHOPEE_PARTNER_ID: '123',
+          SHOPEE_PARTNER_KEY: 'test-key',
+          SHOPEE_TOKEN_ENCRYPTION_KEY: 'ab'.repeat(32),
+          SHOPEE_REDIRECT_URI,
+        }).success,
+      ).toBe(false);
+  });
+});
+
 describe('autorização Shopee de uma loja', () => {
   test('usa o portal global do aplicativo, callback fixo e nenhum segredo no link', () => {
     const url = new URL(

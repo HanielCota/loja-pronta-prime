@@ -8,7 +8,7 @@ import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { panelCard } from '@/features/member/components/area-shell';
 import { SllFlashMessage } from '@/features/sll/components/sll-flash-message';
 import { requireProduct } from '@/features/products/server/access';
-import { SllAreaShell } from '@/features/sll/sll-area-shell';
+import { SllPage } from '@/features/sll/sll-area-shell';
 import { readStoreObservations } from '@/features/assistant/server/metrics';
 import { readCategoryExperiments } from '@/features/assistant/server/experiments';
 import { createCategoryExperiment } from '@/features/assistant/server/experiment-actions';
@@ -40,8 +40,7 @@ export default async function CategoryPage({
   const listingName = (itemId: unknown) =>
     titleById.get(String(itemId)) ?? `Anúncio ${String(itemId)}`;
   return (
-    <SllAreaShell
-      account={session.user}
+    <SllPage
       hasChoice={products.length > 1}
       title="Comparar categorias"
       intro="Veja qual de dois anúncios foi melhor no mesmo período."
@@ -201,6 +200,6 @@ export default async function CategoryPage({
           </p>
         </section>
       )}
-    </SllAreaShell>
+    </SllPage>
   );
 }

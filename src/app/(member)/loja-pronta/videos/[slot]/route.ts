@@ -60,7 +60,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ slot
     status: stored.contentRange ? 206 : 200,
     headers: {
       'Content-Type': video.contentType,
-      'Content-Length': String(stored.length),
+      ...(stored.length === undefined ? {} : { 'Content-Length': String(stored.length) }),
       'Accept-Ranges': 'bytes',
       ...(stored.contentRange ? { 'Content-Range': stored.contentRange } : {}),
       'Cache-Control': 'private, max-age=86400',

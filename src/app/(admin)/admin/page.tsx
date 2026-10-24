@@ -1,0 +1,71 @@
+import type { Metadata } from 'next';
+import { requireAdmin } from '@/features/admin/server/access';
+import { LearningContentTree } from '@/features/admin/components/learning-content-tree';
+import { AdminPage } from '@/features/admin/components/admin-shell';
+import { AdminLiveOverview } from '@/features/admin/components/admin-live-overview';
+import type { AdminSection } from '@/features/admin/components/admin-sidebar';
+import { getOnlineStudents } from '@/features/admin/server/online';
+import { getAdminOverview } from '@/features/admin/server/overview';
+import {
+  getAdminLearningContent,
+  getArchivedLearningContent,
+} from '@/features/admin/server/learning-content';
+
+export const metadata: Metadata = {
+  title: 'Painel administrativo',
+};
+
+/**
+ * Sem `area`, a visão geral do painel (números e o que mudou por último). Com `area`, a estrutura
+ * do conteúdo daquela área e o estado de publicação.
+ */
+export default async function AdminHomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ area?: string }>;
+}) {
+  await requireAdmin();
+  const { area } = await searchParams;
+  if (area !== 'welcome' && area !== 'method' && area !== 'courses') {
+    const [overview, { now, rows: online, total: onlineTotal }] = await Promise.all([
+      getAdminOverview(),
+      getOnlineStudents(),
+    ]);
+    return (
+      <AdminPage title="Visão geral" intro="Os números da plataforma e o que mudou por último.">
+        <AdminLiveOverview initial={{ now, online, onlineTotal, overview }} />
+      </AdminPage>
+    );
+  }
+  const section: AdminSection = area;
+  const [tracks, archived] = await Promise.all([
+    getAdminLearningContent(),
+    getArchivedLearningContent(),
+  ]);
+
+  const kind =
+    section === 'welcome' ? 'welcome' : section === 'method' ? 'method' : 'complementary_course';
+  const title =
+    section === 'welcome'
+      ? 'Comece aqui'
+      : section === 'method'
+        ? 'Método SLL'
+        : 'Cursos complementares';
+  return (
+    <AdminPage
+      title={title}
+      intro="Abra um item para organizar as aulas. Edite ou arraste para mudar a ordem."
+    >
+      <section aria-label="Trilhas, etapas, módulos e aulas">
+        {/* Uma árvore por área: sem a chave, o histórico de navegação da área anterior ficaria
+            aberto e apontaria para itens que não existem nesta. */}
+        <LearningContentTree
+          key={kind}
+          archived={archived}
+          selectedKind={kind}
+          tracks={tracks.filter((track) => track.kind === kind)}
+        />
+      </section>
+    </AdminPage>
+  );
+}

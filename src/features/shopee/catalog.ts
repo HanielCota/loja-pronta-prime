@@ -1,7 +1,10 @@
 import { z } from 'zod';
 
 const positiveInteger = z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
+// O refine roda mesmo com z.url() recusando: sem a guarda, um endereço relativo estouraria
+// `new URL` e viraria erro 500 em vez de "imagem inválida".
 const httpsUrl = z.url().refine((value) => {
+  if (!URL.canParse(value)) return false;
   const url = new URL(value);
   return url.protocol === 'https:' && !url.username && !url.password;
 }, 'Informe uma imagem com endereço HTTPS.');

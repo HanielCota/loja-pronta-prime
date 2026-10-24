@@ -1,3 +1,5 @@
+import { cleanTypedText } from '@/lib/text';
+
 type SettingsInput = { token: string; sllCode: string; storeCode: string };
 type SettingsParseResult = { ok: true; value: SettingsInput } | { ok: false; message: string };
 
@@ -9,7 +11,13 @@ export function parseHotmartSettings(form: FormData): SettingsParseResult {
   if (typeof token !== 'string' || typeof sllCode !== 'string' || typeof storeCode !== 'string') {
     return { ok: false, message: 'Confira os campos.' };
   }
-  const value = { token: token.trim(), sllCode: sllCode.trim(), storeCode: storeCode.trim() };
+  // Código colado da Hotmart pode trazer zero-width ou espaço inquebrável: guardado assim, nunca
+  // casaria com o ucode do aviso e toda compra ficaria "Produto sem acesso configurado".
+  const value = {
+    token: token.trim(),
+    sllCode: cleanTypedText(sllCode),
+    storeCode: cleanTypedText(storeCode),
+  };
   if (
     !value.sllCode ||
     !value.storeCode ||

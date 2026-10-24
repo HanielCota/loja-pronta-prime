@@ -17,16 +17,13 @@ import {
 import { readShopeeAccess } from '@/features/shopee/server/connection';
 import { ShopeeApiError, getShopeeConfiguration } from '@/features/shopee/server/client';
 import { readShopeeResource } from '@/features/shopee/server/resources';
+import { shopeeItemListPageSchema } from '@/features/shopee/item-list';
 import { observationSeries, type MetricObservation } from '../model';
 import { collectTrafficReport } from '@/features/shopee/server/traffic-report';
 
 const identifier = z.number().int().positive().safe();
 const count = z.number().int().nonnegative().safe().nullable().optional();
-const listResponse = z.object({
-  item: z.array(z.object({ item_id: identifier })),
-  has_next_page: z.boolean(),
-  next_offset: z.number().int().nonnegative().optional(),
-});
+const listResponse = shopeeItemListPageSchema;
 const baseResponse = z.object({
   item_list: z.array(
     z.object({

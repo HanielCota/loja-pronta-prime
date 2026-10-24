@@ -45,6 +45,8 @@ export type SllLessonViewerData = {
     title: string;
     description: string | null;
     durationMinutes: number | null;
+    /** Ausente (cache antigo) conta como aula que entra no progresso, o padrão do banco. */
+    countsTowardProgress?: boolean;
     completed: boolean;
     previousId: string | null;
     nextId: string | null;
@@ -113,7 +115,12 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
   const isLocked = !data.stage.access.isUnlocked;
   const firstVideo = data.blocks.find((block) => block.kind === 'video');
   const isCompleted = completion.completed ?? data.lesson.completed;
-  const completionChange = Number(isCompleted) - Number(data.lesson.completed);
+  // A contagem que vem do servidor (Comece aqui) só inclui aulas que contam no progresso:
+  // concluir uma aula de apoio não pode virar "4 de 3 aulas concluídas".
+  const countsInProgress = !progress || data.lesson.countsTowardProgress !== false;
+  const completionChange = countsInProgress
+    ? Number(isCompleted) - Number(data.lesson.completed)
+    : 0;
   const completedCount =
     (progress?.completedCount ?? data.lessons.filter((lesson) => lesson.completed).length) +
     completionChange;

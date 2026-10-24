@@ -15,7 +15,12 @@ export async function startReadyCloneExperiments(userId: string, runId: string) 
       sql`select pg_advisory_xact_lock(hashtext(${`assistant-experiment:${userId}`}))`,
     );
     const [run] = await tx
-      .select()
+      .select({
+        id: shopeeCollectionRuns.id,
+        shopId: shopeeCollectionRuns.shopId,
+        applicationId: shopeeCollectionRuns.applicationId,
+        startedAt: shopeeCollectionRuns.startedAt,
+      })
       .from(shopeeCollectionRuns)
       .where(
         and(
@@ -25,12 +30,22 @@ export async function startReadyCloneExperiments(userId: string, runId: string) 
         ),
       );
     if (!run) return;
+    // Uma leitura de cada tabela e buscas por mapa: antes era uma consulta por clone e um
+    // `find` nos retratos da loja inteira (clones × anúncios) dentro do bloqueio da aluna.
     const snapshots = await tx
-      .select()
+      .select({
+        itemId: shopeeMetricSnapshots.itemId,
+        categoryId: shopeeMetricSnapshots.categoryId,
+      })
       .from(shopeeMetricSnapshots)
       .where(eq(shopeeMetricSnapshots.runId, run.id));
     const clones = await tx
-      .select()
+      .select({
+        id: storeAutomationJobs.id,
+        // Só o anúncio de origem: o modelo inteiro do clone não é usado aqui.
+        sourceItemId: sql<unknown>`${storeAutomationJobs.payload} -> 'item_id'`,
+        result: storeAutomationJobs.result,
+      })
       .from(storeAutomationJobs)
       .where(
         and(
@@ -42,36 +57,50 @@ export async function startReadyCloneExperiments(userId: string, runId: string) 
           lte(storeAutomationJobs.completedAt, run.startedAt),
         ),
       );
+    const experiments = await tx
+      .select({
+        leftItemId: assistantCategoryExperiments.leftItemId,
+        rightItemId: assistantCategoryExperiments.rightItemId,
+      })
+      .from(assistantCategoryExperiments)
+      .where(
+        and(
+          eq(assistantCategoryExperiments.userId, userId),
+          eq(assistantCategoryExperiments.shopId, run.shopId),
+          eq(assistantCategoryExperiments.applicationId, run.applicationId),
+        ),
+      );
+    const categoryByItem = new Map(snapshots.map((row) => [row.itemId, row.categoryId]));
+    const existing = new Set(
+      experiments.map((experiment) => `${experiment.leftItemId}:${experiment.rightItemId}`),
+    );
+    const created = [];
     for (const clone of clones) {
       if (!clone.result) continue;
-      const sourceId = listingCloneSchema.parse(clone.payload).item_id;
-      const source = snapshots.find((row) => row.itemId === sourceId);
-      const created = snapshots.find((row) => row.itemId === clone.result!.itemId);
-      if (!source?.categoryId || !created?.categoryId || source.categoryId === created.categoryId)
+      // Um pedido antigo sem anúncio de origem válido não pode travar a coleta inteira.
+      const parsedSource = listingCloneSchema.shape.item_id.safeParse(clone.sourceItemId);
+      if (!parsedSource.success) {
+        console.error(`[assistant] Pedido de cópia ${clone.id} sem anúncio de origem válido.`);
         continue;
-      const [exists] = await tx
-        .select({ id: assistantCategoryExperiments.id })
-        .from(assistantCategoryExperiments)
-        .where(
-          and(
-            eq(assistantCategoryExperiments.userId, userId),
-            eq(assistantCategoryExperiments.shopId, run.shopId),
-            eq(assistantCategoryExperiments.applicationId, run.applicationId),
-            eq(assistantCategoryExperiments.leftItemId, sourceId),
-            eq(assistantCategoryExperiments.rightItemId, created.itemId),
-          ),
-        )
-        .limit(1);
-      if (!exists)
-        await tx.insert(assistantCategoryExperiments).values({
-          userId,
-          shopId: run.shopId,
-          applicationId: run.applicationId,
-          leftItemId: sourceId,
-          rightItemId: created.itemId,
-          baselineRunId: run.id,
-          minViews: 100,
-        });
+      }
+      const sourceId = parsedSource.data;
+      const createdId = clone.result.itemId;
+      const sourceCategory = categoryByItem.get(sourceId);
+      const createdCategory = categoryByItem.get(createdId);
+      if (!sourceCategory || !createdCategory || sourceCategory === createdCategory) continue;
+      const pair = `${sourceId}:${createdId}`;
+      if (existing.has(pair)) continue;
+      existing.add(pair);
+      created.push({
+        userId,
+        shopId: run.shopId,
+        applicationId: run.applicationId,
+        leftItemId: sourceId,
+        rightItemId: createdId,
+        baselineRunId: run.id,
+        minViews: 100,
+      });
     }
+    if (created.length) await tx.insert(assistantCategoryExperiments).values(created);
   });
 }

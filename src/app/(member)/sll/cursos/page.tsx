@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ArrowRight, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { panelCard } from '@/features/member/components/area-shell';
-import { SllAreaShell } from '@/features/sll/sll-area-shell';
+import { SllPage } from '@/features/sll/sll-area-shell';
 import { getSllPublishedTracks } from '@/features/sll/server/catalog';
 import { getSllCopy } from '@/features/sll/server/copy';
 import { requireProduct } from '@/features/products/server/access';
@@ -30,7 +30,7 @@ function courseActionLabel(completedCount: number, lessonCount: number) {
 }
 
 export default async function ComplementaryCoursesPage() {
-  const [{ session, products }, courses, copy] = await Promise.all([
+  const [{ products }, courses, copy] = await Promise.all([
     requireProduct('sll'),
     getSllPublishedTracks('complementary_course'),
     getSllCopy(),
@@ -55,12 +55,7 @@ export default async function ComplementaryCoursesPage() {
       : copy.coursesLibraryTitle;
 
   return (
-    <SllAreaShell
-      account={session.user}
-      hasChoice={products.length > 1}
-      title={copy.coursesTitle}
-      intro={copy.coursesIntro}
-    >
+    <SllPage hasChoice={products.length > 1} title={copy.coursesTitle} intro={copy.coursesIntro}>
       {catalog.length ? (
         <div className="flex flex-col gap-6">
           {featured ? (
@@ -207,7 +202,7 @@ export default async function ComplementaryCoursesPage() {
           </p>
         </section>
       )}
-    </SllAreaShell>
+    </SllPage>
   );
 }
 

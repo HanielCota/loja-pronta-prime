@@ -76,13 +76,22 @@ export async function getLessonMaterials() {
         lesson.id,
       );
       const files = lesson.blocks.flatMap((block) => {
-        const data = block.data as Record<string, unknown>;
-        if (typeof data.fileName !== 'string' || typeof data.storageKey !== 'string') return [];
+        // jsonb NOT NULL ainda aceita o valor JSON null: sem a guarda, ler data.fileName derrubaria
+        // a página inteira de materiais por causa de um bloco só.
+        const data = block.data as Record<string, unknown> | null;
+        if (
+          !data ||
+          typeof data.fileName !== 'string' ||
+          !data.fileName.trim() ||
+          typeof data.storageKey !== 'string'
+        )
+          return [];
         return [
           {
             id: block.id,
             title: data.fileName,
-            type: data.fileName.split('.').at(-1)?.toUpperCase() ?? 'Arquivo',
+            // "arquivo." mostrava tipo vazio e um nome sem extensão aparecia inteiro em maiúsculas.
+            type: /\.([a-z0-9]{1,8})$/i.exec(data.fileName)?.[1]?.toUpperCase() ?? 'Arquivo',
             lessonId: lesson.id,
             lessonTitle: lesson.title,
             lockMessage,

@@ -1,7 +1,7 @@
 'use server';
 
 import { and, eq, isNull, sql } from 'drizzle-orm';
-import { revalidatePath } from 'next/cache';
+import { refresh } from 'next/cache';
 import { redirect, unstable_rethrow } from 'next/navigation';
 import { requireProductAction } from '@/features/products/server/access';
 import { db } from '@/server/db';
@@ -189,9 +189,9 @@ export async function setSllLessonCompletion(
         ),
       );
     const after = before ? await getTrackStageAccess(userId, location.trackId) : null;
-    revalidatePath('/sll');
-    revalidatePath('/sll/metodo');
-    revalidatePath(`/sll/metodo/etapa/${lesson.stageId}`);
+    // refresh() atualiza só as telas de quem concluiu. revalidatePath('/sll') expirava, a cada
+    // aula concluída por qualquer aluna, o cache de conteúdo lido por todas nessas telas.
+    refresh();
     return {
       saved: true,
       message: undoCompletionMessage(before?.stages ?? [], after?.stages ?? []),
@@ -231,9 +231,7 @@ export async function setSllLessonCompletion(
         set: { currentLessonId: location.lessonId, lastAccessedAt: now, updatedAt: now },
       });
   });
-  revalidatePath('/sll');
-  revalidatePath('/sll/metodo');
-  revalidatePath(`/sll/metodo/etapa/${lesson.stageId}`);
+  refresh();
 
   if (!wasCompleted && lesson.trackKind === 'method') {
     const access = await getTrackStageAccess(userId, location.trackId);
@@ -243,7 +241,6 @@ export async function setSllLessonCompletion(
     const nextStage = currentStageIndex >= 0 ? access?.stages[currentStageIndex + 1] : undefined;
     if (currentStage?.isComplete) {
       if (nextStage?.isUnlocked && nextStage.totalCount > 0) {
-        revalidatePath(`/sll/metodo/etapa/${nextStage.stageId}`);
         redirect(`/sll/metodo/etapa/${nextStage.stageId}`);
       }
       return {

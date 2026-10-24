@@ -6,6 +6,8 @@ import type { learningTrackKind } from '@/server/db/schema';
 import { requireProduct } from '@/features/products/server/access';
 import { db } from '@/server/db';
 import {
+  learningLessons,
+  learningModules,
   learningStages,
   learningTracks,
   learningBanners,
@@ -106,6 +108,22 @@ const readSidebarStages = unstable_cache(
         isNull(learningStages.archivedAt),
       ),
       orderBy: [asc(learningStages.position), asc(learningStages.id)],
+      // As aulas publicadas de cada etapa: na aula, o menu marca a etapa de onde ela vem.
+      with: {
+        modules: {
+          columns: {},
+          where: and(eq(learningModules.status, 'published'), isNull(learningModules.archivedAt)),
+          with: {
+            lessons: {
+              columns: { id: true },
+              where: and(
+                eq(learningLessons.status, 'published'),
+                isNull(learningLessons.archivedAt),
+              ),
+            },
+          },
+        },
+      },
     }),
   ['sll-sidebar-stages', DATABASE_CACHE_SCOPE],
   cacheOptions,

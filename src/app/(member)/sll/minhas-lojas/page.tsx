@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { panelCard, statusBadge } from '@/features/member/components/area-shell';
-import { SllAreaShell } from '@/features/sll/sll-area-shell';
+import { SllPage } from '@/features/sll/sll-area-shell';
 import { getSllStoreSummary } from '@/features/sll/server/store-overview';
 import type { SllStoreSummary } from '@/features/sll/store-overview';
 import { requireProduct } from '@/features/products/server/access';
@@ -96,8 +96,7 @@ export default async function SllStoresPage() {
   const summary = await getSllStoreSummary(session.user, hasLojaPronta);
 
   return (
-    <SllAreaShell
-      account={session.user}
+    <SllPage
       hasChoice={products.length > 1}
       title="Minhas Lojas"
       intro="Sua loja e o que falta pra ela vender."
@@ -116,7 +115,7 @@ export default async function SllStoresPage() {
           ))}
         </SllGroupedList>
       </section>
-    </SllAreaShell>
+    </SllPage>
   );
 }
 

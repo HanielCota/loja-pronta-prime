@@ -6,6 +6,7 @@ import { useActionState, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
+import { NAME_MAX_LENGTH } from '@/features/auth/schemas';
 import {
   endAccountSessionsForm as endAccountSessions,
   resetStudentPasswordForm as resetStudentPassword,
@@ -72,7 +73,7 @@ export function AccountDetailsForm(account: AccountDetailsProps) {
         }
         id="account-preferred-name"
         label="Apelido (opcional)"
-        maxLength={60}
+        maxLength={NAME_MAX_LENGTH}
         name="preferredName"
       />
       <FloatingLabelInput

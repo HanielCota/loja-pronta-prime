@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { ShopeeConfiguration } from '@/features/shopee/authorization';
 import { readShopeeResource } from '@/features/shopee/server/resources';
 import { readProductModels } from '@/features/shopee/server/variations';
-import { publicationPayloadSchema } from '../model';
+import { publicationPayloadSchema, shopeeIdSchema } from '../model';
 import { publicationOfferFingerprint } from '../publication-selection';
 import { assertAssistantAccess } from './metrics';
 import { readShopeeAccess } from '@/features/shopee/server/connection';
@@ -18,7 +18,7 @@ export async function readCloneOffer(
     config,
     access,
     '/api/v2/product/get_item_base_info',
-    z.object({ item_list: z.array(z.looseObject({ item_id: z.number() })) }),
+    z.object({ item_list: z.array(z.looseObject({ item_id: shopeeIdSchema })) }),
     { item_id_list: String(itemId) },
     fetcher,
   );

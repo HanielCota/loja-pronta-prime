@@ -47,7 +47,7 @@ export async function GET(_request: Request, context: RouteContext) {
   return new Response(stored.body, {
     headers: {
       'Content-Type': contentType,
-      'Content-Length': String(stored.length),
+      ...(stored.length === undefined ? {} : { 'Content-Length': String(stored.length) }),
       'Cache-Control': 'private, no-store',
       'X-Content-Type-Options': 'nosniff',
       'Content-Disposition':

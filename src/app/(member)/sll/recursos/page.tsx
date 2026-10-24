@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { panelCard } from '@/features/member/components/area-shell';
-import { SllAreaShell } from '@/features/sll/sll-area-shell';
+import { SllPage } from '@/features/sll/sll-area-shell';
 import { getSllPublishedResources } from '@/features/sll/server/catalog';
 import { getSllCopy } from '@/features/sll/server/copy';
 import { requireProduct } from '@/features/products/server/access';
@@ -21,7 +21,7 @@ const GROUP_ORDER = ['calculadora', 'materiais', 'assistentes', 'parceiros'];
  * frases e os grupos vêm do admin; ferramenta sem endereço aparece como "Em breve".
  */
 export default async function SllResourcesPage() {
-  const [{ session, products }, resources, copy] = await Promise.all([
+  const [{ products }, resources, copy] = await Promise.all([
     requireProduct('sll'),
     getSllPublishedResources(),
     getSllCopy(),
@@ -40,8 +40,7 @@ export default async function SllResourcesPage() {
   groups.sort((left, right) => GROUP_ORDER.indexOf(left.key) - GROUP_ORDER.indexOf(right.key));
 
   return (
-    <SllAreaShell
-      account={session.user}
+    <SllPage
       hasChoice={products.length > 1}
       title={copy.resourcesTitle}
       intro={copy.resourcesIntro}
@@ -82,6 +81,6 @@ export default async function SllResourcesPage() {
           </p>
         </section>
       )}
-    </SllAreaShell>
+    </SllPage>
   );
 }

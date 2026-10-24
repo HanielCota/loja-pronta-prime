@@ -5,7 +5,7 @@ import { BookOpen, ChevronDown, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { requireProduct } from '@/features/products/server/access';
 import { panelCard } from '@/features/member/components/area-shell';
-import { SllAreaShell } from '@/features/sll/sll-area-shell';
+import { SllPage } from '@/features/sll/sll-area-shell';
 import { getLessonMaterials } from '@/features/sll/tools/server/materials';
 import { getSllPublishedResources } from '@/features/sll/server/catalog';
 import { TOOL_MATERIALS } from '@/features/sll/tools/catalog';
@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 export const metadata: Metadata = { title: 'Materiais · SLL' };
 
 export default async function MaterialsPage() {
-  const [{ session, products }, materials, resources] = await Promise.all([
+  const [{ products }, materials, resources] = await Promise.all([
     requireProduct('sll', '/sll/recursos/materiais'),
     getLessonMaterials(),
     getSllPublishedResources(),
@@ -25,12 +25,10 @@ export default async function MaterialsPage() {
   const ready = materials.filter((material) => !material.pending);
   const upcoming = materials.filter((material) => material.pending);
   return (
-    <SllAreaShell
-      account={session.user}
+    <SllPage
       hasChoice={products.length > 1}
       title="Materiais para sua loja"
       intro="Guias, planilhas e arquivos das aulas, reunidos em um lugar."
-      currentSection="/sll/recursos"
       backLink={{ href: '/sll/recursos', label: 'Voltar aos recursos' }}
     >
       <div className="flex flex-col gap-6">
@@ -120,6 +118,6 @@ export default async function MaterialsPage() {
           ) : null}
         </section>
       </div>
-    </SllAreaShell>
+    </SllPage>
   );
 }

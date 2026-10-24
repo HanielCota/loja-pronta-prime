@@ -2,7 +2,7 @@ import { ArrowDownIcon, ArrowRightIcon } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { STORE_STAGES } from '@/config/store-phases';
-import { AreaShell, panelCard } from '@/features/member/components/area-shell';
+import { AreaPage, panelCard } from '@/features/member/components/area-shell';
 import type { NavbarAccount } from '@/features/member/components/member-navbar';
 import { greetingName } from '@/features/products/names';
 import { cn } from '@/lib/utils';
@@ -14,8 +14,7 @@ export function StoreWelcome({ user, hasChoice }: { user: NavbarAccount; hasChoi
   const welcome = name ? `Bem-vinda, ${name}.` : 'Bem-vinda.';
 
   return (
-    <AreaShell
-      account={user}
+    <AreaPage
       hasChoice={hasChoice}
       area="loja-pronta"
       crumb="Loja Pronta"
@@ -101,6 +100,6 @@ export function StoreWelcome({ user, hasChoice }: { user: NavbarAccount; hasChoi
           </Link>
         </Button>
       </section>
-    </AreaShell>
+    </AreaPage>
   );
 }

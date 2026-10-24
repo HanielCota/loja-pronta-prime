@@ -16,3 +16,16 @@ export async function requireAdmin(path = '/admin') {
 
   return session;
 }
+
+/**
+ * A mesma conferência de `requireAdmin`, sem redirecionar: a moldura do painel (o `layout.tsx`)
+ * só se desenha pra quem pode ver o painel. O resto (login, página não encontrada) fica com a
+ * guarda de cada página, que conhece o endereço de volta.
+ */
+export async function readAdminSession() {
+  const state = await getSessionState();
+  if (state.status !== 'active') return null;
+  const { session } = state;
+  if (needsFirstPassword(session.user) || !hasAdminRole(session.user.role)) return null;
+  return session;
+}

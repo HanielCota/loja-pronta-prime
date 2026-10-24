@@ -75,7 +75,7 @@ o tema escuro e o alto contraste.
 
 ## Componentes que já existem (use, não recrie)
 
-- O piloto Bling em `/admin/bling` usa `AdminShell`, `panelCard` e `Button`, como a tela Hotmart.
+- O piloto Bling em `/admin/bling` usa `AdminPage`, `panelCard` e `Button`, como a tela Hotmart.
   Sem configuração, mostra “Conexão em breve”; a consulta só mostra dados reais da API.
 
 - `Button` (`components/ui/button.tsx`): `default` (roxo, a ação principal), `soft` (roxo claro,
@@ -120,9 +120,21 @@ o tema escuro e o alto contraste.
   - `PageShell` + `BrandCard`: telas de acesso (entrar, senha), cartão centralizado com o mascote
     no topo.
   - `AreaShell`: a Loja Pronta e o perfil. Largura 1040px (perfil, 688px); com menu lateral
-    (`sidebar`), 1440px, com o menu de 240px à esquerda (`src/lib/member-layout.ts`).
-  - `SllAreaShell`: o SLL, separado da Loja Pronta, como um painel (dashboard). Ver "Área SLL".
-  - `AdminShell`: o admin, também como painel (dashboard). Ver "Painel admin".
+    (`sidebar`), 1440px, com o menu de 240px à esquerda (`src/lib/member-layout.ts`). No painel
+    da Loja Pronta, a barra do topo (`AreaFrame`) mora no `layout.tsx` do grupo
+    `loja-pronta/(painel)` e cada página usa só o conteúdo (`AreaPage`); o perfil usa o
+    `AreaShell` inteiro.
+  - `SllAreaFrame` + `SllPage`: o SLL, separado da Loja Pronta, como um painel (dashboard). Ver
+    "Área SLL".
+  - `AdminFrame` + `AdminPage`: o admin, também como painel (dashboard). Ver "Painel admin".
+  - **Moldura no `layout.tsx`, cabeçalho na página:** nas áreas logadas (SLL, admin com
+    contatos, painel da Loja Pronta), a moldura (menu lateral, barra do topo, `<main>`) mora no
+    `layout.tsx` da área e não se refaz ao trocar de página. Cada página manda o próprio título,
+    introdução, caminho de volta e ações pelo componente de página (`SllPage`, `AdminPage`,
+    `AreaPage`). A seção marcada no menu sai do endereço, no navegador. O layout só lê a sessão,
+    sem redirecionar: sem acesso, não desenha a moldura e a guarda da página decide (login com a
+    volta, início ou página não encontrada). Página nova numa dessas áreas usa o componente de
+    página, nunca a moldura de novo.
   - `CenteredMemberPage`: telas de dentro com o conteúdo no meio (fim da conversa, marca pronta,
     Shopee).
   - `ConversationLayout`: os passo a passo (conversa, marca), com "Voltar", "Terminar depois" e a
@@ -134,7 +146,7 @@ o tema escuro e o alto contraste.
   Em cima de cada barra, o número e o estado escritos: "Etapa 1 · Você está aqui" (verde, com o
   ícone de marcador), "Feita" (verde, com check) ou "A seguir" (cinza). Onde ela está não fica só
   na cor.
-- Antes da primeira resposta da Loja Pronta, a entrada usa a coluna estreita do `AreaShell`:
+- Antes da primeira resposta da Loja Pronta, a entrada usa a coluna estreita do `AreaPage`:
   um resumo das três etapas, boas-vindas com o nome, título grande e "Quero ver o plano". O
   botão leva ao plano na mesma página, com três cartões numerados em sequência e "Começar
   agora" no fim. A âncora leva o foco ao título e funciona sem JavaScript. O plano usa as mesmas
@@ -226,7 +238,7 @@ o tema escuro e o alto contraste.
 - A referência visual conferida em 6 de outubro de 2026 está em
   `docs/SLL-REFERENCIA-VISUAL.md`. A composição vem do SLL anterior; cores, letras, moldura e
   componentes continuam sendo os da Loja Pronta Prime. Esta adaptação se limita ao SLL.
-- O SLL tem moldura própria (`SllAreaShell`), separada da Loja Pronta: um painel (dashboard). No
+- O SLL tem moldura própria (`SllAreaFrame`, no `layout.tsx`), separada da Loja Pronta: um painel (dashboard). No
   computador, **sem barra no topo**: um menu lateral fixo de 288px, de ponta a ponta na altura da
   tela (`bg-card` com linha à direita), com a marca e o tema no topo, as seções no meio e, no pé,
   "Ir pra Minha loja" (quem tem os dois produtos) e a conta (foto, nome e email; o menu abre pra
@@ -290,12 +302,12 @@ o tema escuro e o alto contraste.
 
 ### Painel admin
 
-- Leads (`/leads`) reutiliza o `AdminShell`, os mesmos cartões, campos e selects. Os indicadores
+- Leads (`/leads`) reutiliza a moldura do admin (o mesmo grupo `(admin)` e o mesmo `layout.tsx`), os mesmos cartões, campos e selects. Os indicadores
   usam números reais e as etapas usam texto junto da cor. A lista vira cartões de contato no
   celular, sem rolagem horizontal. Cadastro, importação com prévia e contato com histórico ficam
   em telas próprias; filtros GET e formulários continuam funcionando sem JavaScript.
 
-- Moldura própria (`AdminShell`), com a mesma composição do SLL: no computador, **sem barra no
+- Moldura própria (`AdminFrame`, no `layout.tsx`), com a mesma composição do SLL: no computador, **sem barra no
   topo**, menu lateral fixo de 288px de ponta a ponta (`bg-card` com linha à direita), com a marca
   e o tema no alto, as seções no meio (Painel, Alunas e vendas, Conteúdo das alunas, Operação) e, no pé,
   "Ver a área das alunas" e a conta. O conteúdo vai até 1400px. No celular, volta a barra do topo
@@ -342,7 +354,7 @@ o tema escuro e o alto contraste.
   busca fica no cabeçalho do cartão. A tela de uma conta tem os formulários à esquerda e o
   resumo e o acesso à plataforma numa coluna de 400px à direita, presa ao rolar.
 - O resumo da conta tem um `Button` **Ver etapa atual**. A tela da etapa (só para ver) usa
-  `AdminShell`, `panelCard` e o mesmo link de voltar pra conta. Começa com a prévia ilustrativa
+  `AdminPage`, `panelCard` e o mesmo link de voltar pra conta. Começa com a prévia ilustrativa
   do perfil e da embalagem com a marca salva (`BrandKitPreview`, o mesmo do estúdio da aluna) e,
   depois, a galeria das imagens salvas. O logo escolhido tem etiqueta `bg-primary-soft`; cada
   imagem abre no tamanho original. Em seguida vêm os cartões da fase atual e dos dados salvos,
@@ -376,6 +388,15 @@ o tema escuro e o alto contraste.
   `PageMain`) entra subindo 0,5rem e esmaecendo em 0,45s; a barra do topo e os menus laterais
   ficam parados. No primeiro carregamento e sem JavaScript, a página já chega parada. Todas as
   molduras usam o `PageMain`; tela nova com moldura própria também deve usar.
+- **Carregando:** nas áreas com moldura no `layout.tsx` (SLL, admin, painel da Loja Pronta), o
+  toque num link mostra o `PageLoading` no lugar do conteúdo até a página nova chegar
+  (`NavigationPending`, na moldura): o menu e a barra ficam parados, e o conteúdo vira um esboço
+  calmo do título e de dois cartões (`bg-border/50` no fundo, `bg-muted` dentro de
+  `rounded-card bg-card shadow-card`). O esboço só aparece depois de 0,3s de espera (troca rápida
+  não pisca), pulsa só sem "Reduzir animações" e o leitor de tela ouve "Carregando…". Sem
+  spinner, sem texto grande, sem barra de progresso no topo. Não use `loading.tsx` nessas áreas:
+  o Suspense dele faz o servidor responder antes da guarda da página, e quem não entrou recebe
+  200 em vez do redirecionamento 307 (e página não encontrada, 200 em vez de 404).
 - **Seções recolhíveis** (`<details>`): abrem e fecham deslizando (altura e opacidade), onde o
   navegador consegue; nos outros, abrem na hora.
 - **Troca de tema:** a tela inteira esmaece de um tema pro outro em 0,3s, sem piscar.
@@ -423,13 +444,13 @@ o tema escuro e o alto contraste.
 
 ### Previous store records (October 21, 2026)
 
-Imported store history uses the existing `AreaShell` and `AdminShell`, `panelCard`, `Button`, brand tokens and typography. Members with previous stores and no current setup see their saved stores first. Administrators see the same history above the current setup in the existing account stage view. Store details show the recorded delivery, description, pending items and paginated products. Historical states are explicitly identified as saved records; external Shopee links use validated numeric identifiers. This adds no new visual system and does not change current setup progress.
+Imported store history uses the existing `AreaPage` and `AdminPage`, `panelCard`, `Button`, brand tokens and typography. Members with previous stores and no current setup see their saved stores first. Administrators see the same history above the current setup in the existing account stage view. Store details show the recorded delivery, description, pending items and paginated products. Historical states are explicitly identified as saved records; external Shopee links use validated numeric identifiers. This adds no new visual system and does not change current setup progress.
 
-As páginas Meu plano, Comparar categorias e Conectar minha loja usam `SllAreaShell`, os tokens e
+As páginas Meu plano, Comparar categorias e Conectar minha loja usam `SllPage`, os tokens e
 os componentes existentes. Tarefas do plano mostram dia, estado escrito e aula relacionada,
-com ações independentes da conclusão das aulas. Produtos usa `AreaShell`, com seleção por
+com ações independentes da conclusão das aulas. Produtos usa `AreaPage`, com seleção por
 checkbox e confirmação explícita antes da fila de publicação. Dados ausentes, catálogo em
-preparação e publicação incerta aparecem com texto próprio. Admin usa `AdminShell`, cartões,
+preparação e publicação incerta aparecem com texto próprio. Admin usa `AdminPage`, cartões,
 campos existentes e detalhes expansíveis para roteiros e prévia de variantes. Nenhuma nova
 linguagem visual, fonte ou cor foi introduzida.
 
@@ -442,14 +463,14 @@ are excluded on the server from presence lists, counts, and account activity det
 
 ### Brand publication and banner kit (October 22, 2026)
 
-The banner kit uses `AreaShell`, `panelCard`, `Button`, `FloatingLabelInput` and `Select`, with the existing tokens, typography and responsive layout. Draft editing, preview/approval and Seller Centre instructions are separate cards. Exported PNG artwork has its own palettes; those colors never style the application interface. Previews show the actual protected PNG files and identify the exported dimensions without claiming an exact Shopee layout. Approval reveals downloads, while edits or a changed brand require a new preview and approval. The existing brand review explains automatic publication authorization and requires confirmation again after an edit.
+The banner kit uses `AreaPage`, `panelCard`, `Button`, `FloatingLabelInput` and `Select`, with the existing tokens, typography and responsive layout. Draft editing, preview/approval and Seller Centre instructions are separate cards. Exported PNG artwork has its own palettes; those colors never style the application interface. Previews show the actual protected PNG files and identify the exported dimensions without claiming an exact Shopee layout. Approval reveals downloads, while edits or a changed brand require a new preview and approval. The existing brand review explains automatic publication authorization and requires confirmation again after an edit.
 
 ### Support contacts (October 23, 2026)
 
 The existing profile support card lists four subjects and their contacts: technical access
 (Mylena), lessons (Rackel), Envio Velox shipping (Nabila), and ombudsman (Dani). Account menus
 and store help actions link to this card. Unconfigured contacts show “Em breve” without an action.
-Administrators configure the numbers at `/admin/suporte`, using `AdminShell`, `panelCard`,
+Administrators configure the numbers at `/admin/suporte`, using `AdminPage`, `panelCard`,
 `FloatingLabelInput`, and `Button`. This preserves the current colors, typography, and layout.
 
 ### Refinamento visual (24 de outubro de 2026)
