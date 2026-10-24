@@ -52,6 +52,13 @@ function s3Storage(): Storage {
     ...(env.S3_ENDPOINT ? { endpoint: env.S3_ENDPOINT } : {}),
     forcePathStyle: env.S3_FORCE_PATH_STYLE === 'true',
     credentials: { accessKeyId: env.S3_ACCESS_KEY_ID, secretAccessKey: env.S3_SECRET_ACCESS_KEY },
+    // Sem limite, um bucket que não responde prende a requisição (e o worker) para sempre. O
+    // prazo vale até a resposta começar: um vídeo pausado continua lendo o corpo sem cair.
+    requestHandler: {
+      connectionTimeout: 5_000,
+      requestTimeout: 15_000,
+      throwOnRequestTimeout: true,
+    },
   });
   return {
     async put(key, body, contentType) {
