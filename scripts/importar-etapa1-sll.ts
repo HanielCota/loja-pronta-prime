@@ -250,7 +250,9 @@ await db.transaction(async (tx) => {
           data: { provider: 'pandavideo', videoId: item.video },
           position: 0,
         });
-      } else if (item.video && 'videoId' in video.data && video.data.videoId === '') {
+        continue;
+      }
+      if (item.video && 'videoId' in video.data && video.data.videoId === '') {
         // Completa apenas o placeholder vazio importado antes da confirmação; uma edição feita
         // no admin continua prevalecendo quando já houver outro ID salvo.
         await tx

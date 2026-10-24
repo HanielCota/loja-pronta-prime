@@ -78,22 +78,22 @@ const summary = await db.transaction(
             .set({ data: { ...videos[0]!.data, provider: 'pandavideo', videoId: item.videoId } })
             .where(eq(learningContentBlocks.id, videos[0]!.id));
         counts.filled++;
-      } else {
-        if (!checkOnly) {
-          // Abre a primeira posição sem mudar a ordem dos textos ou materiais existentes.
-          await tx
-            .update(learningContentBlocks)
-            .set({ position: sql`${learningContentBlocks.position} + 1` })
-            .where(eq(learningContentBlocks.lessonId, lesson.id));
-          await tx.insert(learningContentBlocks).values({
-            lessonId: lesson.id,
-            kind: 'video',
-            data: { provider: 'pandavideo', videoId: item.videoId },
-            position: 0,
-          });
-        }
-        counts.inserted++;
+        continue;
       }
+      if (!checkOnly) {
+        // Abre a primeira posição sem mudar a ordem dos textos ou materiais existentes.
+        await tx
+          .update(learningContentBlocks)
+          .set({ position: sql`${learningContentBlocks.position} + 1` })
+          .where(eq(learningContentBlocks.lessonId, lesson.id));
+        await tx.insert(learningContentBlocks).values({
+          lessonId: lesson.id,
+          kind: 'video',
+          data: { provider: 'pandavideo', videoId: item.videoId },
+          position: 0,
+        });
+      }
+      counts.inserted++;
     }
     return counts;
   },

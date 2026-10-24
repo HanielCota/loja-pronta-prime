@@ -60,7 +60,8 @@ async function run() {
       if (job) {
         const status = await processAssistantJob(job);
         console.log(`[assistant] ${job.kind} ${job.id}: ${status}`);
-      } else if (!once) await delay(5000);
+      }
+      if (!job && !once) await delay(5000);
       if (once || stopping) break;
     }
   } finally {
