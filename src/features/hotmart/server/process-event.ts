@@ -50,6 +50,178 @@ async function findOrCreateBuyer(email: string, name: string) {
   }
 }
 
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type ProductIdentity = Awaited<ReturnType<typeof resolveProductIdentity>>;
+type PreviousPurchase = typeof hotmartPurchases.$inferSelect | undefined;
+
+/** O que o aviso trouxe, já normalizado, para as funções que decidem o resultado. */
+type EventContext = {
+  event: HotmartPurchaseEvent;
+  effect: ReturnType<typeof purchaseEffect>;
+  email: string;
+  productUcode: HotmartPurchaseEvent['data']['product']['ucode'];
+  transaction: HotmartPurchaseEvent['data']['purchase']['transaction'];
+  createdAt: Date;
+  orderDate: Date | null;
+  buyerId: string | null;
+};
+
+// Compra histórica: o aviso só desativa no reembolso e recalcula o acesso; a validade é a original.
+async function historicalEventResult(
+  tx: Transaction,
+  historical: typeof historicalSllPurchases.$inferSelect,
+  conflict: ProductIdentity['conflict'],
+  { event, effect, transaction }: EventContext,
+): Promise<string> {
+  if (conflict) return productIdentityConflict;
+  if (event.data.product.id && String(event.data.product.id) !== historical.sourceProductId)
+    return 'Transação histórica com outro produto; acesso mantido.';
+  if (historical.userId) {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${historical.userId}))`);
+    let result = 'Compra histórica preservada; validade original mantida.';
+    if (effect === 'revoke') {
+      await tx
+        .update(historicalSllPurchases)
+        .set({ active: false })
+        .where(eq(historicalSllPurchases.transaction, transaction));
+      result = 'Reembolso histórico recebido; acesso recalculado.';
+    }
+    await reconcileProductAccess(tx, historical.userId, 'sll');
+    return result;
+  }
+  if (effect !== 'revoke') return 'Compra histórica preservada; validade original mantida.';
+  await tx
+    .update(historicalSllPurchases)
+    .set({ active: false })
+    .where(eq(historicalSllPurchases.transaction, transaction));
+  return 'Reembolso histórico registrado.';
+}
+
+// Compra comum: confere produto e efeito antes de aplicar; devolve o texto guardado no histórico.
+async function purchaseEventResult(
+  tx: Transaction,
+  mapping: ProductIdentity['mapping'],
+  conflict: ProductIdentity['conflict'],
+  context: EventContext,
+): Promise<string> {
+  if (conflict) return productIdentityConflict;
+  if (!mapping.length) return 'Produto sem acesso configurado.';
+  if (context.effect === 'ignore') return 'Aviso sem mudança de acesso.';
+  const previous = await tx.query.hotmartPurchases.findFirst({
+    where: eq(hotmartPurchases.transaction, context.transaction),
+  });
+  // Erro aqui faria a Hotmart reenviar para sempre e o reembolso nunca seria aplicado;
+  // por isso a diferença fica registrada no histórico em vez de virar falha.
+  const mismatch = transactionMismatch(previous, {
+    buyerEmail: context.email,
+    productUcode: context.productUcode,
+    productId: context.event.data.product.id,
+  });
+  if (mismatch === 'product') return 'Transação já registrada com outro produto; acesso mantido.';
+  const result = await applyPurchaseEvent(tx, mapping, previous, mismatch, context);
+  if (mismatch === 'email')
+    return result + ' O email mudou na Hotmart; a compra segue na mesma conta.';
+  return result;
+}
+
+// Liga a compra à conta da aluna e grava o aviso quando ele é mais novo que o já aplicado.
+async function applyPurchaseEvent(
+  tx: Transaction,
+  mapping: ProductIdentity['mapping'],
+  initialPrevious: PreviousPurchase,
+  mismatch: ReturnType<typeof transactionMismatch>,
+  { event, effect, email, productUcode, transaction, createdAt, orderDate, buyerId }: EventContext,
+): Promise<string> {
+  let previous = initialPrevious;
+  const active = effect === 'grant';
+  // Com email trocado, a compra segue na conta que ela já usa, sem procurar pelo novo.
+  let linkedUserId =
+    mismatch === 'email'
+      ? (previous?.userId ?? buyerId)
+      : (buyerId ??
+        previous?.userId ??
+        (
+          await tx.query.user.findFirst({
+            columns: { id: true },
+            where: eq(user.email, email),
+          })
+        )?.id ??
+        null);
+  // Validate the product under the mapping lock before creating an account.
+  if (
+    !linkedUserId &&
+    active &&
+    orderDate &&
+    orderDate <= new Date() &&
+    purchaseExpiresAt(orderDate) > new Date()
+  ) {
+    linkedUserId = await findOrCreateBuyer(
+      email,
+      event.data.buyer.name?.trim() || email.split('@')[0] || 'Aluna',
+    );
+  }
+  if (linkedUserId) {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${linkedUserId}))`);
+    // A admin pode ter revogado esta compra enquanto o aviso aguardava a trava.
+    // Releia antes de aplicar o evento e antes de travar a linha da compra.
+    previous = await tx.query.hotmartPurchases.findFirst({
+      where: eq(hotmartPurchases.transaction, transaction),
+    });
+  }
+  const applies =
+    shouldApplyEvent(previous, { createdAt, active }) ||
+    (active &&
+      previous?.active &&
+      !previous.purchasedAt &&
+      orderDate &&
+      createdAt >= previous.lastEventAt);
+  if (!applies) return 'Aviso antigo; acesso mantido.';
+  // Later completion/replay events can shorten a corrected term but never renew it.
+  const purchasedAt =
+    previous?.purchasedAt && (!orderDate || previous.purchasedAt <= orderDate)
+      ? previous.purchasedAt
+      : orderDate;
+  const expiresAt = purchasedAt ? purchaseExpiresAt(purchasedAt) : null;
+  await tx
+    .insert(hotmartPurchases)
+    .values({
+      transaction,
+      buyerEmail: email,
+      productUcode,
+      productId: event.data.product.id,
+      expert: mapping.find((item) => item.access === 'sll')?.expert ?? mapping[0]?.expert ?? 'pri',
+      userId: linkedUserId,
+      active,
+      purchasedAt,
+      expiresAt,
+      lastEventAt: createdAt,
+    })
+    .onConflictDoUpdate({
+      target: hotmartPurchases.transaction,
+      set: {
+        productId: event.data.product.id,
+        userId: linkedUserId,
+        active,
+        purchasedAt,
+        expiresAt,
+        lastEventAt: createdAt,
+        updatedAt: new Date(),
+      },
+    });
+  if (linkedUserId) {
+    for (const { access } of mapping) {
+      await reconcileProductAccess(tx, linkedUserId, access);
+    }
+  }
+  return active
+    ? expiresAt && purchasedAt && purchasedAt <= new Date() && expiresAt > new Date()
+      ? 'Compra aprovada; acesso liberado.'
+      : !purchasedAt
+        ? missingDateResult
+        : 'Compra fora do prazo válido; acesso não liberado.'
+    : 'Reembolso recebido; acesso recalculado.';
+}
+
 /** Processa uma transação por vez; reprocessamento do mesmo ID não concede acesso novamente. */
 export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<string> {
   const effect = purchaseEffect(event.event);
@@ -113,6 +285,16 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
     );
   }
 
+  const context: EventContext = {
+    event,
+    effect,
+    email,
+    productUcode,
+    transaction,
+    createdAt,
+    orderDate,
+    buyerId,
+  };
   const processed = await db.transaction(async (tx) => {
     // Uma mudança de códigos espera os avisos em andamento antes de decidir se já há compras.
     await tx.execute(
@@ -130,31 +312,7 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
       where: eq(historicalSllPurchases.transaction, transaction),
     });
     if (historical) {
-      let result = 'Compra histórica preservada; validade original mantida.';
-      if (conflict) {
-        result = productIdentityConflict;
-      } else if (
-        event.data.product.id &&
-        String(event.data.product.id) !== historical.sourceProductId
-      ) {
-        result = 'Transação histórica com outro produto; acesso mantido.';
-      } else if (historical.userId) {
-        await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${historical.userId}))`);
-        if (effect === 'revoke') {
-          await tx
-            .update(historicalSllPurchases)
-            .set({ active: false })
-            .where(eq(historicalSllPurchases.transaction, transaction));
-          result = 'Reembolso histórico recebido; acesso recalculado.';
-        }
-        await reconcileProductAccess(tx, historical.userId, 'sll');
-      } else if (effect === 'revoke') {
-        await tx
-          .update(historicalSllPurchases)
-          .set({ active: false })
-          .where(eq(historicalSllPurchases.transaction, transaction));
-        result = 'Reembolso histórico registrado.';
-      }
+      const result = await historicalEventResult(tx, historical, conflict, context);
       await tx
         .insert(hotmartEvents)
         .values({
@@ -172,118 +330,7 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
         });
       return result;
     }
-    let result = 'Aviso sem mudança de acesso.';
-    if (conflict) result = productIdentityConflict;
-    else if (!mapping.length) result = 'Produto sem acesso configurado.';
-    else if (effect !== 'ignore') {
-      let previous = await tx.query.hotmartPurchases.findFirst({
-        where: eq(hotmartPurchases.transaction, transaction),
-      });
-      // Erro aqui faria a Hotmart reenviar para sempre e o reembolso nunca seria aplicado;
-      // por isso a diferença fica registrada no histórico em vez de virar falha.
-      const mismatch = transactionMismatch(previous, {
-        buyerEmail: email,
-        productUcode,
-        productId: event.data.product.id,
-      });
-      const active = effect === 'grant';
-      if (mismatch === 'product') {
-        result = 'Transação já registrada com outro produto; acesso mantido.';
-      } else {
-        // Com email trocado, a compra segue na conta que ela já usa, sem procurar pelo novo.
-        let linkedUserId =
-          mismatch === 'email'
-            ? (previous?.userId ?? buyerId)
-            : (buyerId ??
-              previous?.userId ??
-              (
-                await tx.query.user.findFirst({
-                  columns: { id: true },
-                  where: eq(user.email, email),
-                })
-              )?.id ??
-              null);
-        // Validate the product under the mapping lock before creating an account.
-        if (
-          !linkedUserId &&
-          active &&
-          orderDate &&
-          orderDate <= new Date() &&
-          purchaseExpiresAt(orderDate) > new Date()
-        ) {
-          linkedUserId = await findOrCreateBuyer(
-            email,
-            event.data.buyer.name?.trim() || email.split('@')[0] || 'Aluna',
-          );
-        }
-        if (linkedUserId) {
-          await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${linkedUserId}))`);
-          // A admin pode ter revogado esta compra enquanto o aviso aguardava a trava.
-          // Releia antes de aplicar o evento e antes de travar a linha da compra.
-          previous = await tx.query.hotmartPurchases.findFirst({
-            where: eq(hotmartPurchases.transaction, transaction),
-          });
-        }
-        if (
-          shouldApplyEvent(previous, { createdAt, active }) ||
-          (active &&
-            previous?.active &&
-            !previous.purchasedAt &&
-            orderDate &&
-            createdAt >= previous.lastEventAt)
-        ) {
-          // Later completion/replay events can shorten a corrected term but never renew it.
-          const purchasedAt =
-            previous?.purchasedAt && (!orderDate || previous.purchasedAt <= orderDate)
-              ? previous.purchasedAt
-              : orderDate;
-          const expiresAt = purchasedAt ? purchaseExpiresAt(purchasedAt) : null;
-          await tx
-            .insert(hotmartPurchases)
-            .values({
-              transaction,
-              buyerEmail: email,
-              productUcode,
-              productId: event.data.product.id,
-              expert:
-                mapping.find((item) => item.access === 'sll')?.expert ??
-                mapping[0]?.expert ??
-                'pri',
-              userId: linkedUserId,
-              active,
-              purchasedAt,
-              expiresAt,
-              lastEventAt: createdAt,
-            })
-            .onConflictDoUpdate({
-              target: hotmartPurchases.transaction,
-              set: {
-                productId: event.data.product.id,
-                userId: linkedUserId,
-                active,
-                purchasedAt,
-                expiresAt,
-                lastEventAt: createdAt,
-                updatedAt: new Date(),
-              },
-            });
-          if (linkedUserId) {
-            for (const { access } of mapping) {
-              await reconcileProductAccess(tx, linkedUserId, access);
-            }
-          }
-          result = active
-            ? expiresAt && purchasedAt && purchasedAt <= new Date() && expiresAt > new Date()
-              ? 'Compra aprovada; acesso liberado.'
-              : !purchasedAt
-                ? missingDateResult
-                : 'Compra fora do prazo válido; acesso não liberado.'
-            : 'Reembolso recebido; acesso recalculado.';
-        } else result = 'Aviso antigo; acesso mantido.';
-      }
-      if (mismatch === 'email')
-        result += ' O email mudou na Hotmart; a compra segue na mesma conta.';
-    }
+    const result = await purchaseEventResult(tx, mapping, conflict, context);
     await tx
       .insert(hotmartEvents)
       .values({

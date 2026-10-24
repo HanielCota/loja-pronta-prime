@@ -104,8 +104,11 @@ export default async function AdminResourcesPage() {
     Array<{ key: string; title: string; items: typeof editableResources }>
   >((result, resource) => {
     const group = result.find((item) => item.key === resource.groupKey);
-    if (group) group.items.push(resource);
-    else result.push({ key: resource.groupKey, title: resource.groupTitle, items: [resource] });
+    if (group) {
+      group.items.push(resource);
+      return result;
+    }
+    result.push({ key: resource.groupKey, title: resource.groupTitle, items: [resource] });
     return result;
   }, []);
 

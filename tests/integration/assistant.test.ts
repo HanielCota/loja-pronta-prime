@@ -70,8 +70,11 @@ afterAll(async () => {
   await db.delete(assistantPlaybooks).where(eq(assistantPlaybooks.title, supplierId));
   await db.delete(supplierCatalog).where(eq(supplierCatalog.supplierId, supplierId));
   for (const [key, value] of Object.entries(previous)) {
-    if (value === undefined) delete process.env[key];
-    else process.env[key] = value;
+    if (value === undefined) {
+      delete process.env[key];
+      continue;
+    }
+    process.env[key] = value;
   }
   await db.$client.end();
 });
@@ -699,8 +702,11 @@ test('IA reserva uma chamada por coleta, rejeita IDs inventados e limita três t
         generateAssistantAdvice(id, response),
         generateAssistantAdvice(id, response),
       ]);
-      if (index < 3) expect(results).toContain('unavailable');
-      else expect(results).toEqual(['limited', 'limited']);
+      if (index < 3) {
+        expect(results).toContain('unavailable');
+        continue;
+      }
+      expect(results).toEqual(['limited', 'limited']);
     }
     expect(calls).toBe(3);
     const attempts = await db.select().from(assistantAdvice).where(eq(assistantAdvice.userId, id));

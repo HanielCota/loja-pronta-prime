@@ -34,21 +34,24 @@ export function readCalculatorInput(form: FormData, kind: CalculatorKind) {
     }
     return parsed;
   }
-  const selected = field('policy');
-  let policy: FeePolicy = { mode: 'shopee', seller: 'cnpj', moreThan450Orders: false };
-  if (selected === 'custom') {
-    policy = {
-      mode: 'custom',
-      commissionBps: number('commission', 10_000),
-      fixedCents: number('fixed'),
-    };
-  } else if (['cnpj', 'cpf', 'cpf-volume'].includes(selected)) {
-    policy = {
-      mode: 'shopee',
-      seller: selected === 'cnpj' ? 'cnpj' : 'cpf',
-      moreThan450Orders: selected === 'cpf-volume',
-    };
-  } else errors.policy = 'Escolha o tipo da sua conta.';
+  // Sem tipo de conta válido, fica a regra padrão da Shopee e o erro avisa a aluna.
+  function feePolicy(selected: string): FeePolicy {
+    if (selected === 'custom')
+      return {
+        mode: 'custom',
+        commissionBps: number('commission', 10_000),
+        fixedCents: number('fixed'),
+      };
+    if (['cnpj', 'cpf', 'cpf-volume'].includes(selected))
+      return {
+        mode: 'shopee',
+        seller: selected === 'cnpj' ? 'cnpj' : 'cpf',
+        moreThan450Orders: selected === 'cpf-volume',
+      };
+    errors.policy = 'Escolha o tipo da sua conta.';
+    return { mode: 'shopee', seller: 'cnpj', moreThan450Orders: false };
+  }
+  const policy = feePolicy(field('policy'));
   const costs: SaleCosts = {
     policy,
     productCents: number('product', MAX_PRICE_CENTS, false, true),

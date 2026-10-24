@@ -94,49 +94,7 @@ export async function saveLead(state: LeadFormState, form: FormData): Promise<Le
     return { attempt, values, errors: { ownerId: 'Escolha uma administradora ativa.' } };
   try {
     const result = await db.transaction(async (tx) => {
-      if (editing) {
-        const [before] = await tx
-          .select()
-          .from(leads)
-          .where(eq(leads.id, id))
-          .for('update')
-          .limit(1);
-        if (!before || before.archivedAt) return 'Esse contato está arquivado ou não existe mais.';
-        if (before.updatedAt.toISOString() !== form.get('version'))
-          return 'Esse contato mudou em outra tela. Recarregue a página para conferir os dados antes de salvar.';
-        const data = leadRecord(parsed.data);
-        const changes = LEAD_FIELDS.filter(
-          (field) => JSON.stringify(before[field]) !== JSON.stringify(data[field]),
-        );
-        if (!changes.length) return undefined;
-        const labels: Record<keyof LeadInput, string> = {
-          name: 'nome',
-          email: 'email',
-          phone: 'WhatsApp',
-          stage: 'etapa',
-          product: 'produto de interesse',
-          source: 'origem',
-          ownerId: 'responsável',
-          nextContact: 'próximo contato',
-          tags: 'etiquetas',
-          lostReason: 'motivo da perda',
-        };
-        const body =
-          before.stage !== data.stage
-            ? `Etapa: ${stageLabels[before.stage]} → ${stageLabels[data.stage]}. Dados atualizados: ${changes.map((field) => labels[field]).join(', ')}.`
-            : `Dados atualizados: ${changes.map((field) => labels[field]).join(', ')}.`;
-        await tx
-          .update(leads)
-          .set({ ...data, updatedAt: new Date() })
-          .where(eq(leads.id, id));
-        await tx.insert(leadActivities).values({
-          id: crypto.randomUUID(),
-          leadId: id,
-          actorId: session.user.id,
-          kind: 'updated',
-          body,
-        });
-      } else {
+      if (!editing) {
         await tx.insert(leads).values({ id, ...leadRecord(parsed.data) });
         await tx.insert(leadActivities).values({
           id: crypto.randomUUID(),
@@ -145,7 +103,44 @@ export async function saveLead(state: LeadFormState, form: FormData): Promise<Le
           kind: 'created',
           body: 'Contato cadastrado manualmente.',
         });
+        return undefined;
       }
+      const [before] = await tx.select().from(leads).where(eq(leads.id, id)).for('update').limit(1);
+      if (!before || before.archivedAt) return 'Esse contato está arquivado ou não existe mais.';
+      if (before.updatedAt.toISOString() !== form.get('version'))
+        return 'Esse contato mudou em outra tela. Recarregue a página para conferir os dados antes de salvar.';
+      const data = leadRecord(parsed.data);
+      const changes = LEAD_FIELDS.filter(
+        (field) => JSON.stringify(before[field]) !== JSON.stringify(data[field]),
+      );
+      if (!changes.length) return undefined;
+      const labels: Record<keyof LeadInput, string> = {
+        name: 'nome',
+        email: 'email',
+        phone: 'WhatsApp',
+        stage: 'etapa',
+        product: 'produto de interesse',
+        source: 'origem',
+        ownerId: 'responsável',
+        nextContact: 'próximo contato',
+        tags: 'etiquetas',
+        lostReason: 'motivo da perda',
+      };
+      const body =
+        before.stage !== data.stage
+          ? `Etapa: ${stageLabels[before.stage]} → ${stageLabels[data.stage]}. Dados atualizados: ${changes.map((field) => labels[field]).join(', ')}.`
+          : `Dados atualizados: ${changes.map((field) => labels[field]).join(', ')}.`;
+      await tx
+        .update(leads)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(leads.id, id));
+      await tx.insert(leadActivities).values({
+        id: crypto.randomUUID(),
+        leadId: id,
+        actorId: session.user.id,
+        kind: 'updated',
+        body,
+      });
       return undefined;
     });
     if (result) return { attempt, values, message: result };

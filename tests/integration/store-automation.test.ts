@@ -55,8 +55,11 @@ beforeAll(() => Object.assign(process.env, settings));
 afterAll(async () => {
   for (const id of ids) await db.delete(user).where(eq(user.id, id));
   for (const [key, value] of Object.entries(previous)) {
-    if (value === undefined) delete process.env[key];
-    else process.env[key] = value;
+    if (value === undefined) {
+      delete process.env[key];
+      continue;
+    }
+    process.env[key] = value;
   }
   await db.$client.end();
 });

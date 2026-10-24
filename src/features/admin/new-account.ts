@@ -42,9 +42,15 @@ export function parseNewAccount(
   if (!parsed.success) {
     for (const issue of parsed.error.issues) {
       const field = issue.path[0];
-      if (field === 'name') errors.name = 'Escreva o nome completo (2 a 120 letras).';
-      else if (field === 'email') errors.email = 'Escreva um email válido.';
-      else errors.form = 'Confira as escolhas e tente de novo.';
+      if (field === 'name') {
+        errors.name = 'Escreva o nome completo (2 a 120 letras).';
+        continue;
+      }
+      if (field === 'email') {
+        errors.email = 'Escreva um email válido.';
+        continue;
+      }
+      errors.form = 'Confira as escolhas e tente de novo.';
     }
   }
 

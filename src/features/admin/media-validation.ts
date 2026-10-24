@@ -22,23 +22,25 @@ const FILE_TYPES = {
 
 export type DownloadFileType = keyof typeof FILE_TYPES;
 
+// Sem assinatura binária, o arquivo só passa se for texto UTF-8 de verdade.
+function isSafePlainText(bytes: Uint8Array) {
+  try {
+    const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    // Uma página HTML de erro pode responder 200 e parecer um TXT/CSV para o navegador.
+    return !(text.includes('\0') || /^\s*(?:<!doctype\s+html|<html\b)/i.test(text));
+  } catch {
+    return false;
+  }
+}
+
 /** Aceita documentos conhecidos e confere o conteúdo em vez de confiar só no nome do arquivo. */
 export function validateDownloadFile(fileName: string, bytes: Uint8Array) {
   const extension = `.${fileName.split('.').at(-1)?.toLowerCase() ?? ''}`;
   if (!Object.hasOwn(FILE_TYPES, extension)) return null;
   const type = FILE_TYPES[extension as DownloadFileType];
 
-  if (type.signature) {
-    if (type.signature.some((byte, index) => bytes[index] !== byte)) return null;
-  } else {
-    try {
-      const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
-      // Uma página HTML de erro pode responder 200 e parecer um TXT/CSV para o navegador.
-      if (text.includes('\0') || /^\s*(?:<!doctype\s+html|<html\b)/i.test(text)) return null;
-    } catch {
-      return null;
-    }
-  }
+  if (type.signature && type.signature.some((byte, index) => bytes[index] !== byte)) return null;
+  if (!type.signature && !isSafePlainText(bytes)) return null;
 
   return { extension: extension as DownloadFileType, contentType: type.contentType };
 }

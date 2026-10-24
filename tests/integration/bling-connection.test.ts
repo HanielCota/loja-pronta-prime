@@ -31,8 +31,11 @@ afterAll(async () => {
   await db.delete(user).where(eq(user.id, userId));
   for (const key of Object.keys(config)) {
     const value = previous[key];
-    if (value === undefined) delete process.env[key];
-    else process.env[key] = value;
+    if (value === undefined) {
+      delete process.env[key];
+      continue;
+    }
+    process.env[key] = value;
   }
   await db.$client.end();
 });

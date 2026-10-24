@@ -260,8 +260,11 @@ export function useMascot(
           if (signal.mood === 'grumpy') move(SHAKE);
           break;
         case 'doubt':
-          if (signal.active) setReason('doubt', 'skeptical');
-          else clearReason('doubt');
+          if (signal.active) {
+            setReason('doubt', 'skeptical');
+            break;
+          }
+          clearReason('doubt');
           break;
         case 'nod':
           move(NOD);
@@ -336,8 +339,11 @@ export function useMascot(
       // de teclado de verdade (sem getModifierState): esses não dizem nada sobre o Caps Lock.
       if (!(event instanceof KeyboardEvent) || !(event.target instanceof HTMLInputElement)) return;
       // Caps Lock ligado num campo: olhos arregalados, reforçando o aviso da tela.
-      if (event.getModifierState('CapsLock')) setReason('capsLock', 'surprised');
-      else clearReason('capsLock');
+      if (event.getModifierState('CapsLock')) {
+        setReason('capsLock', 'surprised');
+        return;
+      }
+      clearReason('capsLock');
     };
 
     // Tocar no mascote: encolhe no toque e ri ao soltar em cima dele (arrastar pra fora desfaz).
@@ -364,10 +370,12 @@ export function useMascot(
     // cochila. Sem isso, o "Zzz" animava escondido e ela voltava pra um mascote já dormindo, com
     // os "Z" parados. Ao voltar, o relógio recomeça (se já dormia antes, continua dormindo).
     const onVisibilityChange = () => {
-      if (document.hidden) {
-        window.clearTimeout(idleTimer);
-        stopSway();
-      } else resetIdleTimer();
+      if (!document.hidden) {
+        resetIdleTimer();
+        return;
+      }
+      window.clearTimeout(idleTimer);
+      stopSway();
     };
 
     // O campo de senha troca de tipo ao "Mostrar senha": os olhos precisam acompanhar.
@@ -409,8 +417,11 @@ export function useMascot(
 
     const visibility = new IntersectionObserver(([entry]) => {
       onScreen = entry?.isIntersecting ?? true;
-      if (onScreen) update();
-      else stopSway();
+      if (onScreen) {
+        update();
+        return;
+      }
+      stopSway();
     });
     visibility.observe(root);
 

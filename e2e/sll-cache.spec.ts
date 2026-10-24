@@ -35,16 +35,19 @@ test.beforeAll(async () => {
         data: { emailVerified: true, mustChangePassword: false },
       },
     });
-    if (kind === 'cache-admin') adminEmail = email;
-    else {
-      await database().query("insert into student_products (user_id, product) values ($1, 'sll')", [
-        user.id,
-      ]);
-      if (kind === 'cache-first') {
-        firstId = user.id;
-        firstEmail = email;
-      } else secondEmail = email;
+    if (kind === 'cache-admin') {
+      adminEmail = email;
+      continue;
     }
+    await database().query("insert into student_products (user_id, product) values ($1, 'sll')", [
+      user.id,
+    ]);
+    if (kind === 'cache-first') {
+      firstId = user.id;
+      firstEmail = email;
+      continue;
+    }
+    secondEmail = email;
   }
   const image = await sharp({
     create: { width: 32, height: 18, channels: 3, background: '#452e9a' },

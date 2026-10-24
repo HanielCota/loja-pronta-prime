@@ -119,46 +119,48 @@ export async function saveSllResource(
     buttonLabel: parsed.data.buttonLabel || null,
     destination: parsed.data.destination || null,
   };
+  // Recurso novo: acha um endereço livre a partir do título e entra como rascunho.
+  const createDraftResource = async () => {
+    let slug = learningSlugFromTitle(parsed.data.title);
+    for (
+      let suffix = 2;
+      await db.query.learningResources.findFirst({ where: eq(learningResources.slug, slug) });
+      suffix++
+    ) {
+      slug = `${learningSlugFromTitle(parsed.data.title)}-${suffix}`;
+    }
+    const [created] = await db
+      .insert(learningResources)
+      .values({
+        ...values,
+        groupKey: sameGroup?.groupKey ?? parsed.data.groupKey,
+        position: parsed.data.position,
+        slug,
+        status: 'draft',
+      })
+      .returning({ id: learningResources.id });
+    return created?.id;
+  };
   try {
-    let resourceId = parsed.data.id;
-    if (resourceId) {
-      const id = resourceId;
-      const available = await withNodeDraftLock('resource', id, async (tx) => {
+    const savedId = parsed.data.id;
+    if (savedId) {
+      const available = await withNodeDraftLock('resource', savedId, async (tx) => {
         const resource = await tx.query.learningResources.findFirst({
           columns: { id: true, status: true },
-          where: and(eq(learningResources.id, id), isNull(learningResources.archivedAt)),
+          where: and(eq(learningResources.id, savedId), isNull(learningResources.archivedAt)),
         });
         if (!resource) return false;
-        if (resource.status === 'published')
-          await saveNodeDraft('resource', id, { ...values, relatedLessonIds }, tx);
-        else {
-          await tx.update(learningResources).set(values).where(eq(learningResources.id, id));
-          await saveNodeDraft('resource', id, { relatedLessonIds }, tx);
+        if (resource.status === 'published') {
+          await saveNodeDraft('resource', savedId, { ...values, relatedLessonIds }, tx);
+          return true;
         }
+        await tx.update(learningResources).set(values).where(eq(learningResources.id, savedId));
+        await saveNodeDraft('resource', savedId, { relatedLessonIds }, tx);
         return true;
       });
       if (!available) return { message: 'Este recurso não está disponível.', saved: false };
-    } else {
-      let slug = learningSlugFromTitle(parsed.data.title);
-      for (
-        let suffix = 2;
-        await db.query.learningResources.findFirst({ where: eq(learningResources.slug, slug) });
-        suffix++
-      ) {
-        slug = `${learningSlugFromTitle(parsed.data.title)}-${suffix}`;
-      }
-      const [created] = await db
-        .insert(learningResources)
-        .values({
-          ...values,
-          groupKey: sameGroup?.groupKey ?? parsed.data.groupKey,
-          position: parsed.data.position,
-          slug,
-          status: 'draft',
-        })
-        .returning({ id: learningResources.id });
-      resourceId = created?.id;
     }
+    const resourceId = savedId || (await createDraftResource());
     if (!resourceId) return { message: 'Não consegui guardar este recurso.', saved: false };
     if (!parsed.data.id) await saveNodeDraft('resource', resourceId, { relatedLessonIds });
     revalidatePath('/admin/recursos');

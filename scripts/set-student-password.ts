@@ -15,7 +15,9 @@ const pool = new Pool({
   connectionTimeoutMillis: 5_000,
 });
 const client = await pool.connect();
-try {
+
+// A function of its own so the preview can return early without touching any credential.
+async function updateEligibleStudents() {
   await client.query('BEGIN');
   // Lock accounts before inspecting roles or changing credentials, including concurrent resets.
   const { rows } = await client.query<{ id: string }>(
@@ -31,38 +33,42 @@ try {
       'Preview only. Pass --apply to replace passwords and revoke sessions and reset links.',
     );
     await client.query('ROLLBACK');
-  } else {
-    for (const { id } of rows) {
-      // A separate salt per student preserves the authentication library's password format.
-      const password = await hashPassword(DEFAULT_STUDENT_PASSWORD);
-      const updated = await client.query(
-        `UPDATE account SET password = $1, updated_at = now()
-         WHERE user_id = $2 AND provider_id = 'credential' RETURNING id`,
-        [password, id],
-      );
-      if (!updated.rowCount) {
-        await client.query(
-          `INSERT INTO account (id, account_id, provider_id, user_id, password, updated_at)
-           VALUES ($1, $2, 'credential', $2, $3, now())`,
-          [randomUUID(), id, password],
-        );
-      }
+    return;
+  }
+  for (const { id } of rows) {
+    // A separate salt per student preserves the authentication library's password format.
+    const password = await hashPassword(DEFAULT_STUDENT_PASSWORD);
+    const updated = await client.query(
+      `UPDATE account SET password = $1, updated_at = now()
+       WHERE user_id = $2 AND provider_id = 'credential' RETURNING id`,
+      [password, id],
+    );
+    if (!updated.rowCount) {
       await client.query(
-        `UPDATE "user" SET must_change_password = false, email_verified = true, updated_at = now()
-         WHERE id = $1`,
-        [id],
-      );
-      await client.query('DELETE FROM session WHERE user_id = $1', [id]);
-      await client.query(
-        "DELETE FROM verification WHERE value = $1 AND identifier LIKE 'reset-password:%'",
-        [id],
+        `INSERT INTO account (id, account_id, provider_id, user_id, password, updated_at)
+         VALUES ($1, $2, 'credential', $2, $3, now())`,
+        [randomUUID(), id, password],
       );
     }
-    await client.query('COMMIT');
-    console.info(
-      `Updated ${rows.length} student accounts. No password change is required at first access.`,
+    await client.query(
+      `UPDATE "user" SET must_change_password = false, email_verified = true, updated_at = now()
+       WHERE id = $1`,
+      [id],
+    );
+    await client.query('DELETE FROM session WHERE user_id = $1', [id]);
+    await client.query(
+      "DELETE FROM verification WHERE value = $1 AND identifier LIKE 'reset-password:%'",
+      [id],
     );
   }
+  await client.query('COMMIT');
+  console.info(
+    `Updated ${rows.length} student accounts. No password change is required at first access.`,
+  );
+}
+
+try {
+  await updateEligibleStudents();
 } catch (error) {
   await client.query('ROLLBACK');
   throw error;

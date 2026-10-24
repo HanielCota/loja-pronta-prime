@@ -548,8 +548,11 @@ function SortableContentList({
     startTransition(async () => {
       const result = await reorderLearningNodes(data);
       setMessage(result.message);
-      if (result.saved) router.refresh();
-      else setOrder(previous);
+      if (result.saved) {
+        router.refresh();
+        return;
+      }
+      setOrder(previous);
     });
   }
 

@@ -77,8 +77,11 @@ export function WriteOwn({
             // Esperando o microfone ou a transcrição: segue focável (o foco não some), mas não age.
             aria-disabled={speechBusy && speech.status !== 'recording'}
             onClick={() => {
-              if (speech.status === 'recording') speech.stop();
-              else if (!speechBusy) void speech.start(text);
+              if (speech.status === 'recording') {
+                speech.stop();
+                return;
+              }
+              if (!speechBusy) void speech.start(text);
             }}
             className={cn(
               'grid size-12 shrink-0 place-items-center rounded-full transition-[background-color,transform] duration-100 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid active:scale-[0.94] disabled:opacity-50 aria-disabled:opacity-50 motion-reduce:active:scale-100 forced-colors:border-2 forced-colors:border-[ButtonText]',

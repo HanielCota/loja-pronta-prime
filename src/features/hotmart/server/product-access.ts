@@ -60,9 +60,9 @@ export async function reconcileProductAccess(tx: Transaction, userId: string, pr
       : undefined;
   if (manual || purchase || historical) {
     await tx.insert(studentProducts).values({ userId, product }).onConflictDoNothing();
-  } else {
-    await tx
-      .delete(studentProducts)
-      .where(and(eq(studentProducts.userId, userId), eq(studentProducts.product, product)));
+    return;
   }
+  await tx
+    .delete(studentProducts)
+    .where(and(eq(studentProducts.userId, userId), eq(studentProducts.product, product)));
 }

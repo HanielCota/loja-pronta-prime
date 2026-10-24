@@ -55,8 +55,11 @@ export function guidanceCandidates(
   for (const item of items) {
     const window = windows.find((row) => row.itemId === item.itemId);
     if (!window || window.views === null) continue;
-    if (window.views === 0) candidates.push({ action: 'review-exposure', itemId: item.itemId });
-    else if (window.sales === 0) candidates.push({ action: 'review-offer', itemId: item.itemId });
+    if (window.views === 0) {
+      candidates.push({ action: 'review-exposure', itemId: item.itemId });
+      continue;
+    }
+    if (window.sales === 0) candidates.push({ action: 'review-offer', itemId: item.itemId });
   }
   return [...candidates.slice(0, 24), { action: 'keep-observing', itemId: null }];
 }
