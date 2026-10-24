@@ -10,7 +10,8 @@ export const ACCOUNTS_PAGE_SIZE = 50;
 /** Lista as contas mais novas primeiro; a busca procura no nome e no email. */
 export async function listAccounts({ query, page }: { query: string; page: number }) {
   await requireAdmin('/admin/contas');
-  const term = query.trim();
+  // O mesmo teto da busca de leads: nome e email não passam disso.
+  const term = query.trim().slice(0, 120);
   // Escapa os curingas do LIKE: "%" ou "_" digitados valem como texto.
   const pattern = `%${term.replace(/[\\%_]/g, '\\$&')}%`;
   const where = term ? or(ilike(user.name, pattern), ilike(user.email, pattern)) : undefined;
@@ -27,7 +28,9 @@ export async function listAccounts({ query, page }: { query: string; page: numbe
       })
       .from(user)
       .where(where)
-      .orderBy(desc(user.createdAt))
+      // O id desempata contas criadas no mesmo instante (importações): sem ele, uma conta podia
+      // aparecer em duas páginas e outra em nenhuma.
+      .orderBy(desc(user.createdAt), desc(user.id))
       .limit(ACCOUNTS_PAGE_SIZE)
       .offset((page - 1) * ACCOUNTS_PAGE_SIZE),
     db
