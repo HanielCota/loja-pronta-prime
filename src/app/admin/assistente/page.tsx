@@ -49,6 +49,8 @@ export default async function AssistantAdminPage({
       .select()
       .from(assistantPublicationItems)
       .where(eq(assistantPublicationItems.status, 'unknown'))
+      // As mais antigas primeiro e sempre as mesmas: sem ordem, cada recarga mostrava 50 diferentes.
+      .orderBy(asc(assistantPublicationItems.authorizedAt), asc(assistantPublicationItems.id))
       .limit(50),
     db
       .select({ id: learningLessons.id, title: learningLessons.title })
