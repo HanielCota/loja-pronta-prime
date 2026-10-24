@@ -50,7 +50,7 @@ export function PresenceTable({ rows, now }: { rows: PresenceRow[]; now: Date })
   return (
     <>
       <div className="hidden overflow-x-auto md:block">
-        <table className="w-full border-collapse text-left text-body">
+        <table className="w-full border-collapse text-left text-body tabular-nums">
           <thead>
             <tr className="border-b border-border text-sm text-muted-foreground">
               <th className="py-3 pr-4 pl-3 font-semibold" scope="col">

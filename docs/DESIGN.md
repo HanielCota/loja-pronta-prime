@@ -477,3 +477,9 @@ Mesmas molduras, cartões, textos e fluxos; só espaço, alinhamento, hierarquia
 - Admin: os seis números da Visão geral ficam em duas colunas já no celular. Na conta, "Fase da
   loja" mostra o número e o atalho um embaixo do outro, e "Bloquear conta" usa o botão
   `destructive`. Avisos de formulário vazios não reservam espaço.
+- Controles do navegador: `Input` dá por padrão o teclado e o corretor certos por tipo (email e
+  endereço sem maiúscula automática nem corretor, busca com a tecla "Buscar", número com teclado
+  numérico). O global tira o realce azul do toque e a espera do duplo toque, pinta o que sobrou
+  do navegador com `accent-color` roxo, iguala a cor das dicas dos campos e tem estilo de
+  impressão (só o conteúdo, preto no branco, links externos com o endereço). Tabelas usam
+  números tabulares.

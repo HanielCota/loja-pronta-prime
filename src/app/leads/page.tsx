@@ -259,7 +259,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
         {list.rows.length ? (
           <>
             <div className="hidden overflow-x-auto md:block">
-              <table className="w-full text-left text-body">
+              <table className="w-full border-collapse text-left text-body tabular-nums">
                 <caption className="sr-only">Contatos encontrados e próximos retornos</caption>
                 <thead>
                   <tr className="border-b border-border text-sm text-muted-foreground">

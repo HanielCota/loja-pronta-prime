@@ -550,4 +550,70 @@
   input::-ms-clear {
     display: none;
   }
+
+  /* Controles do navegador que sobraram (barra de progresso, seletor de cor, controles de vídeo)
+     no roxo da marca, não no azul do sistema. */
+  html {
+    accent-color: var(--primary);
+  }
+  /* Toque no celular: sem o retângulo azul que o navegador pinta (cada controle já tem o próprio
+     retorno no toque) e sem a espera do duplo toque pra dar zoom, que atrasa o clique. */
+  a,
+  button,
+  summary,
+  label,
+  input,
+  select,
+  textarea,
+  [role='button'] {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  /* Tocar várias vezes num botão não seleciona o texto dele. */
+  button,
+  summary,
+  [role='button'] {
+    user-select: none;
+  }
+  /* Dica dentro do campo na cor do texto de apoio, igual em todos os navegadores (o Firefox
+     clareava sozinho e caía abaixo do contraste). */
+  ::placeholder {
+    color: var(--muted-foreground);
+    opacity: 1;
+  }
+}
+
+/*
+ * Impressão (ex.: imprimir a Política de Privacidade ou uma aula): só o conteúdo, em preto no
+ * branco, sem menus, botões nem sombras, com o endereço dos links externos escrito ao lado.
+ */
+@media print {
+  :root,
+  .dark {
+    --background: #ffffff;
+    --card: #ffffff;
+    --foreground: #000000;
+    --muted-foreground: #333333;
+    --card-shadow: none;
+  }
+  header,
+  nav,
+  aside,
+  nextjs-portal,
+  button,
+  [data-slot='button'],
+  [role='button'] {
+    display: none !important;
+  }
+  main a[href^='http']::after {
+    content: ' (' attr(href) ')';
+    font-size: 0.875em;
+    word-break: break-all;
+  }
+  .rounded-card,
+  li,
+  figure,
+  table {
+    break-inside: avoid;
+  }
 }
