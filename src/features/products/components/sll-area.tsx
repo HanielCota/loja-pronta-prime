@@ -1,5 +1,5 @@
 import { greetingName } from '../names';
-import { SllAreaShell } from '@/features/sll/sll-area-shell';
+import { SllPage } from '@/features/sll/sll-area-shell';
 import { SllCourseCard, SllNextPathCard, SllStoreStatusCard, SllToolsCard } from './sll-cards';
 import { SllBannerCarousel } from '@/features/sll/components/sll-banner-carousel';
 import type { SllCopy } from '@/features/sll/copy';
@@ -40,8 +40,7 @@ export function SllArea({
   const hasLessons = Boolean(welcomeHref || methodHref || coursesHref);
 
   return (
-    <SllAreaShell
-      account={user}
+    <SllPage
       hasChoice={hasChoice}
       product="Sistema Loja Lucrativa (SLL)"
       title={`${firstVisit ? 'Boas-vindas' : 'Olá'}${name ? `, ${name}` : ''}!`}
@@ -59,6 +58,6 @@ export function SllArea({
       </div>
       <SllStoreStatusCard />
       <SllNextPathCard hasStoreAccess={hasChoice} />
-    </SllAreaShell>
+    </SllPage>
   );
 }

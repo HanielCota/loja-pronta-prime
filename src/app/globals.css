@@ -311,6 +311,8 @@
   --ease-fluid: cubic-bezier(0.22, 1, 0.36, 1);
   --animate-page-enter: page-enter 0.45s var(--ease-fluid) backwards;
   --animate-page-fade: page-fade 0.2s ease-out backwards;
+  /* O esboço de carregamento só aparece se a espera passar de um instante: troca rápida não pisca. */
+  --animate-loading-appear: page-fade 0.2s ease-out 0.3s backwards;
 }
 
 /* O conteúdo de uma página nova chega subindo um pouco, enquanto as molduras ficam paradas.

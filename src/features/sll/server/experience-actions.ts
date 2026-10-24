@@ -2,7 +2,7 @@
 
 import { asc, eq, and, isNotNull, sql } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
-import { revalidatePath } from 'next/cache';
+import { refresh, revalidatePath } from 'next/cache';
 import { db } from '@/server/db';
 import {
   hotmartProductMappings,
@@ -36,7 +36,8 @@ export async function chooseExpert(form: FormData): Promise<void> {
       target: studentExperiences.userId,
       set: { expert, updatedAt: new Date() },
     });
-  revalidatePath('/sll', 'layout');
+  // Só a tela de quem escolheu: o conteúdo compartilhado não depende do apresentador dela.
+  refresh();
   redirect('/sll/plano?resultado=expert-saved');
 }
 

@@ -5,7 +5,7 @@ import { Select } from '@/components/ui/select';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { panelCard } from '@/features/member/components/area-shell';
 import { requireProduct } from '@/features/products/server/access';
-import { SllAreaShell } from '@/features/sll/sll-area-shell';
+import { SllPage } from '@/features/sll/sll-area-shell';
 import { readStoreObservations } from '@/features/assistant/server/metrics';
 import { readCategoryExperiments } from '@/features/assistant/server/experiments';
 import { createCategoryExperiment } from '@/features/assistant/server/experiment-actions';
@@ -26,8 +26,7 @@ export default async function CategoryPage({
   const result = getParam(params.resultado);
   const eligible = data.items.filter((item) => item.categoryId);
   return (
-    <SllAreaShell
-      account={session.user}
+    <SllPage
       hasChoice={products.length > 1}
       title="Comparar categorias"
       intro="Acompanhe dois anúncios existentes e veja o que mudou no mesmo período."
@@ -149,6 +148,6 @@ export default async function CategoryPage({
           <p className="text-body text-muted-foreground">Nenhuma comparação iniciada.</p>
         )}
       </section>
-    </SllAreaShell>
+    </SllPage>
   );
 }

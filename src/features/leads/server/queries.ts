@@ -25,7 +25,9 @@ export async function leadOptions() {
     db
       .select({ id: user.id, name: user.name, role: user.role })
       .from(user)
-      .where(or(isNull(user.banned), eq(user.banned, false)))
+      // O banco já descarta as alunas (milhares de linhas); a função exata é conferida abaixo,
+      // porque o Better Auth guarda várias funções separadas por vírgula.
+      .where(and(or(isNull(user.banned), eq(user.banned, false)), ilike(user.role, '%admin%')))
       .orderBy(asc(user.name)),
     db.selectDistinct({ source: leads.source }).from(leads).orderBy(asc(leads.source)),
   ]);
