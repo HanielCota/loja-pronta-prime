@@ -29,6 +29,7 @@ import {
   listingCloneSchema,
   changeMatches,
 } from '../store-changes';
+import { shopeeIdSchema } from '../model';
 import { readCloneOffer } from './listing-clones';
 import { findSku } from './operations';
 
@@ -189,12 +190,12 @@ export async function processStoreChange(fetcher: typeof fetch = fetch) {
         fetcher,
       );
     else {
-      const itemId = z.object({ item_id: z.number() }).parse(payload).item_id;
+      const itemId = z.object({ item_id: shopeeIdSchema }).parse(payload).item_id;
       const result = await readShopeeResource(
         config,
         access,
         '/api/v2/product/get_item_base_info',
-        z.object({ item_list: z.array(z.looseObject({ item_id: z.number() })) }),
+        z.object({ item_list: z.array(z.looseObject({ item_id: shopeeIdSchema })) }),
         { item_id_list: String(itemId) },
         fetcher,
       );
@@ -416,7 +417,7 @@ export async function reconcileStoreChange(
         access,
         '/api/v2/product/get_item_list',
         z.object({
-          item: z.array(z.object({ item_id: z.number() })),
+          item: z.array(z.object({ item_id: shopeeIdSchema })),
           has_next_page: z.boolean(),
           next_offset: z.number().optional(),
         }),
@@ -432,7 +433,7 @@ export async function reconcileStoreChange(
           z.object({
             item_list: z.array(
               z.object({
-                item_id: z.number(),
+                item_id: shopeeIdSchema,
                 item_sku: z.string(),
                 item_name: z.string(),
                 item_status: z.string(),
@@ -494,7 +495,7 @@ export async function reconcileStoreChange(
       config,
       access,
       '/api/v2/product/get_item_base_info',
-      z.object({ item_list: z.array(z.looseObject({ item_id: z.number() })) }),
+      z.object({ item_list: z.array(z.looseObject({ item_id: shopeeIdSchema })) }),
       { item_id_list: String(itemId) },
       fetcher,
     );
