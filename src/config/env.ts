@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { trustedProxyHopsSchema } from './trusted-proxy-hops';
 
 const isSecureOrigin = (url: string) => {
   const { protocol, hostname } = new URL(url);
@@ -26,14 +27,7 @@ const envSchema = z
      * Em produção é obrigatória: um 1 suposto, sem proxy na frente, deixaria trocar de IP a cada
      * tentativa e fugir dos limites. Fora dela, 1 (o Next preenche o cabeçalho no dev).
      */
-    TRUSTED_PROXY_HOPS: z
-      .string()
-      .optional()
-      .refine((value) => process.env.NODE_ENV !== 'production' || value !== undefined, {
-        error: 'em produção, defina TRUSTED_PROXY_HOPS (0 sem proxy, 1 atrás de um proxy)',
-      })
-      .transform((value) => value ?? '1')
-      .pipe(z.coerce.number<string>().int().min(0).max(5)),
+    TRUSTED_PROXY_HOPS: trustedProxyHopsSchema(process.env.NODE_ENV === 'production'),
     /** Imagem do logo e transcrição (OpenAI). Sem chave, o microfone fica "em breve". */
     OPENAI_API_KEY: z.string().min(1).optional(),
     /** Resend: chave só de envio e endereço de um domínio verificado. */

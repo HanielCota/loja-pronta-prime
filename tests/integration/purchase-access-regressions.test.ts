@@ -5,6 +5,7 @@ import { db } from '@/server/db';
 import * as s from '@/server/db/schema';
 import { publicationPayloadSchema, DAY_MS } from '@/features/assistant/model';
 mock.module('next/cache', () => ({
+  refresh: () => {},
   revalidatePath: () => {},
   revalidateTag: () => {},
   unstable_cache: (f: unknown) => f,

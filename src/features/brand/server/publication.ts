@@ -1,5 +1,17 @@
 import sharp from 'sharp';
-import { and, eq, isNotNull, isNull, notExists, inArray, sql, or, exists } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  eq,
+  gt,
+  isNotNull,
+  isNull,
+  notExists,
+  inArray,
+  sql,
+  or,
+  exists,
+} from 'drizzle-orm';
 import { db } from '@/server/db';
 import {
   storeBrand,
@@ -18,6 +30,7 @@ import { queueStoreChange, reconcileStoreChange } from '@/features/assistant/ser
 import { effectiveProductAccess } from '@/features/products/server/eligibility';
 import { brandPublicationEnabled } from './publication-settings';
 import { brandFingerprint } from './fingerprint';
+import { nextScanCursor } from '../scan-cursor';
 
 /** Only a confirmed, unchanged snapshot can reach the remote write queue. */
 export async function queueApprovedBrand(
@@ -72,6 +85,22 @@ export async function queueApprovedBrand(
   );
 }
 
+/** Itens por varredura de cada fila (o worker varre a cada minuto). */
+const BRAND_SCAN_SIZE = 50;
+
+/**
+ * Onde cada fila continua na próxima varredura. Sem ordem nem cursor, as mesmas 50 linhas que
+ * falham sempre (token vencido, logo apagado) voltavam em toda varredura e as marcas depois delas
+ * nunca eram enviadas. Fica na memória do worker: reiniciar só recomeça do começo.
+ */
+const scanCursor = { uncertain: '', candidates: '' };
+
+/** Só a etapa e o tipo do erro: a mensagem crua pode trazer tokens ou dados da aluna. */
+function reportBrandQueueFailure(stage: 'reconcile' | 'prepare', error: unknown) {
+  const kind = error instanceof Error ? error.name : typeof error;
+  console.error(`[brand] ${stage} falhou: ${kind}`);
+}
+
 /** Reconciliation also covers brands confirmed before a connection or while writes were disabled. */
 export async function queueAutomaticBrands(
   fetcher: typeof fetch = fetch,
@@ -93,14 +122,21 @@ export async function queueAutomaticBrands(
         eq(storeAutomationJobs.kind, 'brand'),
         eq(storeAutomationJobs.applicationId, shopeeApplicationId(config)),
         eq(storeAutomationJobs.status, 'unknown'),
+        scanCursor.uncertain ? gt(storeAutomationJobs.id, scanCursor.uncertain) : undefined,
       ),
     )
-    .limit(50);
+    .orderBy(asc(storeAutomationJobs.id))
+    .limit(BRAND_SCAN_SIZE);
+  scanCursor.uncertain = nextScanCursor(
+    uncertain.map((job) => job.id),
+    BRAND_SCAN_SIZE,
+  );
   for (const job of uncertain) {
     try {
       await reconcileStoreChange(job.userId, job.id, fetcher);
-    } catch {
-      /* Read-only reconciliation never resends a write. */
+    } catch (error) {
+      // Read-only reconciliation never resends a write; the next scan tries again.
+      reportBrandQueueFailure('reconcile', error);
     }
   }
   const pilot = config.SHOPEE_PILOT_USER_IDS.split(',')
@@ -113,6 +149,7 @@ export async function queueAutomaticBrands(
     .innerJoin(user, eq(user.id, storeBrand.userId))
     .where(
       and(
+        scanCursor.candidates ? gt(storeBrand.userId, scanCursor.candidates) : undefined,
         pilot.length
           ? or(inArray(user.id, pilot), sql`${user.role} ~ '(^|,)admin(,|$)'`)
           : undefined,
@@ -165,15 +202,22 @@ export async function queueAutomaticBrands(
         ),
       ),
     )
-    .limit(50);
+    .orderBy(asc(storeBrand.userId))
+    .limit(BRAND_SCAN_SIZE);
+  scanCursor.candidates = nextScanCursor(
+    candidates.map((candidate) => candidate.userId),
+    BRAND_SCAN_SIZE,
+  );
   let queued = 0;
   for (const candidate of candidates) {
     // The queue checks access again immediately before preparation.
     try {
       await queueApprovedBrand(candidate.userId, fetcher, readLogo);
       queued++;
-    } catch {
-      /* A later scan retries preparation, never an uncertain remote write. */
+    } catch (error) {
+      // A later scan retries preparation, never an uncertain remote write. Sem o registro, uma
+      // marca que falha sempre (logo sumido no bucket, token morto) ficava invisível na fila.
+      reportBrandQueueFailure('prepare', error);
     }
   }
   return queued;

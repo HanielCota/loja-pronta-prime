@@ -19,6 +19,8 @@ type StudentProducts = {
   products: ProductId[];
   /** Quando ela abriu cada área pela primeira vez (as que nunca abriu ficam de fora). */
   firstVisits: Partial<Record<ProductId, Date>>;
+  /** A última visita gravada de cada área (pra não regravar a cada página). */
+  lastVisits: Partial<Record<ProductId, Date>>;
   /** A área que ela abriu por último, se já abriu alguma. */
   lastArea?: ProductId | undefined;
 };
@@ -41,6 +43,9 @@ export const getStudentProducts = cache(async (userId: string): Promise<StudentP
     firstVisits: Object.fromEntries(
       rows.flatMap((row) => (row.firstVisitedAt ? [[row.product, row.firstVisitedAt]] : [])),
     ),
+    lastVisits: Object.fromEntries(
+      rows.flatMap((row) => (row.lastVisitedAt ? [[row.product, row.lastVisitedAt]] : [])),
+    ),
     lastArea: latest?.product,
   };
 });
@@ -58,6 +63,21 @@ export async function requireStudent(path: string) {
   const { session } = state;
   if (needsFirstPassword(session.user)) redirect(authHref('/primeiro-acesso', next));
   return { session, ...(await getStudentProducts(session.user.id)) };
+}
+
+/**
+ * A mesma conferência de `requireProduct`, sem redirecionar nem registrar a visita: a moldura da
+ * área (o `layout.tsx`) só precisa saber se pode se desenhar. Quem decide pra onde mandar quem
+ * não pode entrar continua sendo a guarda da página, que conhece o endereço de volta do login.
+ */
+export async function readProductAccess(product: ProductId) {
+  const state = await getSessionState();
+  if (state.status !== 'active') return null;
+  const { session } = state;
+  if (needsFirstPassword(session.user)) return null;
+  const { products } = await getStudentProducts(session.user.id);
+  if (!products.includes(product)) return null;
+  return { session, products };
 }
 
 /** De quanto em quanto tempo a visita a uma área é gravada de novo. */
@@ -96,7 +116,10 @@ export async function requireProduct(product: ProductId, path: string = PRODUCTS
   if (!student.products.includes(product)) redirect('/');
 
   const userId = student.session.user.id;
-  recordProductVisit(userId, product);
+  // A visita já lida há menos de 10 minutos não seria regravada: nem vai ao banco.
+  const lastVisitedAt = student.lastVisits[product];
+  if (!lastVisitedAt || Date.now() - lastVisitedAt.getTime() >= VISIT_INTERVAL_MS)
+    recordProductVisit(userId, product);
   const firstVisitedAt = student.firstVisits[product];
   const firstVisit = !firstVisitedAt || firstVisitedAt >= student.session.session.createdAt;
   return { ...student, firstVisit };

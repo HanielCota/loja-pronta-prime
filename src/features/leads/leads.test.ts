@@ -1,8 +1,21 @@
 import { describe, expect, test } from 'bun:test';
-import { csvCell, parseCsv, readLeadCsv, writeCsv } from './csv';
+import { csvCell, decodeLeadCsv, MAX_IMPORT_COLUMNS, parseCsv, readLeadCsv, writeCsv } from './csv';
+
+const line = (count: number) => Array.from({ length: count }, (_, index) => `c${index}`).join(';');
+
+const readLeadCsvError = (content: string) => {
+  try {
+    readLeadCsv(content);
+    return '';
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error);
+  }
+};
 import {
   EMPTY_LEAD,
   leadSchema,
+  NEXT_CONTACT_MAX,
+  NEXT_CONTACT_MIN,
   leadTags,
   leadRecord,
   parseLeadFilters,
@@ -38,12 +51,24 @@ describe('cadastro de leads', () => {
       false,
     );
   });
+  test('aceita o próximo contato nas bordas da faixa', () => {
+    for (const nextContact of ['', NEXT_CONTACT_MIN, '2024-02-29', NEXT_CONTACT_MAX])
+      expect(
+        leadSchema.safeParse({ ...EMPTY_LEAD, name: 'Ana', email: 'ana@example.com', nextContact })
+          .success,
+      ).toBe(true);
+  });
   test('recusa etapas, produtos, datas e números inválidos', () => {
     for (const invalid of [
       { stage: 'fake' },
       { product: 'fake' },
       { nextContact: '2026-02-30' },
       { nextContact: '08/10/2026' },
+      { nextContact: '0000-01-01' },
+      { nextContact: '1999-12-31' },
+      { nextContact: '2101-01-01' },
+      { nextContact: '9999-12-31' },
+      { nextContact: '+02026-10-08' },
       { phone: '123' },
     ])
       expect(
@@ -115,6 +140,16 @@ describe('planilha de leads', () => {
     expect(() => readLeadCsv('nome;email\n' + 'Ana;ana@example.com\n'.repeat(1001))).toThrow();
     expect(readLeadCsv('nome;email\nAna;ana@example.com;extra').errors).toHaveLength(1);
   });
+  test('limita as colunas por linha sem montar milhões de células', () => {
+    expect(parseCsv(line(MAX_IMPORT_COLUMNS))[0]).toHaveLength(MAX_IMPORT_COLUMNS);
+    expect(parseCsv(`${line(MAX_IMPORT_COLUMNS)}\nx`)[0]).toHaveLength(MAX_IMPORT_COLUMNS);
+    expect(() => parseCsv(line(MAX_IMPORT_COLUMNS + 1))).toThrow('colunas');
+    expect(() => parseCsv(`${line(MAX_IMPORT_COLUMNS + 1)}\nx`)).toThrow('colunas');
+    expect(() => parseCsv(`nome;email\nAna;${';'.repeat(2_000_000)}`)).toThrow('colunas');
+    const unknown = readLeadCsvError(`nome;email;${line(20)}\nAna;a@b.co;${';'.repeat(19)}`);
+    expect(unknown).toContain('e mais 15');
+    expect(unknown.length).toBeLessThan(200);
+  });
   test('exportação escapa aspas e impede fórmulas em células', () => {
     for (const value of ['=HYPERLINK("url")', '+123', '-cmd', '@SUM(1)', '  =2+2', '\tformula'])
       expect(csvCell(value)).toStartWith('"\'');
@@ -130,5 +165,20 @@ describe('planilha de leads', () => {
       ['nome', 'email'],
       ['Ana', 'ana@example.com'],
     ]);
+  });
+});
+
+describe('CSV file encoding', () => {
+  test('Excel Windows-1252 files keep their accents', () => {
+    const latin1 = new Uint8Array([
+      0x4a, 0x6f, 0xe3, 0x6f, 0x3b, 0x4d, 0xe1, 0x72, 0x63, 0x69, 0x61,
+    ]);
+    expect(decodeLeadCsv(latin1)).toBe('João;Márcia');
+  });
+
+  test('UTF-8 files, with or without BOM, are read as UTF-8', () => {
+    const utf8 = new TextEncoder().encode('\uFEFFJoão;Márcia');
+    expect(decodeLeadCsv(utf8).replace(/^\uFEFF/, '')).toBe('João;Márcia');
+    expect(decodeLeadCsv(new Uint8Array())).toBe('');
   });
 });

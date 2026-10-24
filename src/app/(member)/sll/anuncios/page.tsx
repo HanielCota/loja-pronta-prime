@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { storeAutomationJobs } from '@/server/db/schema';
-import { SllAreaShell } from '@/features/sll/sll-area-shell';
+import { SllPage } from '@/features/sll/sll-area-shell';
 import { requireProduct } from '@/features/products/server/access';
 import { readStoreObservations } from '@/features/assistant/server/metrics';
 import { listingChangeOptions } from '@/features/assistant/server/change-options';
@@ -83,8 +83,7 @@ export default async function ListingsPage({
     unknown: 'Resultado a conferir',
   };
   return (
-    <SllAreaShell
-      account={session.user}
+    <SllPage
       hasChoice={products.length > 1}
       title="Ajustar anúncios"
       intro="Selecione os anúncios da sua loja e confira o que deseja alterar."
@@ -299,6 +298,6 @@ export default async function ListingsPage({
       <Button asChild variant="soft">
         <Link href="/sll/comparar-categorias">Voltar para comparar categorias</Link>
       </Button>
-    </SllAreaShell>
+    </SllPage>
   );
 }

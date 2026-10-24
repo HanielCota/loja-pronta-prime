@@ -8,6 +8,7 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { env } from '@/config/env';
+import { CONNECTION_TIMEOUT_MS, REQUEST_TIMEOUT_MS, uploadTimeoutMs } from './timeouts';
 
 /**
  * Onde os arquivos do sistema ficam (os logos e os vídeos): o bucket S3, em dev e em produção.
@@ -31,8 +32,11 @@ export type Storage = {
 
 export type StoredStream = {
   body: ReadableStream;
-  /** Bytes deste pedaço. */
-  length: number;
+  /**
+   * Bytes deste pedaço. Ausente quando o provedor não informa: um 0 inventado viraria
+   * `Content-Length: 0` com corpo, e o navegador receberia o arquivo vazio.
+   */
+  length: number | undefined;
   /** "bytes 0-999/5000", quando é um pedaço. */
   contentRange: string | undefined;
   contentType: string | undefined;
@@ -52,12 +56,22 @@ function s3Storage(): Storage {
     ...(env.S3_ENDPOINT ? { endpoint: env.S3_ENDPOINT } : {}),
     forcePathStyle: env.S3_FORCE_PATH_STYLE === 'true',
     credentials: { accessKeyId: env.S3_ACCESS_KEY_ID, secretAccessKey: env.S3_SECRET_ACCESS_KEY },
+    // Sem limite, um bucket que não responde prende a requisição (e o worker) para sempre. O
+    // prazo vale até a resposta começar: um vídeo pausado continua lendo o corpo sem cair. O
+    // envio ganha mais tempo conforme o tamanho (veja `put`).
+    requestHandler: {
+      connectionTimeout: CONNECTION_TIMEOUT_MS,
+      requestTimeout: REQUEST_TIMEOUT_MS,
+      throwOnRequestTimeout: true,
+    },
   });
   return {
     async put(key, body, contentType) {
       assertKey(key);
       await client.send(
         new PutObjectCommand({ Bucket, Key: key, Body: body, ContentType: contentType }),
+        // O bucket só responde depois de receber o arquivo inteiro: 15 s não mandam um vídeo.
+        { requestTimeout: uploadTimeoutMs(body.byteLength) },
       );
     },
     async get(key) {
@@ -79,7 +93,7 @@ function s3Storage(): Storage {
         if (!object.Body) return null;
         return {
           body: object.Body.transformToWebStream(),
-          length: object.ContentLength ?? 0,
+          length: object.ContentLength,
           contentRange: object.ContentRange,
           contentType: object.ContentType,
         };

@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { learningLessons, user, userPresence } from '@/server/db/schema';
 import { describeDevice } from '@/features/presence/device';
@@ -51,26 +51,51 @@ const presenceColumns = {
   device: userPresence.device,
 };
 
-/**
- * Quem avisou nos últimos 90 segundos, do aviso mais novo ao mais velho. Devolve também a hora da
- * leitura, que as telas usam pra dizer "há quanto tempo".
- */
-export async function getOnlineStudents(): Promise<{ now: Date; rows: PresenceRow[] }> {
-  await requireAdmin('/admin/online');
-  const now = new Date();
-  const rows = await db
-    .select(presenceColumns)
+/** A lista mostra no máximo estas pessoas; o total vem de uma contagem à parte. */
+export const ONLINE_LIST_LIMIT = 500;
+
+/** Quem avisou dentro da janela de online e pode aparecer pra equipe (lista e contagem usam o mesmo). */
+function onlineCondition(now: Date) {
+  return and(
+    gte(userPresence.lastSeenAt, new Date(now.getTime() - ONLINE_WINDOW_MS)),
+    visiblePresenceCondition(),
+  );
+}
+
+/** Quantas pessoas estão online, sem o teto da lista (o número do menu e dos títulos). */
+export async function countOnlineStudents(now: Date): Promise<number> {
+  const [row] = await db
+    .select({ total: sql<number>`count(*)::int` })
     .from(userPresence)
     .innerJoin(user, eq(userPresence.userId, user.id))
-    .where(
-      and(
-        gte(userPresence.lastSeenAt, new Date(now.getTime() - ONLINE_WINDOW_MS)),
-        visiblePresenceCondition(),
-      ),
-    )
-    .orderBy(desc(userPresence.lastSeenAt))
-    .limit(500);
-  return { now, rows: await withLessonTitles(rows) };
+    .where(onlineCondition(now));
+  return row?.total ?? 0;
+}
+
+/**
+ * Quem avisou nos últimos 90 segundos, do aviso mais novo ao mais velho (até ONLINE_LIST_LIMIT),
+ * e o total de verdade: acima do teto, a tela dizia "500 pessoas online" enquanto o menu contava
+ * todas. Devolve também a hora da leitura, que as telas usam pra dizer "há quanto tempo".
+ */
+export async function getOnlineStudents(): Promise<{
+  now: Date;
+  rows: PresenceRow[];
+  total: number;
+}> {
+  await requireAdmin('/admin/online');
+  const now = new Date();
+  const [rows, total] = await Promise.all([
+    db
+      .select(presenceColumns)
+      .from(userPresence)
+      .innerJoin(user, eq(userPresence.userId, user.id))
+      .where(onlineCondition(now))
+      .orderBy(desc(userPresence.lastSeenAt))
+      .limit(ONLINE_LIST_LIMIT),
+    countOnlineStudents(now),
+  ]);
+  // A contagem roda separada; quem entrou entre as duas leituras não deixa o total menor que a lista.
+  return { now, rows: await withLessonTitles(rows), total: Math.max(total, rows.length) };
 }
 
 /** O último lugar em que uma conta esteve (null se nunca abriu as áreas), e a hora da leitura. */

@@ -16,7 +16,8 @@ import {
 } from '../event';
 
 const missingDateResult = 'Compra sem data original; acesso não liberado.';
-const retryableResult = (result: string) =>
+/** Avisos que a Hotmart precisa reenviar: a rota responde 503 e o processamento tenta de novo. */
+export const isRetryableHotmartResult = (result: string) =>
   result === 'Produto sem acesso configurado.' ||
   result === missingDateResult ||
   result === productIdentityConflict;
@@ -236,7 +237,7 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
     columns: { result: true },
     where: eq(hotmartEvents.id, event.id),
   });
-  if (received && !retryableResult(received.result)) return 'Aviso já recebido.';
+  if (received && !isRetryableHotmartResult(received.result)) return 'Aviso já recebido.';
   // Resolve numeric identities before account creation without holding a pooled
   // transaction connection while better-auth acquires its own connection.
   const preliminaryMapping =
@@ -306,7 +307,7 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
       columns: { id: true, result: true },
       where: eq(hotmartEvents.id, event.id),
     });
-    if (duplicate && !retryableResult(duplicate.result)) return 'Aviso já recebido.';
+    if (duplicate && !isRetryableHotmartResult(duplicate.result)) return 'Aviso já recebido.';
     const historical = await tx.query.historicalSllPurchases.findFirst({
       where: eq(historicalSllPurchases.transaction, transaction),
     });

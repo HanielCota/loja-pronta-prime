@@ -2,7 +2,7 @@
 
 import { asc, eq, and, isNotNull, sql } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
-import { revalidatePath } from 'next/cache';
+import { refresh, revalidatePath } from 'next/cache';
 import { db } from '@/server/db';
 import {
   hotmartProductMappings,
@@ -21,6 +21,7 @@ import { reconcileProductAccess } from '@/features/hotmart/server/product-access
 import { revalidateAdminOverview } from '@/features/admin/server/overview-cache';
 import { pandaVideoId } from '../panda-video';
 import { isProgressId } from '../progress-rules';
+import { cleanTypedText } from '@/lib/text';
 
 export async function chooseExpert(form: FormData): Promise<void> {
   const { userId } = await requireProductAction('sll');
@@ -35,13 +36,15 @@ export async function chooseExpert(form: FormData): Promise<void> {
       target: studentExperiences.userId,
       set: { expert, updatedAt: new Date() },
     });
-  revalidatePath('/sll', 'layout');
+  // Só a tela de quem escolheu: o conteúdo compartilhado não depende do apresentador dela.
+  refresh();
   redirect('/sll/plano?resultado=expert-saved');
 }
 
 export async function saveExpertOffer(form: FormData): Promise<void> {
   await requireAdmin('/admin/experts');
-  const code = String(form.get('code') ?? '').trim();
+  // Zero-width colado junto criaria um mapeamento que nunca casa com o ucode da Hotmart.
+  const code = cleanTypedText(String(form.get('code') ?? ''));
   const access = form.get('access');
   const expert = form.get('expert');
   if (

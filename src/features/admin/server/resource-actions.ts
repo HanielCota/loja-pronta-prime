@@ -1,5 +1,6 @@
 'use server';
 
+import { wholeNumberField } from '@/lib/form-number';
 import { and, asc, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { revalidateSllContent } from '@/features/sll/server/content-cache';
@@ -87,7 +88,7 @@ export async function saveSllResource(
       description: field(form, 'description'),
       buttonLabel: field(form, 'buttonLabel'),
       destination: field(form, 'destination'),
-      position: Number(field(form, 'position')),
+      position: wholeNumberField(field(form, 'position')),
     });
   if (!parsed.success) return { message: 'Confira o nome, grupo e texto.', saved: false };
   if (parsed.data.destination && !parsed.data.buttonLabel) {
