@@ -76,9 +76,13 @@ export function VideoGate({
 
       <div className="flex flex-col gap-2">
         <div aria-hidden="true" className="h-2 overflow-hidden rounded-full bg-progress-track">
+          {/* Desliza (transform) em vez de crescer (width): o vídeo atualiza a barra várias vezes
+              por segundo, e assim o navegador não recalcula o layout a cada vez. */}
           <div
-            className="h-full rounded-full bg-progress transition-[width] duration-500 motion-reduce:transition-none"
-            style={{ width: `${ready ? 100 : Math.min(1, fraction / minWatch) * 100}%` }}
+            className="h-full rounded-full bg-progress transition-transform duration-500 motion-reduce:transition-none"
+            style={{
+              transform: `translateX(${(ready ? 1 : Math.min(1, fraction / minWatch)) * 100 - 100}%)`,
+            }}
           />
         </div>
         <p
