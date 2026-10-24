@@ -1,5 +1,6 @@
 'use server';
 
+import { wholeNumberField } from '@/lib/form-number';
 import { and, asc, eq, isNotNull, isNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { revalidateSllContent } from '@/features/sll/server/content-cache';
@@ -59,7 +60,7 @@ export async function saveSllBanner(
     buttonLabel: textField(formData, 'buttonLabel'),
     destination: textField(formData, 'destination'),
     imageAlt: textField(formData, 'imageAlt'),
-    position: Number(positionText),
+    position: wholeNumberField(positionText),
   });
   if (!parsed.success)
     return { message: 'Confira o título, texto, destino e posição.', saved: false };

@@ -192,7 +192,11 @@ export async function setAccountBlocked(
 ): Promise<AccountActionState> {
   const id = accountId(data);
   const admin = await requireAdmin(id ? `/admin/contas/${id}` : '/admin/contas');
-  const block = data.get('blocked') === 'yes';
+  const blockedValue = data.get('blocked');
+  // Campo ausente não pode virar "desbloquear": só 'yes' e 'no' são pedidos de verdade.
+  if (blockedValue !== 'yes' && blockedValue !== 'no')
+    return { message: 'Atualize a página e tente de novo.', saved: false };
+  const block = blockedValue === 'yes';
   const reasonValue = data.get('reason');
   const reason = typeof reasonValue === 'string' ? reasonValue.trim() : '';
   if (!id) return { message: 'Conta não encontrada.', saved: false };
