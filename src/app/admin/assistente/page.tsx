@@ -43,7 +43,11 @@ export default async function AssistantAdminPage({
 }) {
   const session = await requireAdmin('/admin/assistente');
   const [books, jobs, uncertain, lessons, params] = await Promise.all([
-    db.select().from(assistantPlaybooks).orderBy(desc(assistantPlaybooks.revision)),
+    // Só a revisão mais recente de cada estratégia: o histórico cresce a cada publicação.
+    db
+      .selectDistinctOn([assistantPlaybooks.strategy])
+      .from(assistantPlaybooks)
+      .orderBy(assistantPlaybooks.strategy, desc(assistantPlaybooks.revision)),
     db.select().from(assistantJobs).orderBy(desc(assistantJobs.createdAt)).limit(50),
     db
       .select()
