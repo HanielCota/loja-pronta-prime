@@ -52,6 +52,10 @@ export function SllStage2Pilot({
   const completeRequiredDays = requiredModules.filter(
     (module) => module.lessons.length > 0 && module.lessons.every((lesson) => lesson.completed),
   ).length;
+  // Só o dia da vez tem o botão roxo: os outros abertos ficam claros, pra não competir.
+  const currentDayIndex = requiredModules.findIndex(
+    (module) => !module.lessons.length || !module.lessons.every((lesson) => lesson.completed),
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -78,6 +82,7 @@ export function SllStage2Pilot({
               key={module.id}
               index={index}
               total={requiredModules.length}
+              isCurrent={index === currentDayIndex}
               module={module}
               trackId={trackId}
               resumeLessonId={resumeLessonId}
@@ -143,6 +148,7 @@ export function SllStage2Pilot({
 function PlanModule({
   index,
   total,
+  isCurrent,
   module,
   trackId,
   resumeLessonId,
@@ -151,6 +157,7 @@ function PlanModule({
 }: {
   index: number;
   total: number;
+  isCurrent: boolean;
   module: SllStage2PlanModule;
   trackId: string;
   resumeLessonId: string | null;
@@ -201,6 +208,7 @@ function PlanModule({
                 : null
             }
             wholeDay={module.lessons.length === 1}
+            emphasized={isCurrent}
           />
         ))
       ) : (
@@ -219,6 +227,7 @@ function PlanLessonContent({
   nextModule,
   optional = false,
   wholeDay = true,
+  emphasized = false,
 }: {
   lesson: SllStage2PlanLesson;
   trackId: string;
@@ -226,6 +235,8 @@ function PlanLessonContent({
   nextModule?: SllStage2PlanModule | null;
   optional?: boolean;
   wholeDay?: boolean;
+  /** O dia da vez: o único botão roxo do plano. */
+  emphasized?: boolean;
 }) {
   const [state, action, isPending] = useActionState(setSllLessonCompletionForm, INITIAL_STATE);
   const completed = state.completed ?? lesson.completed;
@@ -257,7 +268,7 @@ function PlanLessonContent({
         <Button
           loading={isPending}
           loadingText="Salvando…"
-          variant={completed ? 'soft' : 'default'}
+          variant={!completed && emphasized ? 'default' : 'soft'}
         >
           {completed ? <RotateCcw aria-hidden="true" /> : <Check aria-hidden="true" />}
           {completed

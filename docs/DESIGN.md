@@ -170,7 +170,21 @@ o tema escuro e o alto contraste.
   segmentado de rádios), **Reduzir animações** e **Mais contraste** (chaves). Valem na hora, só no
   aparelho, e viram atributos no `<html>` (`data-text`, `data-motion`, `data-contrast`) que um
   script do head põe antes da página aparecer. O tamanho muda a base do `rem`, então use `rem`
-  (as classes do Tailwind), não `px`, pra o que deve crescer junto.
+  (as classes do Tailwind), não `px`, pra o que deve crescer junto. Quando algo está fora do
+  padrão, a última linha da Aparência é "Voltar ao padrão" (tema claro, texto normal, chaves
+  desligadas); ela some quando o foco sai dela, nunca com o foco dentro.
+- Perfil, por prioridade (a ordem da conta Apple e do Google: aviso, o que ela tem, os dados dela,
+  segurança, preferências, ajuda, sair): **Precisa da sua atenção** (só quando uma área acaba em
+  30 dias ou menos, com "Ajuda" levando ao suporte), **Seus acessos**, Sua conta, Segurança,
+  **Aparelhos conectados**, Aparência, **Precisa de ajuda?** e o sair. Aparelhos conectados lista as sessões abertas (tipo, sistema e
+  navegador, "Entrou em" e "Este aparelho" em verde), sem as do "entrar como" do admin; com mais
+  de uma, a última linha é "Sair dos outros aparelhos" (formulário de verdade, em `text-link`). Seus
+  acessos termina em "Compras e recibos", que abre a área de quem compra na Hotmart. Seus acessos lista cada área dela com a data final da compra ("Até 22/10/2027"); a 30 dias
+  ou menos vira "Acaba em X dias", em `text-warning` com ícone de relógio (não só a cor). Liberação
+  manual diz "Liberado, sem data pra acabar"; sem data conhecida, só "Liberado", nunca uma data
+  inventada. Ajuda tem o WhatsApp (só se configurado), o email do suporte e a Política de
+  Privacidade. As linhas que levam pra outro lugar usam o mesmo desenho das que abrem formulário,
+  com a ação escrita à direita ("Abrir", "Escrever", "Ler").
 
 ## Padrões de tela
 
@@ -236,7 +250,17 @@ o tema escuro e o alto contraste.
   “Voltar às aulas”. O teclado tem o atalho “Pular para o conteúdo”, exclusivo do SLL.
 - A busca da Biblioteca ignora acentos e maiúsculas, oferece contagem e limpeza e mantém a
   busca confirmada no endereço. O formulário GET também funciona sem JavaScript.
-- No painel, o caminho de aprendizagem aparece antes do aviso de lojas. Em Recursos, os cartões
+- No painel, o próximo passo vem num cartão grande (“Seu caminho no curso”): título do passo,
+  uma frase, o progresso real das boas-vindas e o único botão roxo da tela (Começar, Continuar,
+  Ver o método). Ao lado (embaixo no celular), “Também no seu caminho” lista os outros passos.
+  Abaixo, “Sua loja” mostra a loja numa linha (nome, etapa da montagem e se a Shopee está
+  conectada) e “Ferramentas mais usadas” traz até quatro atalhos publicados, com “Ver todas”.
+- Listas agrupadas (`SllGroupedList`/`SllListRow`): a linha inteira é o link, com ícone, nome,
+  uma frase e seta (pra fora quando abre outra aba); sem endereço, “Em breve”. Recursos mostra
+  as ferramentas assim, por categoria, sem botão por item. Minhas Lojas mostra um cartão da loja
+  com “O que falta” (montar, conectar) e um botão roxo só, o do primeiro passo que falta.
+- O laranja da Shopee (`bg-shopee`) só aparece no quadradinho que representa a plataforma,
+  com ícone branco; nunca em botão, texto ou fundo de cartão. Em Recursos, os cartões
   usam sua altura natural; links externos anunciam a abertura em outra aba.
 - Cursos complementares têm destaque amplo e biblioteca em cartões com contagem e progresso
   individuais. Sem o arquivo da capa, aparece um aviso neutro compacto “Capa em breve”, sem imagem

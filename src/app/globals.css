@@ -69,6 +69,8 @@
   --destructive: #d70015;
   --destructive-soft: #fff1f0;
   --warning: #b25000;
+  /* Laranja da Shopee: só no símbolo da plataforma (ícone branco, 3,6:1), nunca em ação. */
+  --shopee: #ee4d2d;
 
   --border: #d2d2d7;
   /* Borda de campo mais escura que --border pra ter contraste mínimo de 3:1. */
@@ -123,6 +125,7 @@
   --destructive: #ff8077;
   --destructive-soft: #3f1d1c;
   --warning: #ff9f0a;
+  --shopee: #ee4d2d;
 
   --border: #48484d;
   /* Borda de campo: 4,4:1 no cartão. */
@@ -215,6 +218,7 @@
   --color-destructive: var(--destructive);
   --color-destructive-soft: var(--destructive-soft);
   --color-warning: var(--warning);
+  --color-shopee: var(--shopee);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-track: var(--track);

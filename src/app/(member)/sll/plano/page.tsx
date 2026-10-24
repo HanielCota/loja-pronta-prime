@@ -16,6 +16,7 @@ import { STRATEGIES, STRATEGY_LABELS, planNeedsHistory } from '@/features/assist
 import { getStudentExperience } from '@/features/sll/server/experience';
 import { chooseExpert } from '@/features/sll/server/experience-actions';
 import { EXPERT_LABELS } from '@/config/experts';
+import { SllFlashMessage } from '@/features/sll/components/sll-flash-message';
 import { readAssistantAdvice } from '@/features/assistant/server/advice';
 import { requestAssistantAdvice } from '@/features/assistant/server/advice-actions';
 import { adviceSchema, GUIDANCE_COPY } from '@/features/assistant/guidance';
@@ -31,8 +32,18 @@ const messages: Record<string, string> = {
   queued: 'Atualização solicitada. Os dados serão coletados pela rotina da plataforma.',
   'connection-required': 'Conecte sua loja para atualizar os dados.',
   'task-saved': 'Progresso salvo.',
-  'expert-saved': 'Sua experiência foi atualizada.',
-  'expert-invalid': 'Escolha uma experiência disponível na sua conta.',
+  'expert-saved': 'Seu conteúdo foi atualizado.',
+  'expert-invalid': 'Escolha um conteúdo disponível na sua conta.',
+};
+// Resultados que pedem uma correção: aparecem como alerta, não como confirmação.
+const failedResults = new Set(['invalid', 'connection-required', 'expert-invalid']);
+const adviceNotices = new Set(['advice-ready', 'advice-limited', 'advice-collect']);
+
+/** Uma frase pra cada caminho: a aluna iniciante não sabe o que é orgânico ou pago. */
+const STRATEGY_HINTS: Record<(typeof STRATEGIES)[number], string> = {
+  organic: 'sem pagar anúncios',
+  hybrid: 'parte sem anúncio, parte com anúncio pago',
+  paid: 'com anúncios pagos da Shopee',
 };
 
 export default async function AssistantPlanPage({
@@ -75,13 +86,21 @@ export default async function AssistantPlanPage({
       title="Meu plano"
       intro="Um caminho de cada vez, com ações práticas e aulas para ajudar você a executar."
     >
-      {message ? <output className="text-body">{message}</output> : null}
+      {message ? (
+        <SllFlashMessage
+          message={message}
+          failed={
+            failedResults.has(result) ||
+            (result.startsWith('advice-') && !adviceNotices.has(result))
+          }
+        />
+      ) : null}
       <section className={panelCard} aria-labelledby="plan-expert">
         <h2 id="plan-expert" className="text-title font-semibold">
           Seu conteúdo com {EXPERT_LABELS[experience.expert]}
         </h2>
         <p className="text-body text-muted-foreground">
-          As aulas acompanham o expert da sua compra. Seu progresso continua salvo.
+          As aulas seguem o conteúdo que veio com a sua compra. Seu progresso continua salvo.
         </p>
         {experience.allowed.length > 1 ? (
           <form action={chooseExpert} className="flex flex-col gap-3">
@@ -114,7 +133,8 @@ export default async function AssistantPlanPage({
                 Há quanto tempo sua loja está aberta?
               </legend>
               {[
-                ['under_7_days', 'Menos de 7 dias'],
+                // Quem ainda não abriu a loja segue o mesmo roteiro de loja nova.
+                ['under_7_days', 'Ainda não abri ou abri há menos de 7 dias'],
                 ['exactly_7_days', 'Exatamente 7 dias'],
                 ['over_7_days', 'Mais de 7 dias'],
               ].map(([value, label]) => (
@@ -130,7 +150,7 @@ export default async function AssistantPlanPage({
             <Select name="strategy" id="plan-strategy" defaultValue="organic">
               {STRATEGIES.map((strategy) => (
                 <option value={strategy} key={strategy}>
-                  {STRATEGY_LABELS[strategy]}
+                  {STRATEGY_LABELS[strategy]}: {STRATEGY_HINTS[strategy]}
                 </option>
               ))}
             </Select>

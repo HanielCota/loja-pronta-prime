@@ -10,6 +10,7 @@ import { getSllCopy } from '@/features/sll/server/copy';
 import { requireProduct } from '@/features/products/server/access';
 import { SllProgress } from '@/features/sll/components/sll-progress';
 import { cn } from '@/lib/utils';
+import { SLL_COPY } from '@/features/sll/copy';
 
 export const metadata: Metadata = { title: 'Cursos complementares · SLL' };
 
@@ -17,6 +18,13 @@ export const metadata: Metadata = { title: 'Cursos complementares · SLL' };
 function lessonSummary(lessonCount: number, minutes: number) {
   if (!lessonCount) return null;
   return `${lessonCount} ${lessonCount === 1 ? 'aula' : 'aulas'}${minutes ? ` · ${minutes} min` : ''}`;
+}
+
+/** O botão diz em que ponto ela está: abrir, continuar ou revisar. */
+function courseActionLabel(completedCount: number, lessonCount: number) {
+  if (completedCount === lessonCount) return 'Revisar curso';
+  if (completedCount) return 'Continuar curso';
+  return 'Abrir curso';
 }
 
 export default async function ComplementaryCoursesPage() {
@@ -36,6 +44,13 @@ export default async function ComplementaryCoursesPage() {
     return { course, lessonCount: lessons.length, completedCount, minutes };
   });
   const featured = catalog.find(({ course }) => course.featured);
+  // O destaque já aparece em cima: repetir na lista mostra o mesmo curso duas vezes.
+  const library = catalog.filter((entry) => entry !== featured);
+  // Sem o destaque, "Todos os cursos" deixa de ser verdade; um título trocado no admin é mantido.
+  const libraryTitle =
+    featured && copy.coursesLibraryTitle === SLL_COPY.coursesLibraryTitle
+      ? 'Outros cursos'
+      : copy.coursesLibraryTitle;
 
   return (
     <SllAreaShell
@@ -88,12 +103,26 @@ export default async function ComplementaryCoursesPage() {
                       {lessonSummary(featured.lessonCount, featured.minutes)}
                     </p>
                   ) : null}
+                  {/* Fora da lista agora: o progresso do destaque fica aqui. */}
+                  {featured.lessonCount ? (
+                    <div className="flex w-full max-w-md flex-col gap-2">
+                      <p className="text-sm text-muted-foreground">
+                        {featured.completedCount} de {featured.lessonCount} aulas concluídas
+                      </p>
+                      <SllProgress
+                        label={`Progresso de ${featured.course.title}`}
+                        completed={featured.completedCount}
+                        total={featured.lessonCount}
+                      />
+                    </div>
+                  ) : null}
                   {/* Igual aos cartões da lista: sem aula publicada, diz que vem aí em vez de
                     sumir com o botão sem explicar. */}
                   {featured.lessonCount ? (
                     <Button asChild className="mt-2 sm:w-auto" variant="default">
                       <Link href={`/sll/cursos/${featured.course.slug}`}>
-                        Abrir curso <ArrowRight aria-hidden="true" />
+                        {courseActionLabel(featured.completedCount, featured.lessonCount)}{' '}
+                        <ArrowRight aria-hidden="true" />
                       </Link>
                     </Button>
                   ) : (
@@ -103,72 +132,71 @@ export default async function ComplementaryCoursesPage() {
               </article>
             </section>
           ) : null}
-          <section aria-labelledby="all-courses-title">
-            <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-              <h2 id="all-courses-title" className="text-body font-semibold text-foreground">
-                {copy.coursesLibraryTitle}
-              </h2>
-              <p className="text-body text-muted-foreground">
-                {catalog.length} {catalog.length === 1 ? 'curso' : 'cursos'}
-              </p>
-            </div>
-            <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] items-start gap-4">
-              {catalog.map(({ course, lessonCount, completedCount, minutes }) => (
-                <li className={cn(panelCard, 'gap-3 p-5 sm:p-5')} key={course.id}>
-                  {course.coverStorageKey ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      alt={course.coverAlt ?? ''}
-                      className="aspect-video w-full rounded-2xl object-cover"
-                      width={1280}
-                      height={720}
-                      loading="lazy"
-                      src={courseCoverSrc(course.id, course.coverStorageKey)}
-                    />
-                  ) : (
-                    <CourseCoverPlaceholder />
-                  )}
-                  <h3 className="text-xl leading-snug font-semibold text-balance text-foreground">
-                    {course.title}
-                  </h3>
-                  {course.description ? (
-                    <p className="text-body text-muted-foreground">{course.description}</p>
-                  ) : null}
-                  {lessonCount ? (
-                    <p className="text-sm text-muted-foreground">
-                      {lessonSummary(lessonCount, minutes)}
-                    </p>
-                  ) : null}
-                  {lessonCount ? (
-                    <div className="flex flex-col gap-2">
-                      <p className="text-sm text-muted-foreground">
-                        {completedCount} de {lessonCount} aulas concluídas
-                      </p>
-                      <SllProgress
-                        label={`Progresso de ${course.title}`}
-                        completed={completedCount}
-                        total={lessonCount}
+          {library.length ? (
+            <section aria-labelledby="all-courses-title">
+              <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+                <h2 id="all-courses-title" className="text-body font-semibold text-foreground">
+                  {libraryTitle}
+                </h2>
+                <p className="text-body text-muted-foreground">
+                  {library.length} {library.length === 1 ? 'curso' : 'cursos'}
+                </p>
+              </div>
+              <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] items-start gap-4">
+                {library.map(({ course, lessonCount, completedCount, minutes }) => (
+                  <li className={cn(panelCard, 'gap-3 p-5 sm:p-5')} key={course.id}>
+                    {course.coverStorageKey ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        alt={course.coverAlt ?? ''}
+                        className="aspect-video w-full rounded-2xl object-cover"
+                        width={1280}
+                        height={720}
+                        loading="lazy"
+                        src={courseCoverSrc(course.id, course.coverStorageKey)}
                       />
-                    </div>
-                  ) : null}
-                  {lessonCount ? (
-                    <Button asChild variant="default">
-                      <Link href={`/sll/cursos/${course.slug}`}>
-                        {completedCount === lessonCount
-                          ? 'Revisar curso'
-                          : completedCount
-                            ? 'Continuar curso'
-                            : 'Abrir curso'}{' '}
-                        <ArrowRight aria-hidden="true" />
-                      </Link>
-                    </Button>
-                  ) : (
-                    <p className="text-body text-muted-foreground">Aulas em breve</p>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </section>
+                    ) : (
+                      <CourseCoverPlaceholder />
+                    )}
+                    <h3 className="text-xl leading-snug font-semibold text-balance text-foreground">
+                      {course.title}
+                    </h3>
+                    {course.description ? (
+                      <p className="text-body text-muted-foreground">{course.description}</p>
+                    ) : null}
+                    {lessonCount ? (
+                      <p className="text-sm text-muted-foreground">
+                        {lessonSummary(lessonCount, minutes)}
+                      </p>
+                    ) : null}
+                    {lessonCount ? (
+                      <div className="flex flex-col gap-2">
+                        <p className="text-sm text-muted-foreground">
+                          {completedCount} de {lessonCount} aulas concluídas
+                        </p>
+                        <SllProgress
+                          label={`Progresso de ${course.title}`}
+                          completed={completedCount}
+                          total={lessonCount}
+                        />
+                      </div>
+                    ) : null}
+                    {lessonCount ? (
+                      // Na lista, botão claro: o roxo fica só com o curso em destaque.
+                      <Button asChild variant="soft">
+                        <Link href={`/sll/cursos/${course.slug}`}>
+                          {courseActionLabel(completedCount, lessonCount)}{' '}
+                          <ArrowRight aria-hidden="true" />
+                        </Link>
+                      </Button>
+                    ) : (
+                      <p className="text-body text-muted-foreground">Aulas em breve</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
         </div>
       ) : (
         <section className={panelCard}>

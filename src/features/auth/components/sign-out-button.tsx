@@ -5,6 +5,7 @@ import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { listCard } from '@/features/member/list-card';
 import { cn } from '@/lib/utils';
+import { signOutOtherDevices } from '../server/profile';
 import { signOut } from '../server/sign-out';
 
 /**
@@ -63,6 +64,36 @@ function SignOutRowButton() {
       className="rounded-none font-semibold text-destructive hover:bg-muted hover:text-destructive focus-visible:-outline-offset-2"
     >
       Sair da conta
+    </Button>
+  );
+}
+
+/**
+ * "Sair dos outros aparelhos", no fim da lista de aparelhos: mesmo desenho de linha do sair, mas
+ * no azul de ação, porque não tira ela daqui (só os outros aparelhos pedem a senha de novo).
+ */
+export function SignOutOthersRow() {
+  return (
+    <li>
+      <form action={signOutOtherDevices}>
+        <SignOutOthersButton />
+      </form>
+    </li>
+  );
+}
+
+function SignOutOthersButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button
+      type="submit"
+      variant="ghost"
+      loading={pending}
+      loadingText="Saindo dos outros aparelhos…"
+      className="w-full rounded-none font-semibold text-link hover:bg-muted focus-visible:-outline-offset-2"
+    >
+      <LogOutIcon aria-hidden="true" />
+      Sair dos outros aparelhos
     </Button>
   );
 }

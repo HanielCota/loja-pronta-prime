@@ -12,7 +12,7 @@ import {
   StoreIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { panelCard } from '@/features/member/components/area-shell';
+import { panelCard, statusBadge } from '@/features/member/components/area-shell';
 import { requireProduct } from '@/features/products/server/access';
 import { SllAreaShell } from '@/features/sll/sll-area-shell';
 import { getSllStoreOverview } from '@/features/sll/server/store-overview';
@@ -196,9 +196,7 @@ function StorePathStep({
             <span className="grid size-12 place-items-center rounded-2xl bg-muted text-foreground">
               <Link2Icon aria-hidden="true" className="size-6" />
             </span>
-            <span className="rounded-full border border-border px-3 py-1 text-sm font-medium text-muted-foreground">
-              Acesso pelo SLL
-            </span>
+            <span className={statusBadge}>Acesso pelo SLL</span>
           </div>
           <div className="flex flex-col gap-2">
             <h2 id="connect-title" className={cardTitleClass}>
@@ -230,7 +228,7 @@ function StorePathStep({
                 <PlusIcon aria-hidden="true" className="size-6" />
               )}
             </span>
-            <span className="rounded-full border border-border px-3 py-1 text-sm font-medium text-muted-foreground">
+            <span className={statusBadge}>
               {hasLoadFailure
                 ? 'Verificação indisponível'
                 : assembly
@@ -259,7 +257,8 @@ function StorePathStep({
               <Link href={SHOPEE_QUERY}>Tentar novamente</Link>
             </Button>
           ) : hasLojaPronta ? (
-            <Button asChild className="w-full">
+            // Opção extra: botão claro, o roxo fica com conectar a loja.
+            <Button asChild className="w-full" variant="soft">
               <Link href="/loja-pronta">
                 {assembly ? 'Continuar montagem' : 'Começar na Loja Pronta'}
                 <ArrowRightIcon aria-hidden="true" />
@@ -271,7 +270,7 @@ function StorePathStep({
                 A Loja Pronta é uma compra adicional. Seu acesso ao SLL e a conexão da Shopee
                 continuam independentes.
               </p>
-              <Button asChild>
+              <Button asChild variant="soft">
                 <a href={checkoutUrl} target="_blank" rel="noreferrer">
                   Conhecer a Loja Pronta<span className="sr-only"> (abre em outra aba)</span>
                 </a>

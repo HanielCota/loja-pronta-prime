@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { panelCard } from '@/features/member/components/area-shell';
+import { SllFlashMessage } from '@/features/sll/components/sll-flash-message';
 import { requireProduct } from '@/features/products/server/access';
 import { SllAreaShell } from '@/features/sll/sll-area-shell';
 import { readStoreObservations } from '@/features/assistant/server/metrics';
@@ -25,6 +26,10 @@ export default async function CategoryPage({
   ]);
   const result = getParam(params.resultado);
   const eligible = data.items.filter((item) => item.categoryId);
+  // Nome do anúncio no lugar do código; sem coleta daquele anúncio, fica o código mesmo.
+  const titleById = new Map(data.items.map((item) => [String(item.itemId), item.title]));
+  const listingName = (itemId: unknown) =>
+    titleById.get(String(itemId)) ?? `Anúncio ${String(itemId)}`;
   return (
     <SllAreaShell
       account={session.user}
@@ -36,13 +41,16 @@ export default async function CategoryPage({
         <Link href="/sll/anuncios">Ajustar anúncios da minha loja</Link>
       </Button>
       {result ? (
-        <output className="text-body">
-          {result === 'saved'
-            ? 'Comparação iniciada. Uma nova coleta mostrará o resultado do período.'
-            : result === 'unavailable'
-              ? 'Escolha anúncios com dados disponíveis e categorias diferentes.'
-              : 'Confira os campos.'}
-        </output>
+        <SllFlashMessage
+          failed={result !== 'saved'}
+          message={
+            result === 'saved'
+              ? 'Comparação iniciada. Uma nova coleta mostrará o resultado do período.'
+              : result === 'unavailable'
+                ? 'Escolha anúncios com dados disponíveis e categorias diferentes.'
+                : 'Confira os campos.'
+          }
+        />
       ) : null}
       <section className={panelCard} aria-labelledby="category-selection">
         <h2 id="category-selection" className="text-title font-semibold">
@@ -108,7 +116,7 @@ export default async function CategoryPage({
             {experiments.map((experiment) => (
               <li key={experiment.id} className="rounded-2xl border border-border p-4">
                 <p className="text-body font-semibold">
-                  Anúncios {experiment.leftItemId} e {experiment.rightItemId}
+                  {listingName(experiment.leftItemId)} e {listingName(experiment.rightItemId)}
                 </p>
                 <p className="mt-2 text-body text-muted-foreground">{experiment.result.message}</p>
                 {experiment.result.source ? (
@@ -139,7 +147,7 @@ export default async function CategoryPage({
                 ) : null}
                 {experiment.result.preferredItemId ? (
                   <p className="mt-2 text-body">
-                    Mais visualizações observadas: anúncio {experiment.result.preferredItemId}.
+                    Mais visualizações observadas: {listingName(experiment.result.preferredItemId)}.
                   </p>
                 ) : null}
               </li>

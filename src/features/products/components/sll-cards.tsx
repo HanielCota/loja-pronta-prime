@@ -1,157 +1,220 @@
-import { ArrowRight, BookOpen, CirclePlay, LockIcon, Store } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import type { ReactNode } from 'react';
+import { ArrowRight, Check, ChevronRight, CirclePlay, GraduationCap, LockIcon } from 'lucide-react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { panelCard, sectionTitleClass } from '@/features/member/components/area-shell';
+import { panelCard } from '@/features/member/components/area-shell';
 import type { SllCopy } from '@/features/sll/copy';
+import {
+  chooseSllNextStep,
+  type SllNextStep,
+  type SllPathStepId,
+  type SllWelcomeProgress,
+} from '@/features/sll/dashboard-next-step';
 
-/**
- * Caminho do SLL, na ordem em que o curso abre. Só vira link o que já tem aula publicada; o
- * resto aparece com cadeado, sem cara de botão.
- */
-export function SllCourseCard({
-  welcomeHref,
-  methodHref,
-  coursesHref,
-  copy,
-}: {
-  welcomeHref: string | null;
-  methodHref: string | null;
-  coursesHref: string | null;
-  copy: SllCopy;
-}) {
-  const steps = [
-    { title: copy.dashboardWelcomeTitle, detail: copy.dashboardWelcomeDetail },
-    { title: copy.dashboardMethodTitle, detail: copy.dashboardMethodDetail },
-    { title: copy.dashboardCoursesTitle, detail: copy.dashboardCoursesDetail },
-  ];
+type PathStep = {
+  id: SllPathStepId;
+  href: string | null;
+  title: string;
+  detail: string;
+};
+
+const NEXT_STEP_LABEL: Record<SllNextStep['mode'], string> = {
+  start: 'Começar',
+  continue: 'Continuar',
+  review: 'Rever as aulas',
+  open: 'Abrir',
+};
+
+const OPEN_LABEL: Record<SllPathStepId, string> = {
+  welcome: 'Abrir',
+  method: 'Ver o método',
+  courses: 'Ver os cursos',
+};
+
+function nextStepLabel(step: SllNextStep): string {
+  if (step.mode === 'open') return OPEN_LABEL[step.id];
+  return NEXT_STEP_LABEL[step.mode];
+}
+
+const rowLinkClass =
+  'group flex min-h-16 items-center gap-4 rounded-2xl px-4 py-3 outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid motion-safe:transition-colors motion-safe:duration-150';
+
+// Separador com recuo, como nas listas de ajustes: começa no texto, não embaixo do ícone.
+const insetSeparatorClass =
+  'relative not-first:before:absolute not-first:before:top-0 not-first:before:right-4 not-first:before:left-18 not-first:before:h-px not-first:before:bg-border';
+
+function RowIcon({ children, muted }: { children: ReactNode; muted?: boolean }) {
   return (
-    <section aria-labelledby="seu-caminho" className={cn(panelCard, 'gap-3')}>
-      <h2 id="seu-caminho" className={sectionTitleClass}>
-        {copy.dashboardPathTitle}
-      </h2>
-      <ol className="flex flex-col divide-y divide-border">
-        {steps.map((step, index) => {
-          const href = index === 0 ? welcomeHref : index === 1 ? methodHref : coursesHref;
+    <span
+      aria-hidden="true"
+      className={cn(
+        'grid size-10 shrink-0 place-items-center rounded-xl [&_svg]:size-5',
+        muted ? 'bg-muted text-muted-foreground' : 'bg-primary-soft text-link',
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+function RowText({ title, detail }: { title: ReactNode; detail: string }) {
+  return (
+    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+      <span className="text-body font-semibold text-foreground">{title}</span>
+      <span className="text-body text-pretty text-muted-foreground">{detail}</span>
+    </span>
+  );
+}
+
+const rowChevron = (
+  <ChevronRight
+    aria-hidden="true"
+    className="size-5 shrink-0 text-muted-foreground motion-safe:transition-transform motion-safe:duration-150 group-hover:motion-safe:translate-x-0.5"
+  />
+);
+
+/** Barra de progresso real das boas-vindas; o texto ao lado diz o mesmo pra quem não vê a barra. */
+function WelcomeProgress({ progress }: { progress: SllWelcomeProgress }) {
+  const percent = Math.round((progress.completed / progress.total) * 100);
+  return (
+    <div className="flex max-w-md flex-col gap-2">
+      <p className="text-sm text-muted-foreground tabular-nums">
+        {progress.completed} de {progress.total} aulas assistidas
+      </p>
+      <div aria-hidden="true" className="h-1.5 overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full rounded-full bg-primary motion-safe:transition-[width] motion-safe:duration-500 motion-safe:ease-out forced-colors:bg-[Highlight]"
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function stepIcon(step: PathStep, welcomeDone: boolean) {
+  if (!step.href) return <LockIcon />;
+  if (step.id === 'welcome' && welcomeDone) return <Check />;
+  if (step.id === 'courses') return <GraduationCap />;
+  return <CirclePlay />;
+}
+
+/** Os outros passos do caminho, em lista calma ao lado do destaque. */
+function OtherSteps({ steps, welcomeDone }: { steps: PathStep[]; welcomeDone: boolean }) {
+  if (!steps.length) return null;
+  return (
+    <div className="flex flex-col gap-2 border-t border-border pt-6 lg:w-80 lg:shrink-0 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-8">
+      <h3 className="text-sm font-semibold text-muted-foreground">Também no seu caminho</h3>
+      <ol className="-mx-4 flex flex-col">
+        {steps.map((step) => {
+          const detail = step.id === 'welcome' && welcomeDone ? 'Concluída' : step.detail;
           return (
-            <li key={step.title} className="py-3.5">
-              {href ? (
-                <Link
-                  className="group flex min-h-14 items-center gap-3 rounded-2xl px-2 py-2 outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid motion-safe:transition-colors"
-                  href={href}
-                >
-                  <span
-                    aria-hidden="true"
-                    className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary-soft text-link"
-                  >
-                    <CirclePlay className="size-5" />
-                  </span>
-                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="text-body font-semibold text-foreground">{step.title}</span>
-                    <span className="text-body text-pretty text-muted-foreground">
-                      {step.detail}
-                    </span>
-                  </span>
-                  <ArrowRight
-                    aria-hidden="true"
-                    className="size-5 shrink-0 text-link motion-safe:transition-transform group-hover:motion-safe:translate-x-1"
-                  />
+            <li key={step.id} className={insetSeparatorClass}>
+              {step.href ? (
+                <Link className={rowLinkClass} href={step.href}>
+                  <RowIcon>{stepIcon(step, welcomeDone)}</RowIcon>
+                  <RowText title={step.title} detail={detail} />
+                  {rowChevron}
                 </Link>
               ) : (
-                <div className="flex gap-3">
-                  <span
-                    aria-hidden="true"
-                    className="grid size-8 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground ring-1 ring-border"
-                  >
-                    <LockIcon className="size-4" />
-                  </span>
-                  <span className="flex min-w-0 flex-col gap-0.5 pt-0.5">
-                    <span className="text-body font-semibold text-foreground">
-                      {step.title}
-                      <span className="sr-only"> (bloqueado por enquanto)</span>
-                    </span>
-                    <span className="text-body text-pretty text-muted-foreground">
-                      {step.detail}
-                    </span>
-                  </span>
+                <div className="flex min-h-16 items-center gap-4 px-4 py-3">
+                  <RowIcon muted>{stepIcon(step, welcomeDone)}</RowIcon>
+                  <RowText
+                    title={
+                      <>
+                        {step.title}
+                        <span className="sr-only"> (em breve)</span>
+                      </>
+                    }
+                    detail="Em breve"
+                  />
                 </div>
               )}
             </li>
           );
         })}
       </ol>
-    </section>
+    </div>
   );
 }
 
-/** Leva às ferramentas conferidas do curso. */
-export function SllToolsCard({ copy }: { copy: SllCopy }) {
-  return (
-    <section aria-labelledby="ferramentas" className={cn(panelCard, 'gap-3')}>
-      <h2 id="ferramentas" className={sectionTitleClass}>
-        {copy.dashboardToolsTitle}
-      </h2>
-      <div className="flex items-center gap-3">
-        <BookOpen aria-hidden="true" className="size-5 shrink-0 text-link" />
-        <p className="flex-1 text-body text-muted-foreground">{copy.dashboardToolsDetail}</p>
-      </div>
-      <Button asChild className="mt-2" variant="default">
-        <Link href="/sll/recursos">
-          {copy.dashboardToolsButton} <ArrowRight aria-hidden="true" />
-        </Link>
-      </Button>
-    </section>
+/**
+ * Destaque do painel: o próximo passo, grande, com um único botão. O resto do caminho fica ao
+ * lado, em lista, pra ela saber o que vem depois sem ter que escolher agora.
+ */
+export function SllNextStepCard({
+  welcomeHref,
+  methodHref,
+  coursesHref,
+  welcomeProgress,
+  copy,
+}: {
+  welcomeHref: string | null;
+  methodHref: string | null;
+  coursesHref: string | null;
+  welcomeProgress: SllWelcomeProgress | null;
+  copy: SllCopy;
+}) {
+  const steps: PathStep[] = [
+    {
+      id: 'welcome',
+      href: welcomeHref,
+      title: copy.dashboardWelcomeTitle,
+      detail: copy.dashboardWelcomeDetail,
+    },
+    {
+      id: 'method',
+      href: methodHref,
+      title: copy.dashboardMethodTitle,
+      detail: copy.dashboardMethodDetail,
+    },
+    {
+      id: 'courses',
+      href: coursesHref,
+      title: copy.dashboardCoursesTitle,
+      detail: copy.dashboardCoursesDetail,
+    },
+  ];
+  const next = chooseSllNextStep(steps, welcomeProgress);
+  const current = steps.find((step) => step.id === next?.id) ?? null;
+  const others = steps.filter((step) => step.id !== current?.id);
+  const welcomeDone = Boolean(
+    welcomeProgress &&
+    welcomeProgress.total > 0 &&
+    welcomeProgress.completed >= welcomeProgress.total,
   );
-}
+  const showProgress =
+    next?.id === 'welcome' && next.mode !== 'review' && welcomeProgress && welcomeProgress.total;
 
-/** Direct students to their actual connection status without inventing store metrics. */
-export function SllStoreStatusCard() {
   return (
     <section
-      aria-labelledby="sll-store-status-title"
-      className={cn(panelCard, 'gap-4 sm:flex-row sm:items-center')}
+      aria-labelledby="seu-caminho"
+      className={cn(panelCard, 'gap-8 lg:flex-row lg:items-start lg:gap-8')}
     >
-      <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary-soft text-link">
-        <Store aria-hidden="true" className="size-6" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <span className="mb-2 inline-flex rounded-full border border-border px-3 py-1 text-sm font-medium text-muted-foreground">
-          Shopee
-        </span>
-        <h2 id="sll-store-status-title" className={sectionTitleClass}>
-          Situação da sua loja
-        </h2>
-        <p className="mt-1 text-body text-pretty text-muted-foreground">
-          Check your store connection and the next steps in My stores. Sales data is available only
-          after a connection is confirmed.
-        </p>
+      <div className="flex min-w-0 flex-1 flex-col gap-6">
+        <div className="flex flex-col gap-3">
+          <h2 id="seu-caminho" className="text-body font-semibold text-link">
+            {copy.dashboardPathTitle}
+          </h2>
+          <p className="text-title font-semibold text-balance text-foreground sm:text-title-lg">
+            {current ? current.title : 'As aulas abrem em breve'}
+          </p>
+          <p className="max-w-[48ch] text-body text-pretty text-muted-foreground">
+            {current ? current.detail : 'Quando a primeira aula sair, ela aparece aqui.'}
+          </p>
+        </div>
+        {showProgress ? <WelcomeProgress progress={welcomeProgress} /> : null}
+        {next && current ? (
+          <Button asChild className="sm:w-fit sm:min-w-52">
+            <Link href={next.href}>
+              {nextStepLabel(next)}
+              <span className="sr-only">: {current.title}</span>
+              <ArrowRight aria-hidden="true" />
+            </Link>
+          </Button>
+        ) : null}
       </div>
-      <Button asChild className="w-full sm:w-auto sm:max-w-52" variant="default">
-        <Link href="/sll/minhas-lojas">
-          Ver situação das lojas <ArrowRight aria-hidden="true" />
-        </Link>
-      </Button>
-    </section>
-  );
-}
-
-/** Só mostra o atalho interno à Loja Pronta quando a conta também tem esse produto. */
-export function SllNextPathCard({ hasStoreAccess }: { hasStoreAccess: boolean }) {
-  if (!hasStoreAccess) return null;
-
-  return (
-    <section aria-labelledby="sll-next-path-title" className={cn(panelCard, 'gap-3')}>
-      <h2 id="sll-next-path-title" className={sectionTitleClass}>
-        Você também tem acesso à Loja Pronta
-      </h2>
-      <p className="text-body text-pretty text-muted-foreground">
-        Acesse a área da Loja Pronta para montar sua loja na Shopee, passo a passo, pela plataforma.
-      </p>
-      <Button asChild variant="default" className="w-full sm:w-fit">
-        <Link href="/loja-pronta">
-          Acessar Loja Pronta <ArrowRight aria-hidden="true" />
-        </Link>
-      </Button>
+      <OtherSteps steps={others} welcomeDone={welcomeDone} />
     </section>
   );
 }

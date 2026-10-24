@@ -20,7 +20,8 @@ export const CALCULATORS: Record<
     kind: 'ads',
     slug: 'calculadora-anuncios',
     title: 'Calculadora de anúncios',
-    intro: 'Descubra o limite de gasto por venda e o ROAS para manter seu lucro.',
+    intro:
+      'Descubra quanto pode gastar em anúncios por venda e quanto cada real investido precisa voltar em vendas (o ROAS).',
   },
 };
 
