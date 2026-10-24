@@ -120,6 +120,10 @@ export async function getLead(id: string) {
   await requireAdmin(`/leads/${id}`);
   const [lead] = await db.select().from(leads).where(eq(leads.id, id)).limit(1);
   if (!lead) return null;
+  // O nome do responsável vem à parte: ele pode ter saído da equipe e não estar na lista ativa.
+  const [owner] = lead.ownerId
+    ? await db.select({ name: user.name }).from(user).where(eq(user.id, lead.ownerId)).limit(1)
+    : [];
   const activities = await db
     .select({ activity: leadActivities, actorName: user.name })
     .from(leadActivities)
@@ -127,5 +131,5 @@ export async function getLead(id: string) {
     .where(eq(leadActivities.leadId, id))
     .orderBy(desc(leadActivities.createdAt), desc(leadActivities.id))
     .limit(100);
-  return { lead, activities };
+  return { lead, activities, ownerName: owner?.name ?? null };
 }

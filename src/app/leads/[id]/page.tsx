@@ -32,7 +32,15 @@ export default async function LeadPage({
   const session = await requireAdmin(`/leads/${id}`);
   const [result, options, search] = await Promise.all([getLead(id), leadOptions(), searchParams]);
   if (!result) notFound();
-  const { lead, activities } = result;
+  const { lead, activities, ownerName } = result;
+  // Sem esta opção, a lista mostraria "Sem responsável" e salvar apagaria quem já cuida do contato.
+  const owners =
+    lead.ownerId && !options.owners.some((owner) => owner.id === lead.ownerId)
+      ? [
+          ...options.owners,
+          { id: lead.ownerId, name: `${ownerName?.trim() || 'Conta sem nome'} (inativa)` },
+        ]
+      : options.owners;
   const initial = {
     name: lead.name,
     email: lead.email ?? '',
@@ -89,7 +97,7 @@ export default async function LeadPage({
               id={id}
               version={lead.updatedAt.toISOString()}
               initial={initial}
-              owners={options.owners}
+              owners={owners}
             />
           )}
         </section>

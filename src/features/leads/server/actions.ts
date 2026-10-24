@@ -43,6 +43,15 @@ async function validOwner(id: string): Promise<boolean> {
   return Boolean(owner && !owner.banned && hasAdminRole(owner.role));
 }
 
+async function leadOwnerId(id: string): Promise<string | null> {
+  const [lead] = await db
+    .select({ ownerId: leads.ownerId })
+    .from(leads)
+    .where(eq(leads.id, id))
+    .limit(1);
+  return lead?.ownerId ?? null;
+}
+
 function reportWriteError(error: unknown): string {
   let current: unknown = error;
   for (let i = 0; i < 4 && current && typeof current === 'object'; i++) {
@@ -74,11 +83,15 @@ export async function saveLead(state: LeadFormState, form: FormData): Promise<Le
       ),
       message: 'Confira os campos indicados.',
     };
-  if (!(await validOwner(parsed.data.ownerId)))
-    return { attempt, values, errors: { ownerId: 'Escolha uma administradora ativa.' } };
   const idValue = form.get('id');
   const editing = typeof idValue === 'string' && Boolean(idValue);
   const id = editing ? (idValue as string) : crypto.randomUUID();
+  // Responsável que saiu da equipe continua no contato até alguém trocar: exigir "ativa" aqui
+  // obrigava a admin a apagar o responsável só para salvar outra mudança.
+  const keepsOwner =
+    editing && Boolean(parsed.data.ownerId) && (await leadOwnerId(id)) === parsed.data.ownerId;
+  if (!keepsOwner && !(await validOwner(parsed.data.ownerId)))
+    return { attempt, values, errors: { ownerId: 'Escolha uma administradora ativa.' } };
   try {
     const result = await db.transaction(async (tx) => {
       if (editing) {
