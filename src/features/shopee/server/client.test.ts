@@ -25,8 +25,11 @@ beforeEach(() => {
 afterEach(() => {
   for (const name of names) {
     const value = previous[name];
-    if (value === undefined) delete process.env[name];
-    else process.env[name] = value;
+    if (value === undefined) {
+      delete process.env[name];
+      continue;
+    }
+    process.env[name] = value;
   }
 });
 

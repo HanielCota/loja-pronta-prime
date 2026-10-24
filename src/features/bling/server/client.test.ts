@@ -28,8 +28,11 @@ describe('API Bling', () => {
           }),
         ),
       );
-      if (tokenType === 'Basic') await expect(request).rejects.toThrow('confirmar a resposta');
-      else expect((await request).accessToken).toBe('access');
+      if (tokenType === 'Basic') {
+        await expect(request).rejects.toThrow('confirmar a resposta');
+        continue;
+      }
+      expect((await request).accessToken).toBe('access');
     }
   });
   it('registra a etapa da falha sem mensagem ou corpo externo', () => {
