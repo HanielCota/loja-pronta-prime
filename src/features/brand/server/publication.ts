@@ -72,6 +72,12 @@ export async function queueApprovedBrand(
   );
 }
 
+/** Só a etapa e o tipo do erro: a mensagem crua pode trazer tokens ou dados da aluna. */
+function reportBrandQueueFailure(stage: 'reconcile' | 'prepare', error: unknown) {
+  const kind = error instanceof Error ? error.name : typeof error;
+  console.error(`[brand] ${stage} falhou: ${kind}`);
+}
+
 /** Reconciliation also covers brands confirmed before a connection or while writes were disabled. */
 export async function queueAutomaticBrands(
   fetcher: typeof fetch = fetch,
@@ -99,8 +105,9 @@ export async function queueAutomaticBrands(
   for (const job of uncertain) {
     try {
       await reconcileStoreChange(job.userId, job.id, fetcher);
-    } catch {
-      /* Read-only reconciliation never resends a write. */
+    } catch (error) {
+      // Read-only reconciliation never resends a write; the next scan tries again.
+      reportBrandQueueFailure('reconcile', error);
     }
   }
   const pilot = config.SHOPEE_PILOT_USER_IDS.split(',')
@@ -172,8 +179,10 @@ export async function queueAutomaticBrands(
     try {
       await queueApprovedBrand(candidate.userId, fetcher, readLogo);
       queued++;
-    } catch {
-      /* A later scan retries preparation, never an uncertain remote write. */
+    } catch (error) {
+      // A later scan retries preparation, never an uncertain remote write. Sem o registro, uma
+      // marca que falha sempre (logo sumido no bucket, token morto) ficava invisível na fila.
+      reportBrandQueueFailure('prepare', error);
     }
   }
   return queued;
