@@ -128,7 +128,6 @@ export async function queueStoreChange(
   });
 }
 
-/** Uma operação por tarefa; uma resposta incerta só é consultada, nunca repetida. */
 type ShopeeConfig = Awaited<ReturnType<typeof assertAssistantAccess>>;
 type ShopeeAccess = Awaited<ReturnType<typeof readShopeeAccess>>;
 type StoreJob = typeof storeAutomationJobs.$inferSelect;
@@ -262,6 +261,7 @@ async function readCurrentListing(
   return response.item_list.find((row) => row.item_id === itemId) ?? {};
 }
 
+/** Uma operação por tarefa; uma resposta incerta só é consultada, nunca repetida. */
 export async function processStoreChange(fetcher: typeof fetch = fetch) {
   const job = await db.transaction(async (tx) => {
     await tx

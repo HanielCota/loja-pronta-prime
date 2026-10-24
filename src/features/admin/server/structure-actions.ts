@@ -820,15 +820,6 @@ export async function publishNodeDraft(data: FormData): Promise<StructureActionS
   return { saved: true, message: 'Alterações publicadas para as alunas.' };
 }
 
-/**
- * Passa o rascunho para a versão principal e apaga o rascunho. Ao publicar, confere as regras
- * da aula; ao despublicar, só junta as edições, já que as alunas deixam de ver o item.
- *
- * Tudo acontece numa transação com o rascunho travado e relido lá dentro: um salvamento que
- * chegue no meio espera, em vez de ser apagado junto com o rascunho publicado. Com `replacement`
- * (voltar à versão anterior), os dados vêm dela e nenhum rascunho é criado: se a conferência
- * falhar, nada fica para trás.
- */
 // Publica o rascunho de uma aula; devolve o motivo quando não dá pra publicar.
 async function applyLessonDraft(
   tx: DbTransaction,
@@ -964,6 +955,15 @@ async function applyContainerDraft(
   return null;
 }
 
+/**
+ * Passa o rascunho para a versão principal e apaga o rascunho. Ao publicar, confere as regras
+ * da aula; ao despublicar, só junta as edições, já que as alunas deixam de ver o item.
+ *
+ * Tudo acontece numa transação com o rascunho travado e relido lá dentro: um salvamento que
+ * chegue no meio espera, em vez de ser apagado junto com o rascunho publicado. Com `replacement`
+ * (voltar à versão anterior), os dados vêm dela e nenhum rascunho é criado: se a conferência
+ * falhar, nada fica para trás.
+ */
 async function applyNodeDraft(
   nodeKind: LearningNodeKind,
   id: string,
