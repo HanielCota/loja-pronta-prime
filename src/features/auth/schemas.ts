@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '@/config/auth';
 import { VALIDATION_MESSAGES } from './messages';
+import { cleanTypedText } from '@/lib/text';
 
 /** Regras compartilhadas entre o navegador e o servidor. */
 export const emailSchema = z
@@ -42,11 +43,16 @@ export const changePasswordSchema = z.object({
 export const NAME_MAX_LENGTH = 30;
 
 export const profileNameSchema = z.object({
+  // Só um zero-width colado passaria no trim e a saudação ficaria "Oi, !".
   name: z
     .string({ error: VALIDATION_MESSAGES.nameRequired })
-    .trim()
-    .min(1, { error: VALIDATION_MESSAGES.nameRequired })
-    .max(NAME_MAX_LENGTH, { error: VALIDATION_MESSAGES.nameTooLong }),
+    .transform(cleanTypedText)
+    .pipe(
+      z
+        .string()
+        .min(1, { error: VALIDATION_MESSAGES.nameRequired })
+        .max(NAME_MAX_LENGTH, { error: VALIDATION_MESSAGES.nameTooLong }),
+    ),
 });
 
 export const resetPasswordSchema = z.object({

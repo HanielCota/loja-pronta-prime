@@ -1,4 +1,5 @@
 import { BRAND_DESCRIPTION_MAX, BRAND_NAME_MAX } from '@/config/brand';
+import { cleanTypedText } from '@/lib/text';
 
 type Parsed = { ok: true; value: string } | { ok: false; error: string };
 
@@ -23,9 +24,12 @@ export function parseBrandName(input: unknown): Parsed {
   return { ok: true, value };
 }
 
-/** Descrição: texto livre, sem espaços sobrando nas pontas, dentro do limite da Shopee. */
+/**
+ * Descrição: texto livre, dentro do limite da Shopee. Limpa como a tela conta (CRLF vira uma
+ * quebra, invisíveis saem): senão o campo aceitava 500 e o servidor recusava "502".
+ */
 export function parseBrandDescription(input: unknown): Parsed {
-  const value = String(input ?? '').trim();
+  const value = cleanTypedText(String(input ?? ''));
   if (!value) return { ok: false, error: 'Escolha um dos textos ou escreva o seu.' };
   if (value.length > BRAND_DESCRIPTION_MAX) {
     return {
