@@ -19,6 +19,18 @@ describe('accessValidityLabel', () => {
     );
   });
 
+  test('acabando hoje, hoje (mesmo com horas sobrando)', () => {
+    // 21h em Brasília, ainda dia 22.
+    expect(accessValidityLabel(until('2026-10-23T00:00:00Z'), now)).toBe('Acaba hoje (22/10/2026)');
+  });
+
+  test('conta dias do calendário de Brasília, não blocos de 24h', () => {
+    // Faltam 30h (dois blocos de 24h), mas o fim é amanhã, às 18h de Brasília.
+    expect(accessValidityLabel(until('2026-10-23T21:00:00Z'), now)).toBe(
+      'Acaba amanhã (23/10/2026)',
+    );
+  });
+
   test('no último dia, amanhã', () => {
     expect(accessValidityLabel(until('2026-10-23T10:00:00Z'), now)).toBe(
       'Acaba amanhã (23/10/2026)',

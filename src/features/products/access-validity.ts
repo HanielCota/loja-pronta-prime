@@ -23,14 +23,34 @@ export function formatAccessDate(date: Date): string {
   return dateFormat.format(date);
 }
 
-/** A frase da linha: "Liberado, sem data pra acabar", "Até 10/05/2027" ou "Acaba em 3 dias". */
+const dayParts = new Intl.DateTimeFormat('en-CA', {
+  day: 'numeric',
+  month: 'numeric',
+  year: 'numeric',
+  timeZone: 'America/Sao_Paulo',
+});
+
+/** O dia do calendário de Brasília, como número, pra contar dias sem depender da hora. */
+function calendarDay(date: Date): number {
+  const parts = Object.fromEntries(
+    dayParts.formatToParts(date).map((part) => [part.type, Number(part.value)]),
+  );
+  return Date.UTC(parts.year!, parts.month! - 1, parts.day!) / DAY_MS;
+}
+
+/**
+ * A frase da linha: "Liberado, sem data pra acabar", "Até 10/05/2027", "Acaba em 3 dias",
+ * "Acaba amanhã" ou "Acaba hoje".
+ */
 export function accessValidityLabel(validity: AccessValidity, now: Date): string {
   if (validity.kind === 'no-end') return 'Liberado, sem data pra acabar';
 
   const date = formatAccessDate(validity.expiresAt);
-  const daysLeft = Math.ceil((validity.expiresAt.getTime() - now.getTime()) / DAY_MS);
+  // Dias de calendário, não blocos de 24h: acabando às 7h de hoje, é "hoje", não "amanhã".
+  const daysLeft = calendarDay(validity.expiresAt) - calendarDay(now);
   if (daysLeft > ACCESS_ENDING_SOON_DAYS) return `Até ${date}`;
-  if (daysLeft <= 1) return `Acaba amanhã (${date})`;
+  if (daysLeft <= 0) return `Acaba hoje (${date})`;
+  if (daysLeft === 1) return `Acaba amanhã (${date})`;
   return `Acaba em ${daysLeft} dias (${date})`;
 }
 
