@@ -663,6 +663,49 @@ export async function evaluatePublicationBatch(userId: string, batchId: string, 
   return current?.analysis ?? analysis;
 }
 
+// O trabalho de cada tipo de tarefa; 'stale' avisa que outra execução assumiu a tarefa no meio.
+async function runJobWork(
+  job: Job,
+  config: Awaited<ReturnType<typeof assertAssistantAccess>>,
+  fetcher: typeof fetch,
+): Promise<'stale' | 'done'> {
+  if (job.kind === 'collect') {
+    const runId = await collectStoreMetrics(job.userId, config, fetcher);
+    await startReadyCloneExperiments(job.userId, runId);
+    if (!(await renewLease(job))) return 'stale';
+    const due = await db
+      .select()
+      .from(assistantPublicationBatches)
+      .where(
+        and(
+          eq(assistantPublicationBatches.userId, job.userId),
+          eq(assistantPublicationBatches.status, 'observing'),
+          eq(assistantPublicationBatches.kind, 'initial'),
+          lte(assistantPublicationBatches.publishedAt, new Date(Date.now() - 5 * DAY_MS)),
+        ),
+      );
+    for (const batch of due)
+      await db
+        .insert(assistantJobs)
+        .values({
+          userId: job.userId,
+          kind: 'evaluate',
+          deduplicationKey: `evaluate:${batch.id}:${runId}`,
+          payload: { batchId: batch.id },
+        })
+        .onConflictDoNothing();
+    await scheduleNextCollection(job);
+    return 'done';
+  }
+  if (job.kind === 'publish') {
+    await publishItem(job, fetcher);
+    return 'done';
+  }
+  if (!job.payload.batchId) throw new OperationBlocked('batch');
+  await evaluatePublicationBatch(job.userId, job.payload.batchId);
+  return 'done';
+}
+
 export async function processAssistantJob(job: Job, fetcher: typeof fetch = fetch) {
   const owns = () =>
     and(
@@ -679,35 +722,7 @@ export async function processAssistantJob(job: Job, fetcher: typeof fetch = fetc
       job.userId,
       job.kind === 'collect' ? undefined : 'loja-pronta',
     );
-    if (job.kind === 'collect') {
-      const runId = await collectStoreMetrics(job.userId, config, fetcher);
-      await startReadyCloneExperiments(job.userId, runId);
-      if (!(await renewLease(job))) return 'stale' as const;
-      const due = await db
-        .select()
-        .from(assistantPublicationBatches)
-        .where(
-          and(
-            eq(assistantPublicationBatches.userId, job.userId),
-            eq(assistantPublicationBatches.status, 'observing'),
-            eq(assistantPublicationBatches.kind, 'initial'),
-            lte(assistantPublicationBatches.publishedAt, new Date(Date.now() - 5 * DAY_MS)),
-          ),
-        );
-      for (const batch of due)
-        await db
-          .insert(assistantJobs)
-          .values({
-            userId: job.userId,
-            kind: 'evaluate',
-            deduplicationKey: `evaluate:${batch.id}:${runId}`,
-            payload: { batchId: batch.id },
-          })
-          .onConflictDoNothing();
-      await scheduleNextCollection(job);
-    } else if (job.kind === 'publish') await publishItem(job, fetcher);
-    else if (job.payload.batchId) await evaluatePublicationBatch(job.userId, job.payload.batchId);
-    else throw new OperationBlocked('batch');
+    if ((await runJobWork(job, config, fetcher)) === 'stale') return 'stale' as const;
     await db
       .update(assistantJobs)
       .set({ status: 'completed', failure: null, leaseUntil: null })
