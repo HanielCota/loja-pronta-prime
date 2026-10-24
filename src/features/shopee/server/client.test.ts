@@ -75,6 +75,20 @@ describe('cliente Shopee', () => {
     expect(tokens.expiresAt.getTime()).toBeGreaterThanOrEqual(start + 60000);
     expect(tokens.refreshToken).toBe('refresh');
   });
+  it('aceita a validade no teto de um ano', async () => {
+    const tokens = await requestShopeeTokens(
+      { kind: 'authorize', code: 'test-code', shopId: 456 },
+      transport(() =>
+        Response.json({
+          error: '',
+          access_token: 'access',
+          refresh_token: 'refresh',
+          expire_in: 366 * 86_400,
+        }),
+      ),
+    );
+    expect(Number.isFinite(tokens.expiresAt.getTime())).toBe(true);
+  });
   it('renova sem repetir uma operação com resultado desconhecido', async () => {
     let calls = 0;
     await expect(
@@ -95,6 +109,11 @@ describe('cliente Shopee', () => {
       { error: 'forbidden', message: 'secret' },
       { error: '', access_token: 'secret', expire_in: 60 },
       { access_token: 'secret', refresh_token: 'secret', expire_in: 60 },
+      { error: '', access_token: 'secret', refresh_token: 'secret', expire_in: 0 },
+      { error: '', access_token: 'secret', refresh_token: 'secret', expire_in: -1 },
+      { error: '', access_token: 'secret', refresh_token: 'secret', expire_in: 1.5 },
+      { error: '', access_token: 'secret', refresh_token: 'secret', expire_in: 366 * 86_400 + 1 },
+      { error: '', access_token: 'secret', refresh_token: 'secret', expire_in: 1e13 },
     ]) {
       try {
         await requestShopeeTokens(

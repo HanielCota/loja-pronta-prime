@@ -14,7 +14,13 @@ export function getShopeeConfiguration() {
 const tokenResponse = z.object({
   access_token: z.string().min(1),
   refresh_token: z.string().min(1),
-  expire_in: z.number().int().positive(),
+  // Teto igual ao do Bling: um valor absurdo virava data inválida e a gravação falhava depois de
+  // o código de autorização, que só vale uma vez, já ter sido gasto.
+  expire_in: z
+    .number()
+    .int()
+    .positive()
+    .max(366 * 24 * 60 * 60),
 });
 
 export class ShopeeApiError extends Error {
