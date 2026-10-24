@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { panelCard } from '@/features/member/components/area-shell';
-import { SllAreaShell } from '@/features/sll/sll-area-shell';
+import { SllPage } from '@/features/sll/sll-area-shell';
 import { SllLessonViewer } from '@/features/sll/components/sll-lesson-viewer';
 import { getFirstSllPublishedTrack } from '@/features/sll/server/catalog';
 import { getSllLessonViewer } from '@/features/sll/server/lesson-viewer';
@@ -21,7 +21,7 @@ export default async function WelcomePage({
 }) {
   const { aula } = await searchParams;
   // Confere primeiro o acesso para o login conservar também a aula escolhida no link direto.
-  const { session, products } = await requireProduct(
+  const { products } = await requireProduct(
     'sll',
     typeof aula === 'string' ? sllLessonHref('welcome', aula) : '/sll/comece-aqui',
   );
@@ -45,8 +45,7 @@ export default async function WelcomePage({
   const lesson = firstLessonId ? await getSllLessonViewer(firstLessonId) : null;
 
   return (
-    <SllAreaShell
-      account={session.user}
+    <SllPage
       hasChoice={products.length > 1}
       title={welcome?.title ?? 'Comece aqui'}
       intro={welcome?.description ?? WELCOME_MESSAGE}
@@ -65,6 +64,6 @@ export default async function WelcomePage({
           </p>
         </section>
       )}
-    </SllAreaShell>
+    </SllPage>
   );
 }

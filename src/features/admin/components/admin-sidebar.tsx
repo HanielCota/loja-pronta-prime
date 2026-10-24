@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   Archive,
   BookOpen,
@@ -18,25 +21,9 @@ import {
 import { cn } from '@/lib/utils';
 import { OnlineCountBadge } from './online-count-badge';
 import { RememberedGroup } from './remembered-group';
+import { adminSectionFor, type AdminSection } from '../admin-section';
 
-export type AdminSection =
-  | 'overview'
-  | 'leads'
-  | 'online'
-  | 'welcome'
-  | 'method'
-  | 'courses'
-  | 'banners'
-  | 'texts'
-  | 'resources'
-  | 'archived'
-  | 'accounts'
-  | 'access'
-  | 'hotmart'
-  | 'bling'
-  | 'experts'
-  | 'assistant'
-  | 'support';
+export type { AdminSection } from '../admin-section';
 
 const groups = [
   {
@@ -139,7 +126,9 @@ function Navigation({ current }: { current: AdminSection | undefined }) {
         'collapsible' in group ? (
           <RememberedGroup
             containsCurrent={group.links.some((link) => link.section === current)}
-            key={group.label}
+            // Recomeça a cada seção, como quando cada página montava o menu: abre o grupo da
+            // seção nova e volta à escolha guardada, sem gravar o fechamento como escolha dela.
+            key={`${group.label}-${current ?? ''}`}
             label={group.label}
             storageKey={group.storageKey}
           >
@@ -160,13 +149,9 @@ function Navigation({ current }: { current: AdminSection | undefined }) {
  * As seções do painel. `rail`: a lista do menu lateral fixo (computador). `disclosure`: o mesmo
  * conteúdo recolhível acima do título (celular e tablet).
  */
-export function AdminSidebar({
-  current,
-  variant,
-}: {
-  current: AdminSection | undefined;
-  variant: 'rail' | 'disclosure';
-}) {
+export function AdminSidebar({ variant }: { variant: 'rail' | 'disclosure' }) {
+  // A seção sai do endereço: a moldura mora no `layout.tsx`, e o menu acompanha a troca na hora.
+  const current = adminSectionFor(usePathname(), useSearchParams().get('area'));
   if (variant === 'rail') return <Navigation current={current} />;
   const currentLabel = groups
     .map((group) => group.links.find((link) => link.section === current)?.label)

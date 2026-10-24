@@ -286,6 +286,19 @@ export const publicationPayloadSchema = z.object({
         .min(1)
         .max(100),
     })
+    // Cada variação aponta para uma opção que existe: um índice fora da lista viraria "undefined"
+    // na tela da aluna e seria recusado pela Shopee de qualquer jeito.
+    .refine(
+      (variations) =>
+        variations.model.every(
+          (model) =>
+            model.tier_index.length === variations.tier_variation.length &&
+            model.tier_index.every(
+              (value, index) => value < (variations.tier_variation[index]?.option_list.length ?? 0),
+            ),
+        ),
+      { error: 'Variação aponta para uma opção que não existe.' },
+    )
     .optional(),
 });
 export type PublicationPayload = z.infer<typeof publicationPayloadSchema>;

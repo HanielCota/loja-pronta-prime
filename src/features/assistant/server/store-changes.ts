@@ -10,6 +10,7 @@ import {
   storeBrand,
 } from '@/server/db/schema';
 import { shopeeApplicationId } from '@/features/shopee/authorization';
+import { shopeeItemListPageSchema } from '@/features/shopee/item-list';
 import { readShopeeAccess } from '@/features/shopee/server/connection';
 import {
   addShopeeItem,
@@ -416,11 +417,7 @@ export async function reconcileStoreChange(
         config,
         access,
         '/api/v2/product/get_item_list',
-        z.object({
-          item: z.array(z.object({ item_id: shopeeIdSchema })),
-          has_next_page: z.boolean(),
-          next_offset: z.number().optional(),
-        }),
+        shopeeItemListPageSchema,
         { offset: String(offset), page_size: '100', item_status: 'NORMAL' },
         fetcher,
       );

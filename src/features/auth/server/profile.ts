@@ -2,7 +2,7 @@
 
 import { parseWithZod } from '@conform-to/zod/v4';
 import { eq } from 'drizzle-orm';
-import { revalidatePath } from 'next/cache';
+import { refresh } from 'next/cache';
 import { PROFILE_PHOTO_MAX_BYTES } from '@/config/profile-photo';
 import { consumeAttempt } from '@/server/auth/rate-limit';
 import { reportAuthError } from '@/server/auth/report-error';
@@ -88,7 +88,9 @@ export async function updateProfilePhoto(
 
   const oldId = profilePhotoId(oldImage);
   if (oldId) await removePhotoFile(userId, oldId);
-  revalidatePath('/', 'layout');
+  // A foto aparece no menu de todas as telas. refresh() atualiza só a tela de quem trocou:
+  // revalidatePath('/', 'layout') expirava o cache de conteúdo de todas as alunas.
+  refresh();
   return { saved: true, removed };
 }
 
@@ -126,8 +128,8 @@ export async function updateName(
     return { submission: reject(submission, 'unknown') };
   }
 
-  // O nome aparece na saudação das telas de dentro.
-  revalidatePath('/', 'layout');
+  // O nome aparece na saudação das telas de dentro (refresh(), pelo mesmo motivo da foto).
+  refresh();
   return { submission: submission.reply(), saved: true };
 }
 

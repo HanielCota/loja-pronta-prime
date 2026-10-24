@@ -10,6 +10,16 @@ function form(sll = 'sll-code', store = 'store-code', token = '') {
 }
 
 describe('configuração de produtos Hotmart', () => {
+  test('pasted invisible characters are removed from product codes', () => {
+    expect(parseHotmartSettings(form('\u200Bsll-code\u00A0', 'store-code\uFEFF'))).toEqual({
+      ok: true,
+      value: { token: '', sllCode: 'sll-code', storeCode: 'store-code' },
+    });
+    for (const blank of ['\u200B', '\u00A0 ', ''])
+      expect(parseHotmartSettings(form(blank, 'store-code'))).toMatchObject({ ok: false });
+    expect(parseHotmartSettings(form('same\u200B', 'same'))).toMatchObject({ ok: false });
+  });
+
   test('rejeita o mesmo código, inclusive com espaços nas pontas', () => {
     expect(parseHotmartSettings(form(' same-code ', 'same-code'))).toMatchObject({ ok: false });
   });

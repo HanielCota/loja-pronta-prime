@@ -16,7 +16,7 @@ import {
   type LeadInput,
   type LeadValues,
 } from '../model';
-import { MAX_IMPORT_ROWS, readLeadCsv } from '../csv';
+import { decodeLeadCsv, MAX_IMPORT_ROWS, readLeadCsv } from '../csv';
 
 export type LeadFormState = {
   attempt: number;
@@ -41,6 +41,15 @@ async function validOwner(id: string): Promise<boolean> {
     .where(eq(user.id, id))
     .limit(1);
   return Boolean(owner && !owner.banned && hasAdminRole(owner.role));
+}
+
+async function leadOwnerId(id: string): Promise<string | null> {
+  const [lead] = await db
+    .select({ ownerId: leads.ownerId })
+    .from(leads)
+    .where(eq(leads.id, id))
+    .limit(1);
+  return lead?.ownerId ?? null;
 }
 
 function reportWriteError(error: unknown): string {
@@ -74,11 +83,15 @@ export async function saveLead(state: LeadFormState, form: FormData): Promise<Le
       ),
       message: 'Confira os campos indicados.',
     };
-  if (!(await validOwner(parsed.data.ownerId)))
-    return { attempt, values, errors: { ownerId: 'Escolha uma administradora ativa.' } };
   const idValue = form.get('id');
   const editing = typeof idValue === 'string' && Boolean(idValue);
   const id = editing ? (idValue as string) : crypto.randomUUID();
+  // Responsável que saiu da equipe continua no contato até alguém trocar: exigir "ativa" aqui
+  // obrigava a admin a apagar o responsável só para salvar outra mudança.
+  const keepsOwner =
+    editing && Boolean(parsed.data.ownerId) && (await leadOwnerId(id)) === parsed.data.ownerId;
+  if (!keepsOwner && !(await validOwner(parsed.data.ownerId)))
+    return { attempt, values, errors: { ownerId: 'Escolha uma administradora ativa.' } };
   try {
     const result = await db.transaction(async (tx) => {
       if (editing) {
@@ -207,7 +220,7 @@ export async function importLeads(_state: ImportState, form: FormData): Promise<
     )
       return { message: 'Escolha um arquivo CSV de até 2 MB.' };
     try {
-      const parsed = readLeadCsv(await file.text());
+      const parsed = readLeadCsv(decodeLeadCsv(new Uint8Array(await file.arrayBuffer())));
       if (parsed.errors.length)
         return {
           message: 'Corrija a planilha e envie de novo. Nenhum contato foi importado.',

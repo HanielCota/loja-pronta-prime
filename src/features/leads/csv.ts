@@ -19,6 +19,19 @@ export const MAX_IMPORT_ROWS = 1000;
 export const MAX_IMPORT_COLUMNS = 50;
 const tooManyColumns = `A planilha tem mais de ${MAX_IMPORT_COLUMNS} colunas. Use o modelo do painel.`;
 
+/**
+ * O Excel do Windows salva CSV em Windows-1252, não UTF-8. Ler tudo como UTF-8 trocava "João" por
+ * "Jo?o" em silêncio e gravava o nome estragado. Tenta UTF-8 estrito e, se o arquivo não for
+ * UTF-8 válido, lê como Windows-1252 (o formato do Excel em português).
+ */
+export function decodeLeadCsv(bytes: Uint8Array): string {
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    return new TextDecoder('windows-1252').decode(bytes);
+  }
+}
+
 /** Aceita CSV do Excel (; ou ,), aspas escapadas e notas com quebra de linha. */
 export function parseCsv(content: string): string[][] {
   const text = content.replace(/^\uFEFF/, '');

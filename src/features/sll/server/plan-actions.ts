@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { refresh } from 'next/cache';
 import { unstable_rethrow } from 'next/navigation';
 import { requireProductAction } from '@/features/products/server/access';
 import { db } from '@/server/db';
@@ -26,8 +26,8 @@ export async function saveSllPlanIntake(
       .insert(sllPlanIntake)
       .values({ userId, storeAge, answeredAt: now, updatedAt: now })
       .onConflictDoNothing();
-    revalidatePath('/sll/metodo');
-    revalidatePath('/sll/metodo/etapa');
+    // Só a tela de quem respondeu: revalidatePath expiraria o conteúdo de todas as alunas.
+    refresh();
     return { saved: true, message: 'Resposta salva. Seu plano está pronto para começar.' };
   } catch (error) {
     unstable_rethrow(error);

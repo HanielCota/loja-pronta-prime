@@ -60,11 +60,58 @@ type AreaShellProps = {
 const START: Crumb = { href: '/', label: 'Início' };
 
 /**
+ * A barra do topo das áreas, em volta do conteúdo. Na Loja Pronta, mora no `layout.tsx` (fica
+ * parada ao trocar de página, com o esboço de carregamento no lugar do conteúdo enquanto carrega); no
+ * perfil, vem pelo `AreaShell`.
+ */
+export function AreaFrame({
+  account,
+  hasChoice,
+  area,
+  hasSidebar = false,
+  children,
+}: {
+  account: NavbarAccount;
+  hasChoice: boolean;
+  area?: ProductId | undefined;
+  hasSidebar?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex min-h-dvh flex-col">
+      <MemberNavbar
+        account={account}
+        hasSidebar={hasSidebar}
+        sticky
+        currentArea={hasChoice ? area : undefined}
+      />
+      {children}
+    </div>
+  );
+}
+
+/**
  * Moldura das áreas dos produtos (Loja Pronta e SLL) e do perfil: a barra do topo, a trilha (ou o
  * nome do produto) acima do título, onde ela está, e o conteúdo.
  */
-export function AreaShell({
-  account,
+export function AreaShell({ account, ...page }: AreaShellProps) {
+  return (
+    <AreaFrame
+      account={account}
+      hasChoice={page.hasChoice}
+      area={page.area}
+      hasSidebar={Boolean(page.sidebar)}
+    >
+      <AreaPage {...page} />
+    </AreaFrame>
+  );
+}
+
+/**
+ * O que fica dentro da barra do topo: a trilha (ou o nome do produto) acima do título, onde ela
+ * está, e o conteúdo. As páginas da Loja Pronta usam direto, com a barra no `layout.tsx`.
+ */
+export function AreaPage({
   hasChoice,
   area,
   product,
@@ -77,7 +124,7 @@ export function AreaShell({
   sidebar,
   contentId,
   children,
-}: AreaShellProps) {
+}: Omit<AreaShellProps, 'account'>) {
   // Nas áreas, quem tem os dois produtos já vê onde está pelas abas do topo.
   const navigation =
     hasChoice && area ? null : hasChoice ? (
@@ -111,36 +158,28 @@ export function AreaShell({
     </>
   );
   return (
-    <div className="flex min-h-dvh flex-col">
-      <MemberNavbar
-        account={account}
-        hasSidebar={Boolean(sidebar)}
-        sticky
-        currentArea={hasChoice ? area : undefined}
-      />
-      <PageMain
-        className={cn(
-          'mx-auto w-full pt-6 pb-12 sm:pt-8',
-          MEMBER_AREA_GUTTERS,
-          sidebar ? MEMBER_AREA_MAX_WIDTH : narrow ? 'max-w-[688px]' : 'max-w-[1040px]',
-        )}
-      >
-        {sidebar ? (
-          <div className={cn('grid gap-6', MEMBER_AREA_SIDEBAR_COLUMNS, MEMBER_AREA_COLUMN_GAP)}>
-            {sidebar}
-            <div
-              id={contentId}
-              tabIndex={contentId ? -1 : undefined}
-              className="flex min-w-0 flex-col gap-8 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
-            >
-              {content}
-            </div>
+    <PageMain
+      className={cn(
+        'mx-auto w-full pt-6 pb-12 sm:pt-8',
+        MEMBER_AREA_GUTTERS,
+        sidebar ? MEMBER_AREA_MAX_WIDTH : narrow ? 'max-w-[688px]' : 'max-w-[1040px]',
+      )}
+    >
+      {sidebar ? (
+        <div className={cn('grid gap-6', MEMBER_AREA_SIDEBAR_COLUMNS, MEMBER_AREA_COLUMN_GAP)}>
+          {sidebar}
+          <div
+            id={contentId}
+            tabIndex={contentId ? -1 : undefined}
+            className="flex min-w-0 flex-col gap-8 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+          >
+            {content}
           </div>
-        ) : (
-          <div className="flex flex-col gap-8">{content}</div>
-        )}
-      </PageMain>
-    </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-8">{content}</div>
+      )}
+    </PageMain>
   );
 }
 

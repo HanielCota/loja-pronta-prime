@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { csvCell, MAX_IMPORT_COLUMNS, parseCsv, readLeadCsv, writeCsv } from './csv';
+import { csvCell, decodeLeadCsv, MAX_IMPORT_COLUMNS, parseCsv, readLeadCsv, writeCsv } from './csv';
 
 const line = (count: number) => Array.from({ length: count }, (_, index) => `c${index}`).join(';');
 
@@ -165,5 +165,20 @@ describe('planilha de leads', () => {
       ['nome', 'email'],
       ['Ana', 'ana@example.com'],
     ]);
+  });
+});
+
+describe('CSV file encoding', () => {
+  test('Excel Windows-1252 files keep their accents', () => {
+    const latin1 = new Uint8Array([
+      0x4a, 0x6f, 0xe3, 0x6f, 0x3b, 0x4d, 0xe1, 0x72, 0x63, 0x69, 0x61,
+    ]);
+    expect(decodeLeadCsv(latin1)).toBe('João;Márcia');
+  });
+
+  test('UTF-8 files, with or without BOM, are read as UTF-8', () => {
+    const utf8 = new TextEncoder().encode('\uFEFFJoão;Márcia');
+    expect(decodeLeadCsv(utf8).replace(/^\uFEFF/, '')).toBe('João;Márcia');
+    expect(decodeLeadCsv(new Uint8Array())).toBe('');
   });
 });

@@ -112,6 +112,51 @@ describe('avisos da Hotmart', () => {
     expect(parseHotmartEvent({ event: 'PURCHASE_APPROVED' }).success).toBe(false);
   });
 
+  test('optional fields sent as null are treated as absent instead of rejecting the event', () => {
+    const parsed = parseHotmartEvent({
+      ...validEvent,
+      event: 'PURCHASE_REFUNDED',
+      data: {
+        product: { ucode: 'curso-1', id: null },
+        buyer: { email: 'ana@exemplo.com', name: null },
+        purchase: { transaction: 'HP123', order_date: null },
+      },
+    });
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+    expect(parsed.data.data.product.id).toBeUndefined();
+    expect(parsed.data.data.buyer.name).toBeUndefined();
+    expect(parsed.data.data.purchase.order_date).toBeUndefined();
+  });
+
+  test('required fields stay required when null, empty or blank', () => {
+    for (const email of [null, undefined, '', '   ', 'null'])
+      expect(
+        parseHotmartEvent({ ...validEvent, data: { ...validEvent.data, buyer: { email } } })
+          .success,
+      ).toBe(false);
+    for (const transaction of [null, '', undefined])
+      expect(
+        parseHotmartEvent({
+          ...validEvent,
+          data: { ...validEvent.data, purchase: { transaction } },
+        }).success,
+      ).toBe(false);
+    expect(
+      parseHotmartEvent({ ...validEvent, data: { ...validEvent.data, product: { ucode: null } } })
+        .success,
+    ).toBe(false);
+  });
+
+  test('buyer email with pasted surrounding spaces is trimmed, not rejected', () => {
+    const parsed = parseHotmartEvent({
+      ...validEvent,
+      data: { ...validEvent.data, buyer: { email: '  ana@exemplo.com \n', name: 'Ana' } },
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data.data.buyer.email).toBe('ana@exemplo.com');
+  });
+
   test('não restaura uma compra com aviso anterior ao reembolso', () => {
     const refunded = { lastEventAt: new Date('2026-10-05T12:00:00Z'), active: false };
     expect(

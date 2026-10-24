@@ -1,6 +1,7 @@
 'use server';
 
 import { and, eq, isNull, sql } from 'drizzle-orm';
+import { effectiveProductAccess } from '@/features/products/server/eligibility';
 import { desc } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
@@ -113,6 +114,18 @@ export async function changeStudentProductAccess(
       // Mesma trava do aviso da Hotmart, para os dois não recalcularem o acesso ao mesmo tempo.
       await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${target.id}))`);
       if (action === 'granted') {
+        // Uma linha de acesso pode sobrar de uma compra vencida: só conta "já tinha pela compra"
+        // quando a compra ainda vale, senão a mensagem mentiria para a admin.
+        const [effective] = await tx
+          .select({ userId: studentProducts.userId })
+          .from(studentProducts)
+          .where(
+            and(
+              eq(studentProducts.userId, target.id),
+              eq(studentProducts.product, product),
+              effectiveProductAccess(),
+            ),
+          );
         const [inserted] = await tx
           .insert(studentProducts)
           .values({ userId: target.id, product })
@@ -126,7 +139,7 @@ export async function changeStudentProductAccess(
           .onConflictDoNothing()
           .returning({ userId: manualProductGrants.userId });
         if (!inserted && !granted) return 'unchanged';
-        if (!inserted) result = 'purchase';
+        if (effective) result = 'purchase';
       } else {
         const removed = await tx
           .delete(studentProducts)
@@ -177,10 +190,11 @@ export async function changeStudentProductAccess(
     },
   );
 
-  const access = await db.query.studentProducts.findMany({
-    columns: { product: true },
-    where: eq(studentProducts.userId, target.id),
-  });
+  // Mesma regra da tela de contas: linha de compra vencida não é acesso atual.
+  const access = await db
+    .select({ product: studentProducts.product })
+    .from(studentProducts)
+    .where(and(eq(studentProducts.userId, target.id), effectiveProductAccess()));
   revalidateAdminOverview();
   revalidatePath('/admin/acessos');
   revalidatePath('/');

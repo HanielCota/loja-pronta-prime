@@ -1,9 +1,11 @@
 import { z } from 'zod';
+import { cleanTypedText } from '@/lib/text';
 
 export const BANNER_KIT_PATH = '/loja-pronta/marca/banners';
 export const bannerDraftSchema = z.object({
-  title: z.string().trim().min(1).max(48),
-  subtitle: z.string().trim().min(1).max(80),
+  // Só um zero-width colado passaria no trim e viraria um banner com título invisível.
+  title: z.string().transform(cleanTypedText).pipe(z.string().min(1).max(48)),
+  subtitle: z.string().transform(cleanTypedText).pipe(z.string().min(1).max(80)),
   palette: z.enum(['violet', 'rose', 'ocean', 'forest']),
 });
 export type BannerDraft = z.infer<typeof bannerDraftSchema>;

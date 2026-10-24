@@ -49,9 +49,11 @@ export function CreatingProgress({ titleId, number }: { titleId: string; number:
         </p>
       </div>
       <div aria-hidden="true" className="h-2.5 overflow-hidden rounded-full bg-progress-track">
+        {/* A barra cheia desliza (transform) em vez de crescer (width): anima por um a dois
+            minutos sem recalcular o layout a cada quadro, e a ponta continua arredondada. */}
         <div
-          className="h-full rounded-full bg-primary transition-[width] duration-1000 ease-linear motion-reduce:transition-none"
-          style={{ width: `${progress}%` }}
+          className="h-full rounded-full bg-primary transition-transform duration-1000 ease-linear motion-reduce:transition-none"
+          style={{ transform: `translateX(${progress - 100}%)` }}
         />
       </div>
       <ol aria-hidden="true" className="flex flex-col gap-3">

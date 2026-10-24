@@ -31,10 +31,12 @@ export async function retryAssistantJob(form: FormData): Promise<void> {
       .for('update');
     if (!job) return;
     if (job.kind === 'publish') {
+      // '' numa coluna uuid seria erro do Postgres; sem item não há o que repetir.
+      if (!job.payload.itemId) return;
       const [item] = await tx
         .select()
         .from(assistantPublicationItems)
-        .where(eq(assistantPublicationItems.id, job.payload.itemId ?? ''))
+        .where(eq(assistantPublicationItems.id, job.payload.itemId))
         .for('update');
       // Resultado incerto nunca passa por este botão de repetição.
       if (!item || !['pending', 'failed'].includes(item.status)) return;

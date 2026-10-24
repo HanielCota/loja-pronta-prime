@@ -25,7 +25,9 @@ export async function leadOptions() {
     db
       .select({ id: user.id, name: user.name, role: user.role })
       .from(user)
-      .where(or(isNull(user.banned), eq(user.banned, false)))
+      // O banco já descarta as alunas (milhares de linhas); a função exata é conferida abaixo,
+      // porque o Better Auth guarda várias funções separadas por vírgula.
+      .where(and(or(isNull(user.banned), eq(user.banned, false)), ilike(user.role, '%admin%')))
       .orderBy(asc(user.name)),
     db.selectDistinct({ source: leads.source }).from(leads).orderBy(asc(leads.source)),
   ]);
@@ -120,6 +122,10 @@ export async function getLead(id: string) {
   await requireAdmin(`/leads/${id}`);
   const [lead] = await db.select().from(leads).where(eq(leads.id, id)).limit(1);
   if (!lead) return null;
+  // O nome do responsável vem à parte: ele pode ter saído da equipe e não estar na lista ativa.
+  const [owner] = lead.ownerId
+    ? await db.select({ name: user.name }).from(user).where(eq(user.id, lead.ownerId)).limit(1)
+    : [];
   const activities = await db
     .select({ activity: leadActivities, actorName: user.name })
     .from(leadActivities)
@@ -127,5 +133,5 @@ export async function getLead(id: string) {
     .where(eq(leadActivities.leadId, id))
     .orderBy(desc(leadActivities.createdAt), desc(leadActivities.id))
     .limit(100);
-  return { lead, activities };
+  return { lead, activities, ownerName: owner?.name ?? null };
 }

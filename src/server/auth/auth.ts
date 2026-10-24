@@ -122,6 +122,9 @@ export const auth = betterAuth({
 
   advanced: {
     cookiePrefix: 'lojaprontaprime',
+    // Sessão e conta numa consulta só (com join): toda página, aviso de presença e pedaço de
+    // vídeo lê a sessão, e sem isso cada leitura custava duas idas ao banco.
+    database: { joins: true },
   },
 
   // nextCookies precisa ser o último: grava os cookies de sessão nas Server Actions.

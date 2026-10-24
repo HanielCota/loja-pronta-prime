@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { STORE_PHASES, STORE_STAGES } from '@/config/store-phases';
 import { SHOPEE_CONNECT_PATH, SHOPEE_PATH } from '@/config/shopee';
 import { BRAND_PATH, brandStepPath } from '@/features/brand/steps';
-import { AreaShell, panelCard } from '@/features/member/components/area-shell';
+import { AreaPage, panelCard } from '@/features/member/components/area-shell';
 import { greetingName } from '@/features/products/names';
 import { cn } from '@/lib/utils';
 import { storeStages, type StageView } from '../stages';
@@ -57,8 +57,7 @@ export function StorePanel({
   // Com os dois produtos, ela chega aqui pela escolha de área, que já disse "Oi": sem repetir.
   const name = hasChoice ? '' : greetingName(user);
   return (
-    <AreaShell
-      account={user}
+    <AreaPage
       hasChoice={hasChoice}
       area="loja-pronta"
       crumb="Loja Pronta"
@@ -86,7 +85,7 @@ export function StorePanel({
             : []
         }
       />
-    </AreaShell>
+    </AreaPage>
   );
 }
 

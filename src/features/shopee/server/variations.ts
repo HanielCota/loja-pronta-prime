@@ -19,18 +19,21 @@ export async function readProductModels(
           z.object({ name: z.string(), option_list: z.array(z.object({ option: z.string() })) }),
         )
         .default([]),
-      model: z.array(
-        z.object({
-          model_sku: z.string(),
-          tier_index: z.array(z.number().int().nonnegative()),
-          price_info: z.array(z.object({ original_price: z.number() })).optional(),
-          stock_info_v2: z
-            .object({
-              summary_info: z.object({ total_available_stock: z.number().int().nonnegative() }),
-            })
-            .optional(),
-        }),
-      ),
+      // Anúncio sem variações: a Shopee pode omitir `model` (como já omite `tier_variation`).
+      model: z
+        .array(
+          z.object({
+            model_sku: z.string(),
+            tier_index: z.array(z.number().int().nonnegative()),
+            price_info: z.array(z.object({ original_price: z.number() })).optional(),
+            stock_info_v2: z
+              .object({
+                summary_info: z.object({ total_available_stock: z.number().int().nonnegative() }),
+              })
+              .optional(),
+          }),
+        )
+        .default([]),
     }),
     { item_id: String(itemId) },
     fetcher,

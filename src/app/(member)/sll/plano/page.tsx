@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { panelCard } from '@/features/member/components/area-shell';
-import { SllAreaShell } from '@/features/sll/sll-area-shell';
+import { SllPage } from '@/features/sll/sll-area-shell';
 import { requireProduct } from '@/features/products/server/access';
 import { getAssistantPlan } from '@/features/assistant/server/plans';
 import {
@@ -69,8 +69,7 @@ export default async function AssistantPlanPage({
     : guidance.candidates.slice(0, 3);
   const history = !plan && intake && planNeedsHistory(intake.storeAge);
   return (
-    <SllAreaShell
-      account={session.user}
+    <SllPage
       hasChoice={products.length > 1}
       title="Meu plano"
       intro="Um caminho de cada vez, com ações práticas e aulas para ajudar você a executar."
@@ -312,6 +311,6 @@ export default async function AssistantPlanPage({
           </form>
         </details>
       ) : null}
-    </SllAreaShell>
+    </SllPage>
   );
 }
