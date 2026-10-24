@@ -16,6 +16,13 @@ export type StoreAssembly = {
   phaseTitle: string;
 };
 
+export type SllStoreSummary = {
+  assembly: StoreAssembly | null;
+  connected: boolean;
+  /** A leitura falhou: não dá pra afirmar que não há loja nem conexão. */
+  failed: boolean;
+};
+
 export type SllStoreOverview = {
   assembly: StoreAssembly | null;
   connected: {

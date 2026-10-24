@@ -112,7 +112,9 @@ for (const size of [
         page.getByRole('heading', { name: 'Vamos organizar seu próximo passo' }),
       ).toBeVisible();
       await expectNoA11yViolations(page);
-      await page.getByRole('radio', { name: 'Menos de 7 dias', exact: true }).check();
+      await page
+        .getByRole('radio', { name: 'Ainda não abri ou abri há menos de 7 dias', exact: true })
+        .check();
       await page.getByRole('button', { name: 'Organizar meu plano', exact: true }).click();
       await expect(page.getByRole('heading', { name: 'Sete dias · Orgânico' })).toBeVisible();
       await page.getByRole('button', { name: 'Marcar como feita', exact: true }).first().click();

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
-import { Select } from '@/components/ui/select';
+import { SelectMenu } from '@/components/ui/select-menu';
 import { AreaPage, panelCard } from '@/features/member/components/area-shell';
 import { requireProduct } from '@/features/products/server/access';
 import { getBrand } from '@/features/brand/server/brand-store';
@@ -97,12 +97,12 @@ export default async function BannerKitPage({
           <label htmlFor="banner-palette" className="text-body">
             Cores dos banners
           </label>
-          <Select id="banner-palette" name="palette" defaultValue={kit?.palette ?? 'violet'}>
+          <SelectMenu id="banner-palette" name="palette" defaultValue={kit?.palette ?? 'violet'}>
             <option value="violet">Roxo suave</option>
             <option value="rose">Rosa suave</option>
             <option value="ocean">Azul suave</option>
             <option value="forest">Verde suave</option>
-          </Select>
+          </SelectMenu>
           <p className="text-body text-muted-foreground">
             Salvar uma alteração pede uma nova aprovação.
           </p>

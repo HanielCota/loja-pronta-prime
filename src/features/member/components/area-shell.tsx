@@ -14,6 +14,9 @@ import { PageMain } from '@/components/ui/page-main';
 /** Cartão branco das áreas; no alto contraste, a borda desenha o que a sombra desenhava. */
 export const panelCard =
   'flex flex-col rounded-card bg-card p-6 shadow-card sm:p-8 forced-colors:border forced-colors:border-[CanvasText]';
+/** Etiqueta de situação ("Em breve", "Em montagem"): a mesma em todas as telas das áreas. */
+export const statusBadge =
+  'inline-flex w-fit rounded-full border border-border px-3 py-1 text-sm font-medium text-muted-foreground';
 /** Título de seção dentro de um cartão ("Ferramentas", "Seu caminho no curso"). */
 export const sectionTitleClass = 'text-body font-semibold text-foreground';
 
@@ -79,6 +82,15 @@ export function AreaFrame({
 }) {
   return (
     <div className="flex min-h-dvh flex-col">
+      {/* O mesmo atalho do SLL e do admin: quem usa teclado pula a barra do topo. */}
+      <nav aria-label="Atalho para o conteúdo">
+        <a
+          href="#area-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-4 focus:z-50 focus:rounded-full focus:bg-card focus:px-6 focus:py-3 focus:text-body focus:text-link focus:shadow-card focus:outline-2 focus:outline-ring"
+        >
+          Pular para o conteúdo
+        </a>
+      </nav>
       <MemberNavbar
         account={account}
         hasSidebar={hasSidebar}
@@ -159,8 +171,10 @@ export function AreaPage({
   );
   return (
     <PageMain
+      id="area-content"
+      tabIndex={-1}
       className={cn(
-        'mx-auto w-full pt-6 pb-12 sm:pt-8',
+        'mx-auto w-full pt-6 pb-12 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring sm:pt-8',
         MEMBER_AREA_GUTTERS,
         sidebar ? MEMBER_AREA_MAX_WIDTH : narrow ? 'max-w-[688px]' : 'max-w-[1040px]',
       )}
@@ -204,6 +218,15 @@ export function CenteredMemberPage({
 }) {
   return (
     <div className="flex min-h-dvh flex-col">
+      {/* O mesmo atalho do SLL e do admin: quem usa teclado pula a barra do topo. */}
+      <nav aria-label="Atalho para o conteúdo">
+        <a
+          href="#area-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-4 focus:z-50 focus:rounded-full focus:bg-card focus:px-6 focus:py-3 focus:text-body focus:text-link focus:shadow-card focus:outline-2 focus:outline-ring"
+        >
+          Pular para o conteúdo
+        </a>
+      </nav>
       <MemberNavbar account={account} />
       {trail && current ? (
         // No topo, alinhada com a marca: o conteúdo abaixo fica no meio da tela.
@@ -212,8 +235,10 @@ export function CenteredMemberPage({
         </div>
       ) : null}
       <PageMain
+        id="area-content"
+        tabIndex={-1}
         className={cn(
-          'mx-auto flex w-full flex-1 flex-col justify-center gap-6 px-4 py-8 sm:px-6 sm:py-12',
+          'mx-auto flex w-full flex-1 flex-col justify-center gap-6 px-4 py-8 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring sm:px-6 sm:py-12',
           wide ? 'max-w-[1040px]' : 'max-w-[512px] lg:max-w-[688px]',
         )}
       >

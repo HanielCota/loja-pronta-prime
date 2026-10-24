@@ -52,7 +52,7 @@ import { panelCard } from '@/features/member/components/area-shell';
 import { LessonDraftPreview, type DraftPreviewBlock } from './lesson-draft-preview';
 import { removeLessonBlock, reorderLessonBlocks, saveLearningLesson } from '../server/actions';
 import type { LessonEditState } from '../server/actions';
-import { AdminSelect as Select } from './admin-select';
+import { SelectMenu as Select } from '@/components/ui/select-menu';
 import { Textarea } from '@/components/ui/textarea';
 import { FileField } from '@/components/ui/file-field';
 

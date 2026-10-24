@@ -9,7 +9,7 @@ import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
 import { changeStudentProductAccess } from '../server/actions';
 import type { ProductAccessState } from '../server/actions';
-import { AdminSelect as Select } from './admin-select';
+import { SelectMenu as Select } from '@/components/ui/select-menu';
 import { Textarea } from '@/components/ui/textarea';
 
 const initialState: ProductAccessState = { message: '', saved: false };
@@ -64,7 +64,7 @@ export function ProductAccessManager({ email }: { email?: string } = {}) {
         <Save aria-hidden="true" data-icon="inline-start" />
         Salvar alteração
       </Button>
-      <output aria-live="polite" className="min-h-6 text-body text-muted-foreground">
+      <output aria-live="polite" className="text-body text-muted-foreground empty:-mt-4">
         {state.message}
       </output>
       {state.currentAccess ? (

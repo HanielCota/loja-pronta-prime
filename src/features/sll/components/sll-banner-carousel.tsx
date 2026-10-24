@@ -35,15 +35,16 @@ export function SllBannerCarousel({ banners }: { banners: Banner[] }) {
   };
   const next = (active + 1) % banners.length;
   const previous = (active - 1 + banners.length) % banners.length;
+  // Claro, não roxo: no painel, o roxo é do próximo passo.
   const button = banner.destination.startsWith('/') ? (
-    <Button asChild className="mt-2 w-full sm:w-auto">
+    <Button asChild className="mt-2 w-full sm:w-auto" variant="soft">
       <Link href={banner.destination}>
         {banner.buttonLabel}
         <ArrowRight aria-hidden="true" />
       </Link>
     </Button>
   ) : (
-    <Button asChild className="mt-2 w-full sm:w-auto">
+    <Button asChild className="mt-2 w-full sm:w-auto" variant="soft">
       <a href={banner.destination} rel="noopener noreferrer" target="_blank">
         {banner.buttonLabel}
         <ArrowRight aria-hidden="true" />

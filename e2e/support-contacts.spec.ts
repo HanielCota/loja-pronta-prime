@@ -30,7 +30,8 @@ test('administrators configure support contacts and students see the saved depar
     await signIn(student, studentEmail('aluna'), PASSWORD, '/perfil');
     const support = student.getByRole('region', { name: 'Precisa de ajuda?' });
     await expect(support.getByText(/Em breve/)).toHaveCount(4);
-    await expect(support.getByRole('link')).toHaveCount(0);
+    // Sem número, só o email do suporte e a política continuam como links.
+    await expect(support.getByRole('link')).toHaveCount(2);
     expect((await student.goto('/admin/suporte'))?.status()).toBe(404);
     await student.goto('/perfil');
 
@@ -74,7 +75,8 @@ test('administrators configure support contacts and students see the saved depar
     await page.reload();
     await expect(page.getByLabel('WhatsApp de Mylena')).toHaveValue('11999991230');
     await student.reload();
-    await expect(support.getByRole('link')).toHaveCount(4);
+    // Os quatro assuntos, o email do suporte e a política de privacidade.
+    await expect(support.getByRole('link')).toHaveCount(6);
     for (const [index, topic] of SUPPORT_TOPICS.entries()) {
       await expect(
         support.getByRole('link', { name: `Falar com ${topic.name}`, exact: false }),
@@ -95,7 +97,7 @@ test('administrators configure support contacts and students see the saved depar
         noJs.getByText('Contatos de suporte salvos.', { exact: true }).first(),
       ).toBeVisible();
       await student.reload();
-      await expect(support.getByRole('link')).toHaveCount(3);
+      await expect(support.getByRole('link')).toHaveCount(5);
       await expect(support.getByText('Mylena · Em breve')).toBeVisible();
     } finally {
       await noJsContext.close();

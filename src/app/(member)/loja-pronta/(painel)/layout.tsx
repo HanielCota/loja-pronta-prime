@@ -25,7 +25,10 @@ export default async function LojaProntaPanelLayout({ children }: { children: Re
     >
       <NavigationPending
         fallback={
+          // O mesmo id do <main> das páginas: o "Pular para o conteúdo" do topo cai aqui também.
           <PageMain
+            id="area-content"
+            tabIndex={-1}
             className={cn('mx-auto w-full max-w-[1040px] pt-6 pb-12 sm:pt-8', MEMBER_AREA_GUTTERS)}
           >
             <PageLoading />

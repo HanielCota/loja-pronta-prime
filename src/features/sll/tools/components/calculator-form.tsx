@@ -54,7 +54,7 @@ export function CalculatorForm({ kind, permalink }: { kind: CalculatorKind; perm
           <CalculatorResult result={state.result} />
         ) : (
           <section className={cn(panelCard, 'gap-3 p-5 sm:p-6')}>
-            <h2 className="text-xl font-semibold text-foreground">Faça sua simulação</h2>
+            <h2 className="text-headline font-semibold text-foreground">Faça sua simulação</h2>
             <p className="text-body text-muted-foreground">
               Preencha os custos de uma unidade. O resultado mostra quanto sobra e como cada custo
               entra na conta.
