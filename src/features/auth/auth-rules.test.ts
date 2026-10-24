@@ -8,8 +8,8 @@ import { authHref } from './links';
 import { EMAIL_CONFIRMED_REASON, parseLoginReason } from './login-reason';
 import { AUTH_ERROR_MESSAGES, formatHours } from './messages';
 import { personalInputs, toStrength } from './password-strength';
-import { sanitizeRedirect } from './redirect';
-import { emailSchema, loginSchema } from './schemas';
+import { MAX_REDIRECT_LENGTH, sanitizeRedirect } from './redirect';
+import { EMAIL_MAX_LENGTH, emailSchema, loginSchema } from './schemas';
 
 /** Resultado do zxcvbn só com o que toStrength lê. */
 const result = (score: number, warning = '', suggestions: string[] = []) =>
@@ -20,6 +20,13 @@ describe('sanitizeRedirect', () => {
     expect(sanitizeRedirect('/sll')).toBe('/sll');
     expect(sanitizeRedirect('/aulas?x=1#a')).toBe('/aulas?x=1#a');
     expect(sanitizeRedirect('/a/../b')).toBe('/b');
+  });
+
+  test('recusa destino maior que o teto', () => {
+    const at = `/${'a'.repeat(MAX_REDIRECT_LENGTH - 1)}`;
+    expect(sanitizeRedirect(at)).toBe(at);
+    expect(sanitizeRedirect(`${at}a`)).toBeUndefined();
+    expect(sanitizeRedirect(`/${'a'.repeat(1_000_000)}`)).toBeUndefined();
   });
 
   test('recusa outros sites, barras invertidas e caracteres de controle', () => {
@@ -91,10 +98,30 @@ describe('authHref e formatHours', () => {
   });
 });
 
+// Um email válido do tamanho exato: partes de até 60 letras separadas por ponto.
+const emailOfLength = (size: number) => {
+  const local = 'a'.repeat(60);
+  const labels: string[] = [];
+  let rest = size - `${local}@.com`.length;
+  while (rest > 0) {
+    const take = Math.min(60, rest);
+    labels.push('b'.repeat(take));
+    rest -= take + 1;
+  }
+  return `${local}@${labels.join('.')}.com`;
+};
+
 describe('schemas', () => {
   test('email: sem espaços e em minúsculas', () => {
     expect(emailSchema.parse('  Ana.Souza@Gmail.COM ')).toBe('ana.souza@gmail.com');
     expect(emailSchema.safeParse('ana@').success).toBe(false);
+  });
+
+  test('email: até 254 caracteres', () => {
+    expect(emailOfLength(EMAIL_MAX_LENGTH)).toHaveLength(EMAIL_MAX_LENGTH);
+    expect(emailSchema.safeParse(emailOfLength(EMAIL_MAX_LENGTH)).success).toBe(true);
+    expect(emailSchema.safeParse(emailOfLength(EMAIL_MAX_LENGTH + 1)).success).toBe(false);
+    expect(emailSchema.safeParse(` ${emailOfLength(EMAIL_MAX_LENGTH)} `).success).toBe(true);
   });
 
   test('senha: limites de tamanho', () => {
