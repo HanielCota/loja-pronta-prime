@@ -1,6 +1,6 @@
 'use client';
 
-import { SparklesIcon } from 'lucide-react';
+import { ArrowRightIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import type { LogoPicks } from '../model';
@@ -122,7 +122,7 @@ export function StudioReview({
               onClick={onCreate}
             >
               {hasLogos ? 'Criar outro logo' : 'Criar meu logo'}
-              <SparklesIcon aria-hidden="true" />
+              <ArrowRightIcon aria-hidden="true" />
             </Button>
           ) : (
             <p className="min-w-0 flex-1 text-body text-pretty text-muted-foreground">

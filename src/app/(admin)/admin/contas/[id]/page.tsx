@@ -136,9 +136,10 @@ export default async function AdminAccountPage({
                   : 'Nenhum'}
               </dd>
               <dt className="text-muted-foreground">Fase da loja</dt>
-              <dd className="mb-2 text-foreground sm:mb-0 xl:mb-2">
-                {storePhase ? `${storePhase} de 7` : 'Ainda não começou'}
-                <Button asChild size="inline" variant="soft" className="mt-3 w-fit">
+              {/* O número e o atalho um embaixo do outro: lado a lado, o botão grudava no texto. */}
+              <dd className="mb-2 flex flex-col items-start gap-2 text-foreground sm:mb-0 xl:mb-2">
+                <span>{storePhase ? `${storePhase} de 7` : 'Ainda não começou'}</span>
+                <Button asChild size="inline" variant="soft" className="w-fit px-4">
                   <Link href={`/admin/contas/${encodeURIComponent(account.id)}/etapa`}>
                     <Eye aria-hidden="true" />
                     Ver etapa atual

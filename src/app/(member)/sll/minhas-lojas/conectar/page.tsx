@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { panelCard } from '@/features/member/components/area-shell';
+import { SllFlashMessage } from '@/features/sll/components/sll-flash-message';
 import { SllPage } from '@/features/sll/sll-area-shell';
 import { requireProduct } from '@/features/products/server/access';
 import { SHOPEE_SELLER_URL } from '@/config/shopee';
@@ -59,10 +60,15 @@ export default async function SllConnectPage({
         </h2>
         <p className="text-body text-muted-foreground">
           {status.connected
-            ? `A loja ${status.shopId} está autorizada${config?.SHOPEE_ENVIRONMENT === 'sandbox' ? ' no ambiente de testes' : ''}. Essa conexão é compartilhada com a Loja Pronta quando você tem os dois produtos.`
+            ? `A loja ${status.shopId} está autorizada${config?.SHOPEE_ENVIRONMENT === 'sandbox' ? ' numa loja de teste da Shopee, não na sua loja real' : ''}. Essa conexão é compartilhada com a Loja Pronta quando você tem os dois produtos.`
             : 'A autorização acontece no site da Shopee. Sua senha fica com você. Você confere as permissões e pode revogar o acesso na Central do Vendedor.'}
         </p>
-        {message ? <output className="text-body">{message}</output> : null}
+        {message && result ? (
+          <SllFlashMessage
+            message={message}
+            failed={!['connected', 'sandbox', 'disconnected'].includes(result)}
+          />
+        ) : null}
         {enabled && !status.connected ? (
           config?.SHOPEE_CALLBACK_MODE === 'manual' ? (
             <ManualConnectionForm origin="sll" />

@@ -12,6 +12,7 @@ import {
   MailIcon,
   MoonIcon,
   CameraIcon,
+  RotateCcwIcon,
   SunMoonIcon,
   UserRoundIcon,
 } from 'lucide-react';
@@ -33,7 +34,12 @@ import { Switch } from '@/components/ui/switch';
 import { PASSWORD_MIN_LENGTH } from '@/config/auth';
 import { PROFILE_PHOTO_ACCEPT, PROFILE_PHOTO_MAX_BYTES } from '@/config/profile-photo';
 import { listCard } from '@/features/member/list-card';
-import { TEXT_SIZES, type TextSize } from '@/features/theme/display';
+import {
+  DEFAULT_DISPLAY,
+  TEXT_SIZES,
+  type DisplaySettings,
+  type TextSize,
+} from '@/features/theme/display';
 import { useDisplay } from '@/features/theme/use-display';
 import { useTheme } from '@/features/theme/use-theme';
 import { prefersReducedMotion } from '@/lib/reduced-motion';
@@ -63,6 +69,12 @@ type ProfileSettingsProps = {
   image: string | null | undefined;
   /** Como trocar o email (o link do suporte, quando existe). */
   emailHelp: ReactNode;
+  /** As áreas dela e até quando valem, antes da conta: é o que ela mais procura aqui. */
+  access?: ReactNode;
+  /** Onde a conta está aberta, logo depois da senha. */
+  devices?: ReactNode;
+  /** Onde pedir ajuda, no fim, antes do sair. */
+  help?: ReactNode;
 };
 
 /**
@@ -70,7 +82,15 @@ type ProfileSettingsProps = {
  * o formulário abre ali mesmo, um por vez. Fechada, a página fica limpa: trocar a senha é raro e
  * não precisa ocupar a tela o tempo todo.
  */
-export function ProfileSettings({ name, email, image, emailHelp }: ProfileSettingsProps) {
+export function ProfileSettings({
+  name,
+  email,
+  image,
+  emailHelp,
+  access,
+  devices,
+  help,
+}: ProfileSettingsProps) {
   const [open, setOpen] = useState<Section | null>(null);
   const [saved, setSaved] = useState<{ section: Section; message: string } | null>(null);
   const rows = useRef<Partial<Record<Section, HTMLButtonElement | null>>>({});
@@ -101,6 +121,9 @@ export function ProfileSettings({ name, email, image, emailHelp }: ProfileSettin
       <noscript>
         <style>{NO_SCRIPT_CSS}</style>
       </noscript>
+      {/* Primeiro o que ela tem e usa (as áreas), depois os dados dela: a ordem da conta Apple. */}
+      {access}
+
       <SettingsGroup id="perfil-conta" title="Sua conta" footer={emailHelp}>
         <ExpandableRow
           section="photo"
@@ -187,6 +210,8 @@ export function ProfileSettings({ name, email, image, emailHelp }: ProfileSettin
         </ExpandableRow>
       </SettingsGroup>
 
+      {devices}
+
       <SettingsGroup
         id="perfil-aparencia"
         title="Aparência"
@@ -194,6 +219,8 @@ export function ProfileSettings({ name, email, image, emailHelp }: ProfileSettin
       >
         <AppearanceRows />
       </SettingsGroup>
+
+      {help}
 
       <LiveRegion>{saved?.message ?? null}</LiveRegion>
     </>
@@ -245,7 +272,50 @@ function AppearanceRows() {
         checked={display.settings.moreContrast}
         onCheckedChange={(moreContrast) => display.update({ moreContrast })}
       />
+      <ResetAppearanceRow
+        changed={preference !== 'light' || !isDefaultDisplay(display.settings)}
+        onReset={() => {
+          setPreference('light');
+          display.update(DEFAULT_DISPLAY);
+        }}
+      />
     </>
+  );
+}
+
+function isDefaultDisplay(settings: DisplaySettings) {
+  return (Object.keys(DEFAULT_DISPLAY) as (keyof DisplaySettings)[]).every(
+    (key) => settings[key] === DEFAULT_DISPLAY[key],
+  );
+}
+
+/**
+ * Mexeu e a tela ficou estranha? Um toque volta tudo como era no começo (tema claro, texto
+ * normal). Só aparece quando há algo diferente do padrão, pra não ser um botão que não faz nada.
+ */
+function ResetAppearanceRow({ changed, onReset }: { changed: boolean; onReset: () => void }) {
+  // Depois do toque, a linha fica até o foco sair dela: sumir com o foco dentro jogaria quem usa
+  // teclado de volta pro começo da página.
+  const [done, setDone] = useState(false);
+
+  if (!changed && !done) return null;
+  return (
+    <li>
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={() => {
+          onReset();
+          setDone(true);
+        }}
+        onBlur={() => setDone(false)}
+        className="w-full rounded-none font-semibold text-link hover:bg-muted focus-visible:-outline-offset-2"
+      >
+        <RotateCcwIcon aria-hidden="true" />
+        Voltar ao padrão
+      </Button>
+      <LiveRegion>{done ? 'Aparência de volta ao padrão' : null}</LiveRegion>
+    </li>
   );
 }
 
@@ -353,7 +423,7 @@ function SwitchRow({
 }
 
 /** Um grupo da lista: o título pequeno em cinza em cima, as linhas num cartão e uma nota embaixo. */
-function SettingsGroup({
+export function SettingsGroup({
   id,
   title,
   footer,
@@ -377,7 +447,7 @@ function SettingsGroup({
   );
 }
 
-function RowIcon({ children }: { children: ReactNode }) {
+export function RowIcon({ children }: { children: ReactNode }) {
   return (
     <span
       aria-hidden="true"
@@ -388,7 +458,7 @@ function RowIcon({ children }: { children: ReactNode }) {
   );
 }
 
-function RowText({ label, value }: { label: string; value: ReactNode }) {
+export function RowText({ label, value }: { label: string; value: ReactNode }) {
   return (
     <span className="flex min-w-0 flex-col">
       <span className="text-sm text-muted-foreground">{label}</span>

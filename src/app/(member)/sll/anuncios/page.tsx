@@ -16,8 +16,9 @@ import {
   retryStoreChange,
 } from '@/features/assistant/server/store-change-actions';
 import { panelCard } from '@/features/member/components/area-shell';
+import { SllFlashMessage } from '@/features/sll/components/sll-flash-message';
 import { Button } from '@/components/ui/button';
-import { Select } from '@/components/ui/select';
+import { SelectMenu } from '@/components/ui/select-menu';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Textarea } from '@/components/ui/textarea';
 import { FileField } from '@/components/ui/file-field';
@@ -75,6 +76,8 @@ export default async function ListingsPage({
     ]),
   );
   const cloneIntent = randomUUID();
+  // Nome do anúncio no resultado, no lugar do código da Shopee.
+  const titleById = new Map(data.items.map((item) => [String(item.itemId), item.title]));
   const labels = {
     pending: 'Na fila',
     running: 'Em execução',
@@ -89,11 +92,14 @@ export default async function ListingsPage({
       intro="Selecione os anúncios da sua loja e confira o que deseja alterar."
     >
       {getParam(params.resultado) ? (
-        <output className="text-body">
-          {getParam(params.resultado) === 'queued'
-            ? 'Alterações salvas. Acompanhe o resultado abaixo.'
-            : 'Não foi possível preparar as alterações. Confira os dados e a conexão.'}
-        </output>
+        <SllFlashMessage
+          failed={getParam(params.resultado) !== 'queued'}
+          message={
+            getParam(params.resultado) === 'queued'
+              ? 'Alterações salvas. Acompanhe o resultado abaixo.'
+              : 'Não foi possível preparar as alterações. Confira os dados e a conexão.'
+          }
+        />
       ) : null}
       {!enabled ? (
         <section className={panelCard}>
@@ -112,7 +118,7 @@ export default async function ListingsPage({
               <label htmlFor="edit-category" className="text-body">
                 Categoria para usar
               </label>
-              <Select
+              <SelectMenu
                 id="edit-category"
                 name="categoria"
                 defaultValue={selectedCategory > 0 ? String(selectedCategory) : ''}
@@ -123,7 +129,7 @@ export default async function ListingsPage({
                     {category.original_category_name}
                   </option>
                 ))}
-              </Select>
+              </SelectMenu>
               <Button variant="soft">Conferir requisitos da categoria</Button>
             </form>
           </section>
@@ -137,10 +143,10 @@ export default async function ListingsPage({
                   <label htmlFor="listing-mode" className="text-body">
                     O que deseja fazer?
                   </label>
-                  <Select id="listing-mode" name="mode">
+                  <SelectMenu id="listing-mode" name="mode">
                     <option value="edit">Alterar os anúncios selecionados</option>
                     <option value="clone">Criar novos anúncios para comparar</option>
-                  </Select>
+                  </SelectMenu>
                   <input type="hidden" name="cloneIntent" value={cloneIntent} />
                   {cloneOffers.map((offer) => (
                     <input
@@ -211,7 +217,7 @@ export default async function ListingsPage({
                         {attribute.original_attribute_name}
                         {attribute.is_mandatory ? ' (obrigatório)' : ''}
                       </label>
-                      <Select
+                      <SelectMenu
                         id={`attribute-${attribute.attribute_id}`}
                         name={`attribute-${attribute.attribute_id}`}
                         required={attribute.is_mandatory}
@@ -222,7 +228,7 @@ export default async function ListingsPage({
                             {value.original_value_name}
                           </option>
                         ))}
-                      </Select>
+                      </SelectMenu>
                     </>
                   ) : (
                     <FloatingLabelInput
@@ -267,7 +273,9 @@ export default async function ListingsPage({
           <ul className="space-y-3">
             {jobs.map((job) => (
               <li key={job.id} className="rounded-2xl border border-border p-4 text-body">
-                Anúncio {String(job.payload.item_id)} · {labels[job.status]}
+                {titleById.get(String(job.payload.item_id)) ??
+                  `Anúncio ${String(job.payload.item_id)}`}{' '}
+                · {labels[job.status]}
                 {job.status === 'unknown' ? (
                   <>
                     <form action={checkStoreChange}>

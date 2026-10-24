@@ -1,7 +1,14 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { storeBrand, storeOnboarding, stores } from '@/server/db/schema';
-import { buildSllStoreOverview, failedSllStoreOverview } from '../store-overview';
+import { getShopeeConfiguration } from '@/features/shopee/server/client';
+import { getShopeeStatus } from '@/features/shopee/server/connection';
+import { canUseShopee } from '@/features/shopee/authorization';
+import {
+  buildSllStoreOverview,
+  failedSllStoreOverview,
+  type SllStoreSummary,
+} from '../store-overview';
 
 /** Lê somente os registros da própria aluna usados para separar montagem e conexão. */
 export async function getSllStoreOverview(userId: string, canAccessLojaPronta: boolean) {
@@ -44,4 +51,27 @@ export async function getSllStoreOverview(userId: string, canAccessLojaPronta: b
     // Falha de banco não pode virar "nenhuma loja": são estados diferentes para a aluna.
     return failedSllStoreOverview();
   }
+}
+
+/** Montagem e conexão numa leitura só, pro painel e pra Minhas Lojas mostrarem o mesmo estado. */
+export async function getSllStoreSummary(
+  user: { id: string; role?: string | null | undefined },
+  canAccessLojaPronta: boolean,
+): Promise<SllStoreSummary> {
+  const overview = await getSllStoreOverview(user.id, canAccessLojaPronta);
+  const config = getShopeeConfiguration();
+  let connected = false;
+  let connectionFailed = false;
+  try {
+    if (config && canUseShopee(config, user.id, user.role)) {
+      connected = (await getShopeeStatus(user.id, config)).connected;
+    }
+  } catch {
+    connectionFailed = true;
+  }
+  return {
+    assembly: overview.assembly,
+    connected,
+    failed: overview.connected.status === 'failure' || connectionFailed,
+  };
 }

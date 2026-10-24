@@ -21,8 +21,8 @@ const emailLinkClass =
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="text-body font-semibold text-balance text-foreground">{title}</h2>
+    <section className="flex flex-col gap-3 border-t border-border pt-8 first:border-t-0 first:pt-0">
+      <h2 className="text-headline font-semibold text-balance text-foreground">{title}</h2>
       {children}
     </section>
   );
@@ -30,7 +30,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 function List({ items }: { items: ReactNode[] }) {
   return (
-    <ul className="flex list-disc flex-col gap-2 pl-6 text-body text-pretty">
+    <ul className="flex list-disc flex-col gap-2 pl-6 text-body text-pretty marker:text-muted-foreground">
       {items.map((item, index) => (
         <li key={index}>{item}</li>
       ))}

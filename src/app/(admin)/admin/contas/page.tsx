@@ -101,7 +101,7 @@ export default async function AdminAccountsPage({
           <>
             {/* Computador: tabela. A linha toda abre a conta (cada célula tem o link dela). */}
             <div className="hidden overflow-x-auto md:block">
-              <table className="w-full border-collapse text-left text-body">
+              <table className="w-full border-collapse text-left text-body tabular-nums">
                 <thead>
                   <tr className="border-b border-border text-sm text-muted-foreground">
                     <th className="py-3 pr-4 font-semibold" scope="col">

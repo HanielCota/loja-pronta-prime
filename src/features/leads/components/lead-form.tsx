@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Field, FieldError } from '@/components/ui/field';
 import { Label } from '@/components/ui/label';
-import { AdminSelect } from '@/features/admin/components/admin-select';
+import { SelectMenu } from '@/components/ui/select-menu';
 import { saveLead } from '../server/actions';
 import {
   EMPTY_LEAD,
@@ -72,28 +72,28 @@ export function LeadForm({
         {textField('source', 'Origem do contato', 'text', 100)}
         <div className="flex flex-col gap-2">
           <Label htmlFor="lead-product">Produto de interesse</Label>
-          <AdminSelect id="lead-product" name="product" defaultValue={values.product}>
+          <SelectMenu id="lead-product" name="product" defaultValue={values.product}>
             {LEAD_PRODUCTS.map((product) => (
               <option key={product} value={product}>
                 {interestLabels[product]}
               </option>
             ))}
-          </AdminSelect>
+          </SelectMenu>
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="lead-stage">Etapa da venda</Label>
-          <AdminSelect id="lead-stage" name="stage" defaultValue={values.stage}>
+          <SelectMenu id="lead-stage" name="stage" defaultValue={values.stage}>
             {LEAD_STAGES.map((stage) => (
               <option key={stage} value={stage}>
                 {stageLabels[stage]}
               </option>
             ))}
-          </AdminSelect>
+          </SelectMenu>
         </div>
         {textField('nextContact', 'Próximo contato', 'date')}
         <Field>
           <Label htmlFor="lead-owner">Responsável</Label>
-          <AdminSelect
+          <SelectMenu
             id="lead-owner"
             name="ownerId"
             defaultValue={values.ownerId}
@@ -106,7 +106,7 @@ export function LeadForm({
                 {owner.name}
               </option>
             ))}
-          </AdminSelect>
+          </SelectMenu>
           <FieldError id="lead-owner-error">{errors.ownerId}</FieldError>
         </Field>
         {textField('tags', 'Etiquetas separadas por vírgula', 'text', 250)}

@@ -9,6 +9,8 @@ const alertVariants = cva(
     variants: {
       variant: {
         destructive: 'bg-destructive-soft text-foreground *:[svg]:text-destructive',
+        /** Retorno de algo que deu certo ("Plano salvo"): o mesmo desenho, no tom da marca. */
+        info: 'bg-primary-soft text-foreground *:[svg]:text-link',
       },
     },
     defaultVariants: {

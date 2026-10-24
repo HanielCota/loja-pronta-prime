@@ -6,7 +6,7 @@ import { Check, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FileField } from '@/components/ui/file-field';
 import { Label } from '@/components/ui/label';
-import { AdminSelect } from '@/features/admin/components/admin-select';
+import { SelectMenu } from '@/components/ui/select-menu';
 import { importLeads, type ImportState } from '../server/actions';
 
 export function ImportForm({ owners }: { owners: { id: string; name: string }[] }) {
@@ -62,14 +62,14 @@ export function ImportForm({ owners }: { owners: { id: string; name: string }[] 
             </p>
           ) : null}
           <Label htmlFor="import-owner">Responsável pelos contatos importados</Label>
-          <AdminSelect id="import-owner" name="ownerId">
+          <SelectMenu id="import-owner" name="ownerId">
             <option value="">Sem responsável</option>
             {owners.map((owner) => (
               <option key={owner.id} value={owner.id}>
                 {owner.name}
               </option>
             ))}
-          </AdminSelect>
+          </SelectMenu>
           <Button type="submit" loading={pending} loadingText="Importando…">
             <Check aria-hidden="true" />
             Confirmar importação

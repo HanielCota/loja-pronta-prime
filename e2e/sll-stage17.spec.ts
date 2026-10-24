@@ -12,19 +12,14 @@ test('adicionar ou conectar loja usa um fluxo único e reaproveita a montagem', 
     .getByRole('link', { name: 'Minhas Lojas', exact: true })
     .filter({ visible: true })
     .click();
-  await page.getByRole('link', { name: 'Ver opções para minha loja', exact: true }).click();
-  await expect(page).toHaveURL(/\/sll\/minhas-lojas\/adicionar$/);
+  await page.getByRole('link', { name: 'Conectar minha loja', exact: true }).click();
+  await expect(page).toHaveURL(/\/sll\/minhas-lojas\/adicionar\?plataforma=shopee$/);
+  await expect(page.getByRole('heading', { name: 'O que você quer fazer?' })).toBeVisible();
+
+  await page.goto('/sll/minhas-lojas/adicionar');
   await expect(page.getByRole('heading', { name: 'Onde está sua loja?' })).toBeVisible();
   await expect(page.getByText('TikTok Shop')).toBeVisible();
   await expect(page.getByText('Mercado Livre')).toBeVisible();
-
-  await page.goto('/sll/minhas-lojas');
-  await page
-    .getByRole('main')
-    .getByRole('link', { name: 'Ver opções para minha loja', exact: true })
-    .last()
-    .click();
-  await expect(page).toHaveURL(/\/sll\/minhas-lojas\/adicionar$/);
 
   await page.getByRole('link', { name: /Shopee/ }).click();
   await expect(page).toHaveURL(/\/sll\/minhas-lojas\/adicionar\?plataforma=shopee$/);

@@ -12,7 +12,7 @@ import { AdminPage } from '@/features/admin/components/admin-shell';
 import { requireAdmin } from '@/features/admin/server/access';
 import { panelCard } from '@/features/member/components/area-shell';
 import { SllLessonVideo } from '@/features/sll/components/sll-lesson-video';
-import { Select } from '@/components/ui/select';
+import { SelectMenu } from '@/components/ui/select-menu';
 import { Button } from '@/components/ui/button';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import {
@@ -79,20 +79,20 @@ export default async function ExpertsPage({
           />
           <label htmlFor="expert-access-1" className="flex flex-col gap-2 text-body">
             Produto
-            <Select id="expert-access-1" name="access">
+            <SelectMenu id="expert-access-1" name="access">
               <option value="sll">SLL</option>
               <option value="loja-pronta">Loja Pronta</option>
-            </Select>
+            </SelectMenu>
           </label>
           <label htmlFor="expert-expert-1" className="flex flex-col gap-2 text-body">
             Especialista
-            <Select id="expert-expert-1" name="expert">
+            <SelectMenu id="expert-expert-1" name="expert">
               {EXPERT_IDS.map((expert) => (
                 <option key={expert} value={expert}>
                   {EXPERT_LABELS[expert]}
                 </option>
               ))}
-            </Select>
+            </SelectMenu>
           </label>
           <Button>Cadastrar origem</Button>
         </form>
@@ -111,23 +111,23 @@ export default async function ExpertsPage({
           <form action={saveVideoVariant} className="flex flex-col gap-4">
             <label htmlFor="expert-blockId-1" className="flex flex-col gap-2 text-body">
               Aula
-              <Select id="expert-blockId-1" name="blockId">
+              <SelectMenu id="expert-blockId-1" name="blockId">
                 {videos.map((video) => (
                   <option value={video.id} key={video.id}>
                     {video.title} · {video.id.slice(0, 8)}
                   </option>
                 ))}
-              </Select>
+              </SelectMenu>
             </label>
             <label htmlFor="expert-expert-2" className="flex flex-col gap-2 text-body">
               Especialista
-              <Select id="expert-expert-2" name="expert">
+              <SelectMenu id="expert-expert-2" name="expert">
                 {EXPERT_IDS.map((expert) => (
                   <option key={expert} value={expert}>
                     {EXPERT_LABELS[expert]}
                   </option>
                 ))}
-              </Select>
+              </SelectMenu>
             </label>
             <FloatingLabelInput
               id="expert-video"
@@ -201,13 +201,13 @@ export default async function ExpertsPage({
           />
           <label htmlFor="expert-expert-3" className="flex flex-col gap-2 text-body">
             Especialista
-            <Select id="expert-expert-3" name="expert">
+            <SelectMenu id="expert-expert-3" name="expert">
               {EXPERT_IDS.map((expert) => (
                 <option key={expert} value={expert}>
                   {EXPERT_LABELS[expert]}
                 </option>
               ))}
-            </Select>
+            </SelectMenu>
           </label>
           <Button variant="soft">Salvar experiência</Button>
         </form>

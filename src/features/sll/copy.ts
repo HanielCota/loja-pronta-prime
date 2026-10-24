@@ -1,6 +1,6 @@
 /** Texto original da interface: o banco guarda somente as mudanças feitas no painel. */
 export const SLL_COPY = {
-  dashboardIntro: 'Continue de onde parou ou escolha uma seção do SLL.',
+  dashboardIntro: 'Seu próximo passo está logo abaixo.',
   dashboardEmptyIntro:
     'As aulas ainda estão em preparação. Os recursos disponíveis estão logo abaixo.',
   dashboardPathTitle: 'Seu caminho no curso',

@@ -15,7 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
-import { AdminSelect } from '@/features/admin/components/admin-select';
+import { SelectMenu } from '@/components/ui/select-menu';
 import { AdminPage } from '@/features/admin/components/admin-shell';
 import { requireAdmin } from '@/features/admin/server/access';
 import { panelCard } from '@/features/member/components/area-shell';
@@ -195,40 +195,40 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="filter-stage">Etapa</Label>
-                <AdminSelect id="filter-stage" name="etapa" defaultValue={filters.stage}>
+                <SelectMenu id="filter-stage" name="etapa" defaultValue={filters.stage}>
                   <option value="">Todas as etapas</option>
                   {LEAD_STAGES.map((stage) => (
                     <option key={stage} value={stage}>
                       {stageLabels[stage]}
                     </option>
                   ))}
-                </AdminSelect>
+                </SelectMenu>
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="filter-product">Produto</Label>
-                <AdminSelect id="filter-product" name="produto" defaultValue={filters.product}>
+                <SelectMenu id="filter-product" name="produto" defaultValue={filters.product}>
                   <option value="">Todos os produtos</option>
                   {LEAD_PRODUCTS.map((product) => (
                     <option key={product} value={product}>
                       {interestLabels[product]}
                     </option>
                   ))}
-                </AdminSelect>
+                </SelectMenu>
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="filter-source">Origem</Label>
-                <AdminSelect id="filter-source" name="origem" defaultValue={filters.source}>
+                <SelectMenu id="filter-source" name="origem" defaultValue={filters.source}>
                   <option value="">Todas as origens</option>
                   {options.sources.map(({ source }) => (
                     <option key={source} value={source}>
                       {source}
                     </option>
                   ))}
-                </AdminSelect>
+                </SelectMenu>
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="filter-owner">Responsável</Label>
-                <AdminSelect id="filter-owner" name="responsavel" defaultValue={filters.owner}>
+                <SelectMenu id="filter-owner" name="responsavel" defaultValue={filters.owner}>
                   <option value="">Todas as pessoas</option>
                   <option value="unassigned">Sem responsável</option>
                   {options.owners.map((owner) => (
@@ -236,7 +236,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                       {owner.name}
                     </option>
                   ))}
-                </AdminSelect>
+                </SelectMenu>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-4">
@@ -260,7 +260,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
         {list.rows.length ? (
           <>
             <div className="hidden overflow-x-auto md:block">
-              <table className="w-full text-left text-body">
+              <table className="w-full border-collapse text-left text-body tabular-nums">
                 <caption className="sr-only">Contatos encontrados e próximos retornos</caption>
                 <thead>
                   <tr className="border-b border-border text-sm text-muted-foreground">

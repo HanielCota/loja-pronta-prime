@@ -82,9 +82,9 @@ describe('tokens da marca (globals.css)', () => {
       background: '#f5f5f7',
       foreground: '#1d1d1f',
       card: '#ffffff',
-      primary: '#452e9a',
+      primary: '#4c1d95',
       'primary-foreground': '#ffffff',
-      link: '#452e9a',
+      link: '#4c1d95',
     });
   });
 
@@ -94,7 +94,7 @@ describe('tokens da marca (globals.css)', () => {
       background: token(dark, 'background'),
       card: token(dark, 'card'),
       primary: token(dark, 'primary'),
-    }).toEqual({ background: '#1f1f22', card: '#2a2a2e', primary: '#8061ce' });
+    }).toEqual({ background: '#1f1f22', card: '#2a2a2e', primary: '#8858e6' });
   });
 
   for (const selector of [':root', '.dark']) {

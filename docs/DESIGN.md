@@ -15,7 +15,7 @@ o público é muito iniciante (muitas alunas mal usam o computador).
 ## Cores: só pelos tokens
 
 As cores ficam em `src/app/globals.css` (claro em `:root`, escuro em `.dark`) e viram classes do
-Tailwind. **Nunca** use cor solta (`#452e9a`, `bg-white`, `text-gray-500`, `bg-[#...]`): ela quebra
+Tailwind. **Nunca** use cor solta (`#4c1d95`, `bg-white`, `text-gray-500`, `bg-[#...]`): ela quebra
 o tema escuro e o alto contraste.
 
 | Classe                                     | Pra quê                                         | Claro              | Escuro                           |
@@ -24,17 +24,21 @@ o tema escuro e o alto contraste.
 | `bg-card`                                  | Cartões                                         | `#ffffff`          | `#2a2a2e`                        |
 | `text-foreground`                          | Texto principal                                 | `#1d1d1f`          | `#f5f5f7`                        |
 | `text-muted-foreground`                    | Texto de apoio                                  | `#515155`          | `#aeaeb2`                        |
-| `bg-primary` / `text-primary-foreground`   | O botão principal                               | `#452e9a` / branco | `#8061ce` / branco               |
-| `bg-primary-soft`                          | Botão secundário, opção escolhida, avisos leves | `#f0edfb`          | `#382b58`                        |
-| `text-link`                                | Links e ações de texto                          | `#452e9a`          | `#c5b4ff`                        |
+| `bg-primary` / `text-primary-foreground`   | O botão principal                               | `#4c1d95` / branco | `#8858e6` / branco               |
+| `bg-primary-soft`                          | Botão secundário, opção escolhida, avisos leves | `#f1ebfd`          | `#3a2566`                        |
+| `text-link`                                | Links e ações de texto                          | `#4c1d95`          | `#c4b5fd`                        |
 | `bg-muted`                                 | Realce, hover                                   | `#f5f5f7`          | `#36363b`                        |
 | `text-destructive` / `bg-destructive-soft` | Erros                                           | `#d70015`          | `#ff8077`                        |
 | `bg-progress` / `text-progress-text`       | Progresso, feito, "Sugestão"                    | verde              | verde                            |
 | `border-border` / `border-input`           | Linhas / borda de campo                         |                    |                                  |
-| `outline-ring`                             | Anel de foco                                    | `#452e9a`          | `#baa9ff`                        |
+| `outline-ring`                             | Anel de foco                                    | `#4c1d95`          | `#bba6fb`                        |
 | `bg-segment` / `bg-segment-thumb`          | Controle segmentado (abas tipo iOS)             |                    |                                  |
 
 - **Um roxo só**, pra ação. Nada de gradiente ou segunda cor de destaque.
+- Em 24 de outubro de 2026, a pedido do dono, o roxo passou a ser o **roxo real** (`#4c1d95`,
+  hover `#41187f`, suave `#f1ebfd`): mais profundo, com 11:1 no branco. No escuro, `#8858e6`
+  (4,6:1 com o texto branco e 3,1:1 com o cartão), suave `#3a2566`, link `#c4b5fd` e foco
+  `#bba6fb`. A tabela acima já mostra esses valores.
 - Em 8 de outubro de 2026, a cor de ação foi ajustada para o roxo dos botões da referência
   enviada pelo dono (`#452e9a`), na Loja Pronta e no SLL. No tema escuro, o roxo é mais claro
   para separar a ação do cartão com pelo menos 3:1 e manter o texto branco com pelo menos 4,5:1.
@@ -75,12 +79,18 @@ o tema escuro e o alto contraste.
   Sem configuração, mostra “Conexão em breve”; a consulta só mostra dados reais da API.
 
 - `Button` (`components/ui/button.tsx`): `default` (roxo, a ação principal), `soft` (roxo claro,
-  secundária), `ghost`, `link`. Tamanhos `default` (altura mínima 48px, largura toda), `inline`,
+  secundária), `destructive` (o mesmo desenho do `soft` no tom de erro, só pra ação que tira algo
+  da pessoa, como bloquear uma conta), `ghost`, `link`. Tamanhos `default` (altura mínima 48px, largura toda), `inline`,
   `icon`. Tem `loading` com texto ("Salvando…").
 - `FloatingLabelInput`, `PasswordInput`, `Field`/`FieldError`, `Switch`, `Avatar`, `Spinner`,
   `LiveRegion` (`components/ui`).
-- Nada com a cara padrão do navegador. Lista de escolha: `Select` (o `<select>` nativo com a
-  borda, o fundo e o foco dos campos e a seta do lucide). Texto longo: `Textarea` (mesmo visual,
+- Nada com a cara padrão do navegador. Lista de escolha: `SelectMenu`
+  (`components/ui/select-menu.tsx`), em todas as telas (alunas e admin): o campo com a borda e o
+  foco dos outros, e a lista que abre com a superfície do cartão, saindo do campo (esmaece e cresce
+  de leve), opção marcada em roxo suave com check e, se a opção tiver `data-description`, uma frase
+  curta embaixo do nome. O `<select>` nativo (`Select`) continua por baixo, como reserva antes da
+  hidratação e sem JavaScript (o atributo `label` da opção é o texto que aparece nele). Campo
+  obrigatório enviado vazio mostra "Escolha uma opção." embaixo, com o foco no campo. Texto longo: `Textarea` (mesmo visual,
   cresce com o texto, sem o puxador onde o navegador permite). Arquivo: `FileField` (botão `soft`
   "Escolher arquivo" e o nome e o tamanho embaixo; sem JavaScript, o campo do navegador). Caixa de
   marcar, rádio, número, busca e `<summary>` já têm estilo global no `globals.css`: borda dos
@@ -182,7 +192,21 @@ o tema escuro e o alto contraste.
   segmentado de rádios), **Reduzir animações** e **Mais contraste** (chaves). Valem na hora, só no
   aparelho, e viram atributos no `<html>` (`data-text`, `data-motion`, `data-contrast`) que um
   script do head põe antes da página aparecer. O tamanho muda a base do `rem`, então use `rem`
-  (as classes do Tailwind), não `px`, pra o que deve crescer junto.
+  (as classes do Tailwind), não `px`, pra o que deve crescer junto. Quando algo está fora do
+  padrão, a última linha da Aparência é "Voltar ao padrão" (tema claro, texto normal, chaves
+  desligadas); ela some quando o foco sai dela, nunca com o foco dentro.
+- Perfil, por prioridade (a ordem da conta Apple e do Google: aviso, o que ela tem, os dados dela,
+  segurança, preferências, ajuda, sair): **Precisa da sua atenção** (só quando uma área acaba em
+  30 dias ou menos, com "Ajuda" levando ao suporte), **Seus acessos**, Sua conta, Segurança,
+  **Aparelhos conectados**, Aparência, **Precisa de ajuda?** e o sair. Aparelhos conectados lista as sessões abertas (tipo, sistema e
+  navegador, "Entrou em" e "Este aparelho" em verde), sem as do "entrar como" do admin; com mais
+  de uma, a última linha é "Sair dos outros aparelhos" (formulário de verdade, em `text-link`). Seus
+  acessos termina em "Compras e recibos", que abre a área de quem compra na Hotmart. Seus acessos lista cada área dela com a data final da compra ("Até 22/10/2027"); a 30 dias
+  ou menos vira "Acaba em X dias", em `text-warning` com ícone de relógio (não só a cor). Liberação
+  manual diz "Liberado, sem data pra acabar"; sem data conhecida, só "Liberado", nunca uma data
+  inventada. Ajuda tem o WhatsApp (só se configurado), o email do suporte e a Política de
+  Privacidade. As linhas que levam pra outro lugar usam o mesmo desenho das que abrem formulário,
+  com a ação escrita à direita ("Abrir", "Escrever", "Ler").
 
 ## Padrões de tela
 
@@ -240,7 +264,7 @@ o tema escuro e o alto contraste.
   que vira ao abrir as instruções. A Biblioteca usa busca e cartões por categoria, em uma coluna
   no celular e até três no computador, com conclusão e ação visíveis.
 - Cartões de etapas, cursos e biblioteca usam largura mínima de 18rem quando há espaço;
-  no celular, cabem na largura disponível. Seus títulos usam `text-xl` (20px), abaixo do título
+  no celular, cabem na largura disponível. Seus títulos usam `text-headline` (20px, o token de título de cartão), abaixo do título
   da página, e o preenchimento é de 20px. As classes de preenchimento são combinadas com `cn`
   para substituir as da moldura. Os cartões não esticam para igualar alturas nem empurram ações
   com margens automáticas. Nada de cortar títulos ou descrições para caber na grade.
@@ -248,11 +272,22 @@ o tema escuro e o alto contraste.
   “Voltar às aulas”. O teclado tem o atalho “Pular para o conteúdo”, exclusivo do SLL.
 - A busca da Biblioteca ignora acentos e maiúsculas, oferece contagem e limpeza e mantém a
   busca confirmada no endereço. O formulário GET também funciona sem JavaScript.
-- No painel, o caminho de aprendizagem aparece antes do aviso de lojas. Em Recursos, os cartões
+- No painel, o próximo passo vem num cartão grande (“Seu caminho no curso”): título do passo,
+  uma frase, o progresso real das boas-vindas e o único botão roxo da tela (Começar, Continuar,
+  Ver o método). Ao lado (embaixo no celular), “Também no seu caminho” lista os outros passos.
+  Abaixo, “Sua loja” mostra a loja numa linha (nome, etapa da montagem e se a Shopee está
+  conectada) e “Ferramentas mais usadas” traz até quatro atalhos publicados, com “Ver todas”.
+- Listas agrupadas (`SllGroupedList`/`SllListRow`): a linha inteira é o link, com ícone, nome,
+  uma frase e seta (pra fora quando abre outra aba); sem endereço, “Em breve”. Recursos mostra
+  as ferramentas assim, por categoria, sem botão por item. Minhas Lojas mostra um cartão da loja
+  com “O que falta” (montar, conectar) e um botão roxo só, o do primeiro passo que falta.
+- O laranja da Shopee (`bg-shopee`) só aparece no quadradinho que representa a plataforma,
+  com ícone branco; nunca em botão, texto ou fundo de cartão. Em Recursos, os cartões
   usam sua altura natural; links externos anunciam a abertura em outra aba.
 - Cursos complementares têm destaque amplo e biblioteca em cartões com contagem e progresso
-  individuais. Sem o arquivo da capa, aparece um aviso neutro compacto “Capa em breve”, sem imagem
-  inventada nem coluna reservada. Capas reais mantêm proporção 16:9. A lista do curso mantém
+  individuais. Sem o arquivo da capa, aparece uma etiqueta neutra pequena “Capa em breve” (pílula,
+  não uma faixa), sem imagem inventada nem coluna reservada. Durações aparecem como se fala ("45
+  min", "2 h 47 min", `formatDuration`). Capas reais mantêm proporção 16:9. A lista do curso mantém
   numeração, duração e progresso.
 - No catálogo e na lista de um curso, a contagem considera todas as aulas publicadas, inclusive
   as opcionais. A regra de progresso principal continua controlando o desbloqueio das etapas.
@@ -280,8 +315,7 @@ o tema escuro e o alto contraste.
   `top-10`. A seção atual fica em `bg-primary-soft` com texto `text-link`.
 - As ações do admin têm ícones lucide junto do texto: salvar, editar, adicionar, publicar,
   descartar, restaurar e arquivar; arquivar usa o ícone de caixa de arquivo, sem lixeira.
-  Os selects do admin abrem uma lista com a superfície do painel, hover, foco e check na opção
-  marcada. Mantêm o campo nativo como reserva antes da hidratação e sem JavaScript.
+  Os selects do admin são o mesmo `SelectMenu` das alunas.
   Confirmações de conteúdo usam uma janela do painel com título, descrição e Cancelar, com foco
   preso e devolvido à ação ao fechar. O email completo no pé do admin usa uma dica estilizada
   ao passar o mouse ou focar pelo teclado. Os erros de formulário aparecem nos avisos e campos
@@ -438,3 +472,35 @@ The existing profile support card lists four subjects and their contacts: techni
 and store help actions link to this card. Unconfigured contacts show “Em breve” without an action.
 Administrators configure the numbers at `/admin/suporte`, using `AdminPage`, `panelCard`,
 `FloatingLabelInput`, and `Button`. This preserves the current colors, typography, and layout.
+
+### Refinamento visual (24 de outubro de 2026)
+
+Pedido do dono: deixar o acabamento mais perto do estilo Apple sem mudar a estrutura das telas.
+Mesmas molduras, cartões, textos e fluxos; só espaço, alinhamento, hierarquia e retorno visual.
+
+- Título de cartão e de seção dentro da página usa `text-headline` (20px, entrelinha 1,3, letra
+  levemente apertada), no lugar de `text-xl` solto.
+- Meu plano mantém a estrutura original, com respiro entre título, frase, perguntas e opções.
+  O "caminho" (Orgânico, Híbrido, Pago) usa o `SelectMenu` com a frase de cada um embaixo.
+- Comparar categorias: "Ajustar anúncios" vira link no topo; antes de comparar, o cartão mostra o
+  que falta em três passos (o check verde vem dos dados) e um botão principal; sem comparações,
+  um estado vazio com ícone e uma frase.
+- Método SLL: roxo cheio só na etapa em andamento; bloqueada diz "Abre depois da Etapa N",
+  onde N é a primeira etapa ainda pendente (a mesma regra do progresso). Ferramentas vira uma
+  linha da lista agrupada embaixo das etapas.
+- Aula: recursos da aula são linhas inteiras clicáveis (ícone, nome, ação e "abre em outra aba"),
+  com folga dos dois lados. Sem frase genérica embaixo do título da página.
+- Recursos: os grupos ficam em colunas que se encaixam (sem buraco ao lado de um grupo curto).
+  Nenhum ícone de "brilho" (lembra IA): assinatura externa usa o globo; assistentes, o balão.
+- Perfil: uma única lista "Precisa de ajuda?" com os assuntos do suporte (WhatsApp de cada pessoa
+  ou "Em breve"), o email e a política. A âncora `/perfil#suporte` cai nela.
+- Política de Privacidade: cada seção com título `text-headline` e uma linha fina entre elas.
+- Admin: os seis números da Visão geral ficam em duas colunas já no celular. Na conta, "Fase da
+  loja" mostra o número e o atalho um embaixo do outro, e "Bloquear conta" usa o botão
+  `destructive`. Avisos de formulário vazios não reservam espaço.
+- Controles do navegador: `Input` dá por padrão o teclado e o corretor certos por tipo (email e
+  endereço sem maiúscula automática nem corretor, busca com a tecla "Buscar", número com teclado
+  numérico). O global tira o realce azul do toque e a espera do duplo toque, pinta o que sobrou
+  do navegador com `accent-color` roxo, iguala a cor das dicas dos campos e tem estilo de
+  impressão (só o conteúdo, preto no branco, links externos com o endereço). Tabelas usam
+  números tabulares.

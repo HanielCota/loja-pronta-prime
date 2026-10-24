@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Select } from '@/components/ui/select';
+import { SelectMenu } from '@/components/ui/select-menu';
+import { cn } from '@/lib/utils';
 import { panelCard } from '@/features/member/components/area-shell';
 import { SllPage } from '@/features/sll/sll-area-shell';
 import { requireProduct } from '@/features/products/server/access';
@@ -16,6 +17,7 @@ import { STRATEGIES, STRATEGY_LABELS, planNeedsHistory } from '@/features/assist
 import { getStudentExperience } from '@/features/sll/server/experience';
 import { chooseExpert } from '@/features/sll/server/experience-actions';
 import { EXPERT_LABELS } from '@/config/experts';
+import { SllFlashMessage } from '@/features/sll/components/sll-flash-message';
 import { readAssistantAdvice } from '@/features/assistant/server/advice';
 import { requestAssistantAdvice } from '@/features/assistant/server/advice-actions';
 import { adviceSchema, GUIDANCE_COPY } from '@/features/assistant/guidance';
@@ -31,8 +33,18 @@ const messages: Record<string, string> = {
   queued: 'Atualização solicitada. Os dados serão coletados pela rotina da plataforma.',
   'connection-required': 'Conecte sua loja para atualizar os dados.',
   'task-saved': 'Progresso salvo.',
-  'expert-saved': 'Sua experiência foi atualizada.',
-  'expert-invalid': 'Escolha uma experiência disponível na sua conta.',
+  'expert-saved': 'Seu conteúdo foi atualizado.',
+  'expert-invalid': 'Escolha um conteúdo disponível na sua conta.',
+};
+// Resultados que pedem uma correção: aparecem como alerta, não como confirmação.
+const failedResults = new Set(['invalid', 'connection-required', 'expert-invalid']);
+const adviceNotices = new Set(['advice-ready', 'advice-limited', 'advice-collect']);
+
+/** Uma frase pra cada caminho: a aluna iniciante não sabe o que é orgânico ou pago. */
+const STRATEGY_HINTS: Record<(typeof STRATEGIES)[number], string> = {
+  organic: 'Sem pagar anúncios',
+  hybrid: 'Parte sem anúncio, parte com anúncio pago',
+  paid: 'Com anúncios pagos da Shopee',
 };
 
 export default async function AssistantPlanPage({
@@ -74,32 +86,40 @@ export default async function AssistantPlanPage({
       title="Meu plano"
       intro="Um caminho de cada vez, com ações práticas e aulas para ajudar você a executar."
     >
-      {message ? <output className="text-body">{message}</output> : null}
-      <section className={panelCard} aria-labelledby="plan-expert">
+      {message ? (
+        <SllFlashMessage
+          message={message}
+          failed={
+            failedResults.has(result) ||
+            (result.startsWith('advice-') && !adviceNotices.has(result))
+          }
+        />
+      ) : null}
+      <section className={cn(panelCard, 'gap-3')} aria-labelledby="plan-expert">
         <h2 id="plan-expert" className="text-title font-semibold">
           Seu conteúdo com {EXPERT_LABELS[experience.expert]}
         </h2>
         <p className="text-body text-muted-foreground">
-          As aulas acompanham o expert da sua compra. Seu progresso continua salvo.
+          As aulas seguem o conteúdo que veio com a sua compra. Seu progresso continua salvo.
         </p>
         {experience.allowed.length > 1 ? (
           <form action={chooseExpert} className="flex flex-col gap-3">
             <label htmlFor="plan-expert-choice" className="text-body">
               Conteúdo disponível na sua conta
             </label>
-            <Select id="plan-expert-choice" name="expert" defaultValue={experience.expert}>
+            <SelectMenu id="plan-expert-choice" name="expert" defaultValue={experience.expert}>
               {experience.allowed.map((expert) => (
                 <option value={expert} key={expert}>
                   {EXPERT_LABELS[expert]}
                 </option>
               ))}
-            </Select>
+            </SelectMenu>
             <Button variant="soft">Usar este conteúdo</Button>
           </form>
         ) : null}
       </section>
       {!plan && !history ? (
-        <section className={panelCard} aria-labelledby="plan-start">
+        <section className={cn(panelCard, 'gap-3')} aria-labelledby="plan-start">
           <h2 id="plan-start" className="text-title font-semibold">
             Vamos organizar seu próximo passo
           </h2>
@@ -107,13 +127,14 @@ export default async function AssistantPlanPage({
             Para uma loja nova, escolha um roteiro de sete dias. Com sete dias ou mais, começamos
             pela leitura dos dados da loja.
           </p>
-          <form action={startAssistantPlan} className="flex flex-col gap-5">
-            <fieldset className="space-y-3">
-              <legend className="mb-2 text-body font-semibold">
+          <form action={startAssistantPlan} className="mt-3 flex flex-col gap-6">
+            <fieldset className="flex flex-col gap-1">
+              <legend className="mb-3 text-body font-semibold">
                 Há quanto tempo sua loja está aberta?
               </legend>
               {[
-                ['under_7_days', 'Menos de 7 dias'],
+                // Quem ainda não abriu a loja segue o mesmo roteiro de loja nova.
+                ['under_7_days', 'Ainda não abri ou abri há menos de 7 dias'],
                 ['exactly_7_days', 'Exatamente 7 dias'],
                 ['over_7_days', 'Mais de 7 dias'],
               ].map(([value, label]) => (
@@ -123,22 +144,28 @@ export default async function AssistantPlanPage({
                 </label>
               ))}
             </fieldset>
-            <label htmlFor="plan-strategy" className="text-body">
+            <label htmlFor="plan-strategy" className="-mb-3 text-body font-semibold">
               Para uma loja nova, qual caminho você quer seguir?
             </label>
-            <Select name="strategy" id="plan-strategy" defaultValue="organic">
+            {/* A lista abre com as cores do app, o nome em cima e a frase embaixo. */}
+            <SelectMenu name="strategy" id="plan-strategy" defaultValue="organic">
               {STRATEGIES.map((strategy) => (
-                <option value={strategy} key={strategy}>
+                <option
+                  value={strategy}
+                  key={strategy}
+                  label={`${STRATEGY_LABELS[strategy]}: ${STRATEGY_HINTS[strategy]}`}
+                  data-description={STRATEGY_HINTS[strategy]}
+                >
                   {STRATEGY_LABELS[strategy]}
                 </option>
               ))}
-            </Select>
+            </SelectMenu>
             <Button>Organizar meu plano</Button>
           </form>
         </section>
       ) : null}
       {plan ? (
-        <section className={panelCard} aria-labelledby="active-plan">
+        <section className={cn(panelCard, 'gap-3')} aria-labelledby="active-plan">
           <h2 id="active-plan" className="text-title font-semibold">
             Sete dias · {STRATEGY_LABELS[plan.strategy]}
           </h2>
@@ -178,7 +205,7 @@ export default async function AssistantPlanPage({
         </section>
       ) : null}
       {history ? (
-        <section className={panelCard} aria-labelledby="history-plan">
+        <section className={cn(panelCard, 'gap-3')} aria-labelledby="history-plan">
           <h2 id="history-plan" className="text-title font-semibold">
             Seu próximo passo começa pelos dados
           </h2>
@@ -191,7 +218,7 @@ export default async function AssistantPlanPage({
           </Button>
         </section>
       ) : null}
-      <section className={panelCard} aria-labelledby="store-data">
+      <section className={cn(panelCard, 'gap-3')} aria-labelledby="store-data">
         <h2 id="store-data" className="text-title font-semibold">
           O que sua loja mostra
         </h2>
@@ -259,7 +286,7 @@ export default async function AssistantPlanPage({
         )}
       </section>
       {history && data.status === 'ready' && data.items.length ? (
-        <section className={panelCard} aria-labelledby="store-guidance">
+        <section className={cn(panelCard, 'gap-3')} aria-labelledby="store-guidance">
           <h2 id="store-guidance" className="text-title font-semibold">
             Próximos passos com os dados disponíveis
           </h2>
@@ -299,7 +326,7 @@ export default async function AssistantPlanPage({
         </section>
       ) : null}
       {plan || history ? (
-        <details className={panelCard}>
+        <details className={cn(panelCard, 'gap-3')}>
           <summary className="min-h-11 cursor-pointer text-body font-semibold">
             Reorganizar meu plano
           </summary>
