@@ -128,7 +128,11 @@ export async function saveLearningNode(
   const durationText = stringField(data, 'durationMinutes') ?? '';
   const duration = durationText === '' ? null : Number(durationText);
   const countsTowardProgress = data.get('countsTowardProgress') === 'true';
-  const relatedLessonId = stringField(data, 'relatedLessonId') || null;
+  // Campo ausente (a lista nem aparece quando não há outras aulas) quer dizer "não mexeu", não
+  // "remover": antes, salvar só o título apagava o vínculo em silêncio.
+  const relatedLessonId = data.has('relatedLessonId')
+    ? stringField(data, 'relatedLessonId') || null
+    : undefined;
 
   if (!['track', 'stage', 'module', 'lesson'].includes(kind ?? '')) {
     return { message: 'Escolha que tipo de conteúdo quer guardar.', saved: false };
@@ -176,10 +180,13 @@ export async function saveLearningNode(
       return { message: 'Escolha outra aula relacionada.', saved: false, field: 'relatedLessonId' };
     const source = editing
       ? await db.query.learningLessons.findFirst({
-          columns: { moduleId: true },
+          columns: { moduleId: true, relatedLessonId: true },
           where: and(eq(learningLessons.id, rawId), isNull(learningLessons.archivedAt)),
         })
-      : { moduleId: parentId };
+      : { moduleId: parentId, relatedLessonId: null };
+    // Manter o vínculo que já existe não depende da aula continuar ativa: ela pode ter sido
+    // arquivada depois, e isso não pode impedir salvar outra mudança desta aula.
+    const keepsCurrent = source?.relatedLessonId === relatedLessonId;
     const [sourceGroup, target] = await Promise.all([
       source?.moduleId
         ? db.query.learningModules.findFirst({
@@ -199,7 +206,10 @@ export async function saveLearningNode(
         },
       }),
     ]);
-    if (!sourceGroup || !target || sourceGroup.stage.trackId !== target.module.stage.trackId)
+    if (
+      !keepsCurrent &&
+      (!sourceGroup || !target || sourceGroup.stage.trackId !== target.module.stage.trackId)
+    )
       return {
         message: 'Escolha uma aula do mesmo curso.',
         saved: false,
@@ -224,7 +234,11 @@ export async function saveLearningNode(
         title: title.data,
         description: description.data || null,
         ...(nodeKind === 'lesson'
-          ? { durationMinutes: duration, countsTowardProgress, relatedLessonId }
+          ? {
+              durationMinutes: duration,
+              countsTowardProgress,
+              ...(relatedLessonId !== undefined ? { relatedLessonId } : {}),
+            }
           : {}),
       };
       if (current.status === 'published') {
@@ -282,7 +296,7 @@ export async function saveLearningNode(
         moduleId: parentId!,
         durationMinutes: duration,
         countsTowardProgress,
-        relatedLessonId,
+        relatedLessonId: relatedLessonId ?? null,
       });
     }
   } catch {
