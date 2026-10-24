@@ -11,12 +11,14 @@ export async function publishToolMaterials() {
     if (!validateDownloadFile(material.fileName, bytes))
       throw new Error(`Material SLL inválido: ${material.fileName}`);
     const current = await storage().get(material.storageKey);
-    if (current) {
-      if (
-        createHash('sha256').update(current).digest('hex') !==
-        createHash('sha256').update(bytes).digest('hex')
-      )
-        throw new Error(`Material SLL diferente no bucket: ${material.fileName}`);
-    } else await storage().put(material.storageKey, bytes, material.contentType);
+    if (!current) {
+      await storage().put(material.storageKey, bytes, material.contentType);
+      continue;
+    }
+    if (
+      createHash('sha256').update(current).digest('hex') !==
+      createHash('sha256').update(bytes).digest('hex')
+    )
+      throw new Error(`Material SLL diferente no bucket: ${material.fileName}`);
   }
 }

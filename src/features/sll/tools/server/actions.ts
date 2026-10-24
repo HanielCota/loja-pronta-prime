@@ -5,6 +5,25 @@ import { suggestPrice, simulateDiscount, advertisingLimits } from '../calculatio
 import { readCalculatorInput, type CalculatorKind } from '../form-input';
 import type { CalculatorResult, CalculatorState } from '../state';
 
+// Cada calculadora usa só os campos dela; o erro de cálculo sobe pra mensagem da tela.
+function calculatorResult(
+  kind: CalculatorKind,
+  input: ReturnType<typeof readCalculatorInput>,
+): CalculatorResult {
+  if (kind === 'price') return { kind, sale: suggestPrice(input.costs, input.marginBps) };
+  if (kind === 'discount')
+    return {
+      kind,
+      simulation: simulateDiscount(
+        input.priceCents,
+        input.discountBps,
+        input.couponCents,
+        input.costs,
+      ),
+    };
+  return { kind, limits: advertisingLimits(input.priceCents, input.costs, input.marginBps) };
+}
+
 async function calculate(kind: CalculatorKind, form: FormData): Promise<CalculatorState> {
   await requireProductAction('sll');
   const input = readCalculatorInput(form, kind);
@@ -12,20 +31,7 @@ async function calculate(kind: CalculatorKind, form: FormData): Promise<Calculat
   if (Object.keys(input.errors).length)
     return { ...state, message: 'Confira os campos indicados.' };
   try {
-    let result: CalculatorResult;
-    if (kind === 'price') result = { kind, sale: suggestPrice(input.costs, input.marginBps) };
-    else if (kind === 'discount')
-      result = {
-        kind,
-        simulation: simulateDiscount(
-          input.priceCents,
-          input.discountBps,
-          input.couponCents,
-          input.costs,
-        ),
-      };
-    else
-      result = { kind, limits: advertisingLimits(input.priceCents, input.costs, input.marginBps) };
+    const result = calculatorResult(kind, input);
     return { ...state, result };
   } catch (error) {
     return {

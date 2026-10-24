@@ -34,8 +34,11 @@ export async function downloadPublicFile(
         const chunks: Buffer[] = [];
         response.on('data', (chunk: Buffer) => {
           size += chunk.length;
-          if (size > limit) req.destroy(new Error('Arquivo remoto grande demais.'));
-          else chunks.push(chunk);
+          if (size > limit) {
+            req.destroy(new Error('Arquivo remoto grande demais.'));
+            return;
+          }
+          chunks.push(chunk);
         });
         response.once('error', reject);
         response.once('end', () =>
