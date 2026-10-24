@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { ArrowRightIcon, CircleAlertIcon, CircleHelpIcon, StoreIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { panelCard } from '@/features/member/components/area-shell';
-import { SllAreaShell } from '@/features/sll/sll-area-shell';
+import { SllPage } from '@/features/sll/sll-area-shell';
 import { getSllStoreOverview } from '@/features/sll/server/store-overview';
 import { requireProduct } from '@/features/products/server/access';
 import { getShopeeConfiguration } from '@/features/shopee/server/client';
@@ -33,8 +33,7 @@ export default async function SllStoresPage() {
   const hasLoadFailure = overview.connected.status === 'failure' || connectionFailed;
 
   return (
-    <SllAreaShell
-      account={session.user}
+    <SllPage
       hasChoice={products.length > 1}
       title="Minhas Lojas"
       intro="Veja o que já existe na sua conta e o que ainda está em preparação."
@@ -199,6 +198,6 @@ export default async function SllStoresPage() {
           ))}
         </ul>
       </section>
-    </SllAreaShell>
+    </SllPage>
   );
 }

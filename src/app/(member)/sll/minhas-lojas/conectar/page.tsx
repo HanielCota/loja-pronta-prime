@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { panelCard } from '@/features/member/components/area-shell';
-import { SllAreaShell } from '@/features/sll/sll-area-shell';
+import { SllPage } from '@/features/sll/sll-area-shell';
 import { requireProduct } from '@/features/products/server/access';
 import { SHOPEE_SELLER_URL } from '@/config/shopee';
 import { canUseShopee, SHOPEE_RESULT_MESSAGES } from '@/features/shopee/authorization';
@@ -30,11 +30,9 @@ export default async function SllConnectPage({
   const message =
     result && Object.hasOwn(SHOPEE_RESULT_MESSAGES, result) ? SHOPEE_RESULT_MESSAGES[result] : null;
   return (
-    <SllAreaShell
-      account={session.user}
+    <SllPage
       hasChoice={products.length > 1}
       title="Conecte sua loja"
-      currentSection="/sll/minhas-lojas"
       backLink={{ href: '/sll/minhas-lojas', label: 'Voltar para minhas lojas' }}
     >
       <section className={panelCard} aria-labelledby="seller-registration">
@@ -64,11 +62,7 @@ export default async function SllConnectPage({
             ? `A loja ${status.shopId} está autorizada${config?.SHOPEE_ENVIRONMENT === 'sandbox' ? ' no ambiente de testes' : ''}. Essa conexão é compartilhada com a Loja Pronta quando você tem os dois produtos.`
             : 'A autorização acontece no site da Shopee. Sua senha fica com você. Você confere as permissões e pode revogar o acesso na Central do Vendedor.'}
         </p>
-        {message ? (
-          <output className="text-body">
-            {message}
-          </output>
-        ) : null}
+        {message ? <output className="text-body">{message}</output> : null}
         {enabled && !status.connected ? (
           config?.SHOPEE_CALLBACK_MODE === 'manual' ? (
             <ManualConnectionForm origin="sll" />
@@ -98,6 +92,6 @@ export default async function SllConnectPage({
           <Link href="/sll/plano">Ir para meu plano</Link>
         </Button>
       </section>
-    </SllAreaShell>
+    </SllPage>
   );
 }

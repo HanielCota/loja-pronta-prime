@@ -65,6 +65,21 @@ export async function requireStudent(path: string) {
   return { session, ...(await getStudentProducts(session.user.id)) };
 }
 
+/**
+ * A mesma conferência de `requireProduct`, sem redirecionar nem registrar a visita: a moldura da
+ * área (o `layout.tsx`) só precisa saber se pode se desenhar. Quem decide pra onde mandar quem
+ * não pode entrar continua sendo a guarda da página, que conhece o endereço de volta do login.
+ */
+export async function readProductAccess(product: ProductId) {
+  const state = await getSessionState();
+  if (state.status !== 'active') return null;
+  const { session } = state;
+  if (needsFirstPassword(session.user)) return null;
+  const { products } = await getStudentProducts(session.user.id);
+  if (!products.includes(product)) return null;
+  return { session, products };
+}
+
 /** De quanto em quanto tempo a visita a uma área é gravada de novo. */
 const VISIT_INTERVAL_MS = 10 * 60 * 1000;
 
