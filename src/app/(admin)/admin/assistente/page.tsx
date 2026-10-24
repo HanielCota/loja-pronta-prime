@@ -272,7 +272,9 @@ export default async function AssistantAdminPage({
                           ? 'A configuração da integração precisa ser concluída.'
                           : job.failure === 'connection-changed'
                             ? 'A loja conectada mudou. Confira antes de continuar.'
-                            : 'Confira a conexão e os dados antes de tentar novamente.'}
+                            : job.failure === 'interrupted'
+                              ? 'A rotina parou no meio porque o servidor reiniciou. Confira antes de tentar de novo.'
+                              : 'Confira a conexão e os dados antes de tentar novamente.'}
                   </p>
                 ) : null}
                 {job.status === 'blocked' ? (
