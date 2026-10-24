@@ -195,6 +195,35 @@ describe('entrada e destinos das ferramentas', () => {
     form.set('policy', 'javascript:');
     expect(readCalculatorInput(form, 'price').errors.policy).toBeDefined();
   });
+  test('diz o teto quando o valor passa do máximo', () => {
+    const form = new FormData();
+    form.set('policy', 'custom');
+    form.set('commission', '100');
+    form.set('fixed', '0');
+    form.set('product', '1000000,00');
+    form.set('margin', '99,99');
+    expect(readCalculatorInput(form, 'price').errors).toEqual({});
+    form.set('commission', '100,01');
+    form.set('product', '1000000,01');
+    form.set('margin', '100');
+    const { errors } = readCalculatorInput(form, 'price');
+    expect(errors.commission).toBe('Use no máximo 100%.');
+    expect(errors.product).toBe('Use no máximo R$ 1.000.000,00.');
+    expect(errors.margin).toBe('Use um percentual menor que 100%.');
+    form.set('product', '0');
+    expect(readCalculatorInput(form, 'price').errors.product).toContain('maior que zero');
+  });
+  test('avisa quando o preço necessário passaria do máximo', () => {
+    const free: FeePolicy = { mode: 'custom', commissionBps: 0, fixedCents: 0 };
+    const base = { ...costs, policy: free, taxBps: 0, extraFeeBps: 0 };
+    expect(() => suggestPrice({ ...base, productCents: 100_000_000 }, 2000)).toThrow(
+      'passaria de R$ 1.000.000,00',
+    );
+    expect(suggestPrice({ ...base, productCents: 79_999_800 }, 2000).priceCents).toBe(100_000_000);
+    expect(() => suggestPrice({ ...base, productCents: 79_999_801 }, 2000)).toThrow(
+      'passaria de R$ 1.000.000,00',
+    );
+  });
   test('os guias levam a aulas reais e não mudam destinos de parceiros ou recursos em breve', () => {
     const content = initialSllContent();
     const slugs = new Set(

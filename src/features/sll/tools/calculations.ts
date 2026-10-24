@@ -77,6 +77,7 @@ export function suggestPrice(costs: SaleCosts, targetMarginBps: number): SaleRes
   if (!Number.isInteger(targetMarginBps) || targetMarginBps < 0 || targetMarginBps >= 10_000)
     throw new Error('A margem desejada deve ficar entre 0% e 99,99%.');
   let best: SaleResult | undefined;
+  let aboveMaximum = false;
   for (const band of feeBands(costs.policy)) {
     const variableBps =
       band.commissionBps +
@@ -99,10 +100,10 @@ export function suggestPrice(costs: SaleCosts, targetMarginBps: number): SaleRes
     // Estes limites cobrem todo o erro possível (2 centavos nas taxas + 1 na margem).
     const start = Math.max(band.min, Math.ceil(((fixed - 2) * 10_000) / available));
     // Se o preço estimado ficou abaixo da faixa, o primeiro preço dela ainda pode atingir a margem.
-    const end = Math.min(
-      band.max,
-      Math.max(band.min, Math.ceil(((fixed + 3) * 10_000) / available)),
-    );
+    const estimatedEnd = Math.max(band.min, Math.ceil(((fixed + 3) * 10_000) / available));
+    const end = Math.min(band.max, estimatedEnd);
+    // A busca para no teto: sem preço achado, o necessário ficou acima de R$ 1.000.000,00.
+    if (band.max === MAX_PRICE_CENTS && estimatedEnd > band.max) aboveMaximum = true;
     for (let price = start; price <= end; price++) {
       if (enough(price)) {
         const candidate = calculateSale(price, costs);
@@ -111,6 +112,10 @@ export function suggestPrice(costs: SaleCosts, targetMarginBps: number): SaleRes
       }
     }
   }
+  if (!best && aboveMaximum)
+    throw new Error(
+      'Com esses custos e percentuais, o preço passaria de R$ 1.000.000,00. Confira os valores ou reduza a margem.',
+    );
   if (!best)
     throw new Error(
       'Com esses custos e percentuais, não há preço que alcance a margem desejada. Confira as taxas ou reduza a margem.',
