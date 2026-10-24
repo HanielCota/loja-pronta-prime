@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { AreaShell } from '@/features/member/components/area-shell';
+import { AreaPage } from '@/features/member/components/area-shell';
 import { requireProduct } from '@/features/products/server/access';
 import { LegacyStoreDetail } from '@/features/legacy-stores/components/store-detail';
 import { getLegacyStoreForUser } from '@/features/legacy-stores/server/queries';
@@ -26,8 +26,7 @@ export default async function PreviousStorePage({
   const data = await getLegacyStoreForUser(session.user.id, id, page);
   if (!data || (page > 1 && (page - 1) * 30 >= data.total)) notFound();
   return (
-    <AreaShell
-      account={session.user}
+    <AreaPage
       hasChoice={products.length > 1}
       area="loja-pronta"
       crumb="Loja anterior"
@@ -48,6 +47,6 @@ export default async function PreviousStorePage({
         page={page}
         basePath={basePath}
       />
-    </AreaShell>
+    </AreaPage>
   );
 }

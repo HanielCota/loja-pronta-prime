@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
-import { AreaShell, panelCard } from '@/features/member/components/area-shell';
+import { AreaPage, panelCard } from '@/features/member/components/area-shell';
 import { requireProduct } from '@/features/products/server/access';
 import { availableSupplierProducts } from '@/features/assistant/server/catalog';
 import { publicationOverview } from '@/features/assistant/server/operations';
@@ -54,8 +54,7 @@ export default async function StoreProductsPage({
   const maySelect = !initial || initial.status === 'evaluated';
   const result = getParam(params.resultado);
   return (
-    <AreaShell
-      account={session.user}
+    <AreaPage
       hasChoice={products.length > 1}
       area="loja-pronta"
       crumb="Produtos"
@@ -340,6 +339,6 @@ export default async function StoreProductsPage({
       <Button asChild variant="soft">
         <Link href="/loja-pronta">Voltar para minha loja</Link>
       </Button>
-    </AreaShell>
+    </AreaPage>
   );
 }

@@ -10,7 +10,7 @@ import { PRODUCTS } from '@/features/products/catalog';
 import { requireProduct } from '@/features/products/server/access';
 import { listLegacyStoresForUser } from '@/features/legacy-stores/server/queries';
 import { LegacyStoreHistory } from '@/features/legacy-stores/components/store-history';
-import { AreaShell, panelCard } from '@/features/member/components/area-shell';
+import { AreaPage, panelCard } from '@/features/member/components/area-shell';
 import { CONVERSATION_PATH } from '@/features/loja-pronta/steps';
 
 export const metadata: Metadata = {
@@ -27,8 +27,7 @@ export default async function Page() {
   ]);
   if (previousStores.length && phase === 1 && conversation === 'nao-comecou') {
     return (
-      <AreaShell
-        account={session.user}
+      <AreaPage
         hasChoice={products.length > 1}
         area="loja-pronta"
         crumb="Loja Pronta"
@@ -54,7 +53,7 @@ export default async function Page() {
           </Button>
         </section>
         <LegacyStoreHistory stores={previousStores} basePath="/loja-pronta/previous-stores" />
-      </AreaShell>
+      </AreaPage>
     );
   }
   return (

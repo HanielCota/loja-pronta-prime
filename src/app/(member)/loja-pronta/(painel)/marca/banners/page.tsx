@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Select } from '@/components/ui/select';
-import { AreaShell, panelCard } from '@/features/member/components/area-shell';
+import { AreaPage, panelCard } from '@/features/member/components/area-shell';
 import { requireProduct } from '@/features/products/server/access';
 import { getBrand } from '@/features/brand/server/brand-store';
 import { brandFingerprint } from '@/features/brand/server/fingerprint';
@@ -39,8 +39,7 @@ export default async function BannerKitPage({
         ? 'A marca ou o kit mudou. Confira a versão atual e tente novamente.'
         : null;
   return (
-    <AreaShell
-      account={session.user}
+    <AreaPage
       hasChoice={products.length > 1}
       area="loja-pronta"
       crumb="Banners"
@@ -194,6 +193,6 @@ export default async function BannerKitPage({
       <Button asChild variant="ghost">
         <Link href="/loja-pronta">Voltar pra minha loja</Link>
       </Button>
-    </AreaShell>
+    </AreaPage>
   );
 }
