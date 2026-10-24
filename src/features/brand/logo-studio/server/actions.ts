@@ -153,17 +153,20 @@ export async function uploadLogo(form: FormData): Promise<StudioResult> {
   if (file.size > MAX_UPLOAD_BYTES) {
     return { studio: view(studio), error: 'Essa imagem é grande demais. Tente outra.' };
   }
-  const png = await normalizeUploadedLogo(new Uint8Array(await file.arrayBuffer()));
-  if (!png) {
-    return {
-      studio: view(studio),
-      error: 'Não consegui abrir essa imagem. Mande uma foto ou imagem (PNG ou JPG).',
-    };
-  }
+  // A vaga vem antes de abrir a imagem: abrir até 40 megapixels custa CPU, e quem já usou todas
+  // as vagas podia mandar imagens sem parar só pra serem abertas e recusadas.
   if (!(await reserveUpload(userId, MAX_UPLOADS))) {
     return {
       studio: view(studio),
       error: 'Você já mandou muitas imagens. Escolha uma das que estão aqui.',
+    };
+  }
+  const png = await normalizeUploadedLogo(new Uint8Array(await file.arrayBuffer()));
+  if (!png) {
+    await releaseUpload(userId);
+    return {
+      studio: view(studio),
+      error: 'Não consegui abrir essa imagem. Mande uma foto ou imagem (PNG ou JPG).',
     };
   }
   let key: string;
