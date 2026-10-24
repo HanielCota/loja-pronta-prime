@@ -7,6 +7,17 @@ const identifier = z
   .max(200)
   .refine((value) => !hasControlCharacters(value));
 
+/**
+ * Campo opcional que a Hotmart pode mandar como `null` em vez de omitir. Recusar o aviso inteiro
+ * por isso faria a Hotmart reenviar pra sempre e um reembolso nunca seria aplicado. Então `null`
+ * vira ausente, e o processamento já sabe agir sem o campo.
+ */
+const absentWhenNull = <Schema extends z.ZodType>(schema: Schema) =>
+  schema
+    .nullish()
+    .transform((value) => value ?? undefined)
+    .optional();
+
 const purchaseEvent = z.object({
   id: identifier,
   event: z
@@ -17,27 +28,34 @@ const purchaseEvent = z.object({
   creation_date: z.number().int().positive().max(253_402_300_799_999),
   version: z.string().startsWith('2.').max(20),
   data: z.object({
-    product: z.object({ ucode: identifier, id: z.number().int().positive().safe().optional() }),
+    product: z.object({
+      ucode: identifier,
+      id: absentWhenNull(z.number().int().positive().safe()),
+    }),
     buyer: z.object({
-      email: z.email().max(254),
+      // Espaço colado no checkout não pode recusar a compra: corta antes de validar.
+      email: z.string().trim().pipe(z.email().max(254)),
       // O nome vem do que a compradora digitou no checkout: uma quebra de linha colada ali não
       // pode recusar o aviso (a Hotmart reenviaria pra sempre e ela ficaria sem acesso). Então
       // ele é limpo, não recusado: controles viram espaço e o excesso é cortado. O teto bruto
       // continua barrando corpo gigante.
-      name: z.string().max(2000).transform(cleanBuyerName).optional(),
+      name: absentWhenNull(z.string().max(2000).transform(cleanBuyerName)),
     }),
     purchase: z.object({
       transaction: identifier,
-      order_date: z
-        .union([
-          z.number(),
-          z
-            .string()
-            .regex(/^\d{1,15}$/)
-            .transform(Number),
-        ])
-        .pipe(z.number().int().positive().max(253_402_300_799_999))
-        .optional(),
+      // Sem data, a compra não libera acesso (fica registrada para nova tentativa), mas um
+      // reembolso continua valendo. Texto vazio segue recusado: Number('') daria 0.
+      order_date: absentWhenNull(
+        z
+          .union([
+            z.number(),
+            z
+              .string()
+              .regex(/^\d{1,15}$/)
+              .transform(Number),
+          ])
+          .pipe(z.number().int().positive().max(253_402_300_799_999)),
+      ),
     }),
   }),
 });
