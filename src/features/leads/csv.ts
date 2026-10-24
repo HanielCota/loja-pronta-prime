@@ -12,6 +12,12 @@ export const CSV_HEADERS = [
   'motivo_perda',
 ] as const;
 export const MAX_IMPORT_ROWS = 1000;
+/**
+ * Colunas por linha. O modelo tem 9; uma planilha do Excel com colunas a mais ainda cabe. Sem
+ * teto, uma linha de 2 MB de ";" virava 2 milhões de células, e todas iam pra mensagem de erro.
+ */
+export const MAX_IMPORT_COLUMNS = 50;
+const tooManyColumns = `A planilha tem mais de ${MAX_IMPORT_COLUMNS} colunas. Use o modelo do painel.`;
 
 /** Aceita CSV do Excel (; ou ,), aspas escapadas e notas com quebra de linha. */
 export function parseCsv(content: string): string[][] {
@@ -40,6 +46,7 @@ export function parseCsv(content: string): string[][] {
       quoted = true;
     } else if (char === delimiter || char === '\n' || char === '\r') {
       row.push(cell);
+      if (row.length > MAX_IMPORT_COLUMNS) throw new Error(tooManyColumns);
       cell = '';
       closed = false;
       if (char !== delimiter) {
@@ -56,6 +63,7 @@ export function parseCsv(content: string): string[][] {
   }
   if (quoted) throw new Error('Faltou fechar as aspas na planilha.');
   row.push(cell);
+  if (row.length > MAX_IMPORT_COLUMNS) throw new Error(tooManyColumns);
   if (row.some((value) => value.trim())) rows.push(row);
   return rows;
 }
@@ -74,7 +82,9 @@ export function readLeadCsv(content: string): { leads: LeadInput[]; errors: stri
     (name) => !CSV_HEADERS.includes(name as (typeof CSV_HEADERS)[number]),
   );
   if (unknown.length)
-    throw new Error(`Colunas não reconhecidas: ${unknown.join(', ')}. Use o modelo do painel.`);
+    throw new Error(
+      `Colunas não reconhecidas: ${unknown.slice(0, 5).join(', ')}${unknown.length > 5 ? ` e mais ${unknown.length - 5}` : ''}. Use o modelo do painel.`,
+    );
   const leads: LeadInput[] = [],
     errors: string[] = [];
   rows.forEach((row, index) => {
