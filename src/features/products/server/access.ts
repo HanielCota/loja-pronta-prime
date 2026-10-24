@@ -19,6 +19,8 @@ type StudentProducts = {
   products: ProductId[];
   /** Quando ela abriu cada área pela primeira vez (as que nunca abriu ficam de fora). */
   firstVisits: Partial<Record<ProductId, Date>>;
+  /** A última visita gravada de cada área (pra não regravar a cada página). */
+  lastVisits: Partial<Record<ProductId, Date>>;
   /** A área que ela abriu por último, se já abriu alguma. */
   lastArea?: ProductId | undefined;
 };
@@ -40,6 +42,9 @@ export const getStudentProducts = cache(async (userId: string): Promise<StudentP
     products: PRODUCT_IDS.filter((id) => rows.some((row) => row.product === id)),
     firstVisits: Object.fromEntries(
       rows.flatMap((row) => (row.firstVisitedAt ? [[row.product, row.firstVisitedAt]] : [])),
+    ),
+    lastVisits: Object.fromEntries(
+      rows.flatMap((row) => (row.lastVisitedAt ? [[row.product, row.lastVisitedAt]] : [])),
     ),
     lastArea: latest?.product,
   };
@@ -96,7 +101,10 @@ export async function requireProduct(product: ProductId, path: string = PRODUCTS
   if (!student.products.includes(product)) redirect('/');
 
   const userId = student.session.user.id;
-  recordProductVisit(userId, product);
+  // A visita já lida há menos de 10 minutos não seria regravada: nem vai ao banco.
+  const lastVisitedAt = student.lastVisits[product];
+  if (!lastVisitedAt || Date.now() - lastVisitedAt.getTime() >= VISIT_INTERVAL_MS)
+    recordProductVisit(userId, product);
   const firstVisitedAt = student.firstVisits[product];
   const firstVisit = !firstVisitedAt || firstVisitedAt >= student.session.session.createdAt;
   return { ...student, firstVisit };
