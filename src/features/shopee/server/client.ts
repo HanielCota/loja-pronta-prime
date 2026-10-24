@@ -6,9 +6,26 @@ import {
   type ShopeeConfiguration,
 } from '../authorization';
 
+let reportedIncompleteConfiguration = false;
+
 export function getShopeeConfiguration() {
   const configured = shopeeConfigurationSchema.safeParse(process.env);
-  return configured.success ? configured.data : null;
+  if (configured.success) return configured.data;
+  // Desligada é normal; ligada e incompleta é erro de configuração que precisa aparecer no log,
+  // e não só virar "em breve" na tela. Só os nomes: os valores são segredos.
+  if (process.env.SHOPEE_ENABLED === 'true' && !reportedIncompleteConfiguration) {
+    reportedIncompleteConfiguration = true;
+    const invalid = configured.error.issues.map((issue) => issue.path.join('.')).join(', ');
+    console.error(`[shopee] SHOPEE_ENABLED=true, mas a configuração está incompleta: ${invalid}`);
+  }
+  return null;
+}
+
+/** Só etapa e motivo conhecido: mensagens externas podem conter códigos e tokens. */
+export function reportShopeeFailure(stage: 'authorize' | 'refresh', error: unknown) {
+  const reason = error instanceof ShopeeApiError ? error.reason : 'unexpected';
+  const kind = error instanceof Error ? error.name : typeof error;
+  console.error(`[shopee] ${stage} falhou: ${reason} (${kind})`);
 }
 
 const tokenResponse = z.object({
