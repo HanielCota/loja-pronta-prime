@@ -48,6 +48,7 @@ export default async function AdminProductAccessPage() {
                   {new Intl.DateTimeFormat('pt-BR', {
                     dateStyle: 'medium',
                     timeStyle: 'short',
+                    timeZone: 'America/Sao_Paulo',
                   }).format(event.createdAt)}
                 </p>
               </li>

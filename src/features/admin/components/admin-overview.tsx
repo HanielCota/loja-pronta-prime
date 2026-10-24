@@ -40,7 +40,9 @@ export type AdminOverviewData = {
 };
 
 // Dia, mês e hora: nas listas curtas, o ano ocuparia o espaço do nome e do email.
+// Fuso fixo: o mesmo texto no servidor (UTC) e no navegador, sempre na hora do Brasil.
 const dateFormat = new Intl.DateTimeFormat('pt-BR', {
+  timeZone: 'America/Sao_Paulo',
   day: '2-digit',
   month: '2-digit',
   hour: '2-digit',

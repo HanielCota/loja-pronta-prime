@@ -15,7 +15,11 @@ import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Contas · Administração' };
 
-const dateFormat = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' });
+// Hora do Brasil: o servidor roda em UTC e uma conta criada às 22h aparecia no dia seguinte.
+const dateFormat = new Intl.DateTimeFormat('pt-BR', {
+  dateStyle: 'short',
+  timeZone: 'America/Sao_Paulo',
+});
 
 const pageLinkClass =
   'inline-flex min-h-11 items-center text-body text-link outline-none hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';

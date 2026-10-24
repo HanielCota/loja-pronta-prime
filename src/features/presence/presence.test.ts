@@ -64,6 +64,24 @@ describe('formatLastSeen e isOnline', () => {
     expect(formatLastSeen(ago(3 * 3_600_000), now)).toBe('Há 3 h');
   });
 
+  test('passa de minutos pra horas e de horas pra data nas bordas exatas', () => {
+    expect(formatLastSeen(ago(59_499), now)).toBe('Agora');
+    expect(formatLastSeen(ago(60_000), now)).toBe('Há 1 min');
+    expect(formatLastSeen(ago(3_599_000), now)).toBe('Há 59 min');
+    expect(formatLastSeen(ago(3_600_000), now)).toBe('Há 1 h');
+    expect(formatLastSeen(ago(24 * 3_600_000 - 1000), now)).toBe('Há 23 h');
+    // Um aviso do futuro (relógio adiantado) não vira tempo negativo.
+    expect(formatLastSeen(new Date(now.getTime() + 60_000), now)).toBe('Agora');
+  });
+
+  test('a data mostra a hora do Brasil, não a do servidor', () => {
+    // 01:30 UTC do dia 8 ainda é 22:30 do dia 7 em São Paulo.
+    const late = new Date('2026-10-08T01:30:00Z');
+    const text = formatLastSeen(late, new Date('2026-10-10T12:00:00Z'));
+    expect(text).toContain('07/10/2026');
+    expect(text).toContain('22:30');
+  });
+
   test('online só dentro da janela', () => {
     expect(isOnline(ago(ONLINE_WINDOW_MS), now)).toBe(true);
     expect(isOnline(ago(ONLINE_WINDOW_MS + 1), now)).toBe(false);
