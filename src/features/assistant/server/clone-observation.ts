@@ -8,6 +8,10 @@ import {
 } from '@/server/db/schema';
 import { listingCloneSchema } from '../store-changes';
 
+// Só o anúncio de origem importa aqui. Um pedido antigo cujo modelo completo não passa mais na
+// validação atual não pode travar a coleta inteira (e, com ela, a reavaliação dos lotes).
+const cloneSourceSchema = listingCloneSchema.pick({ item_id: true });
+
 /** O primeiro retrato completo com os dois anúncios vira a base do experimento. */
 export async function startReadyCloneExperiments(userId: string, runId: string) {
   await db.transaction(async (tx) => {
@@ -44,7 +48,12 @@ export async function startReadyCloneExperiments(userId: string, runId: string) 
       );
     for (const clone of clones) {
       if (!clone.result) continue;
-      const sourceId = listingCloneSchema.parse(clone.payload).item_id;
+      const parsedSource = cloneSourceSchema.safeParse(clone.payload);
+      if (!parsedSource.success) {
+        console.error(`[assistant] Pedido de cópia ${clone.id} sem anúncio de origem válido.`);
+        continue;
+      }
+      const sourceId = parsedSource.data.item_id;
       const source = snapshots.find((row) => row.itemId === sourceId);
       const created = snapshots.find((row) => row.itemId === clone.result!.itemId);
       if (!source?.categoryId || !created?.categoryId || source.categoryId === created.categoryId)
