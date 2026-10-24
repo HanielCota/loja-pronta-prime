@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { ArrowRight, BookOpen, CircleCheck, CirclePlay, LockKeyhole } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { panelCard } from '@/features/member/components/area-shell';
-import { SllAreaShell } from '@/features/sll/sll-area-shell';
+import { SllPage } from '@/features/sll/sll-area-shell';
 import { getFirstSllPublishedTrack } from '@/features/sll/server/catalog';
 import { requireProduct } from '@/features/products/server/access';
 import { getSllCopy } from '@/features/sll/server/copy';
@@ -15,15 +15,14 @@ export const metadata: Metadata = { title: 'Método SLL' };
 
 /** Resumo das três etapas, com avanço em sequência conforme o progresso salvo. */
 export default async function MethodPage() {
-  const [{ session, products }, track, copy] = await Promise.all([
+  const [{ products }, track, copy] = await Promise.all([
     requireProduct('sll'),
     getFirstSllPublishedTrack('method'),
     getSllCopy(),
   ]);
 
   return (
-    <SllAreaShell
-      account={session.user}
+    <SllPage
       hasChoice={products.length > 1}
       title={track?.title ?? 'Método SLL'}
       intro={
@@ -124,6 +123,6 @@ export default async function MethodPage() {
           </p>
         </section>
       )}
-    </SllAreaShell>
+    </SllPage>
   );
 }

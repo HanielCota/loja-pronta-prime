@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { ArrowUpRight, Calculator, Lightbulb, Store, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { panelCard } from '@/features/member/components/area-shell';
-import { SllAreaShell } from '@/features/sll/sll-area-shell';
+import { SllPage } from '@/features/sll/sll-area-shell';
 import { getSllPublishedResources } from '@/features/sll/server/catalog';
 import { getSllCopy } from '@/features/sll/server/copy';
 import { requireProduct } from '@/features/products/server/access';
@@ -20,7 +20,7 @@ const ICONS = {
 } as const;
 
 export default async function SllResourcesPage() {
-  const [{ session, products }, resources, copy] = await Promise.all([
+  const [{ products }, resources, copy] = await Promise.all([
     requireProduct('sll'),
     getSllPublishedResources(),
     getSllCopy(),
@@ -38,8 +38,7 @@ export default async function SllResourcesPage() {
   groups.sort((left, right) => groupOrder.indexOf(left.key) - groupOrder.indexOf(right.key));
 
   return (
-    <SllAreaShell
-      account={session.user}
+    <SllPage
       hasChoice={products.length > 1}
       title={copy.resourcesTitle}
       intro={copy.resourcesIntro}
@@ -129,6 +128,6 @@ export default async function SllResourcesPage() {
           </section>
         ) : null}
       </div>
-    </SllAreaShell>
+    </SllPage>
   );
 }
