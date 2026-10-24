@@ -587,14 +587,22 @@ export async function evaluatePublicationBatch(userId: string, batchId: string, 
       ),
     )
     .orderBy(asc(shopeeCollectionRuns.startedAt));
+  // Só os cinco anúncios do lote: a loja inteira em cada coleta vira centenas de milhares de
+  // linhas na memória depois de algumas semanas.
   const snapshots = runs.length
     ? await db
         .select()
         .from(shopeeMetricSnapshots)
         .where(
-          inArray(
-            shopeeMetricSnapshots.runId,
-            runs.map((run) => run.id),
+          and(
+            inArray(
+              shopeeMetricSnapshots.runId,
+              runs.map((run) => run.id),
+            ),
+            inArray(
+              shopeeMetricSnapshots.itemId,
+              items.flatMap((item) => (item.itemId ? [item.itemId] : [])),
+            ),
           ),
         )
     : [];

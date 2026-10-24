@@ -1,4 +1,4 @@
-import { and, eq, inArray } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { cache } from 'react';
 import { getPublishedSllTrack } from './published-track';
 import { requireProduct } from '@/features/products/server/access';
@@ -10,12 +10,33 @@ import {
   summarizeTrackProgress,
 } from '../progress-rules';
 
+/**
+ * Todo o progresso da aluna numa leitura por tabela (no máximo uma linha por aula ou trilha).
+ * A lista de cursos montava uma trilha por vez, com duas consultas cada, ao mesmo tempo no pool.
+ */
+const readStudentProgress = cache(async (userId: string) => {
+  const [lessons, tracks] = await Promise.all([
+    db.query.learningLessonProgress.findMany({
+      columns: { lessonId: true, lastPositionSeconds: true, completedAt: true, lastViewedAt: true },
+      where: eq(learningLessonProgress.userId, userId),
+    }),
+    db.query.learningTrackProgress.findMany({
+      columns: { trackId: true, currentLessonId: true, lastAccessedAt: true },
+      where: eq(learningTrackProgress.userId, userId),
+    }),
+  ]);
+  return { lessons, tracks };
+});
+
 /** Carrega só aulas publicadas da trilha que a aluna pode acessar. */
 // Só nesta renderização: deduplica consultas sem compartilhar progresso entre alunas.
 export const getSllTrackProgress = cache(async (trackId: string) => {
   const { session } = await requireProduct('sll');
   if (!isProgressId(trackId)) return null;
-  const track = await getPublishedSllTrack(trackId);
+  const [track, progress] = await Promise.all([
+    getPublishedSllTrack(trackId),
+    readStudentProgress(session.user.id),
+  ]);
   if (!track) return null;
 
   const lessons = track.stages.flatMap((stage) =>
@@ -29,30 +50,9 @@ export const getSllTrackProgress = cache(async (trackId: string) => {
       })),
     ),
   );
-  const lessonIds = lessons.map((lesson) => lesson.id);
-  const [saved, trackProgress] = await Promise.all([
-    lessonIds.length
-      ? db.query.learningLessonProgress.findMany({
-          columns: {
-            lessonId: true,
-            lastPositionSeconds: true,
-            completedAt: true,
-            lastViewedAt: true,
-          },
-          where: and(
-            eq(learningLessonProgress.userId, session.user.id),
-            inArray(learningLessonProgress.lessonId, lessonIds),
-          ),
-        })
-      : Promise.resolve([]),
-    db.query.learningTrackProgress.findFirst({
-      columns: { currentLessonId: true, lastAccessedAt: true },
-      where: and(
-        eq(learningTrackProgress.userId, session.user.id),
-        eq(learningTrackProgress.trackId, track.id),
-      ),
-    }),
-  ]);
+  const lessonIds = new Set(lessons.map((lesson) => lesson.id));
+  const saved = progress.lessons.filter((row) => lessonIds.has(row.lessonId));
+  const trackProgress = progress.tracks.find((row) => row.trackId === track.id);
   const summary = summarizeTrackProgress(lessons, saved, trackProgress?.currentLessonId ?? null);
   const progressByLesson = new Map(summary.lessons.map((item) => [item.lessonId, item]));
   const completedLessonIds = new Set(
