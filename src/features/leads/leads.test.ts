@@ -3,6 +3,8 @@ import { csvCell, parseCsv, readLeadCsv, writeCsv } from './csv';
 import {
   EMPTY_LEAD,
   leadSchema,
+  NEXT_CONTACT_MAX,
+  NEXT_CONTACT_MIN,
   leadTags,
   leadRecord,
   parseLeadFilters,
@@ -38,12 +40,24 @@ describe('cadastro de leads', () => {
       false,
     );
   });
+  test('aceita o próximo contato nas bordas da faixa', () => {
+    for (const nextContact of ['', NEXT_CONTACT_MIN, '2024-02-29', NEXT_CONTACT_MAX])
+      expect(
+        leadSchema.safeParse({ ...EMPTY_LEAD, name: 'Ana', email: 'ana@example.com', nextContact })
+          .success,
+      ).toBe(true);
+  });
   test('recusa etapas, produtos, datas e números inválidos', () => {
     for (const invalid of [
       { stage: 'fake' },
       { product: 'fake' },
       { nextContact: '2026-02-30' },
       { nextContact: '08/10/2026' },
+      { nextContact: '0000-01-01' },
+      { nextContact: '1999-12-31' },
+      { nextContact: '2101-01-01' },
+      { nextContact: '9999-12-31' },
+      { nextContact: '+02026-10-08' },
       { phone: '123' },
     ])
       expect(

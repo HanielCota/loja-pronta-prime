@@ -19,6 +19,14 @@ export const interestLabels: Record<(typeof LEAD_PRODUCTS)[number], string> = {
   both: 'Os dois',
 };
 
+/**
+ * Faixa aceita pro próximo contato. "0000-01-01" passava pela conferência do JavaScript mas o
+ * Postgres recusa o ano zero: a gravação falhava com erro genérico e, na importação, derrubava a
+ * planilha inteira. Comparar texto funciona porque o formato é sempre AAAA-MM-DD.
+ */
+export const NEXT_CONTACT_MIN = '2000-01-01';
+export const NEXT_CONTACT_MAX = '2100-12-31';
+
 export const leadSchema = z
   .object({
     name: z.string().trim().min(2, 'Escreva o nome com pelo menos 2 letras.').max(120),
@@ -47,6 +55,8 @@ export const leadSchema = z
         (value) =>
           !value ||
           (/^\d{4}-\d{2}-\d{2}$/.test(value) &&
+            value >= NEXT_CONTACT_MIN &&
+            value <= NEXT_CONTACT_MAX &&
             !Number.isNaN(Date.parse(value)) &&
             new Date(value).toISOString().slice(0, 10) === value),
         'Escolha uma data válida.',
