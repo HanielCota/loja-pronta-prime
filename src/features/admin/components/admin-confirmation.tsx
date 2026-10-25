@@ -44,7 +44,7 @@ export function useAdminConfirmation() {
             event.preventDefault();
             triggerRef.current?.focus();
           }}
-          className="fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-y-auto overscroll-contain rounded-card bg-card p-6 text-foreground shadow-card forced-colors:border forced-colors:border-[CanvasText]"
+          className="fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-y-auto overscroll-contain rounded-card border border-border bg-card p-6 text-foreground shadow-card forced-colors:border forced-colors:border-[CanvasText]"
         >
           <AlertDialog.Title className="text-title font-semibold text-balance break-words">
             {confirmation?.title}

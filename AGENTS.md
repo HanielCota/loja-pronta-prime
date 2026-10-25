@@ -11,8 +11,9 @@ better-auth, Bun. Arquivos no bucket S3; imagem do logo pela OpenAI.
 O visual está decidido e documentado em **`docs/DESIGN.md`**. Leia antes de mexer em qualquer
 tela. Em resumo, o que nunca muda sem pedido explícito do dono:
 
-- Estilo Apple: fundo `#f5f5f7`, cartões brancos `rounded-card` (28px) com `shadow-card`, um roxo
-  só (`#452e9a`, roxo mais claro no escuro) pra ação, tema escuro em grafite (não preto).
+- Estilo Apple: fundo `#f5f5f7`, cartões brancos `rounded-card` (28px) sem sombra (separados do
+  fundo só pelo tom), um roxo só (`#5538b4`, `#7960d2` no escuro, com tons ajustados por lugar) pra ação, tema escuro em
+  grafite (não preto).
 - Cor **só pelos tokens** do `src/app/globals.css` (`bg-card`, `text-muted-foreground`,
   `bg-primary`...). Nada de `#hex`, `bg-white`, `text-gray-500` ou `bg-[#...]` na interface.
 - Fonte Manrope (Inconsolata só pra código). Corpo 17px (`text-body`), nada abaixo de 16px.

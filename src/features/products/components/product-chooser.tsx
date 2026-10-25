@@ -73,7 +73,7 @@ export function ProductChooser({ products, lastArea, status, primary }: ProductC
             <span
               aria-hidden="true"
               className={cn(
-                'inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border border-transparent bg-primary text-body font-semibold text-primary-foreground transition-colors duration-100 group-hover/product:bg-primary-hover forced-colors:border-[LinkText]',
+                'inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border border-transparent bg-primary text-body font-semibold text-primary-foreground transition-[background-color,box-shadow] duration-100 group-hover/product:bg-primary-hover group-hover/product:shadow-halo forced-colors:border-[LinkText]',
                 product === 'sll' ? 'mt-10' : 'mt-auto',
               )}
             >

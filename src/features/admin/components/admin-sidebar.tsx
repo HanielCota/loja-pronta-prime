@@ -114,7 +114,7 @@ function NavLinks({
             className={cn(
               'flex min-h-11 items-center gap-3 rounded-2xl px-3 py-2 text-body text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-safe:transition-colors motion-safe:duration-150',
               current === section
-                ? 'bg-primary-soft font-semibold text-link hover:bg-primary/15'
+                ? 'bg-muted font-semibold text-foreground [&>svg]:text-link'
                 : 'hover:bg-muted',
             )}
             href={href}

@@ -53,7 +53,7 @@ export function AdminShell({
       <div className="min-h-dvh lg:grid lg:grid-cols-[18rem_minmax(0,1fr)]">
         <aside
           aria-label="Navegação da administração"
-          className="hidden lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:gap-6 lg:border-r lg:border-border lg:bg-card lg:px-4 lg:pt-5 lg:pb-4 forced-colors:border-[CanvasText]"
+          className="hidden lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:gap-6 lg:border-r lg:border-border lg:bg-sidebar lg:px-4 lg:pt-5 lg:pb-4 forced-colors:border-[CanvasText]"
         >
           <div className="flex items-center justify-between gap-2">
             <BrandLink className="ml-1" />

@@ -90,7 +90,7 @@ export function AccountMenu({
           align={inSidebar ? 'start' : 'end'}
           sideOffset={8}
           collisionPadding={16}
-          className="z-50 w-72 max-w-[calc(100vw-2rem)] origin-(--radix-dropdown-menu-content-transform-origin) rounded-2xl bg-card p-1.5 shadow-card outline-none data-[state=closed]:animate-out data-[state=closed]:duration-150 data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:duration-200 data-[state=open]:ease-fluid data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 motion-reduce:data-[state=closed]:zoom-out-100 motion-reduce:data-[state=open]:zoom-in-100 forced-colors:border forced-colors:border-[CanvasText]"
+          className="z-50 w-72 max-w-[calc(100vw-2rem)] origin-(--radix-dropdown-menu-content-transform-origin) rounded-2xl border border-border bg-card p-1.5 shadow-card outline-none data-[state=closed]:animate-out data-[state=closed]:duration-150 data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:duration-200 data-[state=open]:ease-fluid data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 motion-reduce:data-[state=closed]:zoom-out-100 motion-reduce:data-[state=open]:zoom-in-100 forced-colors:border forced-colors:border-[CanvasText]"
         >
           {/* Quem está logada: confirma a conta antes de mexer nela (útil em computador dividido). */}
           <div className="flex items-center gap-3 px-3 pt-2 pb-3">

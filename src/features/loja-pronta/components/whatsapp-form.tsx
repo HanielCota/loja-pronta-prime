@@ -168,7 +168,7 @@ export function WhatsappForm({ helpId, initial }: { helpId: string; initial: str
       <FieldError id={errorId}>{error}</FieldError>
 
       {complete ? (
-        <p className="mt-2 rounded-2xl bg-card px-4 py-3 text-center text-body text-pretty shadow-sm">
+        <p className="mt-2 rounded-2xl bg-card px-4 py-3 text-center text-body text-pretty">
           Confira seu número: <strong className="font-semibold whitespace-nowrap">{value}</strong>
         </p>
       ) : null}

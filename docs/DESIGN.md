@@ -9,36 +9,46 @@ quem está implementando. O teste `src/design-guard.test.ts` falha se os pontos 
 ## A direção: estilo Apple
 
 Inspirado no iCloud e no Apple ID: fundo cinza bem claro, cartões brancos com cantos grandes e
-sombra difusa, um roxo só pra ação, muito espaço em branco, letra grande. Calmo e simples, porque
+sem sombra, um roxo só pra ação, muito espaço em branco, letra grande. Calmo e simples, porque
 o público é muito iniciante (muitas alunas mal usam o computador).
 
 ## Cores: só pelos tokens
 
 As cores ficam em `src/app/globals.css` (claro em `:root`, escuro em `.dark`) e viram classes do
-Tailwind. **Nunca** use cor solta (`#452e9a`, `bg-white`, `text-gray-500`, `bg-[#...]`): ela quebra
+Tailwind. **Nunca** use cor solta (`#5538b4`, `bg-white`, `text-gray-500`, `bg-[#...]`): ela quebra
 o tema escuro e o alto contraste.
 
 | Classe                                     | Pra quê                                         | Claro              | Escuro                           |
 | ------------------------------------------ | ----------------------------------------------- | ------------------ | -------------------------------- |
-| `bg-background`                            | Fundo da página                                 | `#f5f5f7`          | `#1f1f22` (grafite, nunca preto) |
-| `bg-card`                                  | Cartões                                         | `#ffffff`          | `#2a2a2e`                        |
+| `bg-sidebar`                               | Menu lateral (um degrau abaixo do fundo)        | `#ececef`          | `#161618`                        |
+| `bg-background`                            | Fundo da página                                 | `#f5f5f7`          | `#1c1c1f` (grafite, nunca preto) |
+| `bg-card`                                  | Cartões                                         | `#ffffff`          | `#242428`                        |
+| `bg-muted`                                 | Realce: item ativo do menu, etiquetas, hover    | `#f5f5f7`          | `#2c2c31`                        |
 | `text-foreground`                          | Texto principal                                 | `#1d1d1f`          | `#f5f5f7`                        |
 | `text-muted-foreground`                    | Texto de apoio                                  | `#515155`          | `#aeaeb2`                        |
-| `bg-primary` / `text-primary-foreground`   | O botão principal                               | `#452e9a` / branco | `#8061ce` / branco               |
-| `bg-primary-soft`                          | Botão secundário, opção escolhida, avisos leves | `#f0edfb`          | `#382b58`                        |
-| `text-link`                                | Links e ações de texto                          | `#452e9a`          | `#c5b4ff`                        |
-| `bg-muted`                                 | Realce, hover                                   | `#f5f5f7`          | `#36363b`                        |
+| `bg-primary` / `text-primary-foreground`   | O botão principal                               | `#5538b4` / branco | `#7960d2` / branco               |
+| `bg-primary-soft`                          | Botão secundário, opção escolhida, avisos leves | `#efecfb`          | `#352a5c`                        |
+| `text-link`                                | Links e ações de texto                          | `#452e9a`          | `#b7a3ff`                        |
 | `text-destructive` / `bg-destructive-soft` | Erros                                           | `#d70015`          | `#ff8077`                        |
 | `bg-progress` / `text-progress-text`       | Progresso, feito, "Sugestão"                    | verde              | verde                            |
 | `border-border` / `border-input`           | Linhas / borda de campo                         |                    |                                  |
-| `outline-ring`                             | Anel de foco                                    | `#452e9a`          | `#baa9ff`                        |
+| `outline-ring`                             | Anel de foco                                    | `#452e9a`          | `#b7a3ff`                        |
 | `bg-segment` / `bg-segment-thumb`          | Controle segmentado (abas tipo iOS)             |                    |                                  |
 
-- **Um roxo só**, pra ação. Nada de gradiente ou segunda cor de destaque.
-- Em 8 de outubro de 2026, a cor de ação foi ajustada para o roxo dos botões da referência
-  enviada pelo dono (`#452e9a`), na Loja Pronta e no SLL. No tema escuro, o roxo é mais claro
-  para separar a ação do cartão com pelo menos 3:1 e manter o texto branco com pelo menos 4,5:1.
-  O fundo claro, os cartões, as letras e as molduras continuam no padrão Apple.
+- **Escada de tons**: menu (`bg-sidebar`) < fundo (`bg-background`) < cartão (`bg-card`) < realce
+  (`bg-muted`). As camadas se separam pelo tom, nunca por sombra.
+- **Um roxo só**, pra ação, e só no que pede atenção: o botão do próximo passo (cheio), os botões
+  secundários (contornados), links, foco e o ícone do item ativo do menu. Estrutura (menu ativo, etiquetas, números de passo) fica neutra.
+  Nada de gradiente ou segunda cor de destaque.
+- Em 25 de outubro de 2026, o dono tirou as sombras dos cartões e trocou o roxo por um azul; no
+  mesmo dia, voltou ao roxo, adaptado como o azul: um matiz só (253°, o do roxo antigo
+  `#452e9a`), com o tom ajustado em cada lugar pra manter o contraste. No claro, o botão é um passo
+  mais vivo (`#5538b4`) e o `#452e9a` fica no hover, nos links e no foco. No escuro, o botão clareia
+  (`#7960d2`, pelo menos 3:1 no cartão e 4,5:1 com o texto branco); no hover ele escurece e acende
+  um halo (`shadow-halo`, token `--primary-halo`), porque clarear tiraria o contraste do texto.
+- Escada do roxo: botão `#5538b4` / `#7960d2`, hover `#452e9a` / `#6a50cc` + halo, fundo leve
+  `#efecfb` / `#352a5c`, link e foco `#452e9a` / `#b7a3ff`, link com mais contraste `#35207c` /
+  `#d7ccff`.
 - Todo contraste confere WCAG AA nos dois temas (os comentários do `globals.css` dizem os valores).
   Cor nova só com contraste conferido, e entra como token nos dois temas.
 - Exceções com motivo (desenhos, não a interface): o mascote, as amostras de cor, o rascunho do
@@ -50,7 +60,7 @@ o tema escuro e o alto contraste.
   outra fonte de interface. As letras da marca (`src/features/brand/fonts.ts`) são só pro nome da
   loja e pro logo.
 - Tamanhos do tema: `text-body` (17px, o texto normal), `text-sm` (16px, o **menor** permitido:
-  dicas, erros, rótulos), `text-title` / `text-title-lg` / `text-title-xl` (títulos, com tracking
+  dicas, erros, rótulos), `text-heading` (22px, título de cartão compacto) / `text-title` / `text-title-lg` / `text-title-xl` (títulos, com tracking
   negativo). Nada abaixo de 16px na tela (exceção: etiquetas `text-xs` em maiúsculas, decorativas).
 - **Normal** é o padrão e o menor tamanho do texto: Perfil só oferece aumentar (Grande, Maior), e
   nenhuma tela reduz o texto por conta própria.
@@ -59,23 +69,25 @@ o tema escuro e o alto contraste.
 ## Forma
 
 - Cartões: `rounded-card` (28px) + `bg-card` + `shadow-card`, e
-  `forced-colors:border forced-colors:border-[CanvasText]` (no alto contraste, a sombra some).
+  `forced-colors:border forced-colors:border-[CanvasText]` (no alto contraste, o contorno aparece).
   Use `panelCard` (`features/member/components/area-shell.tsx`) quando servir.
 - Botões, chips e controles segmentados: `rounded-full`.
 - Peças dentro de cartões (miniaturas, opções grandes): `rounded-2xl` / `rounded-3xl`.
 - Campos: `rounded-field` (12px), com rótulo flutuante (`FloatingLabelInput`).
-- Sombra: só `shadow-card`. Nada de `shadow-lg` ou sombras inventadas.
-- No tema escuro, `shadow-card` é uma sombra curta (`0 8px 24px -12px`, preto a 18%) pra não
-  fazer halo escuro no grafite. O contorno fino separa os cartões; em "Mais contraste" o
-  contorno fica mais forte, com a mesma sombra suave.
+- **Sem sombra nos cartões.** `shadow-card` vale `none` nos dois temas: o cartão se separa do
+  fundo só pelo tom. Nada de `shadow-sm`, `shadow-lg`, halo ou sombra inventada em cartão.
+  Em "Mais contraste", `shadow-card` vira um contorno fino de 1px (sem desfoque), por
+  acessibilidade.
+- Menus suspensos e janelas por cima do conteúdo (menu da conta, confirmação) usam
+  `border border-border` pra não sumir sobre um cartão do mesmo tom.
 
 ## Componentes que já existem (use, não recrie)
 
 - O piloto Bling em `/admin/bling` usa `AdminShell`, `panelCard` e `Button`, como a tela Hotmart.
   Sem configuração, mostra “Conexão em breve”; a consulta só mostra dados reais da API.
 
-- `Button` (`components/ui/button.tsx`): `default` (roxo, a ação principal), `soft` (roxo claro,
-  secundária), `ghost`, `link`. Tamanhos `default` (altura mínima 48px, largura toda), `inline`,
+- `Button` (`components/ui/button.tsx`): `default` (roxo, a ação principal, com halo no hover do escuro), `soft` (roxo
+  contornado: fio roxo e fundo `bg-primary-soft`, a secundária), `ghost`, `link`. Tamanhos `default` (altura mínima 48px, largura toda), `inline`,
   `icon`. Tem `loading` com texto ("Salvando…").
 - `FloatingLabelInput`, `PasswordInput`, `Field`/`FieldError`, `Switch`, `Avatar`, `Spinner`,
   `LiveRegion` (`components/ui`).
@@ -170,7 +182,21 @@ o tema escuro e o alto contraste.
   segmentado de rádios), **Reduzir animações** e **Mais contraste** (chaves). Valem na hora, só no
   aparelho, e viram atributos no `<html>` (`data-text`, `data-motion`, `data-contrast`) que um
   script do head põe antes da página aparecer. O tamanho muda a base do `rem`, então use `rem`
-  (as classes do Tailwind), não `px`, pra o que deve crescer junto.
+  (as classes do Tailwind), não `px`, pra o que deve crescer junto. Quando algo está fora do
+  padrão, a última linha da Aparência é "Voltar ao padrão" (tema claro, texto normal, chaves
+  desligadas); ela some quando o foco sai dela, nunca com o foco dentro.
+- Perfil, por prioridade (a ordem da conta Apple e do Google: aviso, o que ela tem, os dados dela,
+  segurança, preferências, ajuda, sair): **Precisa da sua atenção** (só quando uma área acaba em
+  30 dias ou menos, com "Ajuda" levando ao suporte), **Seus acessos**, Sua conta, Segurança,
+  **Aparelhos conectados**, Aparência, **Precisa de ajuda?** e o sair. Aparelhos conectados lista as sessões abertas (tipo, sistema e
+  navegador, "Entrou em" e "Este aparelho" em verde), sem as do "entrar como" do admin; com mais
+  de uma, a última linha é "Sair dos outros aparelhos" (formulário de verdade, em `text-link`). Seus
+  acessos termina em "Compras e recibos", que abre a área de quem compra na Hotmart. Seus acessos lista cada área dela com a data final da compra ("Até 22/10/2027"); a 30 dias
+  ou menos vira "Acaba em X dias", em `text-warning` com ícone de relógio (não só a cor). Liberação
+  manual diz "Liberado, sem data pra acabar"; sem data conhecida, só "Liberado", nunca uma data
+  inventada. Ajuda tem o WhatsApp (só se configurado), o email do suporte e a Política de
+  Privacidade. As linhas que levam pra outro lugar usam o mesmo desenho das que abrem formulário,
+  com a ação escrita à direita ("Abrir", "Escrever", "Ler").
 
 ## Padrões de tela
 
@@ -236,7 +262,19 @@ o tema escuro e o alto contraste.
   “Voltar às aulas”. O teclado tem o atalho “Pular para o conteúdo”, exclusivo do SLL.
 - A busca da Biblioteca ignora acentos e maiúsculas, oferece contagem e limpeza e mantém a
   busca confirmada no endereço. O formulário GET também funciona sem JavaScript.
-- No painel, o caminho de aprendizagem aparece antes do aviso de lojas. Em Recursos, os cartões
+- No painel, o próximo passo vem num cartão grande (“Seu caminho no curso”): título do passo,
+  uma frase, o progresso real das boas-vindas e o único botão roxo da tela (Começar, Continuar,
+  Ver o método). Ao lado (embaixo no celular), “Também no seu caminho” lista os outros passos.
+  Abaixo, “Sua loja” mostra a loja numa linha (nome, etapa da montagem e se a Shopee está
+  conectada) e “Ferramentas mais usadas” traz até quatro atalhos publicados, com “Ver todas”.
+- Listas agrupadas (`SllGroupedList`/`SllListRow`): a linha inteira é o link, com ícone, nome,
+  uma frase e seta (pra fora quando abre outra aba); sem endereço, “Em breve”. Recursos mostra
+  as ferramentas assim, por categoria, sem botão por item. Minhas Lojas mostra um cartão da loja
+  com “O que falta” (montar, conectar) e um botão roxo só, o do primeiro passo que falta.
+- O laranja da Shopee (`bg-shopee`) só aparece no quadradinho que representa a plataforma,
+  com ícone branco; nunca em botão, texto ou fundo de cartão. A mesma regra vale pras próximas
+  plataformas em Minhas Lojas: TikTok Shop (`bg-tiktok`, nota branca) e Mercado Livre
+  (`bg-mercadolivre`, com o emblema oficial do site deles), com o desenho oficial de cada marca. Em Recursos, os cartões
   usam sua altura natural; links externos anunciam a abertura em outra aba.
 - Cursos complementares têm destaque amplo e biblioteca em cartões com contagem e progresso
   individuais. Sem o arquivo da capa, aparece um aviso neutro compacto “Capa em breve”, sem imagem
@@ -354,11 +392,11 @@ o tema escuro e o alto contraste.
 
 ### Já foram testados e recusados (não proponha de novo)
 
-- Tela de entrada dividida (painel azul da marca ao lado do formulário).
+- Tela de entrada dividida (painel colorido da marca ao lado do formulário).
 - Cartão de duas colunas no login (mascote e título à esquerda, formulário à direita).
 - Mascote "encostado" na borda do cartão. O mascote fica dentro do cartão, centralizado no topo.
 - Fundo bege da paleta antiga do "Escala Shop". A marca é Loja Pronta Prime; o roxo de ação
-  autorizado em 8 de outubro de 2026 usa as superfícies do padrão Apple.
+  (25 de outubro de 2026) usa as superfícies do padrão Apple.
 - Preto puro no tema escuro (o escuro é grafite).
 
 ## Acessibilidade (obrigatória, não opcional)
@@ -398,6 +436,23 @@ checkbox e confirmação explícita antes da fila de publicação. Dados ausente
 preparação e publicação incerta aparecem com texto próprio. Admin usa `AdminShell`, cartões,
 campos existentes e detalhes expansíveis para roteiros e prévia de variantes. Nenhuma nova
 linguagem visual, fonte ou cor foi introduzida.
+
+### Meu plano mais objetivo (25/10/2026)
+
+Aprovado pelo dono no canvas de design. Menos cartões e menos texto à vista:
+
+- O conteúdo da compra ("Seu conteúdo com Pri") é uma etiqueta ao lado do título (`headerAside`
+  do `SllAreaShell`), com "Trocar" num `details` quando a conta tem mais de um.
+- A pergunta "Há quanto tempo sua loja está aberta?" é o passo 1, com as respostas em caixas
+  (rádio de verdade dentro; a escolhida ganha contorno e check). O passo 2 (o caminho) fica
+  sempre à vista, sem nada marcado: a aluna escolhe. Loja com 7 dias ou mais ignora o caminho.
+- Explicações longas ficam no tooltip de um ícone (i) ou da etiqueta, com o texto também pra
+  leitor de tela (`sr-only`).
+- O plano é uma lista de dias em `details`, com o próximo dia aberto e barra de progresso.
+- Os dados da loja mostram uma etiqueta de situação e uma tabela de anúncios; a loja com 7 dias
+  ou mais tem as prioridades no mesmo cartão do próximo passo.
+- Cartões com `text-heading`, padding de 24px e 20px entre eles; entrada suave
+  (`motion-safe:animate-in`), sem movimento com movimento reduzido.
 
 ### Owner-managed online visibility (October 21, 2026)
 

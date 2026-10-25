@@ -13,10 +13,12 @@ const buttonVariants = cva(
     variants: {
       variant: {
         // Alto contraste do Windows: o fundo some, a borda (da cor de botão do sistema) fica.
+        // O halo do hover só tem cor no tema escuro, onde o roxo escurece com o mouse em cima.
         default:
-          'rounded-full bg-primary text-body font-semibold text-primary-foreground transition-[background-color,transform] duration-100 ease-out hover:bg-primary-hover active:scale-[0.97] motion-reduce:active:scale-100 forced-colors:border-2 forced-colors:border-[ButtonText]',
-        /** Ação secundária ao lado (ou no lugar) da principal: mesmo formato, fundo azul claro. */
-        soft: 'rounded-full bg-primary-soft text-body font-semibold text-link transition-[background-color,transform] duration-100 ease-out hover:bg-primary/15 active:scale-[0.97] motion-reduce:active:scale-100 forced-colors:border-2 forced-colors:border-[ButtonText]',
+          'rounded-full bg-primary text-body font-semibold text-primary-foreground transition-[background-color,box-shadow,transform] duration-100 ease-out hover:bg-primary-hover hover:shadow-halo active:scale-[0.97] motion-reduce:active:scale-100 forced-colors:border-2 forced-colors:border-[ButtonText]',
+        /** Ação secundária ao lado (ou no lugar) da principal: mesmo formato, roxo contornado (fio e
+         * fundo roxo bem leves), pra chamar a atenção sem competir com o botão principal. */
+        soft: 'rounded-full border border-primary/55 bg-primary-soft text-body font-semibold text-link transition-[background-color,border-color,transform] duration-100 ease-out hover:border-primary hover:bg-primary/14 active:scale-[0.97] motion-reduce:active:scale-100 forced-colors:border-2 forced-colors:border-[ButtonText]',
         ghost:
           'rounded-full text-muted-foreground transition-[background-color,color,opacity] duration-100 hover:bg-muted hover:text-foreground active:opacity-60',
         link: 'rounded-md font-medium text-link underline-offset-4 transition-opacity duration-100 hover:underline active:opacity-60',
