@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Download, BookOpen } from 'lucide-react';
+import { BookOpen, ChevronDown, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { requireProduct } from '@/features/products/server/access';
 import { panelCard } from '@/features/member/components/area-shell';
@@ -21,6 +21,9 @@ export default async function MaterialsPage() {
   ]);
   if (!resources.some((resource) => resource.slug === 'materiais-sll' && resource.destination))
     notFound();
+  // Os que ainda não saíram ficam juntos no fim: a lista principal só tem o que dá pra usar.
+  const ready = materials.filter((material) => !material.pending);
+  const upcoming = materials.filter((material) => material.pending);
   return (
     <SllAreaShell
       account={session.user}
@@ -43,7 +46,8 @@ export default async function MaterialsPage() {
                 <Button asChild variant="soft">
                   <a href={`/api/sll/ferramentas/material/${material.slug}`}>
                     <Download aria-hidden="true" />
-                    Baixar {material.fileName.endsWith('.pdf') ? 'guia em PDF' : 'planilha XLSX'}
+                    Baixar{' '}
+                    {material.fileName.endsWith('.pdf') ? 'guia em PDF' : 'planilha do Excel'}
                   </a>
                 </Button>
               </li>
@@ -55,15 +59,13 @@ export default async function MaterialsPage() {
             Materiais das aulas
           </h2>
           <ul className="grid items-start gap-4 md:grid-cols-2">
-            {materials.map((material) => (
+            {ready.map((material) => (
               <li className={cn(panelCard, 'gap-3')} key={material.id}>
                 <h3 className="text-xl font-semibold text-foreground">{material.title}</h3>
                 <p className="text-body text-muted-foreground">
                   {material.type} · {material.lessonTitle}
                 </p>
-                {material.pending ? (
-                  <p className="text-body text-muted-foreground">Material em breve.</p>
-                ) : material.lockMessage ? (
+                {material.lockMessage ? (
                   <p className="text-body text-muted-foreground">{material.lockMessage}</p>
                 ) : null}
                 {material.destination ? (
@@ -85,6 +87,32 @@ export default async function MaterialsPage() {
               </li>
             ))}
           </ul>
+          {upcoming.length ? (
+            <details className={cn(panelCard, 'group gap-3 p-5 sm:p-6')}>
+              <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 rounded-2xl text-body font-semibold text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+                <span className="flex-1">
+                  Mais {upcoming.length}{' '}
+                  {upcoming.length === 1 ? 'material chegando' : 'materiais chegando'}
+                </span>
+                <ChevronDown
+                  aria-hidden="true"
+                  className="size-5 shrink-0 text-muted-foreground group-open:rotate-180 motion-safe:transition-transform"
+                />
+              </summary>
+              <ul className="flex flex-col divide-y divide-border">
+                {upcoming.map((material) => (
+                  <li key={material.id} className="flex flex-col gap-0.5 py-3">
+                    <span className="text-body font-semibold text-foreground">
+                      {material.title}
+                    </span>
+                    <span className="text-body text-muted-foreground">
+                      Da aula {material.lessonTitle}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ) : null}
           {!materials.length ? (
             <p className="text-body text-muted-foreground">
               Os materiais das aulas serão mostrados aqui quando estiverem disponíveis.

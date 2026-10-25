@@ -310,6 +310,25 @@ export async function getShopeeStatus(userId: string, config: ShopeeConfiguratio
   }
 }
 
+/**
+ * Só consulta se existe conexão ativa: sem trava e sem refresh do token. Telas de leitura usam
+ * esta; renovar o token numa visita poderia desconectar a loja se a Shopee falhar naquela hora.
+ */
+export async function hasShopeeConnection(userId: string, config: ShopeeConfiguration) {
+  const [stored] = await db
+    .select({ id: shopeeConnections.userId })
+    .from(shopeeConnections)
+    .where(
+      and(
+        eq(shopeeConnections.userId, userId),
+        isNull(shopeeConnections.revokedAt),
+        eq(shopeeConnections.applicationId, shopeeApplicationId(config)),
+      ),
+    )
+    .limit(1);
+  return Boolean(stored);
+}
+
 /** A remoção local não revoga autorizações de outros sistemas que usam o mesmo aplicativo. */
 export async function removeShopeeConnection(userId: string) {
   await locked(userId, undefined, (connection) =>

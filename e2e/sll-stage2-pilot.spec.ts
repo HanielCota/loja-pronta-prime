@@ -114,7 +114,10 @@ test('a entrada do plano funciona sem JavaScript', async ({ browser }) => {
   try {
     await signIn(page, email, PASSWORD, `/sll/metodo/etapa/${stageTwoId}`);
     await page.getByRole('link', { name: 'Abrir meu plano', exact: true }).click();
-    await page.getByRole('radio', { name: 'Menos de 7 dias', exact: true }).check();
+    await page
+      .getByRole('radio', { name: 'Ainda não abri ou abri há menos de 7 dias', exact: true })
+      .check();
+    await page.getByRole('radio', { name: /^Orgânico/ }).check();
     await page.getByRole('button', { name: 'Organizar meu plano' }).click();
     await expect(page.getByRole('heading', { name: 'Sete dias · Orgânico' })).toBeVisible();
     await page.goto(`/sll/metodo/etapa/${stageTwoId}`);
@@ -133,7 +136,10 @@ test('entrada do plano e conclusão do Dia 1 persistem', async ({ page }) => {
   await expect(page.getByRole('radio', { name: 'Exatamente 7 dias', exact: true })).toBeVisible();
   await expectNoA11yViolations(page);
 
-  await page.getByRole('radio', { name: 'Menos de 7 dias', exact: true }).check();
+  await page
+    .getByRole('radio', { name: 'Ainda não abri ou abri há menos de 7 dias', exact: true })
+    .check();
+  await page.getByRole('radio', { name: /^Orgânico/ }).check();
   await page.getByRole('button', { name: 'Organizar meu plano' }).click();
   await expect(page.getByRole('heading', { name: 'Sete dias · Orgânico' })).toBeVisible();
   await page.goto(`/sll/metodo/etapa/${stageTwoId}`);

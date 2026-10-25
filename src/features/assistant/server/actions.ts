@@ -30,21 +30,25 @@ import { assertAssistantAccess } from './metrics';
 
 export async function startAssistantPlan(form: FormData): Promise<void> {
   const { userId } = await requireProductAction('sll');
-  const parsed = planContextSchema.safeParse({
-    storeAge: form.get('storeAge'),
-    strategy: form.get('strategy'),
-  });
-  if (!parsed.success) redirect('/sll/plano?resultado=invalid');
-  if (planNeedsHistory(parsed.data.storeAge)) {
+  const storeAge = planContextSchema.shape.storeAge.safeParse(form.get('storeAge'));
+  if (!storeAge.success) redirect('/sll/plano?resultado=invalid');
+  // Loja com sete dias ou mais não escolhe caminho: a tela nem mostra essa pergunta.
+  if (planNeedsHistory(storeAge.data)) {
     await db
       .insert(sllPlanIntake)
-      .values({ userId, storeAge: parsed.data.storeAge })
+      .values({ userId, storeAge: storeAge.data })
       .onConflictDoUpdate({
         target: sllPlanIntake.userId,
-        set: { storeAge: parsed.data.storeAge, updatedAt: new Date() },
+        set: { storeAge: storeAge.data, updatedAt: new Date() },
       });
     redirect('/sll/plano?resultado=history');
   }
+  // O caminho não vem marcado: a aluna precisa escolher.
+  const parsed = planContextSchema.safeParse({
+    storeAge: storeAge.data,
+    strategy: form.get('strategy'),
+  });
+  if (!parsed.success) redirect('/sll/plano?resultado=invalid');
   const plan = await createAssistantPlan(userId, parsed.data);
   revalidatePath('/sll/plano');
   redirect(`/sll/plano?resultado=${plan ? 'started' : 'preparing'}`);

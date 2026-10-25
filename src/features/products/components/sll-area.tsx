@@ -1,8 +1,11 @@
 import { greetingName } from '../names';
 import { SllAreaShell } from '@/features/sll/sll-area-shell';
-import { SllCourseCard, SllNextPathCard, SllStoreStatusCard, SllToolsCard } from './sll-cards';
+import { SllNextStepCard } from './sll-cards';
+import { SllStoreRow, SllToolShortcuts } from './sll-dashboard-shortcuts';
+import type { SllStoreSummary } from '@/features/sll/store-overview';
 import { SllBannerCarousel } from '@/features/sll/components/sll-banner-carousel';
 import type { SllCopy } from '@/features/sll/copy';
+import type { SllWelcomeProgress } from '@/features/sll/dashboard-next-step';
 
 type SllAreaProps = {
   user: { name: string; email: string; preferredName?: string | null | undefined };
@@ -13,6 +16,19 @@ type SllAreaProps = {
   welcomeHref: string | null;
   methodHref: string | null;
   coursesHref: string | null;
+  /** Aulas assistidas das boas-vindas, pra barra do destaque. */
+  welcomeProgress: SllWelcomeProgress | null;
+  /** Montagem e conexão da loja, a mesma leitura de Minhas Lojas. */
+  storeSummary: SllStoreSummary;
+  hasLojaPronta: boolean;
+  /** Ferramentas publicadas, pros atalhos (só as que têm endereço viram link). */
+  resources: Array<{
+    id: string;
+    slug: string;
+    groupKey: string;
+    title: string;
+    href: string | null;
+  }>;
   banners: Array<{
     id: string;
     label: string | null;
@@ -25,7 +41,7 @@ type SllAreaProps = {
   copy: SllCopy;
 };
 
-/** Painel do SLL: primeiro o estudo disponível, depois a situação da Shopee. */
+/** Painel do SLL: o próximo passo em destaque e, abaixo, os atalhos sem disputar com ele. */
 export function SllArea({
   user,
   firstVisit,
@@ -33,6 +49,10 @@ export function SllArea({
   welcomeHref,
   methodHref,
   coursesHref,
+  welcomeProgress,
+  storeSummary,
+  hasLojaPronta,
+  resources,
   banners,
   copy,
 }: SllAreaProps) {
@@ -48,17 +68,15 @@ export function SllArea({
       intro={hasLessons ? copy.dashboardIntro : copy.dashboardEmptyIntro}
       beforeHeader={banners.length ? <SllBannerCarousel banners={banners} /> : undefined}
     >
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <SllCourseCard
-          welcomeHref={welcomeHref}
-          methodHref={methodHref}
-          coursesHref={coursesHref}
-          copy={copy}
-        />
-        <SllToolsCard copy={copy} />
-      </div>
-      <SllStoreStatusCard />
-      <SllNextPathCard hasStoreAccess={hasChoice} />
+      <SllNextStepCard
+        welcomeHref={welcomeHref}
+        methodHref={methodHref}
+        coursesHref={coursesHref}
+        welcomeProgress={welcomeProgress}
+        copy={copy}
+      />
+      <SllStoreRow summary={storeSummary} hasLojaPronta={hasLojaPronta} />
+      <SllToolShortcuts resources={resources} />
     </SllAreaShell>
   );
 }

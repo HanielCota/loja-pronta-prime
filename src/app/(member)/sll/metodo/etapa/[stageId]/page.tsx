@@ -151,7 +151,8 @@ export default async function MethodStagePage({
                   Escolha um roteiro para uma loja nova ou acompanhe os dados de uma loja com
                   histórico. As ações do plano e as aulas guardam seu progresso separadamente.
                 </p>
-                <Button asChild>
+                {/* Com o plano de 7 dias logo abaixo, o roxo fica com o dia da vez. */}
+                <Button asChild variant={planIntake ? 'soft' : 'default'}>
                   <Link href="/sll/plano">Abrir meu plano</Link>
                 </Button>
               </section>

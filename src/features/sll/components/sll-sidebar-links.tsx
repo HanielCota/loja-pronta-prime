@@ -80,7 +80,7 @@ export function SllSidebarLinks({
                 className={cn(
                   itemClass,
                   currentOf(item) &&
-                    'bg-primary-soft font-semibold text-link hover:bg-primary-soft',
+                    'bg-muted font-semibold text-foreground hover:bg-muted [&>svg]:text-link',
                 )}
                 href={item.href}
               >
@@ -104,7 +104,7 @@ export function SllSidebarLinks({
                 className={cn(
                   itemClass,
                   currentOf(item) &&
-                    'bg-primary-soft font-semibold text-link hover:bg-primary-soft',
+                    'bg-muted font-semibold text-foreground hover:bg-muted [&>svg]:text-link',
                 )}
                 href={item.href}
               >
@@ -123,7 +123,7 @@ export function SllSidebarLinks({
                         className={cn(
                           itemClass,
                           currentOf(stage)
-                            ? 'bg-primary-soft font-semibold text-link hover:bg-primary-soft'
+                            ? 'bg-muted font-semibold text-foreground hover:bg-muted [&>svg]:text-link'
                             : 'text-muted-foreground',
                         )}
                         href={stage.href}

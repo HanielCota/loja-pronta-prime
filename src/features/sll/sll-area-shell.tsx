@@ -26,6 +26,8 @@ type SllAreaShellProps = {
   currentSection?: string | undefined;
   /** O caminho de volta, antes do título (etapas, cursos e aulas). */
   backLink?: { href: string; label: string } | undefined;
+  /** Algo pequeno ao lado do título, à direita (a etiqueta do conteúdo, no Meu plano). */
+  headerAside?: ReactNode;
   children: ReactNode;
 };
 
@@ -45,6 +47,7 @@ export function SllAreaShell({
   beforeHeader,
   currentSection,
   backLink,
+  headerAside,
   children,
 }: SllAreaShellProps) {
   const accountName = account.preferredName?.trim() || account.name;
@@ -66,10 +69,15 @@ export function SllAreaShell({
       {!hasChoice && product ? (
         <p className="text-body font-medium text-muted-foreground">{product}</p>
       ) : null}
-      <h1 className="text-title font-semibold text-balance sm:text-title-lg">{title}</h1>
-      {intro ? (
-        <p className="max-w-[60ch] text-body text-pretty text-muted-foreground">{intro}</p>
-      ) : null}
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+        <div className="flex min-w-0 flex-col gap-2">
+          <h1 className="text-title font-semibold text-balance sm:text-title-lg">{title}</h1>
+          {intro ? (
+            <p className="max-w-[60ch] text-body text-pretty text-muted-foreground">{intro}</p>
+          ) : null}
+        </div>
+        {headerAside}
+      </div>
     </div>
   );
 
@@ -86,7 +94,7 @@ export function SllAreaShell({
       <div className="min-h-dvh lg:grid lg:grid-cols-[18rem_minmax(0,1fr)]">
         <aside
           aria-label="Navegação do SLL"
-          className="hidden lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:gap-6 lg:border-r lg:border-border lg:bg-card lg:px-4 lg:pt-5 lg:pb-4 forced-colors:border-[CanvasText]"
+          className="hidden lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:gap-6 lg:border-r lg:border-border lg:bg-sidebar lg:px-4 lg:pt-5 lg:pb-4 forced-colors:border-[CanvasText]"
         >
           <div className="flex items-center justify-between gap-2">
             <BrandLink className="ml-1" />

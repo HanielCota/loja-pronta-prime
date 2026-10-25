@@ -21,7 +21,7 @@ const RESOURCES = [
     groupKey: 'calculadora',
     groupTitle: 'Calculadoras',
     title: 'Calculadora de anúncios',
-    description: 'Calcule o limite de gasto por venda e o ROAS para manter seu lucro.',
+    description: 'Calcule quanto pode gastar em anúncios por venda sem perder seu lucro.',
     buttonLabel: 'Calcular anúncios',
     destination: '/sll/recursos/calculadora-anuncios',
     position: 2,
