@@ -1,12 +1,20 @@
 import type { Metadata } from 'next';
 import { Avatar } from '@/components/ui/avatar';
-import { TEAM_WHATSAPP } from '@/config/support';
+import { SUPPORT_EMAIL, TEAM_WHATSAPP } from '@/config/support';
+import {
+  AccessGroup,
+  AttentionGroup,
+  DevicesGroup,
+  HelpGroup,
+} from '@/features/auth/components/profile-groups';
 import { ProfileSettings } from '@/features/auth/components/profile-forms';
 import { SignOutRow } from '@/features/auth/components/sign-out-button';
+import { getAccountDevices } from '@/features/auth/server/devices';
 import { whatsappLink } from '@/features/loja-pronta/whatsapp';
 import { greetingName } from '@/features/products/names';
 import { AreaShell } from '@/features/member/components/area-shell';
 import { requireStudent } from '@/features/products/server/access';
+import { getAccessValidity } from '@/features/products/server/access-validity';
 
 export const metadata: Metadata = {
   title: 'Seu perfil',
@@ -15,13 +23,19 @@ export const metadata: Metadata = {
 /**
  * Perfil: quem ela é no topo (as iniciais, o nome e o email) e os ajustes embaixo, em listas que
  * abrem o formulário na própria linha. Cada parte salva sozinha: quem só quer trocar o nome não
- * passa pela senha. Uma coluna estreita, no celular e no computador.
+ * passa pela senha. Depois da conta, as áreas dela e até quando valem; depois da senha, os
+ * aparelhos com a conta aberta; no fim, onde pedir ajuda.
+ * Uma coluna estreita, no celular e no computador.
  */
 export default async function ProfilePage() {
-  const { session } = await requireStudent('/perfil');
+  const { session, products } = await requireStudent('/perfil');
   const { user } = session;
   const name = greetingName(user);
   const profileName = user.preferredName?.trim() || user.name;
+  const [validity, devices] = await Promise.all([
+    getAccessValidity(user.id),
+    getAccountDevices(user.id, session.session.id),
+  ]);
 
   return (
     // O voltar sempre aparece: o início leva pra área certa, mesmo de quem tem um produto só.
@@ -43,10 +57,19 @@ export default async function ProfilePage() {
         </div>
       }
     >
+      {/* Antes de tudo, só quando há algo a fazer (o aviso da conta Apple). */}
+      <AttentionGroup products={products} validity={validity.byProduct} now={validity.checkedAt} />
       <ProfileSettings
         name={profileName}
         email={user.email}
         image={user.image}
+        access={
+          <AccessGroup products={products} validity={validity.byProduct} now={validity.checkedAt} />
+        }
+        devices={
+          <DevicesGroup devices={devices} impersonating={Boolean(session.session.impersonatedBy)} />
+        }
+        help={<HelpGroup />}
         emailHelp={
           <>
             Pra trocar o email,{' '}
@@ -61,7 +84,15 @@ export default async function ProfilePage() {
                 <span className="sr-only"> (abre em outra aba)</span>
               </a>
             ) : (
-              'consulte os contatos do produtor na sua compra na Hotmart'
+              <>
+                escreva pro suporte em{' '}
+                <a
+                  href={`mailto:${SUPPORT_EMAIL}`}
+                  className="font-semibold text-link underline underline-offset-4"
+                >
+                  {SUPPORT_EMAIL}
+                </a>
+              </>
             )}
             .
           </>

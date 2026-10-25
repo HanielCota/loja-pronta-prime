@@ -4,8 +4,11 @@
  */
 export const TEAM_WHATSAPP: string = '';
 
+/** Email do suporte, mostrado no perfil ("Precisa de ajuda?" e como trocar o email). */
+export const SUPPORT_EMAIL = 'suporte@lojaprontaprime.com.br';
+
 /** Email de contato sobre dados pessoais (LGPD), mostrado na Política de Privacidade. */
-export const PRIVACY_EMAIL = 'suporte@lojaprontaprime.com.br';
+export const PRIVACY_EMAIL = SUPPORT_EMAIL;
 
 /** Quem cuida dos dados das alunas: a empresa dona da Loja Pronta Prime. */
 export const DATA_CONTROLLER = {

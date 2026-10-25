@@ -1,13 +1,13 @@
 'use server';
 
 import { parseWithZod } from '@conform-to/zod/v4';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull, ne } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { PROFILE_PHOTO_MAX_BYTES } from '@/config/profile-photo';
 import { consumeAttempt } from '@/server/auth/rate-limit';
 import { reportAuthError } from '@/server/auth/report-error';
 import { db } from '@/server/db';
-import { user } from '@/server/db/schema';
+import { session as sessionTable, user } from '@/server/db/schema';
 import { storage } from '@/server/storage';
 import { profilePhotoId, profilePhotoKey, profilePhotoUrl } from '../profile-photo';
 import { changePasswordSchema, profileNameSchema } from '../schemas';
@@ -175,4 +175,38 @@ export async function changePassword(
 
   // Sem os valores de volta: os campos de senha ficam vazios depois de salvar.
   return { submission: submission.reply({ resetForm: true }), saved: true };
+}
+
+/**
+ * Sair dos outros aparelhos (um celular perdido, um computador emprestado): encerra todas as
+ * sessões dela menos esta. Formulário de verdade, funciona sem JavaScript; a lista se atualiza
+ * na volta.
+ */
+export async function signOutOtherDevices(): Promise<void> {
+  let current: Awaited<ReturnType<typeof profileSession>>;
+  try {
+    current = await profileSession();
+  } catch (error) {
+    reportAuthError('leitura da sessão no perfil', error);
+    return;
+  }
+  if (!current) return;
+  // Admin em "entrar como" não derruba os aparelhos da aluna.
+  if (current.session.impersonatedBy) return;
+
+  try {
+    await db
+      .delete(sessionTable)
+      .where(
+        and(
+          eq(sessionTable.userId, current.user.id),
+          ne(sessionTable.id, current.session.id),
+          isNull(sessionTable.impersonatedBy),
+        ),
+      );
+  } catch (error) {
+    reportAuthError('saída dos outros aparelhos no perfil', error);
+    return;
+  }
+  revalidatePath('/perfil');
 }
