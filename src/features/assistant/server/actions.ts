@@ -32,7 +32,7 @@ export async function startAssistantPlan(form: FormData): Promise<void> {
   const { userId } = await requireProductAction('sll');
   const storeAge = planContextSchema.shape.storeAge.safeParse(form.get('storeAge'));
   if (!storeAge.success) redirect('/sll/plano?resultado=invalid');
-  // Loja com sete dias ou mais não escolhe caminho: a tela nem mostra essa pergunta.
+  // Loja com sete dias ou mais começa pela leitura dos dados: o caminho escolhido não é usado.
   if (planNeedsHistory(storeAge.data)) {
     await db
       .insert(sllPlanIntake)
@@ -43,7 +43,7 @@ export async function startAssistantPlan(form: FormData): Promise<void> {
       });
     redirect('/sll/plano?resultado=history');
   }
-  // O caminho não vem marcado: a aluna precisa escolher.
+  // Só a loja nova precisa de um caminho válido.
   const parsed = planContextSchema.safeParse({
     storeAge: storeAge.data,
     strategy: form.get('strategy'),
