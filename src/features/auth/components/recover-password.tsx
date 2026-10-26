@@ -104,7 +104,7 @@ function ResetLinkSent({
       </AuthStatus>
       <div className="flex flex-col gap-4">
         <p className="rounded-2xl bg-muted px-4 py-3 text-center text-sm text-muted-foreground">
-          Se não chegar, procure “Loja Pronta Prime” no spam e na aba Promoções.
+          Se não chegar, procure “Escala Shop” no spam e na aba Promoções.
         </p>
         <Button asChild>
           <Link href={authHref('/entrar', next)} onClick={() => rememberEmail(email)}>

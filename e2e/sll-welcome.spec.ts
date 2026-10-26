@@ -382,7 +382,7 @@ test('matriz visual, teclado, texto maior, contraste e movimento reduzido', asyn
     for (const width of [320, 390, 768, 1024, 1280, 1440]) {
       await page.setViewportSize({ width, height: 960 });
       await expect(
-        page.getByRole('link', { name: 'Loja Pronta Prime', exact: true }),
+        page.getByRole('link', { name: 'Escala Shop', exact: true }),
       ).toBeVisible();
       await expectNoA11yViolations(page);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(

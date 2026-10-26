@@ -3,7 +3,7 @@ import type { ProductId } from '@/config/products';
 type Product = {
   /** Nome curto, pra botões ("Ir pra Loja Pronta"). */
   name: string;
-  /** Nome da aba na barra do topo: o que tem lá, sem repetir a marca "Loja Pronta Prime". */
+  /** Navigation label describing the product without repeating the Escala Shop brand. */
   tab: string;
   /** Nome completo, pra títulos. */
   title: string;

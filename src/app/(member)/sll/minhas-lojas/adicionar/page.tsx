@@ -90,7 +90,7 @@ function PlatformStep() {
             Onde está sua loja?
           </h2>
           <p className="text-body text-pretty text-muted-foreground">
-            Por enquanto, a Loja Pronta Prime trabalha com a Shopee. Escolha essa opção para ver os
+            Por enquanto, o Escala Shop trabalha com a Shopee. Escolha essa opção para ver os
             caminhos disponíveis.
           </p>
         </div>

@@ -34,7 +34,7 @@ describe('entrega dos emails de acesso pela Resend', () => {
     expect(url).toBe('https://api.resend.com/emails');
     expect(options?.signal).toBeInstanceOf(AbortSignal);
     const body = JSON.parse(String(options?.body));
-    expect(body.from).toBe('Loja Pronta Prime <acesso@mail.example.invalid>');
+    expect(body.from).toBe('Escala Shop <acesso@mail.example.invalid>');
     expect(body.to).toEqual([email.to]);
     expect(body.reply_to).toBe('suporte@example.invalid');
     expect(body.text).toContain(email.url);

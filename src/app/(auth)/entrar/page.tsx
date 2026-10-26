@@ -15,7 +15,7 @@ import { getParam, type SearchParams } from '@/lib/search-params';
 export const metadata: Metadata = {
   title: 'Entrar',
   description:
-    'Entre na sua área da Loja Pronta Prime pra aprender a vender na Shopee ou acompanhar a montagem da sua loja.',
+    'Entre na sua área do Escala Shop pra aprender a vender na Shopee ou acompanhar a montagem da sua loja.',
 };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<SearchParams> }) {

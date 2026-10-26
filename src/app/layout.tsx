@@ -22,11 +22,11 @@ const inconsolata = Inconsolata({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Loja Pronta Prime',
-    template: '%s | Loja Pronta Prime',
+    default: 'Escala Shop',
+    template: '%s | Escala Shop',
   },
   description:
-    'Área de membros da Loja Pronta Prime. Aprenda a vender na Shopee ou acompanhe a montagem da sua loja.',
+    'Área de membros do Escala Shop. Aprenda a vender na Shopee ou acompanhe a montagem da sua loja.',
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

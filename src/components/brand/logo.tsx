@@ -21,7 +21,7 @@ export function Logo({ className, expression, compact }: LogoProps) {
         expression={expression}
       />
       {/* Sem o nome na tela; leitores de tela ainda anunciam a marca. */}
-      <span className="sr-only">Loja Pronta Prime</span>
+      <span className="sr-only">Escala Shop</span>
     </div>
   );
 }

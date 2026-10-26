@@ -9,7 +9,7 @@ import { getParam, type SearchParams } from '@/lib/search-params';
 
 export const metadata: Metadata = {
   title: 'Criar senha',
-  description: 'Crie sua senha pra entrar na Loja Pronta Prime.',
+  description: 'Crie sua senha pra entrar no Escala Shop.',
 };
 
 /** Destino do link enviado por email (o Better Auth adiciona `?token=` ou `?error=`). */

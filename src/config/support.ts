@@ -10,7 +10,7 @@ export const SUPPORT_EMAIL = 'suporte@lojaprontaprime.com.br';
 /** Email de contato sobre dados pessoais (LGPD), mostrado na Política de Privacidade. */
 export const PRIVACY_EMAIL = SUPPORT_EMAIL;
 
-/** Quem cuida dos dados das alunas: a empresa dona da Loja Pronta Prime. */
+/** The company responsible for student data and the Escala Shop platform. */
 export const DATA_CONTROLLER = {
   name: 'Mentalidade Sem Limite Ltda (MSL)',
   cnpj: '46.419.797/0001-67',

@@ -226,7 +226,7 @@ export function HelpGroup({ phones }: { phones: SupportPhones }) {
             key={topic.id}
             href={whatsappLink(
               phones[topic.id],
-              `Oi, ${topic.name}! Sou aluna da Loja Pronta Prime e preciso de ajuda com: ${topic.title}.`,
+              `Oi, ${topic.name}! Sou aluna do Escala Shop e preciso de ajuda com: ${topic.title}.`,
             )}
             external
             icon={<MessageCircleIcon />}

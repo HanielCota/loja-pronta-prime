@@ -10,10 +10,10 @@ export function authEmailMessage(kind: AuthEmailKind, url: string) {
 
   return {
     subject: reset
-      ? 'Crie ou troque sua senha — Loja Pronta Prime'
-      : 'Confirme seu email — Loja Pronta Prime',
+      ? 'Crie ou troque sua senha — Escala Shop'
+      : 'Confirme seu email — Escala Shop',
     text: [
-      'Loja Pronta Prime',
+      'Escala Shop',
       reset
         ? 'Abra o link abaixo para criar sua primeira senha ou trocar a senha atual.'
         : 'Abra o link abaixo para confirmar seu email e acessar sua conta.',

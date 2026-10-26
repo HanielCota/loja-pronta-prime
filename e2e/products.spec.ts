@@ -66,7 +66,7 @@ test('com os dois produtos: escolhe uma área e depois a outra', async ({ page, 
     'page',
   );
   // A marca no topo continua levando pra escolha.
-  await page.getByRole('banner').getByRole('link', { name: 'Loja Pronta Prime' }).click();
+  await page.getByRole('banner').getByRole('link', { name: 'Escala Shop' }).click();
   await expect(page.getByRole('heading', { name: /Pra onde vamos/ })).toBeVisible();
   await page.goto('/loja-pronta');
   // Antes de responder, a entrada apresenta as boas-vindas e o plano da loja.
@@ -227,7 +227,7 @@ test('menu da marca mostra a área única e permite voltar à conversa', async (
   await signIn(page, studentEmail('marca'), PASSWORD);
   await expect(page).toHaveURL(/\/loja-pronta$/);
 
-  await page.getByRole('banner').getByRole('link', { name: 'Loja Pronta Prime' }).click();
+  await page.getByRole('banner').getByRole('link', { name: 'Escala Shop' }).click();
   await expect(page).toHaveURL(/\/menu$/);
   await expect(page.getByRole('heading', { name: /Pra onde vamos/ })).toBeVisible();
   await expect(page.getByRole('link', { name: /^(Entrar|Continuar), Loja Pronta$/ })).toBeVisible();

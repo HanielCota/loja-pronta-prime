@@ -1,12 +1,12 @@
 <div align="center">
 
-<img src="docs/assets/mascot/hero.webp" width="168" alt="The Loja Pronta Prime mascot, a blue cloud, cycling through its expressions" />
+<img src="docs/assets/mascot/hero.webp" width="168" alt="Lupita, the Escala Shop mascot" />
 
-# Loja Pronta Prime
+# Escala Shop
 
 **The member area where beginners learn to sell on Shopee, or build their store step by step, with everything prepared for them.**
 
-[lojaprontaprime.com](https://lojaprontaprime.com)
+[membros.escalashop.com.br](https://membros.escalashop.com.br)
 
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org)
 [![React](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)](https://react.dev)
@@ -342,5 +342,5 @@ src/
 <div align="center">
   <img src="docs/assets/mascot/celebrating.png" width="72" alt="" />
   <br />
-  <sub>Private and proprietary. © Loja Pronta Prime. All rights reserved.</sub>
+  <sub>Private and proprietary. © Escala Shop. All rights reserved.</sub>
 </div>
