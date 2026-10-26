@@ -17,7 +17,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('mostra a tela de login sem cadastro público', async ({ page }) => {
-  await expect(page).toHaveTitle('Entrar | Loja Pronta Prime');
+  await expect(page).toHaveTitle('Entrar | Escala Shop');
   await expect(page.getByRole('heading', { name: 'Sua loja na Shopee começa aqui' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Esqueceu ou não recebeu a senha?' })).toBeVisible();
   await expect(page.getByText(/criar conta/i)).toHaveCount(0);

@@ -1,4 +1,8 @@
-# Design da Loja Pronta Prime
+# Escala Shop design system
+
+On October 26, 2026, the owner requested the platform name **Escala Shop** and the member address
+`membros.escalashop.com.br`. This changes brand text only; the existing mascot, colors, typography,
+components and layouts remain the design standard. Loja Pronta and SLL remain product names.
 
 O visual do app é decidido. Este guia existe pra quem mexe no código (gente ou IA) **seguir o que
 já existe**, não reinventar. Na dúvida, copie o padrão de uma tela parecida que já existe.
@@ -235,9 +239,9 @@ o tema escuro e o alto contraste.
 
 ### Área SLL
 
-- A referência visual conferida em 6 de outubro de 2026 está em
-  `docs/SLL-REFERENCIA-VISUAL.md`. A composição vem do SLL anterior; cores, letras, moldura e
-  componentes continuam sendo os da Loja Pronta Prime. Esta adaptação se limita ao SLL.
+- The visual reference reviewed on October 6, 2026 is in `docs/SLL-REFERENCIA-VISUAL.md`.
+  The composition follows the earlier SLL; colors, typography, shells and components retain
+  the Escala Shop design system. This adaptation is limited to SLL.
 - O SLL tem moldura própria (`SllAreaFrame`, no `layout.tsx`), separada da Loja Pronta: um painel (dashboard). No
   computador, **sem barra no topo**: um menu lateral fixo de 288px, de ponta a ponta na altura da
   tela (`bg-card` com linha à direita), com a marca e o tema no topo, as seções no meio e, no pé,
@@ -412,8 +416,9 @@ o tema escuro e o alto contraste.
 - Tela de entrada dividida (painel azul da marca ao lado do formulário).
 - Cartão de duas colunas no login (mascote e título à esquerda, formulário à direita).
 - Mascote "encostado" na borda do cartão. O mascote fica dentro do cartão, centralizado no topo.
-- Fundo bege da paleta antiga do "Escala Shop". A marca é Loja Pronta Prime; o roxo de ação
-  autorizado em 8 de outubro de 2026 usa as superfícies do padrão Apple.
+- Beige backgrounds from the former Escala Shop palette. Renaming the platform to Escala Shop
+  does not restore that palette: the purple action color approved on October 8, 2026 continues
+  to use the Apple-style surfaces.
 - Preto puro no tema escuro (o escuro é grafite).
 
 ## Acessibilidade (obrigatória, não opcional)

@@ -22,7 +22,7 @@ export function BrandLink({ className }: { className?: string }) {
       )}
     >
       <Image src={mascotStill} alt="" width={32} height={32} className="size-8" />
-      Loja Pronta Prime
+      Escala Shop
     </Link>
   );
 }

@@ -21,7 +21,7 @@ const ONE_HOUR = 60 * 60;
 const ONE_DAY = 24 * ONE_HOUR;
 
 export const auth = betterAuth({
-  appName: 'Loja Pronta Prime',
+  appName: 'Escala Shop',
   baseURL: env.BETTER_AUTH_URL,
   // Somente os dois endereços da aplicação; o cookie continua restrito ao host do acesso.
   trustedOrigins: [env.BETTER_AUTH_URL, LEADS_ORIGIN],

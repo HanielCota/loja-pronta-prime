@@ -10,11 +10,11 @@ import { MemberNavbar } from '@/features/member/components/member-navbar';
 export const metadata: Metadata = {
   title: 'Política de Privacidade',
   description:
-    'Quais dados a Loja Pronta Prime guarda, pra quê, com quem compartilha e como pedir para ver ou apagar os seus.',
+    'Quais dados o Escala Shop guarda, pra quê, com quem compartilha e como pedir para ver ou apagar os seus.',
 };
 
 /** Muda sempre que o texto mudar: a lei pede a data da última atualização. */
-const UPDATED_AT = '22 de outubro de 2026';
+const UPDATED_AT = '26 de outubro de 2026';
 
 const emailLinkClass =
   'font-medium wrap-anywhere text-link underline underline-offset-4 hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
@@ -65,7 +65,7 @@ export default async function PrivacyPage() {
         <div className="flex flex-col gap-8 text-foreground">
           <Section title="Quem cuida dos seus dados">
             <Text>
-              A Loja Pronta Prime é da {DATA_CONTROLLER.name}, CNPJ {DATA_CONTROLLER.cnpj},{' '}
+              O Escala Shop é da {DATA_CONTROLLER.name}, CNPJ {DATA_CONTROLLER.cnpj},{' '}
               {DATA_CONTROLLER.address}. Somos nós que decidimos como os seus dados são usados,
               seguindo a Lei Geral de Proteção de Dados (LGPD, Lei 13.709/2018).
             </Text>

@@ -40,7 +40,7 @@
 }
 
 /*
- * Tokens de design Loja Pronta Prime, estilo Apple, no formato do shadcn/ui.
+ * Escala Shop design tokens, in the Apple style and shadcn/ui format.
  * Use pelas classes geradas: bg-primary, text-muted-foreground, rounded-card, text-body...
  * Tema claro por padrão e escuro quando ela liga no perfil. Contrastes conferidos para WCAG AA
  * nos dois.

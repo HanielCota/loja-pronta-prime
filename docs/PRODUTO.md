@@ -1,8 +1,8 @@
-# Loja Pronta Prime — O que é a plataforma
+# Escala Shop — Platform overview
 
 ## Em uma frase
 
-A Loja Pronta Prime ([lojaprontaprime.com](https://lojaprontaprime.com)) é uma área de membros para mulheres iniciantes que querem vender na Shopee. Ela oferece o curso SLL com ferramentas e a jornada Loja Pronta, em que a própria aluna prepara a marca e a conta, um passo por vez.
+Escala Shop ([membros.escalashop.com.br](https://membros.escalashop.com.br)) is a member platform for women beginning to sell on Shopee. It offers the SLL course and tools, plus the Loja Pronta journey, where students prepare their own brand and seller account one step at a time. See [the domain migration](ESCALA-SHOP-MIGRATION.md) for legacy links and integration routing.
 
 Atualização de 17 de outubro de 2026: planos SLL, conexão compartilhada, variantes por expert e rotinas de produtos estão implementados no código. A operação real da Shopee, o fornecedor e os conteúdos finais continuam pendentes. Consulte [operação e limites do assistente](ASSISTENTE-SLL-OPERACAO.md) para distinguir implementação, testes locais e liberação externa.
 

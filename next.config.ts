@@ -29,7 +29,30 @@ const nextConfig: NextConfig = {
   },
 
   async redirects() {
+    const legacyHost = [{ type: 'host' as const, value: '(?:www\\.)?lojaprontaprime\\.com' }];
+    const memberOrigin = 'https://membros.escalashop.com.br';
+
     return [
+      // Keep machine endpoints on the old host; existing Hotmart webhooks must not redirect.
+      {
+        source: '/:path((?!api(?:/|$)).*)',
+        has: legacyHost,
+        destination: `${memberOrigin}/:path`,
+        permanent: true,
+      },
+      // Registered OAuth returns still reach the session cookie on the new member host.
+      {
+        source: '/api/:provider(shopee|bling)/callback',
+        has: legacyHost,
+        destination: `${memberOrigin}/api/:provider/callback`,
+        permanent: false,
+      },
+      {
+        source: '/api/auth/:path*',
+        has: legacyHost,
+        destination: `${memberOrigin}/api/auth/:path*`,
+        permanent: false,
+      },
       // A tela da etapa da aluna se chamava /journey; links salvos continuam funcionando.
       {
         source: '/admin/contas/:id/journey',
@@ -78,8 +101,15 @@ const nextConfig: NextConfig = {
       // O código e o estado do retorno não podem aparecer no Referer da página seguinte.
       ...['/api/shopee/callback', '/api/bling/callback'].map((source) => ({
         source,
-        headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }],
+        headers: [
+          { key: 'Referrer-Policy', value: 'no-referrer' },
+          { key: 'Cache-Control', value: 'no-store' },
+        ],
       })),
+      {
+        source: '/api/auth/:path*',
+        headers: [{ key: 'Cache-Control', value: 'no-store' }],
+      },
       // Sem JavaScript, o navegador segue o 303 do formulário. Autorize só os provedores usados
       // nessas duas telas; form-action 'self' bloquearia a saída para a autorização oficial.
       {

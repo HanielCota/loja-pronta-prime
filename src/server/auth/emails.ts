@@ -53,7 +53,7 @@ async function deliver(kind: AuthEmailKind, { to, url }: AuthEmail): Promise<voi
           'Idempotency-Key': idempotencyKey,
         },
         body: JSON.stringify({
-          from: `Loja Pronta Prime <${env.EMAIL_FROM}>`,
+          from: `Escala Shop <${env.EMAIL_FROM}>`,
           to: [to],
           ...message,
           ...(env.EMAIL_REPLY_TO ? { reply_to: env.EMAIL_REPLY_TO } : {}),
