@@ -17,6 +17,7 @@ import {
 import {
   beginShopeeAuthorization,
   finishShopeeAuthorization,
+  hasShopeeConnection,
   readShopeeAccess,
   removeShopeeConnection,
 } from '@/features/shopee/server/connection';
@@ -197,6 +198,24 @@ test('renovação concorrente troca uma vez e persiste o novo par', async () => 
   expect(values.map((value) => value.accessToken)).toEqual(['rotated', 'rotated']);
 });
 
+test('leitura da conexão não renova o token e só vale para o mesmo aplicativo', async () => {
+  await db
+    .update(shopeeConnections)
+    .set({ accessTokenExpiresAt: new Date(0) })
+    .where(eq(shopeeConnections.userId, userId));
+  expect(await hasShopeeConnection(userId, config)).toBe(true);
+  const [stored] = await db
+    .select()
+    .from(shopeeConnections)
+    .where(eq(shopeeConnections.userId, userId));
+  expect(stored?.accessTokenExpiresAt.getTime()).toBe(0);
+  expect(stored?.revokedAt).toBeNull();
+  expect(await hasShopeeConnection(userId, { ...config, SHOPEE_ENVIRONMENT: 'sandbox' })).toBe(
+    false,
+  );
+  expect(await hasShopeeConnection(randomUUID(), config)).toBe(false);
+});
+
 test('falha no refresh deixa bloqueio durável e não tenta o token antigo de novo', async () => {
   await db
     .update(shopeeConnections)
@@ -214,6 +233,7 @@ test('falha no refresh deixa bloqueio durável e não tenta o token antigo de no
     (await db.select().from(shopeeConnections).where(eq(shopeeConnections.userId, userId)))[0]
       ?.revokedAt,
   ).toBeInstanceOf(Date);
+  expect(await hasShopeeConnection(userId, config)).toBe(false);
 });
 
 test('sandbox não avança loja real e tokens não podem cruzar ambientes', async () => {
