@@ -441,12 +441,18 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
                     >
                       <LessonNumber lesson={lesson} />
                       <span className="min-w-0 flex-1">{lesson.title}</span>
-                      {isCompleted ? <Check aria-label="Concluída" className="size-5" /> : null}
+                      {isCompleted ? (
+                        <Check aria-label="Concluída" className="size-5 text-progress-text" />
+                      ) : null}
                     </div>
                   ) : (
                     <Link
                       aria-label={`Abrir aula ${lesson.sourceNumber ?? lesson.number}: ${lesson.title}`}
-                      className="flex min-h-12 items-center gap-3 rounded-2xl px-2 py-2 text-sm wrap-anywhere text-foreground outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid motion-safe:transition-colors forced-colors:border forced-colors:border-[CanvasText]"
+                      className={cn(
+                        'flex min-h-12 items-center gap-3 rounded-2xl px-2 py-2 text-sm wrap-anywhere text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid motion-safe:transition-colors forced-colors:border forced-colors:border-[CanvasText]',
+                        // Faixa verde clara: a aluna vê de longe o que já concluiu na trilha.
+                        lesson.completed ? 'bg-progress/10 hover:bg-progress/20' : 'hover:bg-muted',
+                      )}
                       href={sllLessonHref(
                         data.track.kind,
                         lesson.id,
@@ -460,7 +466,7 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
                       <LessonNumber lesson={lesson} />
                       <span className="min-w-0 flex-1">{lesson.title}</span>
                       {lesson.completed ? (
-                        <Check aria-label="Concluída" className="size-5" />
+                        <Check aria-label="Concluída" className="size-5 text-progress-text" />
                       ) : null}
                     </Link>
                   )}
@@ -481,7 +487,9 @@ function LessonNumber({ lesson }: { lesson: SllLessonViewerData['lessons'][numbe
         'flex size-8 shrink-0 items-center justify-center rounded-full text-sm',
         lesson.current
           ? 'bg-primary text-primary-foreground forced-colors:border forced-colors:border-[Highlight]'
-          : 'border border-border text-muted-foreground',
+          : lesson.completed
+            ? 'border border-progress font-semibold text-progress-text'
+            : 'border border-border text-muted-foreground',
       )}
     >
       {lesson.sourceNumber ?? lesson.number}
