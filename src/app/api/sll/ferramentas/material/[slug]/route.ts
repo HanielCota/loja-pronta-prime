@@ -21,7 +21,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
   return new Response(stored.body, {
     headers: {
       'Content-Type': material.contentType,
-      'Content-Length': String(stored.length),
+      ...(stored.length === undefined ? {} : { 'Content-Length': String(stored.length) }),
       'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(material.fileName)}`,
       'Cache-Control': 'private, no-store',
       'X-Content-Type-Options': 'nosniff',

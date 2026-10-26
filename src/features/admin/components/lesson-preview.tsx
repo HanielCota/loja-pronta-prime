@@ -45,7 +45,7 @@ export function LessonPreview({
       </Button>
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <section className={cn(panelCard, '!p-5 sm:!p-8')} aria-labelledby="lesson-preview-title">
-          <p className="text-base text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             {lesson.module.stage.track.title} · {lesson.module.stage.title} · {lesson.module.title}
           </p>
           {firstVideo ? (
@@ -53,7 +53,7 @@ export function LessonPreview({
               <SllLessonVideo data={firstVideo.data} title={lesson.title} />
             </div>
           ) : null}
-          <p className="mt-5 text-base text-muted-foreground">
+          <p className="mt-5 text-sm text-muted-foreground">
             Aula {lesson.module.lessons.find((item) => item.current)?.number} de{' '}
             {lesson.module.lessons.length}
           </p>
@@ -63,7 +63,7 @@ export function LessonPreview({
           >
             {lesson.title}
           </h2>
-          <p className="mt-2 text-base text-muted-foreground">
+          <p className="mt-2 text-sm text-muted-foreground">
             Prévia como aluna · {lesson.status === 'published' ? 'Publicado' : 'Rascunho'}
             {lesson.durationMinutes ? ` · ${lesson.durationMinutes} min` : ''}
           </p>
@@ -183,7 +183,7 @@ export function LessonPreview({
         </section>
         <aside className={cn(panelCard, '!p-5 sm:!p-6')} aria-label="Aulas deste módulo">
           <h3 className="text-body font-semibold text-foreground">Aulas deste módulo</h3>
-          <p className="mt-2 text-base text-muted-foreground">
+          <p className="mt-2 text-sm text-muted-foreground">
             {lesson.module.lessons.length} {lesson.module.lessons.length === 1 ? 'aula' : 'aulas'}
           </p>
           <ol className="mt-4 flex flex-col gap-2">
@@ -192,7 +192,7 @@ export function LessonPreview({
                 <Link
                   aria-current={item.current ? 'page' : undefined}
                   className={cn(
-                    'flex min-h-12 items-center gap-3 rounded-2xl px-3 py-2 text-base outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+                    'flex min-h-12 items-center gap-3 rounded-2xl px-3 py-2 text-sm outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
                     item.current ? 'bg-primary-soft text-link' : 'text-foreground',
                   )}
                   href={`/admin/preview/${item.id}`}

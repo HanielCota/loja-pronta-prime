@@ -94,17 +94,15 @@ export async function setAssistantTask(
       )
       .for('update');
     if (!plan || !plan.actions.some((action) => action.id === actionId)) return false;
-    if (completed)
+    if (completed) {
       await tx.insert(assistantPlanProgress).values({ planId, actionId }).onConflictDoNothing();
-    else
-      await tx
-        .delete(assistantPlanProgress)
-        .where(
-          and(
-            eq(assistantPlanProgress.planId, planId),
-            eq(assistantPlanProgress.actionId, actionId),
-          ),
-        );
+      return true;
+    }
+    await tx
+      .delete(assistantPlanProgress)
+      .where(
+        and(eq(assistantPlanProgress.planId, planId), eq(assistantPlanProgress.actionId, actionId)),
+      );
     return true;
   });
 }

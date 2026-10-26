@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SllCopy } from '../copy';
+import { sllSidebarSection } from '../sidebar-section';
 
 type NavItem = { href: string; label: string; icon: typeof Store; exact?: boolean };
 
@@ -28,13 +29,11 @@ export function SllSidebarLinks({
   variant,
   stages,
   copy,
-  currentSection,
 }: {
   variant: 'rail' | 'disclosure';
-  stages: Array<{ href: string; label: string }>;
+  /** As etapas do Método, com as aulas de cada uma (a aula marca a etapa de onde vem). */
+  stages: Array<{ href: string; label: string; lessonIds: string[] }>;
   copy: SllCopy;
-  /** A seção desta página quando o endereço não está no menu (a aula: a etapa ou a lista). */
-  currentSection?: string | undefined;
 }) {
   const pathname = usePathname();
   const operation: NavItem[] = [
@@ -49,12 +48,12 @@ export function SllSidebarLinks({
     { href: '/sll/recursos', label: copy.sidebarResources, icon: Wrench },
     { href: '/sll/cursos', label: copy.sidebarCourses, icon: GraduationCap },
   ];
-  const section = currentSection ?? pathname;
+  const section = sllSidebarSection(pathname, stages);
   // Fora do Método, a lista curta deixa os outros destinos à vista, como no site de referência.
   const showStages = section.startsWith('/sll/metodo');
   const currentLabel = (
     [...operation, ...learning, ...stages].find((item) => item.href === section) ??
-    learning.find((item) => section.startsWith(`${item.href}/`))
+    [...operation, ...learning].find((item) => !item.exact && section.startsWith(`${item.href}/`))
   )?.label;
   /**
    * O realce e o `aria-current` vêm da mesma conta, pra o leitor de tela ouvir o que a tela mostra:
@@ -80,7 +79,7 @@ export function SllSidebarLinks({
                 className={cn(
                   itemClass,
                   currentOf(item) &&
-                    'bg-muted font-semibold text-foreground hover:bg-muted [&>svg]:text-link',
+                    'bg-primary-soft font-semibold text-link hover:bg-primary-soft',
                 )}
                 href={item.href}
               >
@@ -104,7 +103,7 @@ export function SllSidebarLinks({
                 className={cn(
                   itemClass,
                   currentOf(item) &&
-                    'bg-muted font-semibold text-foreground hover:bg-muted [&>svg]:text-link',
+                    'bg-primary-soft font-semibold text-link hover:bg-primary-soft',
                 )}
                 href={item.href}
               >
@@ -123,7 +122,7 @@ export function SllSidebarLinks({
                         className={cn(
                           itemClass,
                           currentOf(stage)
-                            ? 'bg-muted font-semibold text-foreground hover:bg-muted [&>svg]:text-link'
+                            ? 'bg-primary-soft font-semibold text-link hover:bg-primary-soft'
                             : 'text-muted-foreground',
                         )}
                         href={stage.href}
@@ -141,7 +140,7 @@ export function SllSidebarLinks({
     </nav>
   );
 
-  // No computador, a lista fica solta no menu lateral fixo (a moldura é do SllAreaShell).
+  // No computador, a lista fica solta no menu lateral fixo (a moldura é do SllAreaFrame).
   if (variant === 'rail') return navigation;
 
   return (

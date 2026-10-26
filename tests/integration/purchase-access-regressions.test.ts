@@ -5,6 +5,7 @@ import { db } from '@/server/db';
 import * as s from '@/server/db/schema';
 import { publicationPayloadSchema, DAY_MS } from '@/features/assistant/model';
 mock.module('next/cache', () => ({
+  refresh: () => {},
   revalidatePath: () => {},
   revalidateTag: () => {},
   unstable_cache: (f: unknown) => f,
@@ -21,6 +22,7 @@ mock.module('next/navigation', () => ({
 const adminId = randomUUID();
 mock.module('@/features/admin/server/access', () => ({
   requireAdmin: async () => ({ user: { id: adminId } }),
+  requireStaff: async () => ({ user: { id: adminId, role: 'admin' }, staff: 'admin' as const }),
 }));
 const { processHotmartEvent } = await import('@/features/hotmart/server/process-event');
 const { changeStudentProductAccess } = await import('@/features/admin/server/actions');

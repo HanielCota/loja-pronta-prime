@@ -89,6 +89,30 @@ test('falha da IA devolve a criação e mantém as escolhas', async () => {
   }
 });
 
+test('tempo esgotado na IA conta a criação, porque a imagem pode ter sido cobrada', async () => {
+  drawFailure = new AiUnavailableError('Request timed out', { mayHaveBilled: true });
+  const log = spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    const result = await createLogo(picks);
+    expect(result.studio.generationsLeft).toBe(MAX_GENERATIONS - 1);
+    expect(result.error).toContain('Esta tentativa contou como uma criação');
+  } finally {
+    log.mockRestore();
+  }
+});
+
+test('falhas cobradas param no limite de criações', async () => {
+  drawFailure = new AiUnavailableError('Request timed out', { mayHaveBilled: true });
+  const log = spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    for (let attempt = 0; attempt < MAX_GENERATIONS + 2; attempt++) await createLogo(picks);
+    expect(drawings).toBe(MAX_GENERATIONS);
+    expect(studio.generations).toBe(MAX_GENERATIONS);
+  } finally {
+    log.mockRestore();
+  }
+});
+
 test.each(['bucket', 'registro'])(
   'falha no %s mostra o saldo pago e não expõe detalhes do serviço',
   async (stage) => {

@@ -115,13 +115,12 @@ for (const size of [
       await page
         .getByRole('radio', { name: 'Ainda não abri ou abri há menos de 7 dias', exact: true })
         .check();
-      await page.getByRole('radio', { name: /^Orgânico/ }).check();
       await page.getByRole('button', { name: 'Organizar meu plano', exact: true }).click();
       await expect(page.getByRole('heading', { name: 'Sete dias · Orgânico' })).toBeVisible();
       await page.getByRole('button', { name: 'Marcar como feita', exact: true }).first().click();
-      await expect(page.getByText('1 de 7 ações concluídas')).toBeVisible();
+      await expect(page.getByText('1 de 7 ações concluídas. Siga no seu ritmo.')).toBeVisible();
       await page.reload();
-      await expect(page.getByText('1 de 7 ações concluídas')).toBeVisible();
+      await expect(page.getByText('1 de 7 ações concluídas. Siga no seu ritmo.')).toBeVisible();
       await expect(page.getByRole('link', { name: 'Ver a aula', exact: true })).toHaveAttribute(
         'href',
         `/sll/aula/${lessonId}`,

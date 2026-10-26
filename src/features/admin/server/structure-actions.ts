@@ -128,7 +128,11 @@ export async function saveLearningNode(
   const durationText = stringField(data, 'durationMinutes') ?? '';
   const duration = durationText === '' ? null : Number(durationText);
   const countsTowardProgress = data.get('countsTowardProgress') === 'true';
-  const relatedLessonId = stringField(data, 'relatedLessonId') || null;
+  // Campo ausente (a lista nem aparece quando não há outras aulas) quer dizer "não mexeu", não
+  // "remover": antes, salvar só o título apagava o vínculo em silêncio.
+  const relatedLessonId = data.has('relatedLessonId')
+    ? stringField(data, 'relatedLessonId') || null
+    : undefined;
 
   if (!['track', 'stage', 'module', 'lesson'].includes(kind ?? '')) {
     return { message: 'Escolha que tipo de conteúdo quer guardar.', saved: false };
@@ -176,10 +180,13 @@ export async function saveLearningNode(
       return { message: 'Escolha outra aula relacionada.', saved: false, field: 'relatedLessonId' };
     const source = editing
       ? await db.query.learningLessons.findFirst({
-          columns: { moduleId: true },
+          columns: { moduleId: true, relatedLessonId: true },
           where: and(eq(learningLessons.id, rawId), isNull(learningLessons.archivedAt)),
         })
-      : { moduleId: parentId };
+      : { moduleId: parentId, relatedLessonId: null };
+    // Manter o vínculo que já existe não depende da aula continuar ativa: ela pode ter sido
+    // arquivada depois, e isso não pode impedir salvar outra mudança desta aula.
+    const keepsCurrent = source?.relatedLessonId === relatedLessonId;
     const [sourceGroup, target] = await Promise.all([
       source?.moduleId
         ? db.query.learningModules.findFirst({
@@ -199,7 +206,10 @@ export async function saveLearningNode(
         },
       }),
     ]);
-    if (!sourceGroup || !target || sourceGroup.stage.trackId !== target.module.stage.trackId)
+    if (
+      !keepsCurrent &&
+      (!sourceGroup || !target || sourceGroup.stage.trackId !== target.module.stage.trackId)
+    )
       return {
         message: 'Escolha uma aula do mesmo curso.',
         saved: false,
@@ -224,7 +234,11 @@ export async function saveLearningNode(
         title: title.data,
         description: description.data || null,
         ...(nodeKind === 'lesson'
-          ? { durationMinutes: duration, countsTowardProgress, relatedLessonId }
+          ? {
+              durationMinutes: duration,
+              countsTowardProgress,
+              ...(relatedLessonId !== undefined ? { relatedLessonId } : {}),
+            }
           : {}),
       };
       if (current.status === 'published') {
@@ -270,20 +284,24 @@ export async function saveLearningNode(
     const slug = await unusedSlug(nodeKind, parentId, title.data);
     const position = await nextPosition(nodeKind, parentId);
     const values = { title: title.data, description: description.data || null, slug, position };
-    if (nodeKind === 'track') {
-      await db.insert(learningTracks).values({ ...values, kind: trackKind as LearningTrackKind });
-    } else if (nodeKind === 'stage') {
-      await db.insert(learningStages).values({ ...values, trackId: parentId! });
-    } else if (nodeKind === 'module') {
-      await db.insert(learningModules).values({ ...values, stageId: parentId! });
-    } else {
-      await db.insert(learningLessons).values({
-        ...values,
-        moduleId: parentId!,
-        durationMinutes: duration,
-        countsTowardProgress,
-        relatedLessonId,
-      });
+    switch (nodeKind) {
+      case 'track':
+        await db.insert(learningTracks).values({ ...values, kind: trackKind as LearningTrackKind });
+        break;
+      case 'stage':
+        await db.insert(learningStages).values({ ...values, trackId: parentId! });
+        break;
+      case 'module':
+        await db.insert(learningModules).values({ ...values, stageId: parentId! });
+        break;
+      default:
+        await db.insert(learningLessons).values({
+          ...values,
+          moduleId: parentId!,
+          durationMinutes: duration,
+          countsTowardProgress,
+          relatedLessonId: relatedLessonId ?? null,
+        });
     }
   } catch {
     return { message: 'Não consegui guardar. Atualize a página e tente de novo.', saved: false };
@@ -294,6 +312,87 @@ export async function saveLearningNode(
     message: 'O conteúdo foi adicionado.',
     saved: true,
   };
+}
+
+// Uma tabela por nível; devolve as linhas arquivadas (nenhuma se já estava arquivado).
+async function archiveNode(
+  kind: string | null,
+  id: string,
+  archivedAt: Date,
+): Promise<Array<{ id: string }>> {
+  if (kind === 'track')
+    return db
+      .update(learningTracks)
+      .set({ archivedAt })
+      .where(and(eq(learningTracks.id, id), isNull(learningTracks.archivedAt)))
+      .returning({ id: learningTracks.id });
+  if (kind === 'stage')
+    return db
+      .update(learningStages)
+      .set({ archivedAt })
+      .where(and(eq(learningStages.id, id), isNull(learningStages.archivedAt)))
+      .returning({ id: learningStages.id });
+  if (kind === 'module')
+    return db
+      .update(learningModules)
+      .set({ archivedAt })
+      .where(and(eq(learningModules.id, id), isNull(learningModules.archivedAt)))
+      .returning({ id: learningModules.id });
+  return db
+    .update(learningLessons)
+    .set({ archivedAt })
+    .where(and(eq(learningLessons.id, id), isNull(learningLessons.archivedAt)))
+    .returning({ id: learningLessons.id });
+}
+
+// Volta ao fim da lista do pai; devolve null quando o item não está arquivado.
+async function restoreNode(kind: string | null, id: string): Promise<Array<{ id: string }> | null> {
+  if (kind === 'track') {
+    const row = await db.query.learningTracks.findFirst({
+      columns: { position: true },
+      where: and(eq(learningTracks.id, id), isNotNull(learningTracks.archivedAt)),
+    });
+    if (!row) return null;
+    return db
+      .update(learningTracks)
+      .set({ archivedAt: null, position: await nextPosition('track', null) })
+      .where(eq(learningTracks.id, id))
+      .returning({ id: learningTracks.id });
+  }
+  if (kind === 'stage') {
+    const row = await db.query.learningStages.findFirst({
+      columns: { position: true, trackId: true },
+      where: and(eq(learningStages.id, id), isNotNull(learningStages.archivedAt)),
+    });
+    if (!row) return null;
+    return db
+      .update(learningStages)
+      .set({ archivedAt: null, position: await nextPosition('stage', row.trackId) })
+      .where(eq(learningStages.id, id))
+      .returning({ id: learningStages.id });
+  }
+  if (kind === 'module') {
+    const row = await db.query.learningModules.findFirst({
+      columns: { position: true, stageId: true },
+      where: and(eq(learningModules.id, id), isNotNull(learningModules.archivedAt)),
+    });
+    if (!row) return null;
+    return db
+      .update(learningModules)
+      .set({ archivedAt: null, position: await nextPosition('module', row.stageId) })
+      .where(eq(learningModules.id, id))
+      .returning({ id: learningModules.id });
+  }
+  const row = await db.query.learningLessons.findFirst({
+    columns: { position: true, moduleId: true },
+    where: and(eq(learningLessons.id, id), isNotNull(learningLessons.archivedAt)),
+  });
+  if (!row) return null;
+  return db
+    .update(learningLessons)
+    .set({ archivedAt: null, position: await nextPosition('lesson', row.moduleId) })
+    .where(eq(learningLessons.id, id))
+    .returning({ id: learningLessons.id });
 }
 
 /** Arquiva sem apagar filhos e materiais; a área de itens arquivados permite restaurar. */
@@ -308,32 +407,7 @@ export async function archiveLearningNode(data: FormData): Promise<StructureActi
   ) {
     return { message: 'Este conteúdo não está disponível.', saved: false };
   }
-  const archivedAt = new Date();
-  let archived: Array<{ id: string }>;
-  if (kind === 'track')
-    archived = await db
-      .update(learningTracks)
-      .set({ archivedAt })
-      .where(and(eq(learningTracks.id, id), isNull(learningTracks.archivedAt)))
-      .returning({ id: learningTracks.id });
-  else if (kind === 'stage')
-    archived = await db
-      .update(learningStages)
-      .set({ archivedAt })
-      .where(and(eq(learningStages.id, id), isNull(learningStages.archivedAt)))
-      .returning({ id: learningStages.id });
-  else if (kind === 'module')
-    archived = await db
-      .update(learningModules)
-      .set({ archivedAt })
-      .where(and(eq(learningModules.id, id), isNull(learningModules.archivedAt)))
-      .returning({ id: learningModules.id });
-  else
-    archived = await db
-      .update(learningLessons)
-      .set({ archivedAt })
-      .where(and(eq(learningLessons.id, id), isNull(learningLessons.archivedAt)))
-      .returning({ id: learningLessons.id });
+  const archived = await archiveNode(kind, id, new Date());
   if (archived.length === 0) return { message: 'Este conteúdo não está disponível.', saved: false };
   revalidateSllContent();
   revalidatePath('/admin');
@@ -352,57 +426,8 @@ export async function restoreLearningNode(data: FormData): Promise<StructureActi
   ) {
     return { message: 'Este conteúdo não está disponível.', saved: false };
   }
-  let restored: Array<{ id: string }>;
-  if (kind === 'track') {
-    const row = await db.query.learningTracks.findFirst({
-      columns: { position: true },
-      where: and(eq(learningTracks.id, id), isNotNull(learningTracks.archivedAt)),
-    });
-    if (!row)
-      return { message: 'Este conteúdo não está disponível para restauração.', saved: false };
-    restored = await db
-      .update(learningTracks)
-      .set({ archivedAt: null, position: await nextPosition('track', null) })
-      .where(eq(learningTracks.id, id))
-      .returning({ id: learningTracks.id });
-  } else if (kind === 'stage') {
-    const row = await db.query.learningStages.findFirst({
-      columns: { position: true, trackId: true },
-      where: and(eq(learningStages.id, id), isNotNull(learningStages.archivedAt)),
-    });
-    if (!row)
-      return { message: 'Este conteúdo não está disponível para restauração.', saved: false };
-    restored = await db
-      .update(learningStages)
-      .set({ archivedAt: null, position: await nextPosition('stage', row.trackId) })
-      .where(eq(learningStages.id, id))
-      .returning({ id: learningStages.id });
-  } else if (kind === 'module') {
-    const row = await db.query.learningModules.findFirst({
-      columns: { position: true, stageId: true },
-      where: and(eq(learningModules.id, id), isNotNull(learningModules.archivedAt)),
-    });
-    if (!row)
-      return { message: 'Este conteúdo não está disponível para restauração.', saved: false };
-    restored = await db
-      .update(learningModules)
-      .set({ archivedAt: null, position: await nextPosition('module', row.stageId) })
-      .where(eq(learningModules.id, id))
-      .returning({ id: learningModules.id });
-  } else {
-    const row = await db.query.learningLessons.findFirst({
-      columns: { position: true, moduleId: true },
-      where: and(eq(learningLessons.id, id), isNotNull(learningLessons.archivedAt)),
-    });
-    if (!row)
-      return { message: 'Este conteúdo não está disponível para restauração.', saved: false };
-    restored = await db
-      .update(learningLessons)
-      .set({ archivedAt: null, position: await nextPosition('lesson', row.moduleId) })
-      .where(eq(learningLessons.id, id))
-      .returning({ id: learningLessons.id });
-  }
-  if (restored.length === 0)
+  const restored = await restoreNode(kind, id);
+  if (!restored || restored.length === 0)
     return { message: 'Este conteúdo não está disponível para restauração.', saved: false };
   revalidateSllContent();
   revalidatePath('/admin');
@@ -449,7 +474,9 @@ export async function moveLearningNode(data: FormData): Promise<StructureActionS
         .update(learningTracks)
         .set({ position: rows[index]!.position })
         .where(eq(learningTracks.id, adjacent.id));
-    } else if (kind === 'stage' && parentId) {
+      return;
+    }
+    if (kind === 'stage' && parentId) {
       const rows = await tx.query.learningStages.findMany({
         columns: { id: true, position: true },
         where: and(eq(learningStages.trackId, parentId), isNull(learningStages.archivedAt)),
@@ -466,7 +493,9 @@ export async function moveLearningNode(data: FormData): Promise<StructureActionS
         .update(learningStages)
         .set({ position: rows[index]!.position })
         .where(eq(learningStages.id, adjacent.id));
-    } else if (kind === 'module' && parentId) {
+      return;
+    }
+    if (kind === 'module' && parentId) {
       const rows = await tx.query.learningModules.findMany({
         columns: { id: true, position: true },
         where: and(eq(learningModules.stageId, parentId), isNull(learningModules.archivedAt)),
@@ -483,7 +512,9 @@ export async function moveLearningNode(data: FormData): Promise<StructureActionS
         .update(learningModules)
         .set({ position: rows[index]!.position })
         .where(eq(learningModules.id, adjacent.id));
-    } else if (kind === 'lesson' && parentId) {
+      return;
+    }
+    if (kind === 'lesson' && parentId) {
       const rows = await tx.query.learningLessons.findMany({
         columns: { id: true, position: true },
         where: and(eq(learningLessons.moduleId, parentId), isNull(learningLessons.archivedAt)),
@@ -565,13 +596,19 @@ export async function reorderLearningNodes(data: FormData): Promise<StructureAct
       return false;
     for (let position = 0; position < orderedIds.length; position++) {
       const id = orderedIds[position]!;
-      if (kind === 'track')
+      if (kind === 'track') {
         await tx.update(learningTracks).set({ position }).where(eq(learningTracks.id, id));
-      else if (kind === 'stage')
+        continue;
+      }
+      if (kind === 'stage') {
         await tx.update(learningStages).set({ position }).where(eq(learningStages.id, id));
-      else if (kind === 'module')
+        continue;
+      }
+      if (kind === 'module') {
         await tx.update(learningModules).set({ position }).where(eq(learningModules.id, id));
-      else await tx.update(learningLessons).set({ position }).where(eq(learningLessons.id, id));
+        continue;
+      }
+      await tx.update(learningLessons).set({ position }).where(eq(learningLessons.id, id));
     }
     return true;
   });
@@ -581,6 +618,80 @@ export async function reorderLearningNodes(data: FormData): Promise<StructureAct
   revalidatePath('/admin');
   revalidatePath('/sll');
   return { message: 'Nova ordem salva.', saved: true };
+}
+
+// A aula não tem nível filho; os outros níveis precisam de pelo menos um filho publicado.
+async function publishedChildExists(
+  tx: DbTransaction,
+  kind: string | null,
+  id: string,
+): Promise<boolean> {
+  if (kind === 'track')
+    return Boolean(
+      await tx.query.learningStages.findFirst({
+        columns: { id: true },
+        where: and(
+          eq(learningStages.trackId, id),
+          eq(learningStages.status, 'published'),
+          isNull(learningStages.archivedAt),
+        ),
+      }),
+    );
+  if (kind === 'stage')
+    return Boolean(
+      await tx.query.learningModules.findFirst({
+        columns: { id: true },
+        where: and(
+          eq(learningModules.stageId, id),
+          eq(learningModules.status, 'published'),
+          isNull(learningModules.archivedAt),
+        ),
+      }),
+    );
+  if (kind === 'module')
+    return Boolean(
+      await tx.query.learningLessons.findFirst({
+        columns: { id: true },
+        where: and(
+          eq(learningLessons.moduleId, id),
+          eq(learningLessons.status, 'published'),
+          isNull(learningLessons.archivedAt),
+        ),
+      }),
+    );
+  return true;
+}
+
+// Uma tabela por nível; devolve as linhas alteradas (nenhuma se o item foi arquivado).
+async function setNodeStatus(
+  tx: DbTransaction,
+  kind: string | null,
+  id: string,
+  status: 'draft' | 'published',
+): Promise<Array<{ id: string }>> {
+  if (kind === 'track')
+    return tx
+      .update(learningTracks)
+      .set({ status })
+      .where(and(eq(learningTracks.id, id), isNull(learningTracks.archivedAt)))
+      .returning({ id: learningTracks.id });
+  if (kind === 'stage')
+    return tx
+      .update(learningStages)
+      .set({ status })
+      .where(and(eq(learningStages.id, id), isNull(learningStages.archivedAt)))
+      .returning({ id: learningStages.id });
+  if (kind === 'module')
+    return tx
+      .update(learningModules)
+      .set({ status })
+      .where(and(eq(learningModules.id, id), isNull(learningModules.archivedAt)))
+      .returning({ id: learningModules.id });
+  return tx
+    .update(learningLessons)
+    .set({ status })
+    .where(and(eq(learningLessons.id, id), isNull(learningLessons.archivedAt)))
+    .returning({ id: learningLessons.id });
 }
 
 /** Publica um item só quando ele e o nível filho têm conteúdo pronto. */
@@ -604,41 +715,7 @@ export async function setLearningNodePublication(data: FormData): Promise<Struct
     id,
     async (tx): Promise<StructureActionState> => {
       if (status === 'published') {
-        let hasPublishedChild = true;
-        if (kind === 'track') {
-          hasPublishedChild = Boolean(
-            await tx.query.learningStages.findFirst({
-              columns: { id: true },
-              where: and(
-                eq(learningStages.trackId, id),
-                eq(learningStages.status, 'published'),
-                isNull(learningStages.archivedAt),
-              ),
-            }),
-          );
-        } else if (kind === 'stage') {
-          hasPublishedChild = Boolean(
-            await tx.query.learningModules.findFirst({
-              columns: { id: true },
-              where: and(
-                eq(learningModules.stageId, id),
-                eq(learningModules.status, 'published'),
-                isNull(learningModules.archivedAt),
-              ),
-            }),
-          );
-        } else if (kind === 'module') {
-          hasPublishedChild = Boolean(
-            await tx.query.learningLessons.findFirst({
-              columns: { id: true },
-              where: and(
-                eq(learningLessons.moduleId, id),
-                eq(learningLessons.status, 'published'),
-                isNull(learningLessons.archivedAt),
-              ),
-            }),
-          );
-        }
+        const hasPublishedChild = await publishedChildExists(tx, kind, id);
         if (!hasPublishedChild) {
           const child = kind === 'track' ? 'etapa' : kind === 'stage' ? 'módulo' : 'aula';
           return {
@@ -676,32 +753,7 @@ export async function setLearningNodePublication(data: FormData): Promise<Struct
       if (status === 'draft' && (await getNodeDraft(kind as LearningNodeKind, id, tx)))
         await applyNodeDraft(kind as LearningNodeKind, id, { validate: false }, tx);
 
-      let updated: Array<{ id: string }>;
-      if (kind === 'track') {
-        updated = await tx
-          .update(learningTracks)
-          .set({ status })
-          .where(and(eq(learningTracks.id, id), isNull(learningTracks.archivedAt)))
-          .returning({ id: learningTracks.id });
-      } else if (kind === 'stage') {
-        updated = await tx
-          .update(learningStages)
-          .set({ status })
-          .where(and(eq(learningStages.id, id), isNull(learningStages.archivedAt)))
-          .returning({ id: learningStages.id });
-      } else if (kind === 'module') {
-        updated = await tx
-          .update(learningModules)
-          .set({ status })
-          .where(and(eq(learningModules.id, id), isNull(learningModules.archivedAt)))
-          .returning({ id: learningModules.id });
-      } else {
-        updated = await tx
-          .update(learningLessons)
-          .set({ status })
-          .where(and(eq(learningLessons.id, id), isNull(learningLessons.archivedAt)))
-          .returning({ id: learningLessons.id });
-      }
+      const updated = await setNodeStatus(tx, kind, id, status);
       if (!updated.length) return { message: 'Este conteúdo não está disponível.', saved: false };
       return { saved: true, message: '' };
     },
@@ -768,6 +820,141 @@ export async function publishNodeDraft(data: FormData): Promise<StructureActionS
   return { saved: true, message: 'Alterações publicadas para as alunas.' };
 }
 
+// Publica o rascunho de uma aula; devolve o motivo quando não dá pra publicar.
+async function applyLessonDraft(
+  tx: DbTransaction,
+  id: string,
+  data: LearningNodeDraftData,
+  validate: boolean,
+): Promise<StructureActionState | null> {
+  const lesson = await tx.query.learningLessons.findFirst({
+    columns: {
+      title: true,
+      description: true,
+      durationMinutes: true,
+      countsTowardProgress: true,
+      relatedLessonId: true,
+    },
+    where: and(eq(learningLessons.id, id), isNull(learningLessons.archivedAt)),
+    with: { blocks: { orderBy: [asc(learningContentBlocks.position)] } },
+  });
+  if (!lesson) return { saved: false, message: 'Aula não encontrada.' };
+  const blocks = data.blocks ?? lesson.blocks;
+  const issue = lessonPublicationIssue(
+    data.title ?? lesson.title,
+    data.description === undefined ? lesson.description : data.description,
+    blocks.map((block) => ({ kind: block.kind, data: block.data as Record<string, unknown> })),
+  );
+  if (validate && issue) return { saved: false, message: issue };
+  const previous = {
+    title: lesson.title,
+    description: lesson.description,
+    durationMinutes: lesson.durationMinutes,
+    countsTowardProgress: lesson.countsTowardProgress,
+    relatedLessonId: lesson.relatedLessonId,
+    blocks: lesson.blocks.map((block) => ({
+      id: block.id,
+      kind: block.kind,
+      data: block.data,
+      position: block.position,
+    })),
+  };
+  await tx
+    .insert(learningNodeHistory)
+    .values({ kind: 'lesson', nodeId: id, data: previous })
+    .onConflictDoUpdate({
+      target: [learningNodeHistory.kind, learningNodeHistory.nodeId],
+      set: { data: previous },
+    });
+  await tx
+    .update(learningLessons)
+    .set({
+      title: data.title ?? lesson.title,
+      description: data.description === undefined ? lesson.description : data.description,
+      ...(data.durationMinutes !== undefined ? { durationMinutes: data.durationMinutes } : {}),
+      ...(data.countsTowardProgress !== undefined
+        ? { countsTowardProgress: data.countsTowardProgress }
+        : {}),
+      ...(data.relatedLessonId !== undefined ? { relatedLessonId: data.relatedLessonId } : {}),
+    })
+    .where(eq(learningLessons.id, id));
+  if (!data.blocks) return null;
+  const liveIds = new Set(lesson.blocks.map((block) => block.id));
+  const nextIds = new Set(data.blocks.map((block) => block.id));
+  for (const block of data.blocks) {
+    if (liveIds.has(block.id)) {
+      await tx
+        .update(learningContentBlocks)
+        .set({ data: block.data, position: block.position })
+        .where(and(eq(learningContentBlocks.id, block.id), eq(learningContentBlocks.lessonId, id)));
+      continue;
+    }
+    await tx.insert(learningContentBlocks).values({
+      id: block.id,
+      lessonId: id,
+      kind: block.kind,
+      data: block.data,
+      position: block.position,
+    });
+  }
+  for (const block of lesson.blocks) {
+    if (!nextIds.has(block.id))
+      await tx.delete(learningContentBlocks).where(eq(learningContentBlocks.id, block.id));
+  }
+  return null;
+}
+
+// Publica o rascunho de trilha, etapa ou módulo; devolve o motivo quando não dá pra publicar.
+async function applyContainerDraft(
+  tx: DbTransaction,
+  nodeKind: Exclude<LearningNodeKind, 'lesson'>,
+  id: string,
+  data: LearningNodeDraftData,
+): Promise<StructureActionState | null> {
+  // Item arquivado não recebe publicação: ele voltaria às alunas com outro conteúdo.
+  const current =
+    nodeKind === 'track'
+      ? await tx.query.learningTracks.findFirst({
+          columns: { title: true, description: true, coverStorageKey: true, coverAlt: true },
+          where: and(eq(learningTracks.id, id), isNull(learningTracks.archivedAt)),
+        })
+      : nodeKind === 'stage'
+        ? await tx.query.learningStages.findFirst({
+            columns: { title: true, description: true },
+            where: and(eq(learningStages.id, id), isNull(learningStages.archivedAt)),
+          })
+        : await tx.query.learningModules.findFirst({
+            columns: { title: true, description: true },
+            where: and(eq(learningModules.id, id), isNull(learningModules.archivedAt)),
+          });
+  if (!current) return { saved: false, message: 'Conteúdo não encontrado.' };
+  const values = {
+    ...(data.title !== undefined ? { title: data.title } : {}),
+    ...(data.description !== undefined ? { description: data.description } : {}),
+    ...(nodeKind === 'track' && data.coverStorageKey !== undefined
+      ? { coverStorageKey: data.coverStorageKey }
+      : {}),
+    ...(nodeKind === 'track' && data.coverAlt !== undefined ? { coverAlt: data.coverAlt } : {}),
+  };
+  await tx
+    .insert(learningNodeHistory)
+    .values({ kind: nodeKind, nodeId: id, data: current })
+    .onConflictDoUpdate({
+      target: [learningNodeHistory.kind, learningNodeHistory.nodeId],
+      set: { data: current },
+    });
+  if (nodeKind === 'track') {
+    await tx.update(learningTracks).set(values).where(eq(learningTracks.id, id));
+    return null;
+  }
+  if (nodeKind === 'stage') {
+    await tx.update(learningStages).set(values).where(eq(learningStages.id, id));
+    return null;
+  }
+  await tx.update(learningModules).set(values).where(eq(learningModules.id, id));
+  return null;
+}
+
 /**
  * Passa o rascunho para a versão principal e apaga o rascunho. Ao publicar, confere as regras
  * da aula; ao despublicar, só junta as edições, já que as alunas deixam de ver o item.
@@ -792,122 +979,11 @@ async function applyNodeDraft(
       };
     const data = replacement ?? draft?.data;
     if (!data) return { saved: false, message: 'Não há alterações para publicar.' };
-    if (nodeKind === 'lesson') {
-      const lesson = await tx.query.learningLessons.findFirst({
-        columns: {
-          title: true,
-          description: true,
-          durationMinutes: true,
-          countsTowardProgress: true,
-          relatedLessonId: true,
-        },
-        where: and(eq(learningLessons.id, id), isNull(learningLessons.archivedAt)),
-        with: { blocks: { orderBy: [asc(learningContentBlocks.position)] } },
-      });
-      if (!lesson) return { saved: false, message: 'Aula não encontrada.' };
-      const blocks = data.blocks ?? lesson.blocks;
-      const issue = lessonPublicationIssue(
-        data.title ?? lesson.title,
-        data.description === undefined ? lesson.description : data.description,
-        blocks.map((block) => ({ kind: block.kind, data: block.data as Record<string, unknown> })),
-      );
-      if (validate && issue) return { saved: false, message: issue };
-      const previous = {
-        title: lesson.title,
-        description: lesson.description,
-        durationMinutes: lesson.durationMinutes,
-        countsTowardProgress: lesson.countsTowardProgress,
-        relatedLessonId: lesson.relatedLessonId,
-        blocks: lesson.blocks.map((block) => ({
-          id: block.id,
-          kind: block.kind,
-          data: block.data,
-          position: block.position,
-        })),
-      };
-      await tx
-        .insert(learningNodeHistory)
-        .values({ kind: nodeKind, nodeId: id, data: previous })
-        .onConflictDoUpdate({
-          target: [learningNodeHistory.kind, learningNodeHistory.nodeId],
-          set: { data: previous },
-        });
-      await tx
-        .update(learningLessons)
-        .set({
-          title: data.title ?? lesson.title,
-          description: data.description === undefined ? lesson.description : data.description,
-          ...(data.durationMinutes !== undefined ? { durationMinutes: data.durationMinutes } : {}),
-          ...(data.countsTowardProgress !== undefined
-            ? { countsTowardProgress: data.countsTowardProgress }
-            : {}),
-          ...(data.relatedLessonId !== undefined ? { relatedLessonId: data.relatedLessonId } : {}),
-        })
-        .where(eq(learningLessons.id, id));
-      if (data.blocks) {
-        const liveIds = new Set(lesson.blocks.map((block) => block.id));
-        const nextIds = new Set(data.blocks.map((block) => block.id));
-        for (const block of data.blocks) {
-          if (liveIds.has(block.id))
-            await tx
-              .update(learningContentBlocks)
-              .set({ data: block.data, position: block.position })
-              .where(
-                and(eq(learningContentBlocks.id, block.id), eq(learningContentBlocks.lessonId, id)),
-              );
-          else
-            await tx.insert(learningContentBlocks).values({
-              id: block.id,
-              lessonId: id,
-              kind: block.kind,
-              data: block.data,
-              position: block.position,
-            });
-        }
-        for (const block of lesson.blocks) {
-          if (!nextIds.has(block.id))
-            await tx.delete(learningContentBlocks).where(eq(learningContentBlocks.id, block.id));
-        }
-      }
-    } else {
-      // Item arquivado não recebe publicação: ele voltaria às alunas com outro conteúdo.
-      const current =
-        nodeKind === 'track'
-          ? await tx.query.learningTracks.findFirst({
-              columns: { title: true, description: true, coverStorageKey: true, coverAlt: true },
-              where: and(eq(learningTracks.id, id), isNull(learningTracks.archivedAt)),
-            })
-          : nodeKind === 'stage'
-            ? await tx.query.learningStages.findFirst({
-                columns: { title: true, description: true },
-                where: and(eq(learningStages.id, id), isNull(learningStages.archivedAt)),
-              })
-            : await tx.query.learningModules.findFirst({
-                columns: { title: true, description: true },
-                where: and(eq(learningModules.id, id), isNull(learningModules.archivedAt)),
-              });
-      if (!current) return { saved: false, message: 'Conteúdo não encontrado.' };
-      const values = {
-        ...(data.title !== undefined ? { title: data.title } : {}),
-        ...(data.description !== undefined ? { description: data.description } : {}),
-        ...(nodeKind === 'track' && data.coverStorageKey !== undefined
-          ? { coverStorageKey: data.coverStorageKey }
-          : {}),
-        ...(nodeKind === 'track' && data.coverAlt !== undefined ? { coverAlt: data.coverAlt } : {}),
-      };
-      await tx
-        .insert(learningNodeHistory)
-        .values({ kind: nodeKind, nodeId: id, data: current })
-        .onConflictDoUpdate({
-          target: [learningNodeHistory.kind, learningNodeHistory.nodeId],
-          set: { data: current },
-        });
-      if (nodeKind === 'track')
-        await tx.update(learningTracks).set(values).where(eq(learningTracks.id, id));
-      else if (nodeKind === 'stage')
-        await tx.update(learningStages).set(values).where(eq(learningStages.id, id));
-      else await tx.update(learningModules).set(values).where(eq(learningModules.id, id));
-    }
+    const failure =
+      nodeKind === 'lesson'
+        ? await applyLessonDraft(tx, id, data, validate)
+        : await applyContainerDraft(tx, nodeKind, id, data);
+    if (failure) return failure;
     if (draft)
       await tx
         .delete(learningNodeDrafts)

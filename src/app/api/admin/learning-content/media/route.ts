@@ -53,6 +53,41 @@ function safeFileName(value: string): string {
   );
 }
 
+type PreparedMedia = { bytes: Uint8Array; contentType: string; extension: string };
+
+// Imagem vira WebP de até 2400px; documento só passa se o conteúdo bater com o tipo do arquivo.
+async function prepareMedia(
+  kind: 'image' | 'file',
+  originalName: string,
+  originalBytes: Uint8Array,
+): Promise<PreparedMedia | { error: string }> {
+  if (kind !== 'image') {
+    const validated = validateDownloadFile(originalName, originalBytes);
+    if (!validated) return { error: 'Use PDF, ZIP, DOCX, XLSX, PPTX, TXT ou CSV.' };
+    return {
+      bytes: originalBytes,
+      contentType: validated.contentType,
+      extension: validated.extension.slice(1),
+    };
+  }
+  try {
+    const image = sharp(originalBytes, { limitInputPixels: 40_000_000 });
+    const metadata = await image.metadata();
+    if (!metadata.format || !IMAGE_TYPES.has(metadata.format))
+      return { error: 'Mande uma imagem PNG, JPG ou WebP.' };
+    const bytes = new Uint8Array(
+      await image
+        .rotate()
+        .resize({ width: 2400, height: 2400, fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 84 })
+        .toBuffer(),
+    );
+    return { bytes, contentType: 'image/webp', extension: 'webp' };
+  } catch {
+    return { error: 'Não consegui abrir essa imagem. Mande PNG, JPG ou WebP.' };
+  }
+}
+
 /** Salva uma imagem ou documento e associa o arquivo à aula sem expor a chave do bucket. */
 export async function POST(request: Request) {
   if (!(await hasAdminSession())) return jsonError('Entre com uma conta administradora.', 401);
@@ -133,37 +168,9 @@ export async function POST(request: Request) {
 
   const originalName = safeFileName(file.name);
   const originalBytes = new Uint8Array(await file.arrayBuffer());
-  let bytes: Uint8Array;
-  let contentType: string;
-  let extension: string;
-  if (kind === 'image') {
-    try {
-      const image = sharp(originalBytes, { limitInputPixels: 40_000_000 });
-      const metadata = await image.metadata();
-      if (!metadata.format || !IMAGE_TYPES.has(metadata.format)) {
-        return jsonError('Mande uma imagem PNG, JPG ou WebP.', 400);
-      }
-      bytes = new Uint8Array(
-        await image
-          .rotate()
-          .resize({ width: 2400, height: 2400, fit: 'inside', withoutEnlargement: true })
-          .webp({ quality: 84 })
-          .toBuffer(),
-      );
-      contentType = 'image/webp';
-      extension = 'webp';
-    } catch {
-      return jsonError('Não consegui abrir essa imagem. Mande PNG, JPG ou WebP.', 400);
-    }
-  } else {
-    const validated = validateDownloadFile(originalName, originalBytes);
-    if (!validated) {
-      return jsonError('Use PDF, ZIP, DOCX, XLSX, PPTX, TXT ou CSV.', 400);
-    }
-    bytes = originalBytes;
-    contentType = validated.contentType;
-    extension = validated.extension.slice(1);
-  }
+  const prepared = await prepareMedia(kind, originalName, originalBytes);
+  if ('error' in prepared) return jsonError(prepared.error, 400);
+  const { bytes, contentType, extension } = prepared;
 
   const fileName = kind === 'image' ? `${originalName.replace(/\.[^.]+$/, '')}.webp` : originalName;
   const key = `sll/learning-content/${lesson.id}/${crypto.randomUUID()}.${extension}`;
@@ -213,12 +220,19 @@ export async function POST(request: Request) {
             };
       const blockId = existing?.id ?? crypto.randomUUID();
       const position = Math.max(-1, ...current.map((block) => block.position)) + 1;
+      const outcome = {
+        blockId,
+        previousKey:
+          typeof existingData.storageKey === 'string' ? existingData.storageKey : undefined,
+      };
       if (currentLesson.status === 'published') {
         const blocks: LearningDraftBlock[] = existing
           ? current.map((block) => (block.id === existing.id ? { ...block, data } : block))
           : [...current, { id: blockId, kind, data, position }];
         await saveNodeDraft('lesson', lesson.id, { blocks }, tx);
-      } else if (existing) {
+        return outcome;
+      }
+      if (existing) {
         await tx
           .update(learningContentBlocks)
           .set({ data })
@@ -228,16 +242,12 @@ export async function POST(request: Request) {
               eq(learningContentBlocks.lessonId, lesson.id),
             ),
           );
-      } else {
-        await tx
-          .insert(learningContentBlocks)
-          .values({ id: blockId, lessonId: lesson.id, kind, data, position });
+        return outcome;
       }
-      return {
-        blockId,
-        previousKey:
-          typeof existingData.storageKey === 'string' ? existingData.storageKey : undefined,
-      };
+      await tx
+        .insert(learningContentBlocks)
+        .values({ id: blockId, lessonId: lesson.id, kind, data, position });
+      return outcome;
     });
     // O arquivo da versão publicada ou anterior continua disponível para restauração.
     if (result.previousKey !== key)

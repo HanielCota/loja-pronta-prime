@@ -14,7 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { panelCard, statusBadge } from '@/features/member/components/area-shell';
 import { requireProduct } from '@/features/products/server/access';
-import { SllAreaShell } from '@/features/sll/sll-area-shell';
+import { SllPage } from '@/features/sll/sll-area-shell';
 import { getSllStoreOverview } from '@/features/sll/server/store-overview';
 import { getParam, type SearchParams } from '@/lib/search-params';
 import { cn } from '@/lib/utils';
@@ -23,7 +23,7 @@ export const metadata: Metadata = { title: 'Adicionar ou conectar loja · SLL' }
 
 const FLOW_PATH = '/sll/minhas-lojas/adicionar';
 const SHOPEE_QUERY = `${FLOW_PATH}?plataforma=shopee`;
-const cardTitleClass = 'text-xl font-semibold text-foreground';
+const cardTitleClass = 'text-headline font-semibold text-foreground';
 
 /**
  * Entrada única para os dois caminhos de loja. A plataforma fica na URL para o retorno funcionar
@@ -54,8 +54,7 @@ export default async function AddStorePage({
   const hasLoadFailure = overview?.connected.status === 'failure';
 
   return (
-    <SllAreaShell
-      account={session.user}
+    <SllPage
       hasChoice={products.length > 1}
       title="Adicionar ou conectar loja"
       intro={
@@ -64,7 +63,6 @@ export default async function AddStorePage({
           : 'Primeiro, escolha a plataforma da sua loja.'
       }
       backLink={{ href: '/sll/minhas-lojas', label: 'Minhas Lojas' }}
-      currentSection={FLOW_PATH}
     >
       {platform === 'shopee' ? (
         <StorePathStep
@@ -76,7 +74,7 @@ export default async function AddStorePage({
       ) : (
         <PlatformStep />
       )}
-    </SllAreaShell>
+    </SllPage>
   );
 }
 

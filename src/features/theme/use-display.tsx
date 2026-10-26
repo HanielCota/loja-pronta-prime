@@ -41,8 +41,11 @@ function fromSnapshot(raw: string): DisplaySettings {
 function applyAttributes(settings: DisplaySettings) {
   const root = document.documentElement;
   for (const [name, value] of Object.entries(displayAttributes(settings))) {
-    if (value === null) root.removeAttribute(name);
-    else root.setAttribute(name, value);
+    if (value === null) {
+      root.removeAttribute(name);
+      continue;
+    }
+    root.setAttribute(name, value);
   }
 }
 
@@ -56,8 +59,11 @@ export function useDisplay() {
     const next = { ...fromSnapshot(snapshot()), ...change };
     try {
       for (const [key, value] of Object.entries(displayStorage(next))) {
-        if (value === null) localStorage.removeItem(key);
-        else localStorage.setItem(key, value);
+        if (value === null) {
+          localStorage.removeItem(key);
+          continue;
+        }
+        localStorage.setItem(key, value);
       }
     } catch {
       // Sem armazenamento: vale nesta página, até recarregar.

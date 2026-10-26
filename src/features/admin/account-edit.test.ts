@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import { NAME_MAX_LENGTH } from '@/features/auth/schemas';
 import { parseAccountEdit, withAdminRole } from './account-edit';
 
 function form(values: Record<string, string>) {
@@ -39,6 +40,13 @@ describe('parseAccountEdit', () => {
     expect(parseAccountEdit(form({ ...valid, email: 'maria' }))).toBeNull();
     expect(parseAccountEdit(form({ ...valid, name: 'M' }))).toBeNull();
     expect(parseAccountEdit(form({ ...valid, role: 'owner' }))).toBeNull();
+  });
+
+  test('o nome preferido tem o mesmo teto do perfil da aluna', () => {
+    const at = 'a'.repeat(NAME_MAX_LENGTH);
+    expect(parseAccountEdit(form({ ...valid, preferredName: at }))?.preferredName).toBe(at);
+    expect(parseAccountEdit(form({ ...valid, preferredName: ` ${at} ` }))?.preferredName).toBe(at);
+    expect(parseAccountEdit(form({ ...valid, preferredName: `${at}a` }))).toBeNull();
   });
 });
 

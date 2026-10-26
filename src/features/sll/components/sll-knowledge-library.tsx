@@ -9,6 +9,7 @@ import { panelCard } from '@/features/member/components/area-shell';
 import { Button } from '@/components/ui/button';
 import { usePathname } from 'next/navigation';
 import { filterLibraryModules, type LibraryModule } from '../library-search';
+import { formatDuration } from '../duration';
 import { sllLibraryLessonHref } from '../lesson-navigation';
 import { cn } from '@/lib/utils';
 
@@ -89,7 +90,7 @@ export function SllKnowledgeLibrary({
         results.map((module) => (
           <section key={module.id} aria-label={module.title}>
             <div className="mb-4 flex flex-wrap items-baseline gap-3">
-              <h3 className="text-xl leading-snug font-semibold text-balance text-foreground">
+              <h3 className="text-headline font-semibold text-balance text-foreground">
                 {module.title}
               </h3>
               <span className="text-sm text-muted-foreground">
@@ -123,10 +124,7 @@ export function SllKnowledgeLibrary({
                       ) : null}
                       {lesson.durationMinutes || lesson.materialLabel ? (
                         <span className="mt-2 block text-sm text-muted-foreground">
-                          {[
-                            lesson.durationMinutes ? `${lesson.durationMinutes} min` : null,
-                            lesson.materialLabel,
-                          ]
+                          {[formatDuration(lesson.durationMinutes), lesson.materialLabel]
                             .filter(Boolean)
                             .join(' · ')}
                         </span>

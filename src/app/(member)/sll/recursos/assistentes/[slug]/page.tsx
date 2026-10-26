@@ -4,7 +4,7 @@ import { ArrowUpRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { requireProduct } from '@/features/products/server/access';
 import { panelCard } from '@/features/member/components/area-shell';
-import { SllAreaShell } from '@/features/sll/sll-area-shell';
+import { SllPage } from '@/features/sll/sll-area-shell';
 import { getSllPublishedResources } from '@/features/sll/server/catalog';
 import { ASSISTANT_GUIDES } from '@/features/sll/tools/catalog';
 import { cn } from '@/lib/utils';
@@ -24,23 +24,21 @@ export default async function AssistantPage({ params }: { params: Promise<{ slug
   const { slug } = await params;
   const guide = Object.hasOwn(ASSISTANT_GUIDES, slug) ? ASSISTANT_GUIDES[slug] : undefined;
   if (!guide) notFound();
-  const [{ session, products }, resources] = await Promise.all([
+  const [{ products }, resources] = await Promise.all([
     requireProduct('sll', `/sll/recursos/assistentes/${slug}`),
     getSllPublishedResources(),
   ]);
   const resource = resources.find((item) => item.slug === slug);
   if (!resource?.destination) notFound();
   return (
-    <SllAreaShell
-      account={session.user}
+    <SllPage
       hasChoice={products.length > 1}
       title={resource.title}
       intro="Prepare as informações e abra seu assistente no ChatGPT."
-      currentSection="/sll/recursos"
       backLink={{ href: '/sll/recursos', label: 'Voltar aos recursos' }}
     >
       <section className={cn(panelCard, 'gap-4')}>
-        <h2 className="text-xl font-semibold text-foreground">Como usar</h2>
+        <h2 className="text-headline font-semibold text-foreground">Como usar</h2>
         <ol className="ml-6 list-decimal space-y-3 text-body text-foreground">
           {guide.instructions.map((instruction) => (
             <li key={instruction}>{instruction}</li>
@@ -62,6 +60,6 @@ export default async function AssistantPage({ params }: { params: Promise<{ slug
           </a>
         </Button>
       </section>
-    </SllAreaShell>
+    </SllPage>
   );
 }

@@ -36,9 +36,13 @@ function start(file) {
     });
   });
 }
-const migrated = await start('migrate.cjs');
-if (migrated !== 0 || stopping) process.exitCode = migrated || exitCode;
-else {
+// Função própria pra sair cedo quando a migração falha, sem subir o servidor nem o worker.
+async function run() {
+  const migrated = await start('migrate.cjs');
+  if (migrated !== 0 || stopping) {
+    process.exitCode = migrated || exitCode;
+    return;
+  }
   await Promise.all(
     ['server.js', 'assistant-worker.cjs'].map(async (file) => {
       const code = await start(file);
@@ -49,3 +53,4 @@ else {
     }),
   );
 }
+await run();

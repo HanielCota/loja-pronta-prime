@@ -11,6 +11,12 @@ const studentEmail = `${studentId}@example.invalid`;
 let viewer = { id: ownerId, email: 'beedfialho@gmail.com', role: 'admin' };
 mock.module('@/features/admin/server/access', () => ({
   requireAdmin: async () => ({ user: viewer }),
+  requireStaff: async () => {
+    const roles = viewer.role.split(',').map((role) => role.trim());
+    const staff = roles.includes('admin') ? 'admin' : roles.includes('support') ? 'support' : null;
+    if (!staff) throw new Error('not-found');
+    return { user: viewer, staff };
+  },
 }));
 mock.module('next/navigation', () => ({
   unstable_rethrow: () => {},

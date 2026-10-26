@@ -674,8 +674,11 @@ function ProfilePhotoForm({
       action={action}
       onSubmit={(event) => {
         // Ainda reduzindo a foto: espera, pra não mandar o arquivo grande.
-        if (preparing) event.preventDefault();
-        else setLocalError(undefined);
+        if (preparing) {
+          event.preventDefault();
+          return;
+        }
+        setLocalError(undefined);
       }}
       className="flex flex-col gap-4"
     >

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { NAME_MAX_LENGTH } from '@/features/auth/schemas';
 
 export type AccountEdit = {
   name: string;
@@ -10,7 +11,9 @@ export type AccountEdit = {
 
 const accountEditSchema = z.object({
   name: z.string().trim().min(2).max(120),
-  preferredName: z.string().trim().max(60),
+  // O mesmo teto da aluna: com 60, a equipe gravava um nome que estourava a saudação e que o
+  // perfil dela depois recusava ao salvar sem mudar nada.
+  preferredName: z.string().trim().max(NAME_MAX_LENGTH),
   email: z.email().trim().toLowerCase().max(254),
   role: z.enum(['student', 'admin']),
   mustChangePassword: z.enum(['yes', 'no']),

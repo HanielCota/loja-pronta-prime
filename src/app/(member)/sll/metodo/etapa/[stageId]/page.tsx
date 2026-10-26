@@ -4,7 +4,7 @@ import { ArrowRight, BookOpen, Check, ChevronDown, Circle, LockKeyhole } from 'l
 import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { panelCard } from '@/features/member/components/area-shell';
-import { SllAreaShell } from '@/features/sll/sll-area-shell';
+import { SllPage } from '@/features/sll/sll-area-shell';
 import { SllKnowledgeLibrary } from '@/features/sll/components/sll-knowledge-library';
 import { getSllMethodTrackForStage } from '@/features/sll/server/catalog';
 import { requireProduct } from '@/features/products/server/access';
@@ -83,8 +83,7 @@ export default async function MethodStagePage({
       : null;
 
   return (
-    <SllAreaShell
-      account={session.user}
+    <SllPage
       hasChoice={products.length > 1}
       title={stage.title}
       intro={stage.description ?? undefined}
@@ -266,6 +265,6 @@ export default async function MethodStagePage({
           )}
         </section>
       )}
-    </SllAreaShell>
+    </SllPage>
   );
 }

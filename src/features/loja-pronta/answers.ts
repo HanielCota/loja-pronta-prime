@@ -43,9 +43,13 @@ export function cleanAnswers(answers: OnboardingAnswers): OnboardingAnswers {
     if (question.kind === 'multi') {
       const kept = Array.isArray(value) ? value.filter((item) => labels.includes(item)) : [];
       if (kept.length > 0) clean[id] = kept.slice(0, question.max);
-    } else if (question.kind === 'color' && isCustomColor(value)) {
+      continue;
+    }
+    if (question.kind === 'color' && isCustomColor(value)) {
       clean[id] = value;
-    } else if (typeof value === 'string' && labels.includes(value) && value !== COLOR_OTHER) {
+      continue;
+    }
+    if (typeof value === 'string' && labels.includes(value) && value !== COLOR_OTHER) {
       clean[id] = value;
     }
   }

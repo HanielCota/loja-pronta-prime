@@ -1,20 +1,24 @@
 'use server';
 
-import { and, eq, gte, isNull, sql } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
+import { effectiveProductAccess } from '@/features/products/server/eligibility';
 import { desc } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { revalidateAdminOverview } from './overview-cache';
 import { getAdminOverview } from './overview';
-import { getOnlineStudents } from './online';
-import { visiblePresenceCondition } from './presence-visibility';
+import { countOnlineStudents, getOnlineStudents } from './online';
 import { changePresenceVisibility } from './presence-visibility-actions';
 import { revalidateSllContent } from '@/features/sll/server/content-cache';
 import { z } from 'zod';
 import { requireAdmin } from './access';
-import { ONLINE_WINDOW_MS } from '@/features/presence/presence';
-import { parseLessonEdit } from '../lesson-edit';
-import { getEditableLessonBlocks, saveNodeDraft, withNodeDraftLock } from './node-drafts';
+import { parseLessonEdit, type LessonEditInput } from '../lesson-edit';
+import {
+  getEditableLessonBlocks,
+  saveNodeDraft,
+  withNodeDraftLock,
+  type DbTransaction,
+} from './node-drafts';
 import { removeStorageKeyIfUnused } from './storage-references';
 import { db } from '@/server/db';
 import {
@@ -27,7 +31,6 @@ import {
   manualProductGrants,
   studentProducts,
   user,
-  userPresence,
   type LearningContentBlockData,
 } from '@/server/db/schema';
 import {
@@ -68,7 +71,143 @@ import type { BannerActionState, EditorActionState, ResourceActionState } from '
 
 export type LessonEditState = { message: string; saved: boolean };
 
+type EditedBlock = LessonEditInput['blocks'][number];
+
+// Dados do bloco no rascunho de uma aula publicada; arquivos e imagens mantêm o que já foi enviado.
+function draftBlockData(
+  edited: EditedBlock,
+  originalData: Record<string, unknown>,
+): LearningContentBlockData {
+  if (edited.kind === 'text') return { text: edited.text };
+  if (edited.kind === 'link') return { label: edited.label, url: edited.url, note: edited.note };
+  if (edited.kind === 'video')
+    return { provider: 'pandavideo', videoId: edited.videoId, note: edited.note };
+  if (edited.kind === 'file') {
+    if (typeof originalData.storageKey !== 'string') throw new Error('Arquivo sem material.');
+    return {
+      storageKey: originalData.storageKey,
+      contentType: String(originalData.contentType ?? 'application/octet-stream'),
+      size: Number(originalData.size ?? 0),
+      fileName: edited.fileName,
+      ...(edited.attachedTo ? { attachedTo: edited.attachedTo } : {}),
+    };
+  }
+  if (typeof originalData.storageKey !== 'string') throw new Error('Imagem sem arquivo.');
+  return {
+    storageKey: originalData.storageKey,
+    contentType: String(originalData.contentType ?? 'image/webp'),
+    size: Number(originalData.size ?? 0),
+    alt: edited.alt,
+  };
+}
+
+// Dados gravados direto num bloco existente de aula em rascunho.
+function savedBlockData(
+  edited: EditedBlock,
+  originalData: Record<string, unknown>,
+): LearningContentBlockData {
+  if (edited.kind === 'text') return { text: edited.text };
+  if (edited.kind === 'link') return { url: edited.url, label: edited.label, note: edited.note };
+  if (edited.kind === 'video')
+    return { provider: 'pandavideo', videoId: edited.videoId, note: edited.note };
+  if (edited.kind === 'image') {
+    if (typeof originalData.storageKey !== 'string') throw new Error('Imagem sem arquivo.');
+    return {
+      storageKey: originalData.storageKey,
+      contentType:
+        typeof originalData.contentType === 'string' ? originalData.contentType : 'image/webp',
+      size: typeof originalData.size === 'number' ? originalData.size : 0,
+      alt: edited.alt,
+    };
+  }
+  if (typeof originalData.storageKey !== 'string') throw new Error('Arquivo sem material.');
+  return {
+    storageKey: originalData.storageKey,
+    contentType:
+      typeof originalData.contentType === 'string'
+        ? originalData.contentType
+        : 'application/octet-stream',
+    size: typeof originalData.size === 'number' ? originalData.size : 0,
+    fileName: edited.fileName,
+    ...(edited.attachedTo ? { attachedTo: edited.attachedTo } : {}),
+  };
+}
+
 export type ProductAccessState = { message: string; saved: boolean; currentAccess?: string[] };
+
+type ProductAccessChange = 'changed' | 'purchase' | 'unchanged';
+
+async function grantProductAccess(
+  tx: DbTransaction,
+  userId: string,
+  product: 'sll' | 'loja-pronta',
+): Promise<ProductAccessChange> {
+  // Uma linha de acesso pode sobrar de uma compra vencida: só conta "já tinha pela compra"
+  // quando a compra ainda vale, senão a mensagem mentiria para a admin.
+  const [effective] = await tx
+    .select({ userId: studentProducts.userId })
+    .from(studentProducts)
+    .where(
+      and(
+        eq(studentProducts.userId, userId),
+        eq(studentProducts.product, product),
+        effectiveProductAccess(),
+      ),
+    );
+  const [inserted] = await tx
+    .insert(studentProducts)
+    .values({ userId, product })
+    .onConflictDoNothing()
+    .returning({ userId: studentProducts.userId });
+  // A liberação manual fica guardada mesmo quando a compra já dava acesso: assim um
+  // reembolso depois não tira o que a admin quis garantir.
+  const [granted] = await tx
+    .insert(manualProductGrants)
+    .values({ userId, product })
+    .onConflictDoNothing()
+    .returning({ userId: manualProductGrants.userId });
+  if (!inserted && !granted) return 'unchanged';
+  if (effective) return 'purchase';
+  return 'changed';
+}
+
+async function revokeProductAccess(
+  tx: DbTransaction,
+  userId: string,
+  product: 'sll' | 'loja-pronta',
+): Promise<ProductAccessChange> {
+  const removed = await tx
+    .delete(studentProducts)
+    .where(and(eq(studentProducts.userId, userId), eq(studentProducts.product, product)))
+    .returning({ userId: studentProducts.userId });
+  if (removed.length === 0) return 'unchanged';
+  await tx
+    .delete(manualProductGrants)
+    .where(and(eq(manualProductGrants.userId, userId), eq(manualProductGrants.product, product)));
+  if (product === 'sll')
+    await tx.execute(sql`
+    update historical_sll_purchases set revoked_at = now()
+    where user_id = ${userId} and revoked_at is null
+  `);
+  // Preserve the paid transaction and exclude only the selected area from its grants.
+  const purchases = await tx
+    .select({ transaction: hotmartPurchases.transaction })
+    .from(hotmartPurchases)
+    .innerJoin(
+      hotmartProductMappings,
+      and(
+        eq(hotmartProductMappings.productUcode, hotmartPurchases.productUcode),
+        eq(hotmartProductMappings.access, product),
+      ),
+    )
+    .where(and(eq(hotmartPurchases.userId, userId), eq(hotmartPurchases.active, true)));
+  if (purchases.length)
+    await tx
+      .insert(hotmartPurchaseAccessRevocations)
+      .values(purchases.map(({ transaction }) => ({ transaction, product })))
+      .onConflictDoNothing();
+  return 'changed';
+}
 
 /** Altera só o produto escolhido e guarda o motivo junto da identidade admin. */
 export async function changeStudentProductAccess(
@@ -109,64 +248,16 @@ export async function changeStudentProductAccess(
   // 'purchase': já tinha acesso pela compra e agora a liberação manual também ficou guardada.
   const outcome = await db.transaction(
     async (tx): Promise<'changed' | 'purchase' | 'unchanged'> => {
-      let result: 'changed' | 'purchase' = 'changed';
       await tx.execute(
         sql`select pg_advisory_xact_lock_shared(hashtext('hotmart-product-mappings'))`,
       );
       // Mesma trava do aviso da Hotmart, para os dois não recalcularem o acesso ao mesmo tempo.
       await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${target.id}))`);
-      if (action === 'granted') {
-        const [inserted] = await tx
-          .insert(studentProducts)
-          .values({ userId: target.id, product })
-          .onConflictDoNothing()
-          .returning({ userId: studentProducts.userId });
-        // A liberação manual fica guardada mesmo quando a compra já dava acesso: assim um
-        // reembolso depois não tira o que a admin quis garantir.
-        const [granted] = await tx
-          .insert(manualProductGrants)
-          .values({ userId: target.id, product })
-          .onConflictDoNothing()
-          .returning({ userId: manualProductGrants.userId });
-        if (!inserted && !granted) return 'unchanged';
-        if (!inserted) result = 'purchase';
-      } else {
-        const removed = await tx
-          .delete(studentProducts)
-          .where(and(eq(studentProducts.userId, target.id), eq(studentProducts.product, product)))
-          .returning({ userId: studentProducts.userId });
-        if (removed.length === 0) return 'unchanged';
-        await tx
-          .delete(manualProductGrants)
-          .where(
-            and(
-              eq(manualProductGrants.userId, target.id),
-              eq(manualProductGrants.product, product),
-            ),
-          );
-        if (product === 'sll')
-          await tx.execute(sql`
-          update historical_sll_purchases set revoked_at = now()
-          where user_id = ${target.id} and revoked_at is null
-        `);
-        // Preserve the paid transaction and exclude only the selected area from its grants.
-        const purchases = await tx
-          .select({ transaction: hotmartPurchases.transaction })
-          .from(hotmartPurchases)
-          .innerJoin(
-            hotmartProductMappings,
-            and(
-              eq(hotmartProductMappings.productUcode, hotmartPurchases.productUcode),
-              eq(hotmartProductMappings.access, product),
-            ),
-          )
-          .where(and(eq(hotmartPurchases.userId, target.id), eq(hotmartPurchases.active, true)));
-        if (purchases.length)
-          await tx
-            .insert(hotmartPurchaseAccessRevocations)
-            .values(purchases.map(({ transaction }) => ({ transaction, product })))
-            .onConflictDoNothing();
-      }
+      const result =
+        action === 'granted'
+          ? await grantProductAccess(tx, target.id, product)
+          : await revokeProductAccess(tx, target.id, product);
+      if (result === 'unchanged') return 'unchanged';
 
       await tx.insert(productAccessEvents).values({
         id: randomUUID(),
@@ -180,10 +271,11 @@ export async function changeStudentProductAccess(
     },
   );
 
-  const access = await db.query.studentProducts.findMany({
-    columns: { product: true },
-    where: eq(studentProducts.userId, target.id),
-  });
+  // Mesma regra da tela de contas: linha de compra vencida não é acesso atual.
+  const access = await db
+    .select({ product: studentProducts.product })
+    .from(studentProducts)
+    .where(and(eq(studentProducts.userId, target.id), effectiveProductAccess()));
   revalidateAdminOverview();
   revalidatePath('/admin/acessos');
   revalidatePath('/');
@@ -369,32 +461,7 @@ export async function saveLearningLesson(
             if (edited.id && (!original || original.kind !== edited.kind))
               throw new Error('O material mudou. Atualize a página.');
             const originalData = (original?.data ?? {}) as Record<string, unknown>;
-            let blockData: LearningContentBlockData;
-            if (edited.kind === 'text') blockData = { text: edited.text };
-            else if (edited.kind === 'link')
-              blockData = { label: edited.label, url: edited.url, note: edited.note };
-            else if (edited.kind === 'video')
-              blockData = { provider: 'pandavideo', videoId: edited.videoId, note: edited.note };
-            else if (edited.kind === 'file') {
-              if (typeof originalData.storageKey !== 'string')
-                throw new Error('Arquivo sem material.');
-              blockData = {
-                storageKey: originalData.storageKey,
-                contentType: String(originalData.contentType ?? 'application/octet-stream'),
-                size: Number(originalData.size ?? 0),
-                fileName: edited.fileName,
-                ...(edited.attachedTo ? { attachedTo: edited.attachedTo } : {}),
-              };
-            } else {
-              if (typeof originalData.storageKey !== 'string')
-                throw new Error('Imagem sem arquivo.');
-              blockData = {
-                storageKey: originalData.storageKey,
-                contentType: String(originalData.contentType ?? 'image/webp'),
-                size: Number(originalData.size ?? 0),
-                alt: edited.alt,
-              };
-            }
+            const blockData = draftBlockData(edited, originalData);
             return {
               id: edited.id ?? randomUUID(),
               kind: edited.kind,
@@ -429,14 +496,18 @@ export async function saveLearningLesson(
                 data: { text: edited.text },
                 position: nextPosition++,
               });
-            } else if (edited.kind === 'link') {
+              continue;
+            }
+            if (edited.kind === 'link') {
               await tx.insert(learningContentBlocks).values({
                 lessonId: lesson.id,
                 kind: 'link',
                 data: { label: edited.label, url: edited.url, note: edited.note },
                 position: nextPosition++,
               });
-            } else if (edited.kind === 'video') {
+              continue;
+            }
+            if (edited.kind === 'video') {
               await tx.insert(learningContentBlocks).values({
                 lessonId: lesson.id,
                 kind: 'video',
@@ -450,37 +521,7 @@ export async function saveLearningLesson(
           if (!original || original.kind !== edited.kind)
             throw new Error('Tipo de bloco alterado.');
           const originalData = original.data as Record<string, unknown>;
-          let data: LearningContentBlockData;
-          if (edited.kind === 'text') data = { text: edited.text };
-          else if (edited.kind === 'link')
-            data = { url: edited.url, label: edited.label, note: edited.note };
-          else if (edited.kind === 'video')
-            data = { provider: 'pandavideo', videoId: edited.videoId, note: edited.note };
-          else if (edited.kind === 'image') {
-            if (typeof originalData.storageKey !== 'string') throw new Error('Imagem sem arquivo.');
-            data = {
-              storageKey: originalData.storageKey,
-              contentType:
-                typeof originalData.contentType === 'string'
-                  ? originalData.contentType
-                  : 'image/webp',
-              size: typeof originalData.size === 'number' ? originalData.size : 0,
-              alt: edited.alt,
-            };
-          } else {
-            if (typeof originalData.storageKey !== 'string')
-              throw new Error('Arquivo sem material.');
-            data = {
-              storageKey: originalData.storageKey,
-              contentType:
-                typeof originalData.contentType === 'string'
-                  ? originalData.contentType
-                  : 'application/octet-stream',
-              size: typeof originalData.size === 'number' ? originalData.size : 0,
-              fileName: edited.fileName,
-              ...(edited.attachedTo ? { attachedTo: edited.attachedTo } : {}),
-            };
-          }
+          const data = savedBlockData(edited, originalData);
           await tx
             .update(learningContentBlocks)
             .set({ data })
@@ -552,22 +593,19 @@ export async function reorderLessonBlocks(formData: FormData): Promise<LessonEdi
           },
           tx,
         );
-      } else {
-        for (const [position, id] of ids.entries())
-          await tx
-            .update(learningContentBlocks)
-            .set({ position })
-            .where(
-              and(
-                eq(learningContentBlocks.id, id as string),
-                eq(learningContentBlocks.lessonId, lessonId.data),
-              ),
-            );
+        return { saved: true, message: 'Nova ordem salva no rascunho.' };
       }
-      return {
-        saved: true,
-        message: lesson.status === 'published' ? 'Nova ordem salva no rascunho.' : 'Ordem salva.',
-      };
+      for (const [position, id] of ids.entries())
+        await tx
+          .update(learningContentBlocks)
+          .set({ position })
+          .where(
+            and(
+              eq(learningContentBlocks.id, id as string),
+              eq(learningContentBlocks.lessonId, lessonId.data),
+            ),
+          );
+      return { saved: true, message: 'Ordem salva.' };
     },
   );
   if (result.saved) {
@@ -611,28 +649,29 @@ export async function removeLessonBlock(formData: FormData): Promise<LessonEditS
         }
         return { ...item, position };
       });
-    if (lesson.status === 'published') await saveNodeDraft('lesson', lessonId.data, { blocks }, tx);
-    else {
-      for (const item of blocks)
-        await tx
-          .update(learningContentBlocks)
-          .set({ data: item.data, position: item.position })
-          .where(
-            and(
-              eq(learningContentBlocks.id, item.id),
-              eq(learningContentBlocks.lessonId, lessonId.data),
-            ),
-          );
+    if (lesson.status === 'published') {
+      await saveNodeDraft('lesson', lessonId.data, { blocks }, tx);
+      return { block, published: true };
+    }
+    for (const item of blocks)
       await tx
-        .delete(learningContentBlocks)
+        .update(learningContentBlocks)
+        .set({ data: item.data, position: item.position })
         .where(
           and(
-            eq(learningContentBlocks.id, block.id),
+            eq(learningContentBlocks.id, item.id),
             eq(learningContentBlocks.lessonId, lessonId.data),
           ),
         );
-    }
-    return { block, published: lesson.status === 'published' };
+    await tx
+      .delete(learningContentBlocks)
+      .where(
+        and(
+          eq(learningContentBlocks.id, block.id),
+          eq(learningContentBlocks.lessonId, lessonId.data),
+        ),
+      );
+    return { block, published: false };
   });
   if (!removed) return { saved: false, message: 'O material não está mais nesta aula.' };
   if ('storageKey' in removed.block.data && typeof removed.block.data.storageKey === 'string')
@@ -769,25 +808,16 @@ export async function resetStudentPasswordForm(previous: AccountActionState, dat
 /** Quantas pessoas estão online agora (o número ao lado de "Online agora" no menu). */
 export async function getOnlineCount(): Promise<number> {
   await requireAdmin();
-  const [row] = await db
-    .select({ total: sql<number>`count(*)::int` })
-    .from(userPresence)
-    .where(
-      and(
-        gte(userPresence.lastSeenAt, new Date(Date.now() - ONLINE_WINDOW_MS)),
-        visiblePresenceCondition(),
-      ),
-    );
-  return row?.total ?? 0;
+  return countOnlineStudents(new Date());
 }
 
 /** Atualiza só os números e a presença, sem renderizar novamente a moldura do painel. */
 export async function getAdminDashboard() {
-  const [overview, { now, rows: online }] = await Promise.all([
+  const [overview, { now, rows: online, total: onlineTotal }] = await Promise.all([
     getAdminOverview(),
     getOnlineStudents(),
   ]);
-  return { overview, now, online };
+  return { overview, now, online, onlineTotal };
 }
 
 export async function changeStudentPresenceVisibility(form: FormData): Promise<void> {

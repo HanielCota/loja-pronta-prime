@@ -12,6 +12,25 @@ export const CSV_HEADERS = [
   'motivo_perda',
 ] as const;
 export const MAX_IMPORT_ROWS = 1000;
+/**
+ * Colunas por linha. O modelo tem 9; uma planilha do Excel com colunas a mais ainda cabe. Sem
+ * teto, uma linha de 2 MB de ";" virava 2 milhões de células, e todas iam pra mensagem de erro.
+ */
+export const MAX_IMPORT_COLUMNS = 50;
+const tooManyColumns = `A planilha tem mais de ${MAX_IMPORT_COLUMNS} colunas. Use o modelo do painel.`;
+
+/**
+ * O Excel do Windows salva CSV em Windows-1252, não UTF-8. Ler tudo como UTF-8 trocava "João" por
+ * "Jo?o" em silêncio e gravava o nome estragado. Tenta UTF-8 estrito e, se o arquivo não for
+ * UTF-8 válido, lê como Windows-1252 (o formato do Excel em português).
+ */
+export function decodeLeadCsv(bytes: Uint8Array): string {
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    return new TextDecoder('windows-1252').decode(bytes);
+  }
+}
 
 /** Aceita CSV do Excel (; ou ,), aspas escapadas e notas com quebra de linha. */
 export function parseCsv(content: string): string[][] {
@@ -26,36 +45,43 @@ export function parseCsv(content: string): string[][] {
   for (let i = 0; i < text.length; i++) {
     const char = text[i]!;
     if (quoted) {
-      if (char === '"') {
-        if (text[i + 1] === '"') {
-          cell += '"';
-          i++;
-        } else {
-          quoted = false;
-          closed = true;
-        }
-      } else cell += char;
-    } else if (char === '"') {
+      if (char !== '"') {
+        cell += char;
+        continue;
+      }
+      if (text[i + 1] === '"') {
+        cell += '"';
+        i++;
+        continue;
+      }
+      quoted = false;
+      closed = true;
+      continue;
+    }
+    if (char === '"') {
       if (cell || closed) throw new Error('Aspas fora do lugar na planilha.');
       quoted = true;
-    } else if (char === delimiter || char === '\n' || char === '\r') {
+      continue;
+    }
+    if (char === delimiter || char === '\n' || char === '\r') {
       row.push(cell);
+      if (row.length > MAX_IMPORT_COLUMNS) throw new Error(tooManyColumns);
       cell = '';
       closed = false;
-      if (char !== delimiter) {
-        if (row.some((value) => value.trim())) rows.push(row);
-        row = [];
-        if (char === '\r' && text[i + 1] === '\n') i++;
-        if (rows.length > MAX_IMPORT_ROWS + 1)
-          throw new Error(`Envie até ${MAX_IMPORT_ROWS} contatos por vez.`);
-      }
-    } else {
-      if (closed) throw new Error('Há texto depois das aspas na planilha.');
-      cell += char;
+      if (char === delimiter) continue;
+      if (row.some((value) => value.trim())) rows.push(row);
+      row = [];
+      if (char === '\r' && text[i + 1] === '\n') i++;
+      if (rows.length > MAX_IMPORT_ROWS + 1)
+        throw new Error(`Envie até ${MAX_IMPORT_ROWS} contatos por vez.`);
+      continue;
     }
+    if (closed) throw new Error('Há texto depois das aspas na planilha.');
+    cell += char;
   }
   if (quoted) throw new Error('Faltou fechar as aspas na planilha.');
   row.push(cell);
+  if (row.length > MAX_IMPORT_COLUMNS) throw new Error(tooManyColumns);
   if (row.some((value) => value.trim())) rows.push(row);
   return rows;
 }
@@ -74,7 +100,9 @@ export function readLeadCsv(content: string): { leads: LeadInput[]; errors: stri
     (name) => !CSV_HEADERS.includes(name as (typeof CSV_HEADERS)[number]),
   );
   if (unknown.length)
-    throw new Error(`Colunas não reconhecidas: ${unknown.join(', ')}. Use o modelo do painel.`);
+    throw new Error(
+      `Colunas não reconhecidas: ${unknown.slice(0, 5).join(', ')}${unknown.length > 5 ? ` e mais ${unknown.length - 5}` : ''}. Use o modelo do painel.`,
+    );
   const leads: LeadInput[] = [],
     errors: string[] = [];
   rows.forEach((row, index) => {
@@ -95,11 +123,13 @@ export function readLeadCsv(content: string): { leads: LeadInput[]; errors: stri
       tags: values.etiquetas ?? '',
       lostReason: values.motivo_perda ?? '',
     });
-    if (parsed.success) leads.push(parsed.data);
-    else
-      errors.push(
-        `Linha ${index + 2}: ${parsed.error.issues.map((issue) => issue.message).join(' ')}`,
-      );
+    if (parsed.success) {
+      leads.push(parsed.data);
+      return;
+    }
+    errors.push(
+      `Linha ${index + 2}: ${parsed.error.issues.map((issue) => issue.message).join(' ')}`,
+    );
   });
   return { leads, errors };
 }

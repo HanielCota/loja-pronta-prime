@@ -42,7 +42,7 @@ import type {
   LearningNodeKind,
   StructureActionState,
 } from '../structure-types';
-import { AdminSelect as Select } from './admin-select';
+import { SelectMenu as Select } from '@/components/ui/select-menu';
 import { Textarea } from '@/components/ui/textarea';
 import { FileField } from '@/components/ui/file-field';
 
@@ -187,6 +187,14 @@ export function ContentNodeForm({
                   {...describedBy('relatedLessonId')}
                 >
                   <option value="">Nenhuma aula relacionada</option>
+                  {/* A aula ligada pode ter sido arquivada: sem esta opção, a lista mostraria
+                      "Nenhuma" e salvar apagaria o vínculo sem a admin pedir. */}
+                  {initial?.relatedLessonId &&
+                  !lessonChoices.some((choice) => choice.id === initial.relatedLessonId) ? (
+                    <option value={initial.relatedLessonId}>
+                      Aula indisponível (vínculo mantido)
+                    </option>
+                  ) : null}
                   {lessonChoices.map((choice) => (
                     <option key={choice.id} value={choice.id}>
                       {choice.title}

@@ -1,28 +1,20 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRightIcon, ScaleIcon } from 'lucide-react';
+import { ArrowRight, Check, Scale } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Select } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+import { SelectMenu } from '@/components/ui/select-menu';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { panelCard } from '@/features/member/components/area-shell';
 import { SllFlashMessage } from '@/features/sll/components/sll-flash-message';
 import { requireProduct } from '@/features/products/server/access';
-import { SllAreaShell } from '@/features/sll/sll-area-shell';
+import { SllPage } from '@/features/sll/sll-area-shell';
 import { readStoreObservations } from '@/features/assistant/server/metrics';
 import { readCategoryExperiments } from '@/features/assistant/server/experiments';
 import { createCategoryExperiment } from '@/features/assistant/server/experiment-actions';
 import { getParam, type SearchParams } from '@/lib/search-params';
-import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Comparar categorias · SLL' };
-
-// O que falta pra comparação abrir, na ordem em que a aluna resolve.
-const REQUIREMENTS = [
-  'Conectar sua loja',
-  'Esperar a primeira coleta de dados',
-  'Ter dois anúncios em categorias diferentes',
-];
-
 export default async function CategoryPage({
   searchParams,
 }: {
@@ -36,27 +28,29 @@ export default async function CategoryPage({
   ]);
   const result = getParam(params.resultado);
   const eligible = data.items.filter((item) => item.categoryId);
+  const hasTwoCategories = new Set(eligible.map((item) => item.categoryId)).size >= 2;
+  // O que falta, na ordem em que acontece; cada passo vem dos dados, nunca marcado à toa.
+  const requirements = [
+    { label: 'Conectar sua loja', done: data.status !== 'unavailable' },
+    { label: 'Esperar a primeira coleta de dados', done: data.status === 'ready' },
+    { label: 'Ter dois anúncios em categorias diferentes', done: hasTwoCategories },
+  ];
   // Nome do anúncio no lugar do código; sem coleta daquele anúncio, fica o código mesmo.
   const titleById = new Map(data.items.map((item) => [String(item.itemId), item.title]));
   const listingName = (itemId: unknown) =>
     titleById.get(String(itemId)) ?? `Anúncio ${String(itemId)}`;
   return (
-    <SllAreaShell
-      account={session.user}
+    <SllPage
       hasChoice={products.length > 1}
       title="Comparar categorias"
       intro="Veja qual de dois anúncios foi melhor no mesmo período."
     >
-      <Button
-        asChild
-        variant="link"
-        className="min-h-11 w-auto self-start px-0 text-body font-semibold"
+      <Link
+        href="/sll/anuncios"
+        className="-mt-2 flex min-h-11 w-fit items-center gap-1.5 rounded-full text-body font-semibold text-link outline-none hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid"
       >
-        <Link href="/sll/anuncios">
-          Ajustar anúncios da minha loja
-          <ArrowRightIcon aria-hidden="true" />
-        </Link>
-      </Button>
+        Ajustar anúncios da minha loja <ArrowRight aria-hidden="true" className="size-4" />
+      </Link>
       {result ? (
         <SllFlashMessage
           failed={result !== 'saved'}
@@ -69,23 +63,22 @@ export default async function CategoryPage({
           }
         />
       ) : null}
-      {new Set(eligible.map((item) => item.categoryId)).size >= 2 ? (
-        <section className={panelCard} aria-labelledby="category-selection">
-          <h2 id="category-selection" className="text-title font-semibold">
-            Escolha os anúncios
-          </h2>
-          <p className="text-body text-muted-foreground">
-            Esta ferramenta compara os resultados observados. Ela não duplica anúncios nem troca
-            categorias. Categorias e anúncios precisam seguir as regras da Shopee.
-          </p>
-          <form action={createCategoryExperiment} className="flex flex-col gap-4">
+      <section className={cn(panelCard, 'gap-2')} aria-labelledby="category-selection">
+        <h2 id="category-selection" className="text-title font-semibold">
+          {hasTwoCategories ? 'Escolha os anúncios' : 'Antes de comparar'}
+        </h2>
+        <p className="text-body text-pretty text-muted-foreground">
+          A comparação só lê os resultados. Ela não muda seus anúncios nem as categorias.
+        </p>
+        {hasTwoCategories ? (
+          <form action={createCategoryExperiment} className="mt-4 flex flex-col gap-4">
             {[
               ['left', 'Primeiro anúncio'],
               ['right', 'Segundo anúncio'],
             ].map(([name, label]) => (
               <label key={name} className="flex flex-col gap-2 text-body">
                 {label}
-                <Select name={name} required defaultValue="">
+                <SelectMenu name={name} required defaultValue="">
                   <option value="" disabled>
                     Escolha um anúncio
                   </option>
@@ -94,7 +87,7 @@ export default async function CategoryPage({
                       {item.title} · Categoria {item.categoryId}
                     </option>
                   ))}
-                </Select>
+                </SelectMenu>
               </label>
             ))}
             <FloatingLabelInput
@@ -113,37 +106,35 @@ export default async function CategoryPage({
             </p>
             <Button>Começar comparação</Button>
           </form>
-        </section>
-      ) : (
-        <section className={cn(panelCard, 'gap-6')} aria-labelledby="category-requirements">
-          <div className="flex flex-col gap-2">
-            <h2 id="category-requirements" className="text-title font-semibold">
-              Antes de comparar
-            </h2>
-            <p className="text-body text-pretty text-muted-foreground">
-              A comparação só lê os resultados. Ela não muda seus anúncios nem as categorias.
-            </p>
-          </div>
-          <ol className="flex flex-col gap-3">
-            {REQUIREMENTS.map((requirement, index) => (
-              <li key={requirement} className="flex gap-3 text-body text-pretty">
-                <span
-                  aria-hidden="true"
-                  className="grid size-7 shrink-0 place-items-center rounded-full bg-primary-soft text-sm font-semibold text-link forced-colors:border forced-colors:border-[CanvasText]"
-                >
-                  {index + 1}
-                </span>
-                <span className="pt-0.5">{requirement}</span>
-              </li>
-            ))}
-          </ol>
-          <Button asChild>
-            <Link href="/sll/plano">Conferir dados da loja</Link>
-          </Button>
-        </section>
-      )}
+        ) : (
+          <>
+            <ol className="mt-3 flex flex-col">
+              {requirements.map((requirement, index) => (
+                <li key={requirement.label} className="flex min-h-11 items-center gap-3 text-body">
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      'grid size-7 shrink-0 place-items-center rounded-full text-sm font-bold',
+                      requirement.done
+                        ? 'bg-progress text-primary-foreground'
+                        : 'bg-primary-soft text-link',
+                    )}
+                  >
+                    {requirement.done ? <Check className="size-4" strokeWidth={3} /> : index + 1}
+                  </span>
+                  {requirement.label}
+                  <span className="sr-only">{requirement.done ? ' (feito)' : ' (falta)'}</span>
+                </li>
+              ))}
+            </ol>
+            <Button asChild className="mt-4">
+              <Link href="/sll/plano">Conferir dados da loja</Link>
+            </Button>
+          </>
+        )}
+      </section>
       {experiments.length ? (
-        <section className={panelCard} aria-labelledby="category-results">
+        <section className={cn(panelCard, 'gap-3')} aria-labelledby="category-results">
           <h2 id="category-results" className="text-title font-semibold">
             Suas comparações
           </h2>
@@ -190,14 +181,18 @@ export default async function CategoryPage({
           </ul>
         </section>
       ) : (
+        // Sem comparações: um convite curto, centralizado, em vez de uma lista vazia.
         <section
-          className={cn(panelCard, 'items-center gap-3 py-10 text-center')}
+          className={cn(panelCard, 'items-center gap-2 text-center')}
           aria-labelledby="category-results"
         >
-          <span className="grid size-12 place-items-center rounded-2xl bg-muted text-muted-foreground">
-            <ScaleIcon aria-hidden="true" className="size-6" />
+          <span
+            aria-hidden="true"
+            className="grid size-12 place-items-center rounded-2xl bg-muted text-muted-foreground"
+          >
+            <Scale className="size-6" />
           </span>
-          <h2 id="category-results" className="text-body font-semibold">
+          <h2 id="category-results" className="mt-1 text-body font-semibold">
             Suas comparações
           </h2>
           <p className="text-body text-pretty text-muted-foreground">
@@ -205,6 +200,6 @@ export default async function CategoryPage({
           </p>
         </section>
       )}
-    </SllAreaShell>
+    </SllPage>
   );
 }

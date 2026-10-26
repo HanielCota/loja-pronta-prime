@@ -23,7 +23,7 @@ import {
   type ShopeeCallback,
   type ShopeeConfiguration,
 } from '../authorization';
-import { requestShopeeTokens, ShopeeApiError } from './client';
+import { reportShopeeFailure, requestShopeeTokens, ShopeeApiError } from './client';
 
 /**
  * Trava de sessão numa conexão reservada: sobrevive aos commits que precedem chamadas externas.
@@ -206,7 +206,9 @@ export async function finishShopeeAuthorization(
               .where(and(eq(stores.userId, input.userId), eq(stores.phase, 4)));
         });
         return config.SHOPEE_ENVIRONMENT === 'live' ? 'connected' : 'sandbox';
-      } catch {
+      } catch (error) {
+        // A aluna vê "tente de novo"; o log separa recusa da Shopee de falha ao salvar no banco.
+        reportShopeeFailure('authorize', error);
         return 'failed';
       }
     },
@@ -292,7 +294,9 @@ export async function readShopeeAccess(
           })
           .where(eq(shopeeConnections.userId, userId));
         accessToken = tokens.accessToken;
-      } catch {
+      } catch (error) {
+        // A conexão já ficou revogada; sem este registro, a loja apareceria só "desconectada".
+        reportShopeeFailure('refresh', error);
         throw new ShopeeApiError('rejected');
       }
     }

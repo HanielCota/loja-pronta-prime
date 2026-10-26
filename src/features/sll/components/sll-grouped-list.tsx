@@ -33,12 +33,6 @@ const ICON_TONES = {
   // A marca da plataforma: só o quadradinho, nunca um botão.
   shopee:
     'bg-shopee text-primary-foreground forced-colors:border forced-colors:border-[CanvasText]',
-  // O preto some no cartão escuro: a borda fina mantém o quadradinho visível.
-  tiktok:
-    'bg-tiktok text-tiktok-foreground dark:ring-1 dark:ring-border forced-colors:border forced-colors:border-[CanvasText]',
-  // O símbolo é largo e cheio de detalhe: ocupa quase todo o quadradinho, senão some.
-  mercadolivre:
-    'bg-mercadolivre [&_svg]:h-auto! [&_svg]:w-9! forced-colors:border forced-colors:border-[CanvasText]',
 } as const;
 
 export function SllRowIcon({

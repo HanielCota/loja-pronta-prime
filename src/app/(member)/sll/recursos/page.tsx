@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { panelCard } from '@/features/member/components/area-shell';
-import { SllAreaShell } from '@/features/sll/sll-area-shell';
+import { SllPage } from '@/features/sll/sll-area-shell';
 import { getSllPublishedResources } from '@/features/sll/server/catalog';
 import { getSllCopy } from '@/features/sll/server/copy';
 import { requireProduct } from '@/features/products/server/access';
@@ -21,7 +21,7 @@ const GROUP_ORDER = ['calculadora', 'materiais', 'assistentes', 'parceiros'];
  * frases e os grupos vêm do admin; ferramenta sem endereço aparece como "Em breve".
  */
 export default async function SllResourcesPage() {
-  const [{ session, products }, resources, copy] = await Promise.all([
+  const [{ products }, resources, copy] = await Promise.all([
     requireProduct('sll'),
     getSllPublishedResources(),
     getSllCopy(),
@@ -29,10 +29,11 @@ export default async function SllResourcesPage() {
   const groups = resources.reduce<Array<{ key: string; title: string; items: typeof resources }>>(
     (result, resource) => {
       const group = result.find((item) => item.key === resource.groupKey);
-      if (group) group.items.push(resource);
-      if (!group) {
-        result.push({ key: resource.groupKey, title: resource.groupTitle, items: [resource] });
+      if (group) {
+        group.items.push(resource);
+        return result;
       }
+      result.push({ key: resource.groupKey, title: resource.groupTitle, items: [resource] });
       return result;
     },
     [],
@@ -40,19 +41,20 @@ export default async function SllResourcesPage() {
   groups.sort((left, right) => GROUP_ORDER.indexOf(left.key) - GROUP_ORDER.indexOf(right.key));
 
   return (
-    <SllAreaShell
-      account={session.user}
+    <SllPage
       hasChoice={products.length > 1}
       title={copy.resourcesTitle}
       intro={copy.resourcesIntro}
     >
       {groups.length ? (
-        <div className="grid items-start gap-8 lg:grid-cols-2">
+        // Colunas que se encaixam (como num mural): um grupo curto não deixa buraco ao lado do
+        // grupo comprido. Cada grupo fica inteiro numa coluna.
+        <div className="gap-8 lg:columns-2">
           {groups.map((group) => (
             <section
               key={group.key}
               aria-labelledby={`resource-group-${group.key}`}
-              className="flex flex-col gap-3"
+              className="mb-8 flex break-inside-avoid flex-col gap-3 last:mb-0"
             >
               <SllGroupTitle id={`resource-group-${group.key}`}>{group.title}</SllGroupTitle>
               <SllGroupedList>
@@ -80,6 +82,6 @@ export default async function SllResourcesPage() {
           </p>
         </section>
       )}
-    </SllAreaShell>
+    </SllPage>
   );
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
-import { SllAreaShell } from '@/features/sll/sll-area-shell';
+import { SllPage } from '@/features/sll/sll-area-shell';
 import { SllLessonViewer } from '@/features/sll/components/sll-lesson-viewer';
 import { getSllLessonViewer } from '@/features/sll/server/lesson-viewer';
 import { safeSllReturnHref, sllLessonHref } from '@/features/sll/lesson-navigation';
@@ -22,9 +22,6 @@ export default async function SllLessonPage({
   if (!data) notFound();
   // Links antigos continuam abrindo a mesma aula, agora dentro da trilha de boas-vindas.
   if (data.track.kind === 'welcome') redirect(sllLessonHref('welcome', data.lesson.id));
-  // A aula não tem link no menu: marca de onde ela vem (a etapa do Método, Comece aqui ou Cursos).
-  const currentSection =
-    data.track.kind === 'method' ? `/sll/metodo/etapa/${data.stage.id}` : '/sll/cursos';
   const defaultBackLink =
     data.track.kind === 'method'
       ? { href: `/sll/metodo/etapa/${data.stage.id}`, label: 'Voltar às aulas da etapa' }
@@ -32,12 +29,10 @@ export default async function SllLessonPage({
   const isLibraryReturn = Boolean(returnHref?.includes('#library-lesson-'));
 
   return (
-    <SllAreaShell
-      account={data.user}
-      currentSection={currentSection}
+    <SllPage
       hasChoice={data.hasChoice}
       title={data.track.title}
-      intro="Assista à aula e acompanhe seu progresso."
+      // Sem frase genérica embaixo do título: a trilha da aula e o vídeo já dizem onde ela está.
       backLink={
         returnHref
           ? {
@@ -48,6 +43,6 @@ export default async function SllLessonPage({
       }
     >
       <SllLessonViewer key={data.lesson.id} data={{ ...data, returnHref }} />
-    </SllAreaShell>
+    </SllPage>
   );
 }

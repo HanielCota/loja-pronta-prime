@@ -22,12 +22,14 @@ export function BrandReview({
   logoSrc,
   description,
   revising = false,
+  fingerprint,
 }: {
   name: string;
   /** A imagem do logo salvo (brandLogoSrc). */
   logoSrc: string;
   description: string;
   revising?: boolean;
+  fingerprint: string;
 }) {
   return (
     <>
@@ -64,19 +66,16 @@ export function BrandReview({
           </Row>
         </dl>
       </section>
-      {revising ? (
+      <p className="text-body text-muted-foreground">
+        Ao confirmar, você autoriza o envio automático deste nome, logo e texto quando sua loja
+        estiver conectada e o recurso estiver liberado. Os banners são aprovados separadamente.
+      </p>
+      <BrandForm action={finishBrand}>
+        <input type="hidden" name="fingerprint" value={fingerprint} />
         <StickyAction>
-          <Button asChild>
-            <Link href="/loja-pronta">Voltar pra Loja Pronta</Link>
-          </Button>
+          {revising ? <Button>Confirmar alterações da marca</Button> : <FinishButton />}
         </StickyAction>
-      ) : (
-        <BrandForm action={finishBrand}>
-          <StickyAction>
-            <FinishButton />
-          </StickyAction>
-        </BrandForm>
-      )}
+      </BrandForm>
     </>
   );
 }

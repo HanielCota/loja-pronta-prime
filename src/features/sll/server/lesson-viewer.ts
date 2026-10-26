@@ -30,6 +30,7 @@ const readPublishedLesson = unstable_cache(
         description: true,
         sourceNumber: true,
         durationMinutes: true,
+        countsTowardProgress: true,
         status: true,
       },
       where: and(
@@ -104,13 +105,12 @@ const readLessonResources = unstable_cache(
 
 /** Entrega à aula só os materiais publicados e os dados visíveis para a aluna. */
 export async function getSllLessonViewer(lessonId: string) {
-  const { session, products } = await requireProduct(
-    'sll',
-    `/sll/aula/${encodeURIComponent(lessonId)}`,
-  );
-  if (!isProgressId(lessonId)) return null;
-
-  const lesson = await readPublishedLesson(lessonId);
+  // A aula publicada é igual para todas (vem do cache): começa junto com a conferência de
+  // acesso, em vez de esperar por ela. Cada espera em série pesa na rede fraca do celular.
+  const [{ session, products }, lesson] = await Promise.all([
+    requireProduct('sll', `/sll/aula/${encodeURIComponent(lessonId)}`),
+    isProgressId(lessonId) ? readPublishedLesson(lessonId) : undefined,
+  ]);
   if (
     !lesson ||
     lesson.module.status !== 'published' ||
@@ -122,7 +122,10 @@ export async function getSllLessonViewer(lessonId: string) {
   )
     return null;
 
-  const track = await getSllTrackProgress(lesson.module.stage.track.id);
+  const [track, assistantReference] = await Promise.all([
+    getSllTrackProgress(lesson.module.stage.track.id),
+    hasAssistantLessonReference(session.user.id, lesson.id),
+  ]);
   const stage = track?.stages.find((item) => item.id === lesson.module.stage.id);
   if (!track || !stage || !stage.access) return null;
   const planStages = track.stages.map((item) => ({
@@ -132,7 +135,6 @@ export async function getSllLessonViewer(lessonId: string) {
       module.lessons.map((sourceLesson) => sourceLesson.relatedLessonId),
     ),
   }));
-  const assistantReference = await hasAssistantLessonReference(session.user.id, lesson.id);
   const isReference = (id: string) =>
     (assistantReference && id === lesson.id) || isPlanReferenceAvailable(planStages, id);
   const isUnlocked =
@@ -165,8 +167,12 @@ export async function getSllLessonViewer(lessonId: string) {
   const currentIndex = moduleLessons.findIndex((item) => item.id === lesson.id);
   if (currentIndex < 0) return null;
 
-  // Etapa fechada: nem procura as ferramentas da aula (a tela só mostra o aviso de bloqueio).
-  const linkedResources = !isUnlocked ? [] : await readLessonResources(lesson.id);
+  // Etapa fechada: nem procura as ferramentas da aula nem manda o conteúdo pro navegador (a
+  // tela só mostra o aviso de bloqueio).
+  const [linkedResources, blocks] = await Promise.all([
+    isUnlocked ? readLessonResources(lesson.id) : [],
+    studentContentBlocks(session.user.id, isUnlocked ? lesson.blocks : []),
+  ]);
 
   return {
     user: session.user,
@@ -196,6 +202,7 @@ export async function getSllLessonViewer(lessonId: string) {
         ? null
         : getSllExpectedMaterial(lesson.sourceNumber),
       durationMinutes: lesson.durationMinutes,
+      countsTowardProgress: lesson.countsTowardProgress,
       completed:
         currentProgress?.completedAt !== null && currentProgress?.completedAt !== undefined,
       previousId: adjacent.previous?.id ?? null,
@@ -217,8 +224,7 @@ export async function getSllLessonViewer(lessonId: string) {
         current: item.id === lesson.id,
       };
     }),
-    // Etapa fechada não manda o conteúdo pro navegador: a tela só mostra o aviso.
-    blocks: await studentContentBlocks(session.user.id, isUnlocked ? lesson.blocks : []),
+    blocks,
     resources: linkedResources.map((resource) => ({
       ...resource,
       destination:

@@ -76,7 +76,11 @@ const rowChevron = (
 
 /** Barra de progresso real das boas-vindas; o texto ao lado diz o mesmo pra quem não vê a barra. */
 function WelcomeProgress({ progress }: { progress: SllWelcomeProgress }) {
-  const percent = Math.round((progress.completed / progress.total) * 100);
+  // Contagem fora do esperado (mais assistidas que o total) não estoura a barra.
+  const percent = Math.min(
+    100,
+    Math.max(0, Math.round((progress.completed / progress.total) * 100)),
+  );
   return (
     <div className="flex max-w-md flex-col gap-2">
       <p className="text-sm text-muted-foreground tabular-nums">

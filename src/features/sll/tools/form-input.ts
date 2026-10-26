@@ -4,6 +4,13 @@ import type { SaleCosts } from './calculations';
 
 export type CalculatorKind = 'price' | 'discount' | 'ads';
 
+/** Passou do teto: diz qual é, em vez de chamar de inválido um número bem escrito. */
+function aboveLimitMessage(max: number) {
+  if (max === MAX_PRICE_CENTS) return 'Use no máximo R$ 1.000.000,00.';
+  if (max < 10_000) return 'Use um percentual menor que 100%.';
+  return 'Use no máximo 100%.';
+}
+
 export function readCalculatorInput(form: FormData, kind: CalculatorKind) {
   const values: Record<string, string> = {};
   const errors: Record<string, string> = {};
@@ -15,7 +22,11 @@ export function readCalculatorInput(form: FormData, kind: CalculatorKind) {
   function number(name: string, max = MAX_PRICE_CENTS, optional = false, positive = false) {
     const raw = field(name);
     const parsed = optional && !raw.trim() ? 0 : parseDecimalInput(raw);
-    if (parsed === null || parsed > max || (positive && parsed === 0)) {
+    if (parsed !== null && parsed > max) {
+      errors[name] = aboveLimitMessage(max);
+      return 0;
+    }
+    if (parsed === null || (positive && parsed === 0)) {
       errors[name] = positive
         ? 'Informe um valor maior que zero, com até duas casas decimais.'
         : 'Informe um valor válido, com até duas casas decimais.';
@@ -23,21 +34,24 @@ export function readCalculatorInput(form: FormData, kind: CalculatorKind) {
     }
     return parsed;
   }
-  const selected = field('policy');
-  let policy: FeePolicy = { mode: 'shopee', seller: 'cnpj', moreThan450Orders: false };
-  if (selected === 'custom') {
-    policy = {
-      mode: 'custom',
-      commissionBps: number('commission', 10_000),
-      fixedCents: number('fixed'),
-    };
-  } else if (['cnpj', 'cpf', 'cpf-volume'].includes(selected)) {
-    policy = {
-      mode: 'shopee',
-      seller: selected === 'cnpj' ? 'cnpj' : 'cpf',
-      moreThan450Orders: selected === 'cpf-volume',
-    };
-  } else errors.policy = 'Escolha o tipo da sua conta.';
+  // Sem tipo de conta válido, fica a regra padrão da Shopee e o erro avisa a aluna.
+  function feePolicy(selected: string): FeePolicy {
+    if (selected === 'custom')
+      return {
+        mode: 'custom',
+        commissionBps: number('commission', 10_000),
+        fixedCents: number('fixed'),
+      };
+    if (['cnpj', 'cpf', 'cpf-volume'].includes(selected))
+      return {
+        mode: 'shopee',
+        seller: selected === 'cnpj' ? 'cnpj' : 'cpf',
+        moreThan450Orders: selected === 'cpf-volume',
+      };
+    errors.policy = 'Escolha o tipo da sua conta.';
+    return { mode: 'shopee', seller: 'cnpj', moreThan450Orders: false };
+  }
+  const policy = feePolicy(field('policy'));
   const costs: SaleCosts = {
     policy,
     productCents: number('product', MAX_PRICE_CENTS, false, true),

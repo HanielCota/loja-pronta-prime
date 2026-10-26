@@ -39,6 +39,7 @@ import {
 } from '@/features/assistant/server/plans';
 import {
   claimAssistantJob,
+  MAX_INTERRUPTED_ATTEMPTS,
   processAssistantJob,
   createPublicationBatch,
   evaluatePublicationBatch,
@@ -69,8 +70,11 @@ afterAll(async () => {
   await db.delete(assistantPlaybooks).where(eq(assistantPlaybooks.title, supplierId));
   await db.delete(supplierCatalog).where(eq(supplierCatalog.supplierId, supplierId));
   for (const [key, value] of Object.entries(previous)) {
-    if (value === undefined) delete process.env[key];
-    else process.env[key] = value;
+    if (value === undefined) {
+      delete process.env[key];
+      continue;
+    }
+    process.env[key] = value;
   }
   await db.$client.end();
 });
@@ -483,6 +487,38 @@ test('reinício de worker marca escrita como incerta e recupera somente leituras
   await db.update(assistantJobs).set({ status: 'completed' }).where(eq(assistantJobs.userId, id));
 });
 
+test('leitura interrompida volta à fila só até o teto de tentativas', async () => {
+  const id = await account();
+  const past = new Date(Date.now() - 1000);
+  const [job] = await db
+    .insert(assistantJobs)
+    .values({
+      userId: id,
+      kind: 'collect',
+      deduplicationKey: randomUUID(),
+      status: 'running',
+      attempts: MAX_INTERRUPTED_ATTEMPTS - 1,
+      leaseUntil: past,
+      runAt: past,
+    })
+    .returning();
+  // Uma a menos que o teto: volta pra fila e é pega de novo.
+  const retried = await claimAssistantJob();
+  expect(retried?.id).toBe(job!.id);
+  expect(retried?.attempts).toBe(MAX_INTERRUPTED_ATTEMPTS);
+  await db.update(assistantJobs).set({ leaseUntil: past }).where(eq(assistantJobs.id, job!.id));
+  // No teto: para como bloqueada e a próxima coleta fica agendada.
+  expect((await claimAssistantJob())?.id).not.toBe(job!.id);
+  const rows = await db.select().from(assistantJobs).where(eq(assistantJobs.userId, id));
+  const stopped = rows.find((row) => row.id === job!.id);
+  expect(stopped?.status).toBe('blocked');
+  expect(stopped?.failure).toBe('interrupted');
+  const next = rows.find((row) => row.id !== job!.id && row.kind === 'collect');
+  expect(next?.status).toBe('pending');
+  expect(next!.runAt.getTime()).toBeGreaterThan(Date.now());
+  await db.update(assistantJobs).set({ status: 'completed' }).where(eq(assistantJobs.userId, id));
+});
+
 test('avaliação exige cinco dias de dados completos e comparação pertence à dona', async () => {
   const id = await account();
   const keys = await catalog(id);
@@ -666,8 +702,11 @@ test('IA reserva uma chamada por coleta, rejeita IDs inventados e limita três t
         generateAssistantAdvice(id, response),
         generateAssistantAdvice(id, response),
       ]);
-      if (index < 3) expect(results).toContain('unavailable');
-      else expect(results).toEqual(['limited', 'limited']);
+      if (index < 3) {
+        expect(results).toContain('unavailable');
+        continue;
+      }
+      expect(results).toEqual(['limited', 'limited']);
     }
     expect(calls).toBe(3);
     const attempts = await db.select().from(assistantAdvice).where(eq(assistantAdvice.userId, id));

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Avatar } from '@/components/ui/avatar';
-import { SUPPORT_EMAIL, TEAM_WHATSAPP } from '@/config/support';
+import { getSupportPhones } from '@/features/support/server/contacts';
+import { SUPPORT_EMAIL } from '@/config/support';
 import {
   AccessGroup,
   AttentionGroup,
@@ -30,6 +31,7 @@ export const metadata: Metadata = {
 export default async function ProfilePage() {
   const { session, products } = await requireStudent('/perfil');
   const { user } = session;
+  const phones = await getSupportPhones();
   const name = greetingName(user);
   const profileName = user.preferredName?.trim() || user.name;
   const [validity, devices] = await Promise.all([
@@ -66,16 +68,19 @@ export default async function ProfilePage() {
         access={
           <AccessGroup products={products} validity={validity.byProduct} now={validity.checkedAt} />
         }
-        devices={
-          <DevicesGroup devices={devices} impersonating={Boolean(session.session.impersonatedBy)} />
+        devices={<DevicesGroup devices={devices} />}
+        help={
+          // A âncora "/perfil#suporte" (menu da conta e painel da loja) cai direto aqui.
+          <div id="suporte" className="scroll-mt-24">
+            <HelpGroup phones={phones} />
+          </div>
         }
-        help={<HelpGroup />}
         emailHelp={
           <>
             Pra trocar o email,{' '}
-            {TEAM_WHATSAPP ? (
+            {phones.technical ? (
               <a
-                href={whatsappLink(TEAM_WHATSAPP, 'Oi! Quero trocar o email da minha conta.')}
+                href={whatsappLink(phones.technical, 'Oi! Quero trocar o email da minha conta.')}
                 target="_blank"
                 rel="noreferrer"
                 className="font-semibold text-link underline underline-offset-4"

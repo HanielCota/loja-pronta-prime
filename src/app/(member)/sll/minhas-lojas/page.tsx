@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { panelCard, statusBadge } from '@/features/member/components/area-shell';
-import { SllAreaShell } from '@/features/sll/sll-area-shell';
+import { SllPage } from '@/features/sll/sll-area-shell';
 import { getSllStoreSummary } from '@/features/sll/server/store-overview';
 import type { SllStoreSummary } from '@/features/sll/store-overview';
 import { requireProduct } from '@/features/products/server/access';
@@ -21,7 +21,6 @@ import {
   SllListRow,
   SllRowIcon,
 } from '@/features/sll/components/sll-grouped-list';
-import { MercadoLivreLogo, TikTokLogo } from '@/features/sll/components/platform-logos';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Minhas Lojas · SLL' };
@@ -35,12 +34,6 @@ type Step = {
   href: string;
   state: 'now' | 'later' | 'done';
 };
-
-/** As próximas plataformas, cada uma com o próprio símbolo: ainda sem endereço, só "Em breve". */
-const FUTURE_PLATFORMS = [
-  { name: 'TikTok Shop', logo: <TikTokLogo />, tone: 'tiktok' },
-  { name: 'Mercado Livre', logo: <MercadoLivreLogo />, tone: 'mercadolivre' },
-] as const;
 
 const STATE_LABEL: Record<Step['state'], string> = {
   now: 'Agora',
@@ -103,12 +96,10 @@ export default async function SllStoresPage() {
   const summary = await getSllStoreSummary(session.user, hasLojaPronta);
 
   return (
-    <SllAreaShell
-      account={session.user}
+    <SllPage
       hasChoice={products.length > 1}
       title="Minhas Lojas"
       intro="Sua loja e o que falta pra ela vender."
-      backLink={{ href: '/sll', label: 'Voltar ao painel' }}
     >
       {summary.failed ? (
         <StoreLoadFailure />
@@ -119,18 +110,12 @@ export default async function SllStoresPage() {
       <section aria-labelledby="future-platforms-title" className="flex flex-col gap-3">
         <SllGroupTitle id="future-platforms-title">Outras plataformas</SllGroupTitle>
         <SllGroupedList>
-          {FUTURE_PLATFORMS.map((platform) => (
-            <SllListRow
-              key={platform.name}
-              icon={platform.logo}
-              iconTone={platform.tone}
-              title={platform.name}
-              badge="Em breve"
-            />
+          {['TikTok Shop', 'Mercado Livre'].map((platform) => (
+            <SllListRow key={platform} icon={<StoreIcon />} title={platform} badge="Em breve" />
           ))}
         </SllGroupedList>
       </section>
-    </SllAreaShell>
+    </SllPage>
   );
 }
 
@@ -153,7 +138,7 @@ function StoreCard({
         <div className="min-w-0 flex-1">
           <h2
             id="store-title"
-            className="text-xl font-semibold text-pretty break-words text-foreground"
+            className="text-headline font-semibold text-pretty break-words text-foreground"
           >
             {summary.assembly?.name ?? 'Sua loja na Shopee'}
           </h2>
@@ -216,7 +201,7 @@ function StoreLoadFailure() {
         <SllRowIcon tone="muted">
           <StoreIcon />
         </SllRowIcon>
-        <h2 id="store-failure-title" className="text-xl font-semibold text-foreground">
+        <h2 id="store-failure-title" className="text-headline font-semibold text-foreground">
           Não foi possível carregar suas lojas
         </h2>
       </div>

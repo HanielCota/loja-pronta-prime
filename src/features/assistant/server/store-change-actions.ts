@@ -6,11 +6,13 @@ import { revalidatePath } from 'next/cache';
 import { eq, and, sql } from 'drizzle-orm';
 import sharp from 'sharp';
 import { db } from '@/server/db';
-import { storeBrand, storeAutomationJobs } from '@/server/db/schema';
-import { storage } from '@/server/storage';
+import { storeAutomationJobs, storeBrand } from '@/server/db/schema';
+import { brandPublicationEnabled } from '@/features/brand/server/publication-settings';
+import { brandFingerprint } from '@/features/brand/server/fingerprint';
+import { queueApprovedBrand } from '@/features/brand/server/publication';
 import { requireProductAction } from '@/features/products/server/access';
 import { readShopeeAccess } from '@/features/shopee/server/connection';
-import { uploadShopeeImage, uploadShopeeMedia } from '@/features/shopee/server/resources';
+import { uploadShopeeImage } from '@/features/shopee/server/resources';
 import { assertAssistantAccess } from './metrics';
 import { listingChangeOptions } from './change-options';
 import { queueStoreChange, reconcileStoreChange, finishClonedVariations } from './store-changes';
@@ -20,34 +22,13 @@ export async function sendStoreBrand(): Promise<void> {
   const { userId } = await requireProductAction('loja-pronta');
   let saved = false;
   try {
-    const [brand] = await db.select().from(storeBrand).where(eq(storeBrand.userId, userId));
-    if (!brand?.completedAt || !brand.name || !brand.description || !brand.logoImage)
-      throw new Error('Marca incompleta.');
-    const config = await assertAssistantAccess(userId, 'loja-pronta');
-    if (process.env.SHOPEE_PUBLICATION_ENABLED !== 'true')
-      throw new Error('Alterações indisponíveis.');
-    const access = await readShopeeAccess(userId, config);
-    const logo = await storage().get(brand.logoImage);
-    if (!logo) throw new Error('Imagem indisponível.');
-    const bytes = await sharp(logo, { limitInputPixels: 40_000_000 })
-      .rotate()
-      .resize(512, 512, { fit: 'contain', background: '#ffffff' })
-      .flatten({ background: '#ffffff' })
-      .jpeg({ quality: 90 })
-      .toBuffer();
-    const uploaded = await uploadShopeeMedia(config, access, bytes);
-    if (!uploaded.url) throw new Error('Endereço da imagem indisponível.');
-    await queueStoreChange(userId, 'brand', {
-      shop_name: brand.name,
-      description: brand.description,
-      shop_logo: uploaded.url,
-    });
+    await queueApprovedBrand(userId);
     saved = true;
   } catch {
-    /* A tela não recebe credenciais nem respostas externas. */
+    /* Only a confirmed current brand may be queued. */
   }
   revalidatePath('/loja-pronta/produtos');
-  redirect(`/loja-pronta/produtos?resultado=${saved ? 'queued' : 'unavailable'}`);
+  redirect(`/loja-pronta/produtos?resultado=${saved ? 'brand-queued' : 'brand-unavailable'}`);
 }
 
 export async function submitListingChanges(form: FormData): Promise<void> {
@@ -231,4 +212,70 @@ export async function finishStoreExperiment(form: FormData): Promise<void> {
       /* Mantém o resultado pendente para conferência. */
     }
   revalidatePath('/sll/anuncios');
+}
+
+export async function retryBrandPublication(form: FormData): Promise<void> {
+  const { userId } = await requireProductAction('loja-pronta');
+  const parsed = z.uuid().safeParse(form.get('jobId'));
+  if (!parsed.success || !brandPublicationEnabled()) return;
+  const config = await assertAssistantAccess(userId, 'loja-pronta');
+  const access = await readShopeeAccess(userId, config);
+  await db.transaction(async (tx) => {
+    const [brand] = await tx
+      .select()
+      .from(storeBrand)
+      .where(eq(storeBrand.userId, userId))
+      .for('share');
+    if (!brand?.publicationFingerprint || brand.publicationFingerprint !== brandFingerprint(brand))
+      return;
+    await tx
+      .update(storeAutomationJobs)
+      .set({ status: 'pending', failure: null, leaseUntil: null })
+      .where(
+        and(
+          eq(storeAutomationJobs.id, parsed.data),
+          eq(storeAutomationJobs.userId, userId),
+          eq(storeAutomationJobs.kind, 'brand'),
+          eq(storeAutomationJobs.status, 'blocked'),
+          eq(storeAutomationJobs.sourceFingerprint, brand.publicationFingerprint),
+          eq(storeAutomationJobs.shopId, String(access.shopId)),
+          eq(
+            storeAutomationJobs.applicationId,
+            `${config.SHOPEE_ENVIRONMENT}:${config.SHOPEE_PARTNER_ID}`,
+          ),
+        ),
+      );
+  });
+  revalidatePath('/loja-pronta/produtos');
+}
+
+/** Existing completed journeys may authorize publication without reopening locked editing steps. */
+export async function confirmSavedBrand(form: FormData): Promise<void> {
+  const { userId } = await requireProductAction('loja-pronta');
+  const [brand] = await db.select().from(storeBrand).where(eq(storeBrand.userId, userId));
+  const path = '/loja-pronta/marca/publication';
+  if (
+    !brand?.completedAt ||
+    !brand.name ||
+    !brand.logoImage ||
+    !brand.description ||
+    form.get('confirmed') !== 'true' ||
+    form.get('fingerprint') !== brandFingerprint(brand)
+  )
+    redirect(`${path}?resultado=changed`);
+  const [approved] = await db
+    .update(storeBrand)
+    .set({ publicationFingerprint: brandFingerprint(brand) })
+    .where(
+      and(
+        eq(storeBrand.userId, userId),
+        eq(storeBrand.name, brand.name),
+        eq(storeBrand.logoImage, brand.logoImage),
+        eq(storeBrand.description, brand.description),
+      ),
+    )
+    .returning({ userId: storeBrand.userId });
+  if (!approved) redirect(`${path}?resultado=changed`);
+  revalidatePath('/loja-pronta/produtos');
+  redirect('/loja-pronta/produtos?resultado=brand-approved');
 }

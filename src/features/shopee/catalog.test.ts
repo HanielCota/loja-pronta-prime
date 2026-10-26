@@ -27,6 +27,11 @@ describe('preparação do catálogo', () => {
       prepareSupplierProduct({ ...product, images: ['http://example.com/test.jpg'] }, now).status,
     ).toBe('invalid');
   });
+  it('rejects empty, blank or relative image addresses instead of throwing', () => {
+    for (const image of ['', '   ', '/foto.jpg', 'null', 'undefined'])
+      expect(prepareSupplierProduct({ ...product, images: [image] }, now).status).toBe('invalid');
+    expect(prepareSupplierProduct({ ...product, images: [] }, now).status).toBe('invalid');
+  });
   it('bloqueia estoque antigo, futuro, esgotado e venda abaixo do custo', () => {
     for (const change of [
       { updatedAt: '2026-10-08T12:00:00Z' },

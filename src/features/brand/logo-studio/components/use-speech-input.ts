@@ -99,11 +99,11 @@ export function useSpeechInput(onText: (text: string) => void) {
           setError('Não consegui gravar. Tente de novo ou escreva.');
           if (current.state === 'recording') {
             current.stop();
-          } else {
-            releaseMicrophone();
-            active.current = false;
-            setStatus('idle');
+            return;
           }
+          releaseMicrophone();
+          active.current = false;
+          setStatus('idle');
         });
         current.addEventListener('stop', async () => {
           releaseMicrophone();

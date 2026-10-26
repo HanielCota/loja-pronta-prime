@@ -1,3 +1,6 @@
+import sharp from 'sharp';
+import { brandFingerprint } from '@/features/brand/server/fingerprint';
+import { queueAutomaticBrands, queueApprovedBrand } from '@/features/brand/server/publication';
 import { afterAll, beforeAll, expect, test } from 'bun:test';
 import { randomUUID } from 'node:crypto';
 import { and, eq, inArray } from 'drizzle-orm';
@@ -8,6 +11,7 @@ import {
   manualProductGrants,
   shopeeConnections,
   storeAutomationJobs,
+  storeBrand,
   runtimeHeartbeats,
   supplierFeedSubscriptions,
   supplierCatalog,
@@ -39,6 +43,7 @@ const settings = {
   SHOPEE_TOKEN_ENCRYPTION_KEY: 'cd'.repeat(32),
   SHOPEE_ENABLED: 'true',
   SHOPEE_PUBLICATION_ENABLED: 'true',
+  SHOPEE_BRAND_PUBLICATION_ENABLED: 'true',
   SHOPEE_ENVIRONMENT: 'live',
   SHOPEE_PILOT_USER_IDS: '',
 };
@@ -50,8 +55,11 @@ beforeAll(() => Object.assign(process.env, settings));
 afterAll(async () => {
   for (const id of ids) await db.delete(user).where(eq(user.id, id));
   for (const [key, value] of Object.entries(previous)) {
-    if (value === undefined) delete process.env[key];
-    else process.env[key] = value;
+    if (value === undefined) {
+      delete process.env[key];
+      continue;
+    }
+    process.env[key] = value;
   }
   await db.$client.end();
 });
@@ -612,4 +620,159 @@ test('retoma somente a ativação de variações confirmadas sem criar outro an�
     if (previousSetting === undefined) delete process.env.SHOPEE_DUPLICATION_ENABLED;
     else process.env.SHOPEE_DUPLICATION_ENABLED = previousSetting;
   }
+});
+
+test('automatic brand publication is independent of product publication and confirms remote fields', async () => {
+  const id = await account();
+  const brand = {
+    name: 'Automatic store',
+    description: 'Approved description',
+    logoImage: `logos/${id}/test.png`,
+  };
+  const sourceFingerprint = brandFingerprint(brand);
+  await db.insert(storeBrand).values({
+    userId: id,
+    ...brand,
+    completedAt: new Date(),
+    publicationFingerprint: sourceFingerprint,
+  });
+  const png = await sharp({ create: { width: 50, height: 50, channels: 4, background: '#ffffff' } })
+    .png()
+    .toBuffer();
+  let uploads = 0;
+  let writes = 0;
+  let profile: Record<string, unknown> = { shop_name: 'Previous' };
+  const fetcher = transport((url, init) => {
+    if (url.pathname.endsWith('upload_image')) {
+      uploads++;
+      return envelope({
+        image_info: {
+          image_id: 'image-one',
+          image_url_list: [{ image_url: 'https://images.example.com/one.jpg' }],
+        },
+      });
+    }
+    if (url.pathname.endsWith('get_profile')) return envelope(profile);
+    if (url.pathname.endsWith('update_profile')) {
+      writes++;
+      profile = JSON.parse(String(init.body));
+      return envelope({});
+    }
+    throw new Error('Unexpected endpoint');
+  });
+  process.env.SHOPEE_PUBLICATION_ENABLED = 'false';
+  try {
+    expect(await queueAutomaticBrands(fetcher, async () => png)).toBe(1);
+    expect(await queueAutomaticBrands(fetcher, async () => png)).toBe(0);
+    expect(uploads).toBe(1);
+    await processStoreChange(fetcher);
+    const [job] = await db
+      .select()
+      .from(storeAutomationJobs)
+      .where(eq(storeAutomationJobs.userId, id));
+    expect(job?.status).toBe('completed');
+    expect(profile.shop_name).toBe(brand.name);
+    expect(profile.description).toBe(brand.description);
+    expect(writes).toBe(1);
+    expect(await queueAutomaticBrands(fetcher, async () => png)).toBe(0);
+    await db
+      .update(storeBrand)
+      .set({ description: 'Unapproved edit', publicationFingerprint: null })
+      .where(eq(storeBrand.userId, id));
+    expect(await queueAutomaticBrands(fetcher, async () => png)).toBe(0);
+    await expect(queueApprovedBrand(id, fetcher, async () => png)).rejects.toThrow();
+  } finally {
+    process.env.SHOPEE_PUBLICATION_ENABLED = 'true';
+  }
+});
+
+test('an obsolete approved snapshot never reaches Shopee and a successful write still needs read-back', async () => {
+  const id = await account();
+  const brand = {
+    name: 'Original store',
+    description: 'Original description',
+    logoImage: `logos/${id}/test.png`,
+  };
+  const fingerprint = brandFingerprint(brand);
+  await db
+    .insert(storeBrand)
+    .values({ userId: id, ...brand, completedAt: new Date(), publicationFingerprint: fingerprint });
+  const payload = {
+    shop_name: brand.name,
+    description: brand.description,
+    shop_logo: 'https://images.example.com/logo.jpg',
+  };
+  const jobId = await queueStoreChange(id, 'brand', payload, fingerprint);
+  await db
+    .update(storeBrand)
+    .set({ publicationFingerprint: null })
+    .where(eq(storeBrand.userId, id));
+  let writes = 0;
+  const fetcher = transport((url) => {
+    if (url.pathname.endsWith('get_profile')) return envelope({ shop_name: 'Previous' });
+    writes++;
+    return envelope({});
+  });
+  await processStoreChange(fetcher);
+  const [obsolete] = await db
+    .select()
+    .from(storeAutomationJobs)
+    .where(eq(storeAutomationJobs.id, jobId));
+  expect(obsolete?.status).toBe('blocked');
+  expect(writes).toBe(0);
+  const second = await account();
+  const secondId = await queueStoreChange(second, 'brand', payload);
+  await processStoreChange(fetcher);
+  const [unconfirmed] = await db
+    .select()
+    .from(storeAutomationJobs)
+    .where(eq(storeAutomationJobs.id, secondId));
+  expect(unconfirmed?.status).toBe('unknown');
+  expect(writes).toBe(1);
+  expect(
+    await reconcileStoreChange(
+      second,
+      secondId,
+      transport(() => envelope(payload)),
+    ),
+  ).toBe(true);
+  expect(writes).toBe(1);
+});
+
+test('a rejected read-back after an acknowledged profile write remains uncertain', async () => {
+  const id = await account();
+  const payload = {
+    shop_name: 'Read-back store',
+    description: 'Description',
+    shop_logo: 'https://images.example.com/read-back.jpg',
+  };
+  const jobId = await queueStoreChange(id, 'brand', payload);
+  let reads = 0;
+  let writes = 0;
+  await processStoreChange(
+    transport((url) => {
+      if (url.pathname.endsWith('get_profile')) {
+        reads++;
+        return reads === 1
+          ? envelope({ shop_name: 'Before' })
+          : Response.json({ error: 'permission_denied' });
+      }
+      writes++;
+      return envelope({});
+    }),
+  );
+  const [job] = await db
+    .select()
+    .from(storeAutomationJobs)
+    .where(eq(storeAutomationJobs.id, jobId));
+  expect(job?.status).toBe('unknown');
+  expect(writes).toBe(1);
+  expect(
+    await reconcileStoreChange(
+      id,
+      jobId,
+      transport(() => envelope(payload)),
+    ),
+  ).toBe(true);
+  expect(writes).toBe(1);
 });

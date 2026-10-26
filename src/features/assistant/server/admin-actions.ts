@@ -31,10 +31,12 @@ export async function retryAssistantJob(form: FormData): Promise<void> {
       .for('update');
     if (!job) return;
     if (job.kind === 'publish') {
+      // '' numa coluna uuid seria erro do Postgres; sem item não há o que repetir.
+      if (!job.payload.itemId) return;
       const [item] = await tx
         .select()
         .from(assistantPublicationItems)
-        .where(eq(assistantPublicationItems.id, job.payload.itemId ?? ''))
+        .where(eq(assistantPublicationItems.id, job.payload.itemId))
         .for('update');
       // Resultado incerto nunca passa por este botão de repetição.
       if (!item || !['pending', 'failed'].includes(item.status)) return;
@@ -65,9 +67,11 @@ export async function retryAssistantJob(form: FormData): Promise<void> {
           .set({ payload: corrected.data })
           .where(eq(assistantPublicationItems.id, item.id));
     }
+    // As tentativas recomeçam: sem isso, uma leitura parada no teto de interrupções voltava a ser
+    // bloqueada na primeira queda, sem as novas chances que a equipe acabou de dar.
     await tx
       .update(assistantJobs)
-      .set({ status: 'pending', runAt: new Date(), leaseUntil: null, failure: null })
+      .set({ status: 'pending', runAt: new Date(), leaseUntil: null, failure: null, attempts: 0 })
       .where(eq(assistantJobs.id, id.data));
   });
   revalidatePath('/admin/assistente');

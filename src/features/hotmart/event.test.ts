@@ -20,6 +20,32 @@ describe('avisos da Hotmart', () => {
     },
   };
 
+  test('preserves numeric product IDs and rejects unsafe or nonnumeric IDs', () => {
+    const parsed = parseHotmartEvent({
+      ...validEvent,
+      data: { ...validEvent.data, product: { ucode: 'course', id: 8781486 } },
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data.data.product.id).toBe(8781486);
+    for (const id of ['8781486', 0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1])
+      expect(
+        parseHotmartEvent({
+          ...validEvent,
+          data: { ...validEvent.data, product: { ucode: 'course', id } },
+        }).success,
+      ).toBe(false);
+  });
+
+  test('a transaction cannot switch numeric products even when its ucode is unchanged', () => {
+    const purchase = {
+      buyerEmail: 'buyer@example.invalid',
+      productUcode: 'course',
+      productId: 8781486,
+    };
+    expect(transactionMismatch(purchase, { ...purchase, productId: 8781449 })).toBe('product');
+    expect(transactionMismatch(purchase, { ...purchase, productId: undefined })).toBeNull();
+  });
+
   test('accepts documented numeric-string purchase dates without using event arrival time', () => {
     const timestamp = 1791475200000;
     for (const order_date of [timestamp, String(timestamp)]) {
@@ -84,6 +110,51 @@ describe('avisos da Hotmart', () => {
 
   test('rejeita evento incompleto', () => {
     expect(parseHotmartEvent({ event: 'PURCHASE_APPROVED' }).success).toBe(false);
+  });
+
+  test('optional fields sent as null are treated as absent instead of rejecting the event', () => {
+    const parsed = parseHotmartEvent({
+      ...validEvent,
+      event: 'PURCHASE_REFUNDED',
+      data: {
+        product: { ucode: 'curso-1', id: null },
+        buyer: { email: 'ana@exemplo.com', name: null },
+        purchase: { transaction: 'HP123', order_date: null },
+      },
+    });
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+    expect(parsed.data.data.product.id).toBeUndefined();
+    expect(parsed.data.data.buyer.name).toBeUndefined();
+    expect(parsed.data.data.purchase.order_date).toBeUndefined();
+  });
+
+  test('required fields stay required when null, empty or blank', () => {
+    for (const email of [null, undefined, '', '   ', 'null'])
+      expect(
+        parseHotmartEvent({ ...validEvent, data: { ...validEvent.data, buyer: { email } } })
+          .success,
+      ).toBe(false);
+    for (const transaction of [null, '', undefined])
+      expect(
+        parseHotmartEvent({
+          ...validEvent,
+          data: { ...validEvent.data, purchase: { transaction } },
+        }).success,
+      ).toBe(false);
+    expect(
+      parseHotmartEvent({ ...validEvent, data: { ...validEvent.data, product: { ucode: null } } })
+        .success,
+    ).toBe(false);
+  });
+
+  test('buyer email with pasted surrounding spaces is trimmed, not rejected', () => {
+    const parsed = parseHotmartEvent({
+      ...validEvent,
+      data: { ...validEvent.data, buyer: { email: '  ana@exemplo.com \n', name: 'Ana' } },
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data.data.buyer.email).toBe('ana@exemplo.com');
   });
 
   test('não restaura uma compra com aviso anterior ao reembolso', () => {

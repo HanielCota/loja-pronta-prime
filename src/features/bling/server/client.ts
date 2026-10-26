@@ -2,9 +2,19 @@ import { z } from 'zod';
 import { readLimitedBody } from '@/lib/request-body';
 import { BLING_API_URL, blingConfigurationSchema, type BlingConfiguration } from '../model';
 
+let reportedIncompleteConfiguration = false;
+
 export function getBlingConfiguration() {
   const result = blingConfigurationSchema.safeParse(process.env);
-  return result.success ? result.data : null;
+  if (result.success) return result.data;
+  // Desligado é normal; ligado e incompleto é erro de configuração que precisa aparecer no log,
+  // e não só virar "em breve" na tela. Só os nomes: os valores são segredos.
+  if (process.env.BLING_ENABLED === 'true' && !reportedIncompleteConfiguration) {
+    reportedIncompleteConfiguration = true;
+    const invalid = result.error.issues.map((issue) => issue.path.join('.')).join(', ');
+    console.error(`[bling] BLING_ENABLED=true, mas a configuração está incompleta: ${invalid}`);
+  }
+  return null;
 }
 
 export class BlingError extends Error {

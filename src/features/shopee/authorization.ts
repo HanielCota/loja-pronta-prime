@@ -3,7 +3,10 @@ import { SHOPEE_CALLBACK_PATH } from '@/config/shopee';
 import { hasControlCharacters } from '@/lib/text';
 import { hasAdminRole } from '@/features/admin/access';
 
+// No zod 4 o refine roda mesmo depois de z.url() recusar: sem a guarda, `new URL('')` estoura
+// dentro do safeParse e uma variável vazia derrubaria toda tela da Shopee em vez de desligá-la.
 const redirectUriSchema = z.url().refine((value) => {
+  if (!URL.canParse(value)) return false;
   const url = new URL(value);
   return (
     url.protocol === 'https:' &&

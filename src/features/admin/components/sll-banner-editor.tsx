@@ -8,6 +8,7 @@ import { LiveRegion } from '@/components/ui/live-region';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
 import { panelCard } from '@/features/member/components/area-shell';
+import { draftOrLive } from '../draft-value';
 import { saveSllBannerForm } from '../server/actions';
 import type { BannerActionState } from '../structure-types';
 import { Textarea } from '@/components/ui/textarea';
@@ -64,12 +65,12 @@ export function SllBannerEditor({
   const [uploading, setUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState('');
   const initial = {
-    label: banner?.draft?.label ?? banner?.label ?? '',
-    title: banner?.draft?.title ?? banner?.title ?? '',
-    description: banner?.draft?.description ?? banner?.description ?? '',
-    buttonLabel: banner?.draft?.buttonLabel ?? banner?.buttonLabel ?? '',
-    destination: banner?.draft?.destination ?? banner?.destination ?? '',
-    imageAlt: banner?.draft?.imageAlt ?? banner?.imageAlt ?? '',
+    label: draftOrLive(banner?.draft?.label, banner?.label) ?? '',
+    title: draftOrLive(banner?.draft?.title, banner?.title) ?? '',
+    description: draftOrLive(banner?.draft?.description, banner?.description) ?? '',
+    buttonLabel: draftOrLive(banner?.draft?.buttonLabel, banner?.buttonLabel) ?? '',
+    destination: draftOrLive(banner?.draft?.destination, banner?.destination) ?? '',
+    imageAlt: draftOrLive(banner?.draft?.imageAlt, banner?.imageAlt) ?? '',
   };
   const [preview, setPreview] = useState(initial);
   const [dirty, setDirty] = useState(false);

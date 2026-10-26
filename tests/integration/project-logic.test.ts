@@ -17,6 +17,7 @@ const key = `test.${randomUUID()}`;
 mock.module('@/server/db', () => ({ db: database }));
 mock.module('@/features/admin/server/access', () => ({ requireAdmin: async () => ({}) }));
 mock.module('next/cache', () => ({
+  refresh: () => {},
   revalidatePath: () => {},
   revalidateTag: () => {},
   unstable_cache: (read: (...args: unknown[]) => unknown) => read,

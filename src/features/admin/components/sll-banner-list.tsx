@@ -124,8 +124,11 @@ export function SllBannerList({ banners }: { banners: NonNullable<Banner>[] }) {
     startTransition(async () => {
       const result = await reorderSllBannersForm(form);
       setMessage({ text: result.message, error: !result.saved, focus: false });
-      if (result.saved) router.refresh();
-      else setOrder(previous);
+      if (result.saved) {
+        router.refresh();
+        return;
+      }
+      setOrder(previous);
     });
   }
 

@@ -53,8 +53,6 @@ const DRAWINGS: Record<string, string> = {
   'src/features/auth/components/password-strength-meter.tsx':
     'a escala de força da senha (vermelho a verde), com contraste conferido nos dois temas',
   'src/components/ui/switch.tsx': 'a bolinha branca do interruptor (igual ao do iOS)',
-  'src/features/sll/components/platform-logos.tsx':
-    'o símbolo oficial do Mercado Livre, com as cores da marca',
   'src/features/brand/logo-studio/components/write-own.tsx':
     'o branco do microfone gravando, sobre o vermelho',
 };
@@ -71,7 +69,7 @@ function offenders(pattern: RegExp): string[] {
 }
 
 describe('tokens da marca (globals.css)', () => {
-  test('tema claro: estilo Apple, roxo nas ações', () => {
+  test('tema claro: estilo Apple, roxo da referência nas ações', () => {
     const light = block(':root');
     expect({
       background: token(light, 'background'),
@@ -84,9 +82,9 @@ describe('tokens da marca (globals.css)', () => {
       background: '#f5f5f7',
       foreground: '#1d1d1f',
       card: '#ffffff',
-      primary: '#5538b4',
+      primary: '#4c1d95',
       'primary-foreground': '#ffffff',
-      link: '#452e9a',
+      link: '#4c1d95',
     });
   });
 
@@ -96,13 +94,7 @@ describe('tokens da marca (globals.css)', () => {
       background: token(dark, 'background'),
       card: token(dark, 'card'),
       primary: token(dark, 'primary'),
-    }).toEqual({ background: '#1c1c1f', card: '#242428', primary: '#7960d2' });
-  });
-
-  test('cartões sem sombra: separados do fundo só pelo tom', () => {
-    for (const selector of [':root', '.dark']) {
-      expect(token(block(selector), 'card-shadow')).toBe('none');
-    }
+    }).toEqual({ background: '#1f1f22', card: '#2a2a2e', primary: '#8858e6' });
   });
 
   for (const selector of [':root', '.dark']) {
@@ -117,16 +109,10 @@ describe('tokens da marca (globals.css)', () => {
             )
           : '';
         const color = (name: string) => token(override, name) ?? token(base, name)!;
-        // No hover do escuro, a borda que separa o botão do cartão é o halo (quando tem cor).
-        const halo = color('primary-halo');
-        const edges = {
-          primary: 'primary',
-          'primary-hover': halo === 'transparent' ? 'primary-hover' : 'primary-halo',
-        };
-        for (const [action, edge] of Object.entries(edges)) {
+        for (const action of ['primary', 'primary-hover']) {
           expect(contrast(color('primary-foreground'), color(action))).toBeGreaterThanOrEqual(4.5);
           for (const surface of ['background', 'card']) {
-            expect(contrast(color(edge), color(surface))).toBeGreaterThanOrEqual(3);
+            expect(contrast(color(action), color(surface))).toBeGreaterThanOrEqual(3);
           }
         }
         for (const surface of ['background', 'card', 'muted', 'primary-soft']) {

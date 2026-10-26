@@ -16,7 +16,7 @@ import {
   type LeadInput,
   type LeadValues,
 } from '../model';
-import { MAX_IMPORT_ROWS, readLeadCsv } from '../csv';
+import { decodeLeadCsv, MAX_IMPORT_ROWS, readLeadCsv } from '../csv';
 
 export type LeadFormState = {
   attempt: number;
@@ -41,6 +41,15 @@ async function validOwner(id: string): Promise<boolean> {
     .where(eq(user.id, id))
     .limit(1);
   return Boolean(owner && !owner.banned && hasAdminRole(owner.role));
+}
+
+async function leadOwnerId(id: string): Promise<string | null> {
+  const [lead] = await db
+    .select({ ownerId: leads.ownerId })
+    .from(leads)
+    .where(eq(leads.id, id))
+    .limit(1);
+  return lead?.ownerId ?? null;
 }
 
 function reportWriteError(error: unknown): string {
@@ -74,56 +83,18 @@ export async function saveLead(state: LeadFormState, form: FormData): Promise<Le
       ),
       message: 'Confira os campos indicados.',
     };
-  if (!(await validOwner(parsed.data.ownerId)))
-    return { attempt, values, errors: { ownerId: 'Escolha uma administradora ativa.' } };
   const idValue = form.get('id');
   const editing = typeof idValue === 'string' && Boolean(idValue);
   const id = editing ? (idValue as string) : crypto.randomUUID();
+  // Responsável que saiu da equipe continua no contato até alguém trocar: exigir "ativa" aqui
+  // obrigava a admin a apagar o responsável só para salvar outra mudança.
+  const keepsOwner =
+    editing && Boolean(parsed.data.ownerId) && (await leadOwnerId(id)) === parsed.data.ownerId;
+  if (!keepsOwner && !(await validOwner(parsed.data.ownerId)))
+    return { attempt, values, errors: { ownerId: 'Escolha uma administradora ativa.' } };
   try {
     const result = await db.transaction(async (tx) => {
-      if (editing) {
-        const [before] = await tx
-          .select()
-          .from(leads)
-          .where(eq(leads.id, id))
-          .for('update')
-          .limit(1);
-        if (!before || before.archivedAt) return 'Esse contato está arquivado ou não existe mais.';
-        if (before.updatedAt.toISOString() !== form.get('version'))
-          return 'Esse contato mudou em outra tela. Recarregue a página para conferir os dados antes de salvar.';
-        const data = leadRecord(parsed.data);
-        const changes = LEAD_FIELDS.filter(
-          (field) => JSON.stringify(before[field]) !== JSON.stringify(data[field]),
-        );
-        if (!changes.length) return undefined;
-        const labels: Record<keyof LeadInput, string> = {
-          name: 'nome',
-          email: 'email',
-          phone: 'WhatsApp',
-          stage: 'etapa',
-          product: 'produto de interesse',
-          source: 'origem',
-          ownerId: 'responsável',
-          nextContact: 'próximo contato',
-          tags: 'etiquetas',
-          lostReason: 'motivo da perda',
-        };
-        const body =
-          before.stage !== data.stage
-            ? `Etapa: ${stageLabels[before.stage]} → ${stageLabels[data.stage]}. Dados atualizados: ${changes.map((field) => labels[field]).join(', ')}.`
-            : `Dados atualizados: ${changes.map((field) => labels[field]).join(', ')}.`;
-        await tx
-          .update(leads)
-          .set({ ...data, updatedAt: new Date() })
-          .where(eq(leads.id, id));
-        await tx.insert(leadActivities).values({
-          id: crypto.randomUUID(),
-          leadId: id,
-          actorId: session.user.id,
-          kind: 'updated',
-          body,
-        });
-      } else {
+      if (!editing) {
         await tx.insert(leads).values({ id, ...leadRecord(parsed.data) });
         await tx.insert(leadActivities).values({
           id: crypto.randomUUID(),
@@ -132,7 +103,44 @@ export async function saveLead(state: LeadFormState, form: FormData): Promise<Le
           kind: 'created',
           body: 'Contato cadastrado manualmente.',
         });
+        return undefined;
       }
+      const [before] = await tx.select().from(leads).where(eq(leads.id, id)).for('update').limit(1);
+      if (!before || before.archivedAt) return 'Esse contato está arquivado ou não existe mais.';
+      if (before.updatedAt.toISOString() !== form.get('version'))
+        return 'Esse contato mudou em outra tela. Recarregue a página para conferir os dados antes de salvar.';
+      const data = leadRecord(parsed.data);
+      const changes = LEAD_FIELDS.filter(
+        (field) => JSON.stringify(before[field]) !== JSON.stringify(data[field]),
+      );
+      if (!changes.length) return undefined;
+      const labels: Record<keyof LeadInput, string> = {
+        name: 'nome',
+        email: 'email',
+        phone: 'WhatsApp',
+        stage: 'etapa',
+        product: 'produto de interesse',
+        source: 'origem',
+        ownerId: 'responsável',
+        nextContact: 'próximo contato',
+        tags: 'etiquetas',
+        lostReason: 'motivo da perda',
+      };
+      const body =
+        before.stage !== data.stage
+          ? `Etapa: ${stageLabels[before.stage]} → ${stageLabels[data.stage]}. Dados atualizados: ${changes.map((field) => labels[field]).join(', ')}.`
+          : `Dados atualizados: ${changes.map((field) => labels[field]).join(', ')}.`;
+      await tx
+        .update(leads)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(leads.id, id));
+      await tx.insert(leadActivities).values({
+        id: crypto.randomUUID(),
+        leadId: id,
+        actorId: session.user.id,
+        kind: 'updated',
+        body,
+      });
       return undefined;
     });
     if (result) return { attempt, values, message: result };
@@ -207,7 +215,7 @@ export async function importLeads(_state: ImportState, form: FormData): Promise<
     )
       return { message: 'Escolha um arquivo CSV de até 2 MB.' };
     try {
-      const parsed = readLeadCsv(await file.text());
+      const parsed = readLeadCsv(decodeLeadCsv(new Uint8Array(await file.arrayBuffer())));
       if (parsed.errors.length)
         return {
           message: 'Corrija a planilha e envie de novo. Nenhum contato foi importado.',

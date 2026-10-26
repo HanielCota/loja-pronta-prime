@@ -4,31 +4,33 @@ import Link from 'next/link';
 import { ArrowRight, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { panelCard } from '@/features/member/components/area-shell';
-import { SllAreaShell } from '@/features/sll/sll-area-shell';
+import { SllPage } from '@/features/sll/sll-area-shell';
 import { getSllPublishedTracks } from '@/features/sll/server/catalog';
 import { getSllCopy } from '@/features/sll/server/copy';
 import { requireProduct } from '@/features/products/server/access';
 import { SllProgress } from '@/features/sll/components/sll-progress';
 import { cn } from '@/lib/utils';
+import { formatDuration } from '@/features/sll/duration';
 import { SLL_COPY } from '@/features/sll/copy';
 
 export const metadata: Metadata = { title: 'Cursos complementares · SLL' };
 
-/** "1 aula · 12 min", "8 aulas". Sem aula publicada, nada: o cartão já diz "Aulas em breve". */
+/** "1 aula · 12 min", "11 aulas · 2 h 47 min", "8 aulas". Sem aula publicada, nada: o cartão já diz "Aulas em breve". */
 function lessonSummary(lessonCount: number, minutes: number) {
   if (!lessonCount) return null;
-  return `${lessonCount} ${lessonCount === 1 ? 'aula' : 'aulas'}${minutes ? ` · ${minutes} min` : ''}`;
+  const duration = formatDuration(minutes);
+  return `${lessonCount} ${lessonCount === 1 ? 'aula' : 'aulas'}${duration ? ` · ${duration}` : ''}`;
 }
 
 /** O botão diz em que ponto ela está: abrir, continuar ou revisar. */
 function courseActionLabel(completedCount: number, lessonCount: number) {
-  if (lessonCount > 0 && completedCount >= lessonCount) return 'Revisar curso';
+  if (completedCount === lessonCount) return 'Revisar curso';
   if (completedCount) return 'Continuar curso';
   return 'Abrir curso';
 }
 
 export default async function ComplementaryCoursesPage() {
-  const [{ session, products }, courses, copy] = await Promise.all([
+  const [{ products }, courses, copy] = await Promise.all([
     requireProduct('sll'),
     getSllPublishedTracks('complementary_course'),
     getSllCopy(),
@@ -53,12 +55,7 @@ export default async function ComplementaryCoursesPage() {
       : copy.coursesLibraryTitle;
 
   return (
-    <SllAreaShell
-      account={session.user}
-      hasChoice={products.length > 1}
-      title={copy.coursesTitle}
-      intro={copy.coursesIntro}
-    >
+    <SllPage hasChoice={products.length > 1} title={copy.coursesTitle} intro={copy.coursesIntro}>
       {catalog.length ? (
         <div className="flex flex-col gap-6">
           {featured ? (
@@ -158,7 +155,7 @@ export default async function ComplementaryCoursesPage() {
                     ) : (
                       <CourseCoverPlaceholder />
                     )}
-                    <h3 className="text-xl leading-snug font-semibold text-balance text-foreground">
+                    <h3 className="text-headline font-semibold text-balance text-foreground">
                       {course.title}
                     </h3>
                     {course.description ? (
@@ -205,15 +202,18 @@ export default async function ComplementaryCoursesPage() {
           </p>
         </section>
       )}
-    </SllAreaShell>
+    </SllPage>
   );
 }
 
-/** Sem arquivo, o aviso ocupa só o necessário; a proporção 16:9 fica para a capa real. */
+/**
+ * Sem arquivo, uma etiqueta pequena (não uma faixa): o título do curso continua sendo o destaque.
+ * A proporção 16:9 fica para a capa real.
+ */
 function CourseCoverPlaceholder() {
   return (
-    <div className="flex w-full items-center gap-2 rounded-2xl bg-muted p-3 text-muted-foreground">
-      <BookOpen aria-hidden="true" className="size-5 shrink-0" />
+    <div className="inline-flex w-fit items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-muted-foreground">
+      <BookOpen aria-hidden="true" className="size-4 shrink-0" />
       <span className="text-sm">Capa em breve</span>
     </div>
   );

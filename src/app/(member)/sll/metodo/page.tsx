@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, BookOpen, CircleCheck, CirclePlay, LockKeyhole } from 'lucide-react';
+import { ArrowRight, BookOpen, CircleCheck, CirclePlay, LockKeyhole, Wrench } from 'lucide-react';
+import { SllGroupedList, SllListRow } from '@/features/sll/components/sll-grouped-list';
 import { Button } from '@/components/ui/button';
 import { panelCard } from '@/features/member/components/area-shell';
-import { SllAreaShell } from '@/features/sll/sll-area-shell';
+import { SllPage } from '@/features/sll/sll-area-shell';
 import { getFirstSllPublishedTrack } from '@/features/sll/server/catalog';
 import { requireProduct } from '@/features/products/server/access';
 import { getSllCopy } from '@/features/sll/server/copy';
@@ -15,15 +16,21 @@ export const metadata: Metadata = { title: 'Método SLL' };
 
 /** Resumo das três etapas, com avanço em sequência conforme o progresso salvo. */
 export default async function MethodPage() {
-  const [{ session, products }, track, copy] = await Promise.all([
+  const [{ products }, track, copy] = await Promise.all([
     requireProduct('sll'),
     getFirstSllPublishedTrack('method'),
     getSllCopy(),
   ]);
 
+  // A etapa que trava as outras é a primeira ainda pendente (a mesma regra do progresso), não
+  // sempre a anterior: sem nada feito, a Etapa 3 também espera a Etapa 1.
+  const blockingIndex =
+    track?.stages.findIndex(
+      (stage) => (stage.access?.totalCount ?? 0) > 0 && !stage.access?.isComplete,
+    ) ?? -1;
+
   return (
-    <SllAreaShell
-      account={session.user}
+    <SllPage
       hasChoice={products.length > 1}
       title={track?.title ?? 'Método SLL'}
       intro={
@@ -52,10 +59,18 @@ export default async function MethodPage() {
                   isUnlocked: stage.access?.isUnlocked ?? false,
                   lockMessage: stage.access?.lockMessage ?? null,
                 });
+                const locked = state.kind === 'locked';
                 return (
-                  <article className={cn(panelCard, 'gap-3 p-5 sm:p-5')} key={stage.id}>
+                  <article className={cn(panelCard, 'gap-3 p-6 sm:p-6')} key={stage.id}>
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-link">ETAPA {index + 1}</p>
+                      <p
+                        className={cn(
+                          'text-sm font-semibold tracking-wide',
+                          locked ? 'text-muted-foreground' : 'text-link',
+                        )}
+                      >
+                        ETAPA {index + 1}
+                      </p>
                       {state.kind === 'complete' ? (
                         <CircleCheck aria-hidden="true" className="size-6 text-progress-text" />
                       ) : state.kind === 'available' ? (
@@ -66,7 +81,7 @@ export default async function MethodPage() {
                         <BookOpen aria-hidden="true" className="size-6 text-muted-foreground" />
                       )}
                     </div>
-                    <h3 className="text-xl leading-snug font-semibold text-balance text-foreground">
+                    <h3 className="text-headline font-semibold text-balance text-foreground">
                       {stage.title}
                     </h3>
                     {stage.description ? (
@@ -74,7 +89,18 @@ export default async function MethodPage() {
                         {stage.description}
                       </p>
                     ) : null}
-                    <p className="text-body text-pretty text-muted-foreground">{state.message}</p>
+                    {locked ? (
+                      // Bloqueada: uma linha curta com o cadeado, em vez da frase longa repetindo
+                      // o nome das duas etapas.
+                      <p className="mt-1 flex items-center gap-2 text-body text-muted-foreground">
+                        <LockKeyhole aria-hidden="true" className="size-4 shrink-0" />
+                        {blockingIndex >= 0 && blockingIndex < index
+                          ? `Abre depois da Etapa ${blockingIndex + 1}`
+                          : state.message}
+                      </p>
+                    ) : (
+                      <p className="text-body text-pretty text-muted-foreground">{state.message}</p>
+                    )}
                     {state.showProgress ? (
                       <SllProgress
                         label={`Progresso da Etapa ${index + 1}`}
@@ -83,7 +109,12 @@ export default async function MethodPage() {
                       />
                     ) : null}
                     {state.actionLabel ? (
-                      <Button asChild variant="soft">
+                      // Roxo cheio só na etapa em andamento: é a ação principal da tela.
+                      <Button
+                        asChild
+                        className="mt-1"
+                        variant={state.kind === 'available' ? 'default' : 'soft'}
+                      >
                         <Link href={`/sll/metodo/etapa/${stage.id}`}>
                           {state.actionLabel}
                           <ArrowRight aria-hidden="true" />
@@ -93,29 +124,17 @@ export default async function MethodPage() {
                   </article>
                 );
               })}
-              <section
-                className={cn(panelCard, 'gap-3 p-5 sm:p-5')}
-                aria-labelledby="method-tools-title"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-link">FERRAMENTAS</p>
-                  <BookOpen aria-hidden="true" className="size-6 text-link" />
-                </div>
-                <h3
-                  id="method-tools-title"
-                  className="text-xl leading-snug font-semibold text-foreground"
-                >
-                  {copy.methodToolsTitle}
-                </h3>
-                <p className="text-body text-pretty text-muted-foreground">
-                  {copy.methodToolsDetail}
-                </p>
-                <Button asChild className="w-full" variant="soft">
-                  <Link href="/sll/recursos">{copy.methodToolsButton}</Link>
-                </Button>
-              </section>
             </div>
           </section>
+          {/* Ferramentas fora da grade das etapas: é um atalho, não uma quarta etapa. */}
+          <SllGroupedList>
+            <SllListRow
+              icon={<Wrench />}
+              title={copy.methodToolsTitle}
+              detail={copy.methodToolsDetail}
+              href="/sll/recursos"
+            />
+          </SllGroupedList>
         </div>
       ) : (
         <section className={panelCard}>
@@ -124,6 +143,6 @@ export default async function MethodPage() {
           </p>
         </section>
       )}
-    </SllAreaShell>
+    </SllPage>
   );
 }

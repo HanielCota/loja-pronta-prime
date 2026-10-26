@@ -40,7 +40,9 @@ export type AdminOverviewData = {
 };
 
 // Dia, mês e hora: nas listas curtas, o ano ocuparia o espaço do nome e do email.
+// Fuso fixo: o mesmo texto no servidor (UTC) e no navegador, sempre na hora do Brasil.
 const dateFormat = new Intl.DateTimeFormat('pt-BR', {
+  timeZone: 'America/Sao_Paulo',
   day: '2-digit',
   month: '2-digit',
   hour: '2-digit',
@@ -69,20 +71,20 @@ function StatTile({
     <Link
       className={cn(
         panelCard,
-        'gap-3 !p-5 outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-safe:transition-[background-color,transform] motion-safe:duration-150 motion-safe:ease-fluid motion-safe:active:scale-[0.98]',
+        'gap-2 !p-4 outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-safe:transition-[background-color,transform] motion-safe:duration-150 motion-safe:ease-fluid motion-safe:active:scale-[0.98] sm:gap-3 sm:!p-5',
       )}
       href={href}
     >
-      <span className="flex items-center justify-between gap-3">
+      <span className="flex items-start justify-between gap-2">
         <span className="text-sm font-semibold text-muted-foreground">{label}</span>
-        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary-soft text-link">
+        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary-soft text-link sm:size-10">
           <Icon aria-hidden="true" className="size-5" />
         </span>
       </span>
       <span className="text-title-lg font-semibold text-foreground tabular-nums">
         {numberFormat.format(value)}
       </span>
-      <span className="text-sm text-muted-foreground">{hint}</span>
+      <span className="text-sm text-pretty text-muted-foreground">{hint}</span>
     </Link>
   );
 }
@@ -133,11 +135,14 @@ const hotmartEventLabels: Record<string, string> = {
 export function AdminOverview({
   overview,
   online,
+  onlineTotal,
   now,
 }: {
   overview: AdminOverviewData;
   /** Quem está online agora (a lista completa fica em /admin/online). */
   online: PresenceRow[];
+  /** Quantas pessoas estão online de verdade (a lista tem teto). */
+  onlineTotal: number;
   now: Date;
 }) {
   const { totals, recentAccounts, recentAccess, recentHotmart } = overview;
@@ -145,7 +150,9 @@ export function AdminOverview({
   return (
     <div className="flex flex-col gap-6">
       <section aria-label="Números do painel">
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+        {/* Duas colunas já no celular, como os widgets de números: os seis cabem numa olhada e
+            as listas de baixo aparecem sem rolar tanto. */}
+        <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 2xl:grid-cols-6">
           <li className="grid">
             <StatTile
               hint="Todas as contas cadastradas"
@@ -208,7 +215,7 @@ export function AdminOverview({
         href="/admin/online"
         id="online-now"
         linkLabel="Ver todas"
-        title={`Online agora (${online.length})`}
+        title={`Online agora (${onlineTotal})`}
       >
         <ul className="grid gap-x-8 lg:grid-cols-2 [&>li]:border-b [&>li]:border-border">
           {online.slice(0, 6).map((row) => (

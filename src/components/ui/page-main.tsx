@@ -5,8 +5,9 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 /*
- * Fora do componente porque cada página nova monta a moldura (e este <main>) do zero: só aqui a
- * informação sobrevive à navegação. Só é usada no navegador; no servidor nada anima.
+ * Fora do componente porque este <main> recomeça a cada endereço (pela `key`, ou com a moldura
+ * inteira nas telas sem `layout.tsx`): só aqui a informação sobrevive à navegação. Só é usada no
+ * navegador; no servidor nada anima.
  */
 let firstPath: string | null = null;
 let navigated = false;

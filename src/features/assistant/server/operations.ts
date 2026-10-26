@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { and, asc, desc, eq, gt, inArray, lte, ne, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, gte, inArray, lt, lte, ne, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
 import {
   assistantJobs,
@@ -13,6 +13,7 @@ import {
   stores,
 } from '@/server/db/schema';
 import { shopeeApplicationId, type ShopeeConfiguration } from '@/features/shopee/authorization';
+import { shopeeItemListPageSchema } from '@/features/shopee/item-list';
 import { readShopeeAccess } from '@/features/shopee/server/connection';
 import {
   addShopeeItem,
@@ -210,6 +211,12 @@ export async function createPublicationBatch(
   });
 }
 
+/**
+ * Quantas vezes uma leitura interrompida (o worker caiu no meio) volta pra fila. Sem teto, uma
+ * coleta que derruba o worker voltava na hora pra sempre, e as tarefas das outras alunas esperavam.
+ */
+export const MAX_INTERRUPTED_ATTEMPTS = 3;
+
 /** Nenhum timeout de escrita volta automaticamente à fila de publicação. */
 export async function claimAssistantJob(now = new Date()) {
   return db.transaction(async (tx) => {
@@ -259,16 +266,22 @@ export async function claimAssistantJob(now = new Date()) {
         })
         .where(eq(assistantJobs.id, job.id));
     }
+    const expiredRead = and(
+      eq(assistantJobs.status, 'running'),
+      ne(assistantJobs.kind, 'publish'),
+      lte(assistantJobs.leaseUntil, now),
+    );
+    const exhausted = await tx
+      .update(assistantJobs)
+      .set({ status: 'blocked', leaseUntil: null, failure: 'interrupted' })
+      .where(and(expiredRead, gte(assistantJobs.attempts, MAX_INTERRUPTED_ATTEMPTS)))
+      .returning();
+    // A coleta parada não pode encerrar as próximas: a da vez seguinte continua agendada.
+    for (const job of exhausted) if (job.kind === 'collect') await scheduleNextCollection(job, tx);
     await tx
       .update(assistantJobs)
       .set({ status: 'pending', leaseUntil: null })
-      .where(
-        and(
-          eq(assistantJobs.status, 'running'),
-          ne(assistantJobs.kind, 'publish'),
-          lte(assistantJobs.leaseUntil, now),
-        ),
-      );
+      .where(and(expiredRead, lt(assistantJobs.attempts, MAX_INTERRUPTED_ATTEMPTS)));
     const [job] = await tx
       .select()
       .from(assistantJobs)
@@ -376,11 +389,7 @@ export async function findSku(
         config,
         access,
         '/api/v2/product/get_item_list',
-        z.object({
-          item: z.array(z.object({ item_id: z.number().int().positive().safe() })),
-          has_next_page: z.boolean(),
-          next_offset: z.number().int().nonnegative().optional(),
-        }),
+        shopeeItemListPageSchema,
         { offset: String(offset), page_size: '100', item_status: status },
         fetcher,
       );
@@ -418,12 +427,15 @@ async function publishItem(job: Job, fetcher: typeof fetch) {
   const config = await assertAssistantAccess(job.userId, 'loja-pronta');
   if (process.env.SHOPEE_PUBLICATION_ENABLED !== 'true')
     throw new OperationBlocked('publication-disabled');
+  // Sem item, '' comparado a uma coluna uuid viraria erro do Postgres (22P02) em vez de bloqueio.
+  const publicationItemId = job.payload.itemId;
+  if (!publicationItemId) throw new OperationBlocked('item');
   const [item] = await db
     .select()
     .from(assistantPublicationItems)
     .where(
       and(
-        eq(assistantPublicationItems.id, job.payload.itemId ?? ''),
+        eq(assistantPublicationItems.id, publicationItemId),
         eq(assistantPublicationItems.userId, job.userId),
       ),
     );
@@ -587,14 +599,22 @@ export async function evaluatePublicationBatch(userId: string, batchId: string, 
       ),
     )
     .orderBy(asc(shopeeCollectionRuns.startedAt));
+  // Só os cinco anúncios do lote: a loja inteira em cada coleta vira centenas de milhares de
+  // linhas na memória depois de algumas semanas.
   const snapshots = runs.length
     ? await db
         .select()
         .from(shopeeMetricSnapshots)
         .where(
-          inArray(
-            shopeeMetricSnapshots.runId,
-            runs.map((run) => run.id),
+          and(
+            inArray(
+              shopeeMetricSnapshots.runId,
+              runs.map((run) => run.id),
+            ),
+            inArray(
+              shopeeMetricSnapshots.itemId,
+              items.flatMap((item) => (item.itemId ? [item.itemId] : [])),
+            ),
           ),
         )
     : [];
@@ -663,6 +683,49 @@ export async function evaluatePublicationBatch(userId: string, batchId: string, 
   return current?.analysis ?? analysis;
 }
 
+// O trabalho de cada tipo de tarefa; 'stale' avisa que outra execução assumiu a tarefa no meio.
+async function runJobWork(
+  job: Job,
+  config: Awaited<ReturnType<typeof assertAssistantAccess>>,
+  fetcher: typeof fetch,
+): Promise<'stale' | 'done'> {
+  if (job.kind === 'collect') {
+    const runId = await collectStoreMetrics(job.userId, config, fetcher);
+    await startReadyCloneExperiments(job.userId, runId);
+    if (!(await renewLease(job))) return 'stale';
+    const due = await db
+      .select()
+      .from(assistantPublicationBatches)
+      .where(
+        and(
+          eq(assistantPublicationBatches.userId, job.userId),
+          eq(assistantPublicationBatches.status, 'observing'),
+          eq(assistantPublicationBatches.kind, 'initial'),
+          lte(assistantPublicationBatches.publishedAt, new Date(Date.now() - 5 * DAY_MS)),
+        ),
+      );
+    for (const batch of due)
+      await db
+        .insert(assistantJobs)
+        .values({
+          userId: job.userId,
+          kind: 'evaluate',
+          deduplicationKey: `evaluate:${batch.id}:${runId}`,
+          payload: { batchId: batch.id },
+        })
+        .onConflictDoNothing();
+    await scheduleNextCollection(job);
+    return 'done';
+  }
+  if (job.kind === 'publish') {
+    await publishItem(job, fetcher);
+    return 'done';
+  }
+  if (!job.payload.batchId) throw new OperationBlocked('batch');
+  await evaluatePublicationBatch(job.userId, job.payload.batchId);
+  return 'done';
+}
+
 export async function processAssistantJob(job: Job, fetcher: typeof fetch = fetch) {
   const owns = () =>
     and(
@@ -679,35 +742,7 @@ export async function processAssistantJob(job: Job, fetcher: typeof fetch = fetc
       job.userId,
       job.kind === 'collect' ? undefined : 'loja-pronta',
     );
-    if (job.kind === 'collect') {
-      const runId = await collectStoreMetrics(job.userId, config, fetcher);
-      await startReadyCloneExperiments(job.userId, runId);
-      if (!(await renewLease(job))) return 'stale' as const;
-      const due = await db
-        .select()
-        .from(assistantPublicationBatches)
-        .where(
-          and(
-            eq(assistantPublicationBatches.userId, job.userId),
-            eq(assistantPublicationBatches.status, 'observing'),
-            eq(assistantPublicationBatches.kind, 'initial'),
-            lte(assistantPublicationBatches.publishedAt, new Date(Date.now() - 5 * DAY_MS)),
-          ),
-        );
-      for (const batch of due)
-        await db
-          .insert(assistantJobs)
-          .values({
-            userId: job.userId,
-            kind: 'evaluate',
-            deduplicationKey: `evaluate:${batch.id}:${runId}`,
-            payload: { batchId: batch.id },
-          })
-          .onConflictDoNothing();
-      await scheduleNextCollection(job);
-    } else if (job.kind === 'publish') await publishItem(job, fetcher);
-    else if (job.payload.batchId) await evaluatePublicationBatch(job.userId, job.payload.batchId);
-    else throw new OperationBlocked('batch');
+    if ((await runJobWork(job, config, fetcher)) === 'stale') return 'stale' as const;
     await db
       .update(assistantJobs)
       .set({ status: 'completed', failure: null, leaseUntil: null })

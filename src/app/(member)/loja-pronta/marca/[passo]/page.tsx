@@ -1,3 +1,4 @@
+import { brandFingerprint } from '@/features/brand/server/fingerprint';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { BrandReview } from '@/features/brand/components/brand-review';
@@ -98,6 +99,7 @@ export default async function BrandStepPage({ params, searchParams }: PageProps)
           logoSrc={brandLogoSrc(brand)}
           description={brand.description}
           revising={revising}
+          fingerprint={brandFingerprint(brand)}
         />
       ) : null}
     </ConversationLayout>
