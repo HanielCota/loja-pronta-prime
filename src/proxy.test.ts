@@ -1,9 +1,9 @@
 import { expect, test } from 'bun:test';
-import { unstable_getResponseFromNextConfig } from 'next/experimental/testing/server';
-import nextConfig from '../../next.config';
+import { NextRequest } from 'next/server';
+import { proxy } from './proxy';
 
 const responseFor = (host: string, path: string) =>
-  unstable_getResponseFromNextConfig({ url: `https://${host}${path}`, nextConfig });
+  proxy(new NextRequest(`https://${host}${path}`, { headers: { host } }));
 
 test('legacy member links preserve their path and query on the canonical host', async () => {
   for (const host of ['lojaprontaprime.com', 'www.lojaprontaprime.com']) {
@@ -52,4 +52,18 @@ test('the new host, leads, marketing site and unknown hosts do not redirect', as
     const response = await responseFor(host, '/entrar');
     expect(response.headers.get('location')).toBeNull();
   }
+});
+
+test('forwarded host headers cannot trigger a redirect on an unrelated hostname', () => {
+  const request = new NextRequest('https://preview.example.invalid/entrar', {
+    headers: { host: 'preview.example.invalid', 'x-forwarded-host': 'lojaprontaprime.com' },
+  });
+  expect(proxy(request).headers.get('location')).toBeNull();
+});
+
+test('a path resembling an external URL cannot replace the fixed destination origin', () => {
+  const response = responseFor('lojaprontaprime.com', '//attacker.invalid/entrar?from=email');
+  const destination = new URL(response.headers.get('location')!);
+  expect(destination.origin).toBe('https://membros.escalashop.com.br');
+  expect(destination.search).toBe('?from=email');
 });

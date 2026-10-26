@@ -29,30 +29,7 @@ const nextConfig: NextConfig = {
   },
 
   async redirects() {
-    const legacyHost = [{ type: 'host' as const, value: '(?:www\\.)?lojaprontaprime\\.com' }];
-    const memberOrigin = 'https://membros.escalashop.com.br';
-
     return [
-      // Keep machine endpoints on the old host; existing Hotmart webhooks must not redirect.
-      {
-        source: '/:path((?!api(?:/|$)).*)',
-        has: legacyHost,
-        destination: `${memberOrigin}/:path`,
-        permanent: true,
-      },
-      // Registered OAuth returns still reach the session cookie on the new member host.
-      {
-        source: '/api/:provider(shopee|bling)/callback',
-        has: legacyHost,
-        destination: `${memberOrigin}/api/:provider/callback`,
-        permanent: false,
-      },
-      {
-        source: '/api/auth/:path*',
-        has: legacyHost,
-        destination: `${memberOrigin}/api/auth/:path*`,
-        permanent: false,
-      },
       // A tela da etapa da aluna se chamava /journey; links salvos continuam funcionando.
       {
         source: '/admin/contas/:id/journey',
