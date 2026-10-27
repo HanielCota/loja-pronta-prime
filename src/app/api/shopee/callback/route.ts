@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { env } from '@/config/env';
-import { shopeeConnectionPath, type ShopeeEntry } from '@/features/shopee/entry';
+import {
+  shopeeConnectionPath,
+  shopeeEntryProduct,
+  type ShopeeEntry,
+} from '@/features/shopee/entry';
 import { getActiveSession, needsFirstPassword } from '@/features/auth/server/session';
 import { getStudentProducts } from '@/features/products/server/access';
 import { canUseShopee, parseShopeeCallback } from '@/features/shopee/authorization';
@@ -34,7 +38,8 @@ async function authorizationResult(
     callback.state,
   );
   if (!savedOrigin) return current;
-  if (!products.includes(savedOrigin)) return { ...current, origin: savedOrigin };
+  if (!products.includes(shopeeEntryProduct(savedOrigin)))
+    return { ...current, origin: savedOrigin };
   try {
     const result = await finishShopeeAuthorization(
       { ...callback, userId: session.user.id, sessionId: session.session.id },

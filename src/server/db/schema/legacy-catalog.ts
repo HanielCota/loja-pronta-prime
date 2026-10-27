@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  bigint,
   check,
   foreignKey,
   index,
@@ -17,6 +18,12 @@ import type {
   ProductRecovery,
   RestoredProduct,
 } from '../../../features/legacy-stores/recovery';
+import type {
+  PublicationContext,
+  RecoveredListingPayload,
+  RecoveredPublicationIntent,
+  RecoveredPublicationStatus,
+} from '../../../features/legacy-stores/publication';
 import { user } from './auth';
 import { legacyStoreProducts, legacyStores } from './legacy-stores';
 
@@ -114,6 +121,55 @@ export const legacyCatalogImports = pgTable(
     check(
       'legacy_catalog_imports_draft_check',
       sql`${table.product}->>'legacyProductId'=${table.productId}::text and ${table.product}->>'publicationReady'='false' and ${table.revision}>0`,
+    ),
+  ],
+);
+
+export const legacyCatalogPublications = pgTable(
+  'legacy_catalog_publications',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    importId: uuid('import_id')
+      .notNull()
+      .references(() => legacyCatalogImports.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    applicationId: text('application_id').notNull(),
+    shopId: bigint('shop_id', { mode: 'number' }).notNull(),
+    status: text('status').$type<RecoveredPublicationStatus>().notNull().default('editing'),
+    context: jsonb('context').$type<PublicationContext>().notNull(),
+    intent: jsonb('intent').$type<RecoveredPublicationIntent>(),
+    fingerprint: text('fingerprint'),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    confirmedAt: timestamp('confirmed_at', { withTimezone: true }),
+    payload: jsonb('payload').$type<RecoveredListingPayload>(),
+    itemId: bigint('item_id', { mode: 'number' }),
+    failure: text('failure'),
+    leaseId: uuid('lease_id'),
+    leaseUntil: timestamp('lease_until', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('legacy_catalog_publications_import_unique').on(table.importId),
+    index('legacy_catalog_publications_owner_idx').on(table.userId),
+    index('legacy_catalog_publications_queue_idx').on(table.status, table.createdAt),
+    check(
+      'legacy_catalog_publications_status_check',
+      sql`${table.status} in ('editing','review','pending','preparing','sending','published','blocked','unknown')`,
+    ),
+    check(
+      'legacy_catalog_publications_confirmation_check',
+      sql`${table.status} in ('editing','review','blocked') or (${table.confirmedAt} is not null and ${table.intent} is not null and ${table.fingerprint} is not null and ${table.expiresAt} is not null)`,
+    ),
+    check(
+      'legacy_catalog_publications_published_check',
+      sql`${table.status}<>'published' or ${table.itemId} is not null`,
+    ),
+    check(
+      'legacy_catalog_publications_shop_check',
+      sql`${table.shopId}>0 and ${table.shopId}<=9007199254740991`,
     ),
   ],
 );

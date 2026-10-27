@@ -10,6 +10,8 @@ const READ_PATHS = [
   '/api/v2/product/get_item_extra_info',
   '/api/v2/product/get_category',
   '/api/v2/product/get_attributes',
+  '/api/v2/product/get_attribute_tree',
+  '/api/v2/product/get_item_limit',
   '/api/v2/product/get_brand_list',
   '/api/v2/product/get_model_list',
   '/api/v2/logistics/get_channel_list',

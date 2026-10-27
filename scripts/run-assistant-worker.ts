@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { runtimeHeartbeats } from '../src/server/db/schema';
 import { queueAutomaticBrands } from '../src/features/brand/server/publication';
 import { syncSupplierFeeds } from '../src/features/assistant/server/supplier-sync';
+import { processRecoveredPublication } from '../src/features/legacy-stores/server/publication-runtime';
 import { processStoreChange } from '../src/features/assistant/server/store-changes';
 import {
   claimAssistantJob,
@@ -79,6 +80,8 @@ async function run() {
         );
       }
       try {
+        const recovered = await processRecoveredPublication();
+        if (once && recovered) break;
         const changed = await processStoreChange();
         if (once && changed) break;
         const job = await claimAssistantJob();
@@ -87,7 +90,7 @@ async function run() {
           const status = await processAssistantJob(job);
           console.log(`[assistant] ${job.kind} ${job.id}: ${status}`);
         }
-        if (!job && !once) await delay(5000);
+        if (!job && !recovered && !once) await delay(5000);
       } catch (error) {
         failures += 1;
         console.error(

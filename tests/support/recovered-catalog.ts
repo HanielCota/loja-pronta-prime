@@ -9,7 +9,7 @@ import {
 } from '../../src/features/legacy-stores/recovery';
 
 export const fixtureImage = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a7S0AAAAASUVORK5CYII=',
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADElEQVQImWP4//8/AAX+Av5Y8msOAAAAAElFTkSuQmCC',
   'base64',
 );
 export async function seedRecoveredCatalog(pool: Pool, userId: string, count = 2) {

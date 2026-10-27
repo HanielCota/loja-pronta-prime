@@ -28,6 +28,7 @@ export async function recoveredStores(client: Client, userId: string) {
 
 export async function importedProducts(client: Client, userId: string, page = 1) {
   const { rows } = await client.query<{
+    id: string;
     product_id: string;
     store_id: string;
     source_hash: string;
@@ -35,7 +36,7 @@ export async function importedProducts(client: Client, userId: string, page = 1)
     product: RestoredProduct;
     revision: number;
   }>(
-    `SELECT i.product_id,i.store_id,i.source_hash,p.record original,i.product,i.revision
+    `SELECT i.id,i.product_id,i.store_id,i.source_hash,p.record original,i.product,i.revision
     FROM legacy_catalog_imports i JOIN legacy_store_products p ON p.id=i.product_id AND p.store_id=i.store_id
     JOIN legacy_stores s ON s.id=p.store_id JOIN legacy_customers c ON c.id=s.customer_id AND c.user_id=$1
     JOIN legacy_product_recoveries r ON r.run_id=i.run_id AND r.product_id=i.product_id AND r.user_id=$1 AND r.status='recovered'
@@ -51,6 +52,7 @@ export async function importedProduct(client: Client, userId: string, productId:
   const {
     rows: [row],
   } = await client.query<{
+    id: string;
     product_id: string;
     store_id: string;
     source_hash: string;
@@ -58,7 +60,7 @@ export async function importedProduct(client: Client, userId: string, productId:
     product: RestoredProduct;
     revision: number;
   }>(
-    `SELECT i.product_id,i.store_id,i.source_hash,p.record original,i.product,i.revision
+    `SELECT i.id,i.product_id,i.store_id,i.source_hash,p.record original,i.product,i.revision
     FROM legacy_catalog_imports i JOIN legacy_store_products p ON p.id=i.product_id AND p.store_id=i.store_id
     JOIN legacy_stores s ON s.id=p.store_id JOIN legacy_customers c ON c.id=s.customer_id AND c.user_id=$1
     JOIN legacy_product_recoveries r ON r.run_id=i.run_id AND r.product_id=i.product_id AND r.user_id=$1 AND r.status='recovered'
@@ -132,7 +134,31 @@ export async function importRecoveredProducts(
   }
 }
 
-export async function reviewImportedProduct(client: Client, userId: string, input: unknown) {
+export async function reviewImportedProduct(
+  pool: Pick<Pool, 'connect'>,
+  userId: string,
+  input: unknown,
+) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const parsedInput = catalogReviewSchema.parse(input);
+    await client.query(
+      'SELECT id FROM legacy_catalog_imports WHERE user_id=$1 AND product_id=$2::uuid FOR UPDATE',
+      [userId, parsedInput.productId],
+    );
+    const saved = await updateImportedProduct(client, userId, input);
+    await client.query('COMMIT');
+    return saved;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function updateImportedProduct(client: Client, userId: string, input: unknown) {
   const parsed = catalogReviewSchema.parse(input);
   const row = await importedProduct(client, userId, parsed.productId);
   if (!row) return false;
@@ -146,7 +172,8 @@ export async function reviewImportedProduct(client: Client, userId: string, inpu
     `UPDATE legacy_catalog_imports i SET product=$4::jsonb,revision=revision+1,updated_at=now()
     FROM legacy_store_products p JOIN legacy_stores s ON s.id=p.store_id JOIN legacy_customers c ON c.id=s.customer_id
     WHERE i.user_id=$1 AND c.user_id=$1 AND i.product_id=$2::uuid AND i.run_id=$3 AND i.revision=$5
-      AND p.id=i.product_id AND p.store_id=i.store_id AND p.record=$6::jsonb RETURNING i.id`,
+      AND p.id=i.product_id AND p.store_id=i.store_id AND p.record=$6::jsonb
+      AND NOT EXISTS (SELECT 1 FROM legacy_catalog_publications q WHERE q.import_id=i.id AND q.status in ('pending','preparing','sending','unknown','published')) RETURNING i.id`,
     [
       userId,
       parsed.productId,
