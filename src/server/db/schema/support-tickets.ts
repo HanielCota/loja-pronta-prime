@@ -331,18 +331,31 @@ export const supportWhatsappClicks = pgTable(
   (table) => [index('support_whatsapp_clicks_created_idx').on(table.createdAt)],
 );
 
-/** Ações feitas por alguém da equipe dentro da conta de uma aluna (entrar como aluna). */
+/**
+ * O que alguém da equipe fez dentro da conta de uma aluna ("Entrar como aluna"): a entrada, cada
+ * ação feita ou recusada e a saída. `action` é o nome da ação, nunca o conteúdo; `path` é só o
+ * endereço. `session_id` junta os registros de uma mesma visita (a sessão some na saída, então
+ * não é chave estrangeira).
+ */
 export const supportImpersonationLog = pgTable(
   'support_impersonation_log',
   {
     id: uuid('id').defaultRandom().primaryKey(),
+    kind: text('kind', { enum: ['started', 'action', 'refused', 'ended'] })
+      .default('action')
+      .notNull(),
+    sessionId: text('session_id'),
     staffId: text('staff_id').references(() => user.id, { onDelete: 'set null' }),
     studentId: text('student_id').references(() => user.id, { onDelete: 'set null' }),
+    ticketId: uuid('ticket_id').references(() => supportTickets.id, { onDelete: 'set null' }),
     action: text('action').notNull(),
     path: text('path'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
-  (table) => [index('support_impersonation_log_student_idx').on(table.studentId, table.createdAt)],
+  (table) => [
+    index('support_impersonation_log_student_idx').on(table.studentId, table.createdAt),
+    index('support_impersonation_log_session_idx').on(table.sessionId),
+  ],
 );
 
 /**
