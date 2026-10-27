@@ -4,6 +4,7 @@ import { LEGACY_CATALOG_RUN } from '@/config/legacy-catalog';
 import { legacyRecordHash, type RestoredProduct } from '../recovery';
 import { recoveredSelectionSchema, catalogReviewSchema } from '../catalog-import';
 import { readRecoveredLegacyCatalog } from './recovery';
+import type { RecoveredPublicationStatus } from '../publication';
 
 type Client = Pick<PoolClient, 'query'>;
 export async function recoveredStores(client: Client, userId: string) {
@@ -26,7 +27,8 @@ export async function recoveredStores(client: Client, userId: string) {
   return rows;
 }
 
-export async function importedProducts(client: Client, userId: string, page = 1) {
+export async function importedProducts(client: Client, userId: string, page = 1, storeId?: string) {
+  if (storeId !== undefined && !z.guid().safeParse(storeId).success) return [];
   const { rows } = await client.query<{
     id: string;
     product_id: string;
@@ -35,14 +37,17 @@ export async function importedProducts(client: Client, userId: string, page = 1)
     original: unknown;
     product: RestoredProduct;
     revision: number;
+    publication_status: RecoveredPublicationStatus | null;
   }>(
-    `SELECT i.id,i.product_id,i.store_id,i.source_hash,p.record original,i.product,i.revision
+    `SELECT i.id,i.product_id,i.store_id,i.source_hash,p.record original,i.product,i.revision,q.status publication_status
     FROM legacy_catalog_imports i JOIN legacy_store_products p ON p.id=i.product_id AND p.store_id=i.store_id
     JOIN legacy_stores s ON s.id=p.store_id JOIN legacy_customers c ON c.id=s.customer_id AND c.user_id=$1
     JOIN legacy_product_recoveries r ON r.run_id=i.run_id AND r.product_id=i.product_id AND r.user_id=$1 AND r.status='recovered'
     JOIN legacy_catalog_recovery_runs run ON run.id=i.run_id AND run.applied_at IS NOT NULL
-    WHERE i.user_id=$1 AND i.run_id=$2 ORDER BY i.product_id LIMIT 30 OFFSET $3`,
-    [userId, LEGACY_CATALOG_RUN, (Math.max(1, page) - 1) * 30],
+    LEFT JOIN legacy_catalog_publications q ON q.import_id=i.id AND q.user_id=$1
+    WHERE i.user_id=$1 AND i.run_id=$2 AND ($4::uuid IS NULL OR i.store_id=$4::uuid)
+    ORDER BY i.product_id LIMIT 30 OFFSET $3`,
+    [userId, LEGACY_CATALOG_RUN, (Math.max(1, page) - 1) * 30, storeId ?? null],
   );
   return rows.filter((row) => legacyRecordHash(row.original) === row.source_hash);
 }

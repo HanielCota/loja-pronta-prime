@@ -32,27 +32,25 @@ export default async function Page() {
         area="loja-pronta"
         crumb="Loja Pronta"
         title="Suas lojas"
-        intro="Veja suas lojas salvas e as entregas registradas."
+        intro="Sua loja anterior está salva. Continue com ela sem começar de novo."
       >
-        {/* Sem isso, quem tinha loja no sistema antigo ficava presa no histórico, sem conseguir
-            começar a loja aqui. */}
-        <section aria-labelledby="new-store" className={`${panelCard} gap-5`}>
-          <div>
-            <h2 id="new-store" className="text-title font-semibold text-balance">
-              Montar sua loja aqui
-            </h2>
-            <p className="mt-2 text-body text-muted-foreground">
-              Comece do início neste site. Suas lojas anteriores continuam salvas logo abaixo.
-            </p>
-          </div>
-          <Button asChild className="w-fit">
+        <LegacyStoreHistory
+          stores={previousStores}
+          basePath="/loja-pronta/previous-stores"
+          canContinue
+        />
+        <details className={`${panelCard} gap-5`}>
+          <summary className="text-body font-semibold">Quero montar outra loja</summary>
+          <p className="mt-4 text-body text-muted-foreground">
+            Use esta opção só para criar uma loja nova. Sua loja anterior continua salva.
+          </p>
+          <Button asChild className="mt-4 w-fit" variant="soft">
             <Link href={CONVERSATION_PATH}>
-              Começar minha loja
+              Começar uma nova loja
               <ArrowRightIcon aria-hidden="true" />
             </Link>
           </Button>
-        </section>
-        <LegacyStoreHistory stores={previousStores} basePath="/loja-pronta/previous-stores" />
+        </details>
       </AreaPage>
     );
   }
@@ -63,7 +61,11 @@ export default async function Page() {
       phase={phase}
       conversation={conversation}
       previousStores={
-        <LegacyStoreHistory stores={previousStores} basePath="/loja-pronta/previous-stores" />
+        <LegacyStoreHistory
+          stores={previousStores}
+          basePath="/loja-pronta/previous-stores"
+          canContinue
+        />
       }
       brand={{
         name: brand.name,

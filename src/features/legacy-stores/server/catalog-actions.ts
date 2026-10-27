@@ -23,7 +23,7 @@ export async function importRecoveredCatalog(form: FormData): Promise<void> {
   }
   revalidatePath(path);
   revalidatePath('/loja-pronta');
-  redirect(`${path}?resultado=imported&quantidade=${count}`);
+  redirect(`${path}?store=${parsed.data.storeId}&resultado=imported&quantidade=${count}`);
 }
 
 export async function saveRecoveredCatalogReview(form: FormData): Promise<void> {

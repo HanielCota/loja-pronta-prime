@@ -1,5 +1,18 @@
 # Legacy Loja Pronta data migration
 
+## Member continuation (October 27, 2026)
+
+Members resume an owned store at `/loja-pronta/previous-stores/<id>/continue`. The page preserves
+historical records and current setup, resolves linked product ownership through the existing
+reader, and routes members to import or review without repeating onboarding or brand creation.
+The recovered catalog accepts an owned `store` filter, keeps it through import and pagination,
+and displays persisted publication states. An invalid or foreign filter cannot expose another
+store. Connection alone is explicitly distinguished from completed publication.
+
+This rollout builds on the current import and confirmed-publication tables and requires no
+additional schema migration. The existing migration journal, pilot allowlist and
+customer confirmation requirements remain intact. See [publication requirements](RECOVERED-PUBLICATION.md).
+
 The previous `loja-pronta-entrega` project contains delivery records, not the authentication or progress model used by this application. The migration preserves its four tables as local historical records and links customers to accounts by trimmed, lowercase email. The application never needs a Supabase key to read imported data.
 
 ## Source inventory
