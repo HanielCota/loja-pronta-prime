@@ -14,6 +14,8 @@ import {
 } from '@/server/db/schema';
 
 mock.module('@/features/auth/server/session', () => ({
+  // Sem visita da equipe ("Entrar como aluna"): a sessão é da própria pessoa.
+  getVisit: async () => null,
   getActiveSession: async () => ({ user: { role: 'admin' } }),
   getSessionState: async () => ({ status: 'active', session: { user: { role: 'admin' } } }),
   needsFirstPassword: () => false,

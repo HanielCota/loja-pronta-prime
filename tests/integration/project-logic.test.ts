@@ -34,6 +34,8 @@ mock.module('@/features/products/server/access', () => ({
   getStudentProducts: async () => ({ products: ['sll'] }),
 }));
 mock.module('@/features/auth/server/session', () => ({
+  // Sem visita da equipe ("Entrar como aluna"): a sessão é da própria pessoa.
+  getVisit: async () => null,
   getSessionState: async () => ({
     status: 'active',
     session: { user: { id: userId, role: 'user' } },

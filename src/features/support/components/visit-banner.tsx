@@ -1,5 +1,6 @@
 import { Eye } from 'lucide-react';
-import { stopVisitAction } from '@/features/support-desk/server/actions';
+import { BLOCKED_SUMMARY } from '../visit-rules';
+import { LeaveVisitButton } from './leave-visit-button';
 
 const timeFormat = new Intl.DateTimeFormat('pt-BR', {
   hour: '2-digit',
@@ -8,28 +9,29 @@ const timeFormat = new Intl.DateTimeFormat('pt-BR', {
 });
 
 /**
- * A faixa fixa enquanto alguém da equipe está na conta da aluna: de quem é a conta, até quando,
- * e o caminho de volta (alvo de 44px). Fica em toda página da área das alunas.
+ * A faixa fixa enquanto alguém da equipe está na conta da aluna: de quem é a conta, até quando, o
+ * que fica bloqueado (em telas maiores) e o caminho de volta (alvo de 44px). Fica em toda página
+ * da área das alunas.
  */
 export function VisitBanner({ name, until }: { name: string; until: Date }) {
   return (
     <aside
-      aria-label="Visita à conta da aluna"
+      aria-label="Acesso à conta da aluna"
       className="sticky top-0 z-40 flex flex-wrap items-center justify-center gap-3 bg-primary px-4 py-2 text-body text-primary-foreground"
     >
       <Eye aria-hidden="true" className="size-5 shrink-0" />
-      <p className="min-w-0 text-pretty">
-        Você está usando a conta de <strong className="font-semibold">{name}</strong> até {timeFormat.format(until)}.
-        <span className="hidden sm:inline"> Tudo o que fizer fica registrado com o seu nome.</span>
-      </p>
-      <form action={stopVisitAction}>
-        <button
-          type="submit"
-          className="inline-flex min-h-11 items-center rounded-full bg-primary-foreground px-5 text-body font-semibold text-primary outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground"
-        >
-          Voltar ao admin
-        </button>
-      </form>
+      <div className="min-w-0 text-pretty">
+        <p>
+          Você está usando a conta de <strong className="font-semibold">{name}</strong> até{' '}
+          {timeFormat.format(until)}.
+          <span className="hidden sm:inline">
+            {' '}
+            Tudo o que fizer fica registrado com o seu nome.
+          </span>
+        </p>
+        <p className="hidden md:block">{BLOCKED_SUMMARY}</p>
+      </div>
+      <LeaveVisitButton className="bg-primary-foreground px-5 font-semibold text-primary hover:bg-primary-foreground/90 focus-visible:outline-primary-foreground" />
     </aside>
   );
 }

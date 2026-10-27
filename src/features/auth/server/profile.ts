@@ -1,5 +1,6 @@
 'use server';
 
+import { runAsStudent } from '@/features/support/server/impersonation';
 import { parseWithZod } from '@conform-to/zod/v4';
 import { and, eq, ne } from 'drizzle-orm';
 import { refresh } from 'next/cache';
@@ -46,54 +47,56 @@ export async function updateProfilePhoto(
   _state: ProfilePhotoResult,
   formData: FormData,
 ): Promise<ProfilePhotoResult> {
-  let newId: string | null = null;
-  let userId: string | undefined;
-  let oldImage: string | null;
-  const removed = formData.get('intent') === 'remove';
-  try {
-    const session = await profileSession();
-    if (!session) return { error: 'Entre na sua conta de novo pra mudar a foto.' };
-    userId = session.user.id;
-    if (!(await consumeAttempt('profilePhotoPerUser', userId))) {
-      return { error: 'Você tentou várias vezes. Espere um minuto e tente de novo.' };
+  return runAsStudent('updateProfilePhoto', async () => {
+    let newId: string | null = null;
+    let userId: string | undefined;
+    let oldImage: string | null;
+    const removed = formData.get('intent') === 'remove';
+    try {
+      const session = await profileSession();
+      if (!session) return { error: 'Entre na sua conta de novo pra mudar a foto.' };
+      userId = session.user.id;
+      if (!(await consumeAttempt('profilePhotoPerUser', userId))) {
+        return { error: 'Você tentou várias vezes. Espere um minuto e tente de novo.' };
+      }
+
+      if (!removed) {
+        const file = formData.get('photo');
+        if (!(file instanceof File) || !file.size) return { error: 'Escolha uma foto pra enviar.' };
+        if (file.size > PROFILE_PHOTO_MAX_BYTES) return { error: 'Escolha uma foto de até 5 MB.' };
+        const photo = await normalizeProfilePhoto(new Uint8Array(await file.arrayBuffer()));
+        if (!photo)
+          return { error: 'Não deu pra abrir essa foto. Escolha uma imagem JPG, PNG ou WebP.' };
+        newId = crypto.randomUUID();
+        await storage().put(profilePhotoKey(userId, newId), photo, 'image/webp');
+      }
+
+      const image = newId ? profilePhotoUrl(newId) : null;
+      const ownerId = userId;
+      // Duas abas podem trocar a foto juntas: a trava garante que cada uma apague só a anterior.
+      oldImage = await db.transaction(async (tx) => {
+        const [account] = await tx
+          .select({ image: user.image })
+          .from(user)
+          .where(eq(user.id, ownerId))
+          .for('update');
+        if (!account) throw new Error('Conta não encontrada');
+        await tx.update(user).set({ image, updatedAt: new Date() }).where(eq(user.id, ownerId));
+        return account.image;
+      });
+    } catch (error) {
+      if (userId && newId) await removePhotoFile(userId, newId);
+      reportAuthError('troca da foto de perfil', error);
+      return { error: 'Não deu pra salvar a foto agora. Tente de novo.' };
     }
 
-    if (!removed) {
-      const file = formData.get('photo');
-      if (!(file instanceof File) || !file.size) return { error: 'Escolha uma foto pra enviar.' };
-      if (file.size > PROFILE_PHOTO_MAX_BYTES) return { error: 'Escolha uma foto de até 5 MB.' };
-      const photo = await normalizeProfilePhoto(new Uint8Array(await file.arrayBuffer()));
-      if (!photo)
-        return { error: 'Não deu pra abrir essa foto. Escolha uma imagem JPG, PNG ou WebP.' };
-      newId = crypto.randomUUID();
-      await storage().put(profilePhotoKey(userId, newId), photo, 'image/webp');
-    }
-
-    const image = newId ? profilePhotoUrl(newId) : null;
-    const ownerId = userId;
-    // Duas abas podem trocar a foto juntas: a trava garante que cada uma apague só a anterior.
-    oldImage = await db.transaction(async (tx) => {
-      const [account] = await tx
-        .select({ image: user.image })
-        .from(user)
-        .where(eq(user.id, ownerId))
-        .for('update');
-      if (!account) throw new Error('Conta não encontrada');
-      await tx.update(user).set({ image, updatedAt: new Date() }).where(eq(user.id, ownerId));
-      return account.image;
-    });
-  } catch (error) {
-    if (userId && newId) await removePhotoFile(userId, newId);
-    reportAuthError('troca da foto de perfil', error);
-    return { error: 'Não deu pra salvar a foto agora. Tente de novo.' };
-  }
-
-  const oldId = profilePhotoId(oldImage);
-  if (oldId) await removePhotoFile(userId, oldId);
-  // A foto aparece no menu de todas as telas. refresh() atualiza só a tela de quem trocou:
-  // revalidatePath('/', 'layout') expirava o cache de conteúdo de todas as alunas.
-  refresh();
-  return { saved: true, removed };
+    const oldId = profilePhotoId(oldImage);
+    if (oldId) await removePhotoFile(userId, oldId);
+    // A foto aparece no menu de todas as telas. refresh() atualiza só a tela de quem trocou:
+    // revalidatePath('/', 'layout') expirava o cache de conteúdo de todas as alunas.
+    refresh();
+    return { saved: true, removed };
+  });
 }
 
 /**
@@ -103,36 +106,38 @@ export async function updateName(
   _state: ProfileResult,
   formData: FormData,
 ): Promise<ProfileResult> {
-  const submission = parseWithZod(formData, { schema: profileNameSchema });
-  if (submission.status !== 'success') return { submission: submission.reply() };
+  return runAsStudent('updateName', async () => {
+    const submission = parseWithZod(formData, { schema: profileNameSchema });
+    if (submission.status !== 'success') return { submission: submission.reply() };
 
-  let session: Awaited<ReturnType<typeof profileSession>>;
-  try {
-    session = await profileSession();
-  } catch (error) {
-    reportAuthError('leitura da sessão no perfil', error);
-    return { submission: reject(submission, 'unknown') };
-  }
-  if (!session) return { submission: reject(submission, 'session_expired') };
+    let session: Awaited<ReturnType<typeof profileSession>>;
+    try {
+      session = await profileSession();
+    } catch (error) {
+      reportAuthError('leitura da sessão no perfil', error);
+      return { submission: reject(submission, 'unknown') };
+    }
+    if (!session) return { submission: reject(submission, 'session_expired') };
 
-  const userId = session.user.id;
-  if (!(await consumeAttempt('profileNamePerUser', userId))) {
-    return { submission: reject(submission, 'rate_limited') };
-  }
+    const userId = session.user.id;
+    if (!(await consumeAttempt('profileNamePerUser', userId))) {
+      return { submission: reject(submission, 'rate_limited') };
+    }
 
-  try {
-    await db
-      .update(user)
-      .set({ preferredName: submission.value.name, updatedAt: new Date() })
-      .where(eq(user.id, userId));
-  } catch (error) {
-    reportAuthError('troca do nome no perfil', error);
-    return { submission: reject(submission, 'unknown') };
-  }
+    try {
+      await db
+        .update(user)
+        .set({ preferredName: submission.value.name, updatedAt: new Date() })
+        .where(eq(user.id, userId));
+    } catch (error) {
+      reportAuthError('troca do nome no perfil', error);
+      return { submission: reject(submission, 'unknown') };
+    }
 
-  // O nome aparece na saudação das telas de dentro (refresh(), pelo mesmo motivo da foto).
-  refresh();
-  return { submission: submission.reply(), saved: true };
+    // O nome aparece na saudação das telas de dentro (refresh(), pelo mesmo motivo da foto).
+    refresh();
+    return { submission: submission.reply(), saved: true };
+  });
 }
 
 /**
@@ -143,42 +148,45 @@ export async function changePassword(
   _state: ProfileResult,
   formData: FormData,
 ): Promise<ProfileResult> {
-  const submission = parseWithZod(formData, { schema: changePasswordSchema });
-  if (submission.status !== 'success') {
-    return { submission: submission.reply({ hideFields: HIDDEN_FIELDS }) };
-  }
+  return runAsStudent('changePassword', async () => {
+    const submission = parseWithZod(formData, { schema: changePasswordSchema });
+    if (submission.status !== 'success') {
+      return { submission: submission.reply({ hideFields: HIDDEN_FIELDS }) };
+    }
 
-  let session: Awaited<ReturnType<typeof profileSession>>;
-  try {
-    session = await profileSession();
-  } catch (error) {
-    reportAuthError('leitura da sessão no perfil', error);
-    return { submission: reject(submission, 'unknown') };
-  }
-  if (!session) return { submission: reject(submission, 'session_expired') };
+    let session: Awaited<ReturnType<typeof profileSession>>;
+    try {
+      session = await profileSession();
+    } catch (error) {
+      reportAuthError('leitura da sessão no perfil', error);
+      return { submission: reject(submission, 'unknown') };
+    }
+    if (!session) return { submission: reject(submission, 'session_expired') };
 
-  if (!(await consumeAttempt('changePasswordPerUser', session.user.id))) {
-    return { submission: reject(submission, 'rate_limited') };
-  }
+    if (!(await consumeAttempt('changePasswordPerUser', session.user.id))) {
+      return { submission: reject(submission, 'rate_limited') };
+    }
 
-  const { currentPassword, password } = submission.value;
-  if (currentPassword === password) return { submission: reject(submission, 'unchanged_password') };
+    const { currentPassword, password } = submission.value;
+    if (currentPassword === password)
+      return { submission: reject(submission, 'unchanged_password') };
 
-  try {
-    const failure = await changeOwnPassword(
-      session.user.id,
-      session.session.token,
-      currentPassword,
-      password,
-    );
-    if (failure) return { submission: reject(submission, failure) };
-  } catch (error) {
-    reportAuthError('troca de senha no perfil', error);
-    return { submission: reject(submission, 'unknown') };
-  }
+    try {
+      const failure = await changeOwnPassword(
+        session.user.id,
+        session.session.token,
+        currentPassword,
+        password,
+      );
+      if (failure) return { submission: reject(submission, failure) };
+    } catch (error) {
+      reportAuthError('troca de senha no perfil', error);
+      return { submission: reject(submission, 'unknown') };
+    }
 
-  // Sem os valores de volta: os campos de senha ficam vazios depois de salvar.
-  return { submission: submission.reply({ resetForm: true }), saved: true };
+    // Sem os valores de volta: os campos de senha ficam vazios depois de salvar.
+    return { submission: submission.reply({ resetForm: true }), saved: true };
+  });
 }
 
 /**
@@ -187,25 +195,27 @@ export async function changePassword(
  * na volta.
  */
 export async function signOutOtherDevices(): Promise<void> {
-  let current: Awaited<ReturnType<typeof profileSession>>;
-  try {
-    current = await profileSession();
-  } catch (error) {
-    reportAuthError('leitura da sessão no perfil', error);
-    return;
-  }
-  if (!current) return;
+  return runAsStudent('signOutOtherDevices', async () => {
+    let current: Awaited<ReturnType<typeof profileSession>>;
+    try {
+      current = await profileSession();
+    } catch (error) {
+      reportAuthError('leitura da sessão no perfil', error);
+      return;
+    }
+    if (!current) return;
 
-  try {
-    await db
-      .delete(sessionTable)
-      .where(
-        and(eq(sessionTable.userId, current.user.id), ne(sessionTable.id, current.session.id)),
-      );
-  } catch (error) {
-    reportAuthError('saída dos outros aparelhos no perfil', error);
-    return;
-  }
-  // A lista de aparelhos é só dela: refresh(), pelo mesmo motivo da foto.
-  refresh();
+    try {
+      await db
+        .delete(sessionTable)
+        .where(
+          and(eq(sessionTable.userId, current.user.id), ne(sessionTable.id, current.session.id)),
+        );
+    } catch (error) {
+      reportAuthError('saída dos outros aparelhos no perfil', error);
+      return;
+    }
+    // A lista de aparelhos é só dela: refresh(), pelo mesmo motivo da foto.
+    refresh();
+  });
 }

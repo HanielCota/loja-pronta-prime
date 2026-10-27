@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getActiveSession } from '@/features/auth/server/session';
 import { recordPresence } from '@/features/presence/server/record';
+import { visitForRoute } from '@/features/support/server/impersonation';
 import { readLimitedBody, RequestBodyTooLargeError } from '@/lib/request-body';
 import { hasTrustedOrigin } from '@/server/request/origin';
 
@@ -18,6 +19,9 @@ export async function POST(request: Request) {
   if (!hasTrustedOrigin(request)) return new NextResponse(null, { status: 403, headers: noStore });
   const session = await getActiveSession();
   if (!session) return new NextResponse(null, { status: 401, headers: noStore });
+  // A equipe dentro da conta da aluna não faz a aluna aparecer online nem muda o "visto por último".
+  if ((await visitForRoute('recordPresence')).status !== 'student')
+    return new NextResponse(null, { status: 204, headers: noStore });
 
   let body: unknown;
   try {

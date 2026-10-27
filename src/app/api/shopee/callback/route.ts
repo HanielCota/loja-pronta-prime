@@ -9,6 +9,9 @@ import { getActiveSession, needsFirstPassword } from '@/features/auth/server/ses
 import { getStudentProducts } from '@/features/products/server/access';
 import { canUseShopee, parseShopeeCallback } from '@/features/shopee/authorization';
 import { getShopeeConfiguration } from '@/features/shopee/server/client';
+import { visitForRoute } from '@/features/support/server/impersonation';
+import { VISIT_BLOCKED_PATH } from '@/features/support/visit-rules';
+import { VISIT_OVER_PATH } from '@/features/support/visit-window';
 import {
   finishShopeeAuthorization,
   getShopeeAuthorizationOrigin,
@@ -52,6 +55,15 @@ async function authorizationResult(
 }
 
 export async function GET(request: Request) {
+  // Durante "Entrar como aluna", a Shopee dela não é conectada (o vínculo dura além da visita).
+  const visit = await visitForRoute('shopeeCallback');
+  if (visit.status === 'over')
+    return NextResponse.redirect(new URL(VISIT_OVER_PATH, request.url), 303);
+  if (visit.status === 'refused')
+    return NextResponse.redirect(
+      new URL(`${VISIT_BLOCKED_PATH}?acao=shopeeCallback`, request.url),
+      303,
+    );
   let origin: ShopeeEntry = 'loja-pronta';
   const session = await getActiveSession();
   const config = getShopeeConfiguration();

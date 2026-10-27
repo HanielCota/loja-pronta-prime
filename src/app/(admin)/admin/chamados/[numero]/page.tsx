@@ -26,6 +26,7 @@ import {
   TopicForm,
 } from '@/features/support-desk/components/desk-forms';
 import { ImpersonateButton } from '@/features/support-desk/components/impersonate-button';
+import { visitRefusalReason } from '@/features/support/visit-target';
 import { StaffComposer } from '@/features/support-desk/components/staff-composer';
 import { markReadAction } from '@/features/support-desk/server/actions';
 import { getStaffTicket } from '@/features/support-desk/server/queries';
@@ -268,8 +269,15 @@ export default async function StaffTicketPage({ params }: { params: Promise<{ nu
                     <ExternalLink aria-hidden="true" className="size-4" />
                   </Link>
                 ) : null}
-                {hasStaffPermission(user.role, 'support.impersonate') && requester.id !== user.id && !unconfirmed ? (
-                  <ImpersonateButton userId={requester.id} ticketNumber={ticket.number} name={requester.displayName} />
+                {hasStaffPermission(user.role, 'support.impersonate') ? (
+                  <ImpersonateButton
+                    userId={requester.id}
+                    name={requester.displayName}
+                    ticketNumber={ticket.number}
+                    back={`/admin/chamados/${ticket.number}`}
+                    destination={`/suporte/${ticket.number}`}
+                    refusal={unconfirmed ? 'O e-mail do chamado ainda não foi confirmado.' : visitRefusalReason(requester, user.id)}
+                  />
                 ) : null}
               </>
             ) : (

@@ -11,7 +11,7 @@ import {
   storeAttachments,
   type RefusedAttachment,
 } from '@/features/support/server/attachments';
-import { refuseDuringVisit, VISIT_WRITE_REFUSED } from '@/features/support/server/impersonation';
+import { visitForRoute } from '@/features/support/server/impersonation';
 import { notifyRequesterReplied, notifyStaffReplied } from '@/features/support/server/notify';
 import { isEnhanced, respond, text } from '@/features/support/server/route-helpers';
 import {
@@ -90,8 +90,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ num
       status: 404,
       backTo: '/suporte',
     });
-  if (author.side === 'requester' && (await refuseDuringVisit('mensagem no chamado', author.backTo)))
-    return respond(request, enhanced, { ok: false, message: VISIT_WRITE_REFUSED, status: 403, backTo: author.backTo });
+  // Durante "Entrar como aluna", a mensagem sairia como se fosse dela: a equipe usa o painel.
+  if (author.side === 'requester') {
+    const visit = await visitForRoute('sendTicketMessage');
+    if (visit.status === 'over' || visit.status === 'refused')
+      return respond(request, enhanced, { ok: false, message: visit.message, status: 403, backTo: author.backTo });
+  }
   const internal = author.side === 'staff' && form.get('interna') === '1';
   const body = text(form, 'mensagem', MAX_DESCRIPTION + 1).trim();
   const minimum = internal ? 2 : 1;

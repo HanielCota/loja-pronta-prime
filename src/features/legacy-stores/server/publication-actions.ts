@@ -1,5 +1,6 @@
 'use server';
 
+import { runAsStudent } from '@/features/support/server/impersonation';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
@@ -31,82 +32,92 @@ async function currentAccess(userId: string) {
 }
 
 export async function startRecoveredPublication(form: FormData): Promise<void> {
-  const { userId } = await requireProductAction('loja-pronta');
-  const parsed = z.guid().safeParse(form.get('productId'));
-  if (!parsed.success) redirect(root);
-  const id = parsed.data;
-  let result = 'unavailable';
-  try {
-    const imported = await importedProduct(db.$client, userId, id);
-    if (!imported) throw new Error('scope');
-    const existing = await recoveredPublication(db.$client, userId, id);
-    if (existing && publicationLocked(existing.status)) result = 'ready';
-    else {
-      if (!(await consumeAttempt('shopeePerUser', userId))) throw new Error('limited');
-      const { config, access } = await currentAccess(userId);
-      let context = await recoveredPublicationOptions(config, access);
-      const categoryId = Number(form.get('categoryId') || imported.product.categoryId);
-      if (context.categories.some((row) => row.id === categoryId))
-        context = await recoveredCategoryOptions(config, access, context, categoryId);
-      await saveRecoveredPublicationOptions(
-        db.$client,
-        userId,
-        id,
-        shopeeApplicationId(config),
-        access.shopId,
-        context,
-      );
-      result = 'ready';
+  return runAsStudent('startRecoveredPublication', async () => {
+    const { userId } = await requireProductAction('loja-pronta');
+    const parsed = z.guid().safeParse(form.get('productId'));
+    if (!parsed.success) redirect(root);
+    const id = parsed.data;
+    let result = 'unavailable';
+    try {
+      const imported = await importedProduct(db.$client, userId, id);
+      if (!imported) throw new Error('scope');
+      const existing = await recoveredPublication(db.$client, userId, id);
+      if (existing && publicationLocked(existing.status)) result = 'ready';
+      else {
+        if (!(await consumeAttempt('shopeePerUser', userId))) throw new Error('limited');
+        const { config, access } = await currentAccess(userId);
+        let context = await recoveredPublicationOptions(config, access);
+        const categoryId = Number(form.get('categoryId') || imported.product.categoryId);
+        if (context.categories.some((row) => row.id === categoryId))
+          context = await recoveredCategoryOptions(config, access, context, categoryId);
+        await saveRecoveredPublicationOptions(
+          db.$client,
+          userId,
+          id,
+          shopeeApplicationId(config),
+          access.shopId,
+          context,
+        );
+        result = 'ready';
+      }
+    } catch {
+      /* Marketplace details and credentials never enter redirects. */
     }
-  } catch {
-    /* Marketplace details and credentials never enter redirects. */
-  }
-  revalidatePath(pathFor(id));
-  redirect(`${pathFor(id)}?resultado=${result}`);
+    revalidatePath(pathFor(id));
+    redirect(`${pathFor(id)}?resultado=${result}`);
+  });
 }
 
 export async function reviewRecoveredPublicationAction(form: FormData): Promise<void> {
-  const { userId } = await requireProductAction('loja-pronta');
-  const id = productId(form);
-  let saved = false;
-  try {
-    const { config, access } = await currentAccess(userId);
-    const row = await recoveredPublication(db.$client, userId, id);
-    if (!row || row.application_id !== shopeeApplicationId(config) || row.shop_id !== access.shopId)
-      throw new Error('destination');
-    saved = await reviewRecoveredPublication(
-      db.$client,
-      userId,
-      id,
-      z.coerce.number().int().positive().parse(form.get('revision')),
-      z.guid().parse(form.get('publicationId')),
-      form,
-    );
-  } catch {
-    /* The form explains the required current data without echoing external errors. */
-  }
-  revalidatePath(pathFor(id));
-  redirect(`${pathFor(id)}?resultado=${saved ? 'reviewed' : 'invalid'}`);
+  return runAsStudent('reviewRecoveredPublicationAction', async () => {
+    const { userId } = await requireProductAction('loja-pronta');
+    const id = productId(form);
+    let saved = false;
+    try {
+      const { config, access } = await currentAccess(userId);
+      const row = await recoveredPublication(db.$client, userId, id);
+      if (
+        !row ||
+        row.application_id !== shopeeApplicationId(config) ||
+        row.shop_id !== access.shopId
+      )
+        throw new Error('destination');
+      saved = await reviewRecoveredPublication(
+        db.$client,
+        userId,
+        id,
+        z.coerce.number().int().positive().parse(form.get('revision')),
+        z.guid().parse(form.get('publicationId')),
+        form,
+      );
+    } catch {
+      /* The form explains the required current data without echoing external errors. */
+    }
+    revalidatePath(pathFor(id));
+    redirect(`${pathFor(id)}?resultado=${saved ? 'reviewed' : 'invalid'}`);
+  });
 }
 
 export async function confirmRecoveredPublicationAction(form: FormData): Promise<void> {
-  const { userId } = await requireProductAction('loja-pronta');
-  const id = productId(form);
-  let saved = false;
-  try {
-    const confirmation = recoveredConfirmationSchema.parse(Object.fromEntries(form));
-    const { config, access } = await currentAccess(userId);
-    saved = await confirmRecoveredPublication(
-      db.$client,
-      userId,
-      id,
-      confirmation.fingerprint,
-      shopeeApplicationId(config),
-      access.shopId,
-    );
-  } catch {
-    /* Confirmation failures cannot authorize a later automatic retry. */
-  }
-  revalidatePath(pathFor(id));
-  redirect(`${pathFor(id)}?resultado=${saved ? 'confirmed' : 'expired'}`);
+  return runAsStudent('confirmRecoveredPublicationAction', async () => {
+    const { userId } = await requireProductAction('loja-pronta');
+    const id = productId(form);
+    let saved = false;
+    try {
+      const confirmation = recoveredConfirmationSchema.parse(Object.fromEntries(form));
+      const { config, access } = await currentAccess(userId);
+      saved = await confirmRecoveredPublication(
+        db.$client,
+        userId,
+        id,
+        confirmation.fingerprint,
+        shopeeApplicationId(config),
+        access.shopId,
+      );
+    } catch {
+      /* Confirmation failures cannot authorize a later automatic retry. */
+    }
+    revalidatePath(pathFor(id));
+    redirect(`${pathFor(id)}?resultado=${saved ? 'confirmed' : 'expired'}`);
+  });
 }

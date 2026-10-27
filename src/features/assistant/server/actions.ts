@@ -1,5 +1,6 @@
 'use server';
 
+import { runAsStudent } from '@/features/support/server/impersonation';
 import { z } from 'zod';
 import { and, eq, sql } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
@@ -29,73 +30,86 @@ import { readShopeeAccess } from '@/features/shopee/server/connection';
 import { assertAssistantAccess } from './metrics';
 
 export async function startAssistantPlan(form: FormData): Promise<void> {
-  const { userId } = await requireProductAction('sll');
-  const storeAge = planContextSchema.shape.storeAge.safeParse(form.get('storeAge'));
-  if (!storeAge.success) redirect('/sll/plano?resultado=invalid');
-  // Loja com sete dias ou mais começa pela leitura dos dados: o caminho escolhido não é usado.
-  if (planNeedsHistory(storeAge.data)) {
-    await db
-      .insert(sllPlanIntake)
-      .values({ userId, storeAge: storeAge.data })
-      .onConflictDoUpdate({
-        target: sllPlanIntake.userId,
-        set: { storeAge: storeAge.data, updatedAt: new Date() },
-      });
-    redirect('/sll/plano?resultado=history');
-  }
-  // Só a loja nova precisa de um caminho válido.
-  const parsed = planContextSchema.safeParse({
-    storeAge: storeAge.data,
-    strategy: form.get('strategy'),
+  return runAsStudent('startAssistantPlan', async () => {
+    const { userId } = await requireProductAction('sll');
+    const storeAge = planContextSchema.shape.storeAge.safeParse(form.get('storeAge'));
+    if (!storeAge.success) redirect('/sll/plano?resultado=invalid');
+    // Loja com sete dias ou mais começa pela leitura dos dados: o caminho escolhido não é usado.
+    if (planNeedsHistory(storeAge.data)) {
+      await db
+        .insert(sllPlanIntake)
+        .values({ userId, storeAge: storeAge.data })
+        .onConflictDoUpdate({
+          target: sllPlanIntake.userId,
+          set: { storeAge: storeAge.data, updatedAt: new Date() },
+        });
+      redirect('/sll/plano?resultado=history');
+    }
+    // Só a loja nova precisa de um caminho válido.
+    const parsed = planContextSchema.safeParse({
+      storeAge: storeAge.data,
+      strategy: form.get('strategy'),
+    });
+    if (!parsed.success) redirect('/sll/plano?resultado=invalid');
+    const plan = await createAssistantPlan(userId, parsed.data);
+    revalidatePath('/sll/plano');
+    redirect(`/sll/plano?resultado=${plan ? 'started' : 'preparing'}`);
   });
-  if (!parsed.success) redirect('/sll/plano?resultado=invalid');
-  const plan = await createAssistantPlan(userId, parsed.data);
-  revalidatePath('/sll/plano');
-  redirect(`/sll/plano?resultado=${plan ? 'started' : 'preparing'}`);
 }
 
 export async function markAssistantTask(form: FormData): Promise<void> {
-  const { userId } = await requireProductAction('sll');
-  const id = z.uuid().safeParse(form.get('planId'));
-  const actionId = String(form.get('actionId') ?? '');
-  if (!id.success || actionId.length > 80) redirect('/sll/plano?resultado=invalid');
-  const saved = await setAssistantTask(userId, id.data, actionId, form.get('completed') === 'true');
-  revalidatePath('/sll/plano');
-  redirect(`/sll/plano?resultado=${saved ? 'task-saved' : 'invalid'}`);
+  return runAsStudent('markAssistantTask', async () => {
+    const { userId } = await requireProductAction('sll');
+    const id = z.uuid().safeParse(form.get('planId'));
+    const actionId = String(form.get('actionId') ?? '');
+    if (!id.success || actionId.length > 80) redirect('/sll/plano?resultado=invalid');
+    const saved = await setAssistantTask(
+      userId,
+      id.data,
+      actionId,
+      form.get('completed') === 'true',
+    );
+    revalidatePath('/sll/plano');
+    redirect(`/sll/plano?resultado=${saved ? 'task-saved' : 'invalid'}`);
+  });
 }
 
 export async function restartAssistantPlan(): Promise<void> {
-  const { userId } = await requireProductAction('sll');
-  await db.transaction(async (tx) => {
-    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`assistant-plan:${userId}`}))`);
-    await tx
-      .update(assistantPlans)
-      .set({ active: false })
-      .where(and(eq(assistantPlans.userId, userId), eq(assistantPlans.active, true)));
-    await tx.delete(sllPlanIntake).where(eq(sllPlanIntake.userId, userId));
+  return runAsStudent('restartAssistantPlan', async () => {
+    const { userId } = await requireProductAction('sll');
+    await db.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`assistant-plan:${userId}`}))`);
+      await tx
+        .update(assistantPlans)
+        .set({ active: false })
+        .where(and(eq(assistantPlans.userId, userId), eq(assistantPlans.active, true)));
+      await tx.delete(sllPlanIntake).where(eq(sllPlanIntake.userId, userId));
+    });
+    revalidatePath('/sll/plano');
+    redirect('/sll/plano');
   });
-  revalidatePath('/sll/plano');
-  redirect('/sll/plano');
 }
 
 export async function queueStoreCollection(): Promise<void> {
-  const { userId } = await requireProductAction('sll');
-  try {
-    const config = await assertAssistantAccess(userId, 'sll');
-    await readShopeeAccess(userId, config);
-  } catch {
-    redirect('/sll/plano?resultado=connection-required');
-  }
-  await db
-    .insert(assistantJobs)
-    .values({
-      userId,
-      kind: 'collect',
-      deduplicationKey: `collect:${userId}:${Math.floor(Date.now() / (15 * 60 * 1000))}`,
-    })
-    .onConflictDoNothing();
-  revalidatePath('/sll/plano');
-  redirect('/sll/plano?resultado=queued');
+  return runAsStudent('queueStoreCollection', async () => {
+    const { userId } = await requireProductAction('sll');
+    try {
+      const config = await assertAssistantAccess(userId, 'sll');
+      await readShopeeAccess(userId, config);
+    } catch {
+      redirect('/sll/plano?resultado=connection-required');
+    }
+    await db
+      .insert(assistantJobs)
+      .values({
+        userId,
+        kind: 'collect',
+        deduplicationKey: `collect:${userId}:${Math.floor(Date.now() / (15 * 60 * 1000))}`,
+      })
+      .onConflictDoNothing();
+    revalidatePath('/sll/plano');
+    redirect('/sll/plano?resultado=queued');
+  });
 }
 
 export async function saveAssistantPlaybook(form: FormData): Promise<void> {

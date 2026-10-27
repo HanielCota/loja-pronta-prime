@@ -58,6 +58,7 @@
                   "!**/server/first-access",
                   "!**/server/sign-out",
                   "!**/server/profile",
+                  "!**/server/visit-actions",
                   "@/config/env"
                 ],
                 "message": "Código de servidor (banco, auth, variáveis de ambiente) não pode ir pro navegador. Use uma Server Action ('use server')."

@@ -1,7 +1,7 @@
 import { getSessionState, needsFirstPassword } from '@/features/auth/server/session';
 import { MAX_ATTACHMENT_REQUEST_BYTES } from '@/features/support/attachments';
 import { filesFromForm } from '@/features/support/server/attachments';
-import { refuseDuringVisit, VISIT_WRITE_REFUSED } from '@/features/support/server/impersonation';
+import { visitForRoute } from '@/features/support/server/impersonation';
 import { openTicket, readTicketContext } from '@/features/support/server/new-ticket';
 import { isEnhanced, respond, text } from '@/features/support/server/route-helpers';
 import { readLimitedFormData, RequestBodyTooLargeError } from '@/lib/request-body';
@@ -24,8 +24,10 @@ export async function POST(request: Request) {
     return respond(request, true, { ok: false, message, status: 400, backTo: '/suporte/novo' });
   }
   const enhanced = isEnhanced(form);
-  if (await refuseDuringVisit('abrir chamado', '/suporte/novo'))
-    return respond(request, enhanced, { ok: false, message: VISIT_WRITE_REFUSED, status: 403, backTo: '/suporte/novo' });
+  // Durante "Entrar como aluna", o chamado sairia como se fosse dela: a equipe usa o painel.
+  const visit = await visitForRoute('openTicket');
+  if (visit.status === 'over' || visit.status === 'refused')
+    return respond(request, enhanced, { ok: false, message: visit.message, status: 403, backTo: '/suporte/novo' });
   const { user } = state.session;
   const situation = text(form, 'situacao', 64);
   const outcome = await openTicket({

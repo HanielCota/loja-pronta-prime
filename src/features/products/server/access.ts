@@ -132,8 +132,10 @@ export async function requireProduct(
 
   const userId = student.session.user.id;
   // A visita já lida há menos de 10 minutos não seria regravada: nem vai ao banco.
+  // A equipe dentro da conta da aluna ("Entrar como aluna") não conta como acesso dela.
   const lastVisitedAt = student.lastVisits[product];
-  if (!lastVisitedAt || Date.now() - lastVisitedAt.getTime() >= VISIT_INTERVAL_MS)
+  const staffVisit = Boolean(student.session.session.impersonatedBy);
+  if (!staffVisit && (!lastVisitedAt || Date.now() - lastVisitedAt.getTime() >= VISIT_INTERVAL_MS))
     recordProductVisit(userId, product);
   const firstVisitedAt = student.firstVisits[product];
   const firstVisit = !firstVisitedAt || firstVisitedAt >= student.session.session.createdAt;
