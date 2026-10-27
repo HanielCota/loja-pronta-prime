@@ -78,9 +78,10 @@ recorded separately from code integration.
 - Preserved identity, expiry, refund and duplicate-event checks. Unknown products do not grant
   access automatically; older events without sufficient original metadata still require a
   resend from Hotmart.
-- At the time this entry was written, the correction was merged and its production rollout
-  verification was still in progress. Individual access cases requiring product identification
-  were not recorded as resolved.
+- Deployed the correction to a healthy production version and verified the pending-event panel.
+  Final migration verification was still in progress when this entry was updated. Individual
+  access cases requiring product identification or missing original notifications were not
+  recorded as resolved.
 - Reference: [#167](https://github.com/HanielCota/loja-pronta-prime/pull/167).
 
 ### Verification notes
