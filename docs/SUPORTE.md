@@ -123,6 +123,13 @@ supervisors get 404 there. Create local staff with `bun run dev:equipe <email> <
   - **Audit:** `support_impersonation_log` keeps `started` (session hook), each `action` or
     `refused`, and `ended`, grouped by `session_id`, with the ticket that motivated the visit.
     Only ids, action names and paths.
+  - **One visit at a time per staff member:** entering takes a Postgres advisory lock per staff
+    member (own connection, outside the pool) and ends any visit still open (double click, tab
+    closed without "Voltar ao painel"), logged as `ended` / `nova visita`. A unique index keeps
+    one `ended` row per visit.
+  - **Stress test:** `VISIT_STRESS=1 bun run test:integration -t estresse` (off by default):
+    parallel visits, 500 simultaneous actions, 50 enter/exit cycles, double clicks, presence
+    flood, the 1-hour boundary, staff targets and the closed plugin routes.
   - **Guard tests:** `visit-guard.test.ts` fails when an exported student Server Action does not
     start with `return runAsStudent('<name>', ...)`, when a student write route skips
     `visitForRoute`, or when a rule names an action that no longer exists.
