@@ -4,6 +4,7 @@ import { useActionState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { ConfirmAction } from './confirm-action';
 import {
   assignAction,
   availabilityAction,
@@ -150,17 +151,24 @@ export function QueueForm({ number, value }: { number: number; value: 'general' 
 }
 
 /** Reabrir ou encerrar sem mensagem ("respondido" só respondendo). */
-export function StatusButton({ number, next, label, variant = 'ghost' }: { number: number; next: 'open' | 'closed'; label: string; variant?: 'ghost' | 'soft' }) {
+export function StatusButton({ number, next, label, variant = 'ghost', confirm }: { number: number; next: 'open' | 'closed'; label: string; variant?: 'ghost' | 'soft'; confirm?: { title: string; description: string; confirmLabel: string } }) {
   const [state, formAction, pending] = useActionState(statusAction, IDLE);
-  return (
+  const form = (
     <form action={formAction} className="flex flex-col gap-1">
       <input type="hidden" name="numero" value={number} />
       <input type="hidden" name="status" value={next} />
-      <Button type="submit" variant={variant} className="w-fit px-4" size="inline" loading={pending}>
-        {label}
+      {/* Dentro da confirmação, o botão que faz de verdade é `soft`, como em "Entrar como aluna". */}
+      <Button type="submit" variant={confirm ? 'soft' : variant} className="w-fit px-4" size="inline" loading={pending}>
+        {confirm ? confirm.confirmLabel : label}
       </Button>
       <Feedback state={state} />
     </form>
+  );
+  if (!confirm) return form;
+  return (
+    <ConfirmAction label={label} title={confirm.title} description={confirm.description}>
+      {form}
+    </ConfirmAction>
   );
 }
 
