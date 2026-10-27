@@ -5,16 +5,40 @@ import { AdminPage } from '@/features/admin/components/admin-shell';
 import { requireAdmin } from '@/features/admin/server/access';
 import { HotmartSettingsForm } from '@/features/hotmart/components/settings-form';
 import { getHotmartAdminState } from '@/features/hotmart/server/actions';
+import { getHotmartPendingState } from '@/features/hotmart/server/pending-events';
+import { HotmartPendingEvents } from '@/features/hotmart/server/pending-events-panel';
+import { getParam, parsePageNumber, type SearchParams } from '@/lib/search-params';
 
 export const metadata: Metadata = { title: 'Compras Hotmart · Administração' };
 
-export default async function HotmartAdminPage() {
+export default async function HotmartAdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
   await requireAdmin('/admin/hotmart');
-  const state = await getHotmartAdminState();
+  const params = await searchParams;
+  const query = (getParam(params.q) ?? '').trim().slice(0, 120);
+  const page = parsePageNumber(params.pagina);
+  const [state, pending] = await Promise.all([
+    getHotmartAdminState(),
+    getHotmartPendingState(query, page),
+  ]);
+  const result = getParam(params.resultado);
   const url = new URL('/api/hotmart/webhook', env.BETTER_AUTH_URL).toString();
   return (
     <AdminPage title="Compras da Hotmart">
-      <section className={`${panelCard} gap-5`} aria-labelledby="hotmart-config">
+      {result ? (
+        <output className="mb-6 block text-body text-muted-foreground">
+          {result === 'retry-failed'
+            ? 'Alguns avisos não puderam ser recuperados. A configuração salva foi mantida. Confira as pendências e tente de novo.'
+            : result === 'configured'
+              ? 'Produto configurado. Os avisos com dados completos foram verificados. Confira as pendências abaixo.'
+              : 'Tentativa concluída. Confira abaixo os avisos que ainda precisam de correção.'}
+        </output>
+      ) : null}
+      <HotmartPendingEvents state={pending} query={query} page={page} />
+      <section className={`${panelCard} mt-6 gap-5`} aria-labelledby="hotmart-config">
         <div>
           <h2 id="hotmart-config" className="text-title font-semibold">
             Configurar produtos
