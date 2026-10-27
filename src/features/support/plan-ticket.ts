@@ -1,0 +1,102 @@
+import {
+  findSituation,
+  findTopic,
+  OTHER_ISSUE_ID,
+  visibleSituations,
+  type SituationPriority,
+  type SupportTicketTopic,
+  type SupportTopic,
+  type TicketQueue,
+} from './catalog';
+
+/** Descrição mínima com uma situação conhecida e sem ela (ou em "Outro problema"). */
+export const MIN_DESCRIPTION_WITH_SITUATION = 20;
+export const MIN_DESCRIPTION_WITHOUT_SITUATION = 40;
+export const MAX_DESCRIPTION = 5000;
+export const MAX_SUBJECT = 120;
+const SUBJECT_EXCERPT = 60;
+
+export type TicketDraft = {
+  topicId: string;
+  situationId: string | null;
+  description: string;
+};
+
+export type PlannedTicket = {
+  topicId: SupportTicketTopic;
+  situationId: string | null;
+  priority: SituationPriority;
+  queue: TicketQueue;
+  subject: string;
+  description: string;
+};
+
+export type PlanError = { field: 'topic' | 'situation' | 'description'; message: string };
+
+export type PlanResult = { ok: true; ticket: PlannedTicket } | { ok: false; error: PlanError };
+
+/** O mínimo que vale pra situação escolhida: o navegador e o servidor usam o mesmo número. */
+export function minimumDescription(situationId: string | null): number {
+  if (!situationId || situationId === OTHER_ISSUE_ID) return MIN_DESCRIPTION_WITHOUT_SITUATION;
+  return MIN_DESCRIPTION_WITH_SITUATION;
+}
+
+function oneLine(text: string): string {
+  return text.replace(/\s+/g, ' ').trim();
+}
+
+function subjectFor(label: string, description: string): string {
+  const excerpt = oneLine(description).slice(0, SUBJECT_EXCERPT).trim();
+  return `${label}: ${excerpt}`.slice(0, MAX_SUBJECT).trim();
+}
+
+/**
+ * Monta o chamado a partir do que a aluna escolheu, sem confiar no navegador: confere tema e
+ * situação no catálogo, tira a prioridade da situação (a aluna nunca escolhe) e escreve o assunto.
+ */
+export function planSupportTicket(catalog: readonly SupportTopic[], draft: TicketDraft): PlanResult {
+  const topic = findTopic(catalog, draft.topicId);
+  if (!topic) return { ok: false, error: { field: 'topic', message: 'Escolha sobre o que é.' } };
+
+  const hasSituations = visibleSituations(topic).length > 0;
+  const situationId = hasSituations ? draft.situationId : null;
+  if (hasSituations && !situationId)
+    return {
+      ok: false,
+      error: { field: 'situation', message: 'Escolha o que está acontecendo.' },
+    };
+  const found = situationId ? findSituation(topic, situationId) : undefined;
+  if (situationId && !found)
+    return {
+      ok: false,
+      error: { field: 'situation', message: 'Escolha o que está acontecendo.' },
+    };
+
+  const description = draft.description.trim();
+  if (description.length < minimumDescription(situationId))
+    return {
+      ok: false,
+      error: { field: 'description', message: 'Conte um pouco mais pra gente entender o caso.' },
+    };
+  if (description.length > MAX_DESCRIPTION)
+    return {
+      ok: false,
+      error: {
+        field: 'description',
+        message: `Escreva até ${MAX_DESCRIPTION} caracteres. Se precisar, mande o resto numa resposta.`,
+      },
+    };
+
+  const label = found && found.id !== OTHER_ISSUE_ID ? found.label : topic.label;
+  return {
+    ok: true,
+    ticket: {
+      topicId: topic.id,
+      situationId: found?.id ?? null,
+      priority: found?.priority ?? 'normal',
+      queue: topic.queue,
+      subject: subjectFor(label, description),
+      description,
+    },
+  };
+}

@@ -20,5 +20,6 @@ export * from './assistant';
 export * from './automation';
 export * from './legacy-stores';
 export * from './support';
+export * from './support-tickets';
 
 export * from './legacy-catalog';

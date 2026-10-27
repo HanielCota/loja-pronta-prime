@@ -35,6 +35,11 @@ const envSchema = z
     EMAIL_FROM: z.email().optional(),
     /** Opcional: use apenas uma caixa real, acompanhada pelo suporte. */
     EMAIL_REPLY_TO: z.email().optional(),
+    /**
+     * Donos da plataforma: e-mails separados por vírgula. Só eles (com o e-mail verificado)
+     * convidam, mudam o cargo ou bloqueiam pessoas da equipe. Vazio: ninguém mexe na equipe.
+     */
+    PLATFORM_OWNER_EMAILS: z.string().default(''),
     /** Os arquivos (o logo gerado) ficam sempre no bucket S3, em dev e em produção. */
     S3_ENDPOINT: z.url().optional(),
     S3_REGION: z.string().min(1).default('us-east-1'),
@@ -71,6 +76,7 @@ const BUILD_PLACEHOLDERS: Env = {
   S3_SECRET_ACCESS_KEY: 'build',
   S3_REGION: 'us-east-1',
   S3_FORCE_PATH_STYLE: 'false',
+  PLATFORM_OWNER_EMAILS: '',
 };
 
 function loadEnv(): Env {

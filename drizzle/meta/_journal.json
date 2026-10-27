@@ -505,6 +505,13 @@
       "when": 1793064262037,
       "tag": "0071_hotmart-pending-event-recovery",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1793121986018,
+      "tag": "0072_support-tickets",
+      "breakpoints": true
     }
   ]
 }
