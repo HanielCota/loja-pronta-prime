@@ -1,4 +1,7 @@
 import type { ReactNode } from 'react';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Breadcrumb, type Crumb } from './breadcrumb';
 import type { ProductId } from '@/config/products';
@@ -57,6 +60,8 @@ type AreaShellProps = {
   sidebar?: ReactNode;
   /** Destino do atalho de teclado da área com navegação lateral. */
   contentId?: string | undefined;
+  /** "Voltar ao SLL": no lugar da trilha, como nas páginas do SLL. */
+  backLink?: { href: string; label: string } | undefined;
   children: ReactNode;
 };
 
@@ -135,11 +140,18 @@ export function AreaPage({
   narrow,
   sidebar,
   contentId,
+  backLink,
   children,
 }: Omit<AreaShellProps, 'account'>) {
   // Nas áreas, quem tem os dois produtos já vê onde está pelas abas do topo.
-  const navigation =
-    hasChoice && area ? null : hasChoice ? (
+  const navigation = backLink ? (
+    <Button asChild className="-ml-2 w-fit px-2 text-sm whitespace-normal" size="inline" variant="ghost">
+      <Link href={backLink.href}>
+        <ArrowLeft aria-hidden="true" />
+        {backLink.label}
+      </Link>
+    </Button>
+  ) : hasChoice && area ? null : hasChoice ? (
       <Breadcrumb trail={[START]} current={crumb ?? product ?? title} />
     ) : product ? (
       <p className="text-body font-medium text-muted-foreground">{product}</p>

@@ -17,6 +17,7 @@ import { TICKET_STATUSES } from '@/features/support/ticket-rules';
 import { formatMoment } from '@/features/support/components/message-list';
 import { getParam, type SearchParams } from '@/lib/search-params';
 import { cn } from '@/lib/utils';
+import type { ProductId } from '@/config/products';
 
 export const metadata: Metadata = { title: 'Suporte' };
 
@@ -27,8 +28,15 @@ const linkClass =
  * Suporte da aluna: os chamados dela, o horário de atendimento e, como segunda opção, o WhatsApp
  * de sempre. Comum aos dois produtos (como o perfil), fora das abas das áreas.
  */
+/** O voltar leva pra área do curso dela: o SLL primeiro (o principal), senão a Loja Pronta. */
+function backToArea(products: readonly ProductId[]): { href: string; label: string } | undefined {
+  if (products.includes('sll')) return { href: '/sll', label: 'Voltar ao SLL' };
+  if (products.includes('loja-pronta')) return { href: '/loja-pronta', label: 'Voltar à Loja Pronta' };
+  return undefined;
+}
+
 export default async function SupportPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const { session } = await requireStudent('/suporte');
+  const { session, products } = await requireStudent('/suporte');
   const raw = await searchParams;
   const params = new URLSearchParams(
     Object.entries(raw).flatMap(([key, value]) => {
@@ -53,6 +61,7 @@ export default async function SupportPage({ searchParams }: { searchParams: Prom
     <AreaShell
       account={session.user}
       hasChoice
+      backLink={backToArea(products)}
       title="Suporte"
       intro="Abra um chamado e acompanhe a resposta por aqui. Chamados respondidos ficam abertos por 7 dias esperando o seu retorno."
     >

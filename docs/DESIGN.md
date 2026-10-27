@@ -467,6 +467,8 @@ o tema escuro e o alto contraste.
   conversa de um chamado.
 - Sem bolha flutuante e sem sino: contadores no menu da conta e no menu do admin.
 - "Encerrar chamado" (aluna) é botão `soft`, roxo suave: no `ghost` ele sumia no tema escuro.
+- A página Suporte da aluna tem "Voltar ao SLL" (ou "Voltar à Loja Pronta", se ela só tem esse
+  produto) no lugar da trilha, o mesmo link de voltar das páginas do SLL (`backLink` do `AreaShell`).
 
 ## Assistente e experts (17/10/2026)
 
