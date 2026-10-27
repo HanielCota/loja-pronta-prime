@@ -339,7 +339,8 @@ function GuidedForm(props: NewTicketProps) {
                 <Button type="button" variant="soft" className="sm:w-auto" onClick={() => answerFaq(true)}>
                   Resolveu
                 </Button>
-                <Button type="button" variant="ghost" className="sm:w-auto" onClick={() => answerFaq(false)}>
+                {/* `soft`, não `ghost`: quem veio pedir ajuda não pode ter o botão mais apagado. */}
+                <Button type="button" variant="soft" className="sm:w-auto" onClick={() => answerFaq(false)}>
                   Ainda preciso de ajuda
                 </Button>
               </div>
@@ -355,7 +356,7 @@ function GuidedForm(props: NewTicketProps) {
             Abrir “{duplicate.subject}”
             <ArrowRight aria-hidden="true" className="size-4" />
           </Link>
-          <Button type="button" variant="ghost" className="w-fit px-4" size="inline" onClick={() => { setDuplicateOk(true); setFocusTarget('details'); }}>
+          <Button type="button" variant="soft" className="w-fit px-4" size="inline" onClick={() => { setDuplicateOk(true); setFocusTarget('details'); }}>
             Abrir outro mesmo assim
           </Button>
         </div>
