@@ -5,7 +5,7 @@ describe('regras da visita', () => {
   test('ação bloqueada traz a recusa em português', () => {
     expect(visitRuleFor('changePassword')).toEqual({
       kind: 'blocked',
-      message: 'Não é possível trocar a senha da aluna durante o acesso à conta da aluna.',
+      message: 'Não é possível trocar a senha da aluna enquanto você usa a conta dela.',
     });
   });
 

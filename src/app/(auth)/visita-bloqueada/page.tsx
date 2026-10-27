@@ -26,7 +26,7 @@ export default async function VisitBlockedPage({
   const action = typeof acao === 'string' ? BLOCKED_DURING_VISIT[acao] : undefined;
   const message = action
     ? refusalMessage(action)
-    : 'Essa ação não é possível durante o acesso à conta da aluna.';
+    : 'Essa ação não é possível enquanto você usa a conta da aluna.';
   return (
     <BrandCard>
       <CardHeading title="Ação bloqueada" description={message} />

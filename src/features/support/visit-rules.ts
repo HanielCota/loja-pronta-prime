@@ -101,7 +101,7 @@ export function visitRuleFor(actionName: string): VisitRule {
 }
 
 export function refusalMessage(action: string): string {
-  return `Não é possível ${action} durante o acesso à conta da aluna.`;
+  return `Não é possível ${action} enquanto você usa a conta dela.`;
 }
 
 /** O que fica bloqueado, em uma frase, pra faixa da visita. */
