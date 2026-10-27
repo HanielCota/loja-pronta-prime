@@ -121,7 +121,7 @@ export function CloseTicketForm({ number, token }: { number: number; token?: str
     <form action={action} className="flex flex-col gap-2">
       <Hidden number={number} token={token} />
       <p className="text-body text-muted-foreground">Seu problema foi resolvido?</p>
-      <Button type="submit" variant="ghost" className="w-fit px-4" size="inline" loading={pending}>
+      <Button type="submit" variant="soft" className="w-fit px-5" size="inline" loading={pending}>
         Encerrar chamado
       </Button>
       <Feedback state={state} />

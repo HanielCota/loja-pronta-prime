@@ -466,6 +466,7 @@ o tema escuro e o alto contraste.
 - O WhatsApp aparece nas telas novas como segunda opção, em link discreto; nunca dentro da
   conversa de um chamado.
 - Sem bolha flutuante e sem sino: contadores no menu da conta e no menu do admin.
+- "Encerrar chamado" (aluna) é botão `soft`, roxo suave: no `ghost` ele sumia no tema escuro.
 
 ## Assistente e experts (17/10/2026)
 
