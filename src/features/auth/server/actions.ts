@@ -9,6 +9,7 @@ import { consumeAttempt, consumeAttempts } from '@/server/auth/rate-limit';
 import { reportAuthError } from '@/server/auth/report-error';
 import { getClientIp } from '@/server/request/client-ip';
 import { ENHANCED_SUBMIT_FIELD } from '@/lib/forms';
+import { staffLandingPath } from '@/features/support/server/staff-landing';
 import { sanitizeRedirect } from '../redirect';
 import { EMAIL_CONFIRMED_REASON } from '../login-reason';
 import { loginSchema, recoverSchema, resetPasswordSchema } from '../schemas';
@@ -48,6 +49,7 @@ export async function login(_state: LoginResult, formData: FormData): Promise<Lo
   }
 
   let mustChangePassword: boolean;
+  let signedIn: Awaited<ReturnType<typeof auth.api.signInEmail>>['user'];
   try {
     const { user } = await auth.api.signInEmail({
       // callbackURL: pra onde volta o link de confirmação de email, se ele for enviado. O login
@@ -61,13 +63,19 @@ export async function login(_state: LoginResult, formData: FormData): Promise<Lo
     });
     // Conta com senha temporária (ou sem a marca): primeiro cria a própria senha.
     mustChangePassword = needsFirstPassword(user);
+    signedIn = user;
   } catch (error) {
     const code = toAuthErrorCode(error);
     if (code === 'unknown') reportAuthError('login', error);
     return { submission: reject(submission, code) };
   }
 
-  const destination = resolvePostLoginPath(next, { mustChangePassword });
+  // Fora do try: uma falha ao ler os produtos não pode recusar um login que já deu certo.
+  const staffPanelPath = await staffLandingPath(signedIn).catch((error: unknown) => {
+    reportAuthError('destino da equipe depois do login', error);
+    return null;
+  });
+  const destination = resolvePostLoginPath(next, { mustChangePassword, staffPanelPath });
   // Com JavaScript: a tela comemora e depois navega. Sem: redireciona direto.
   if (formData.get(ENHANCED_SUBMIT_FIELD)) return { redirectTo: destination };
   redirect(destination);
