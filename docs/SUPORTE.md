@@ -39,7 +39,7 @@ Staff (admin frame, menu filtered by role):
   GET filters, availability toggle, CSV export (`/admin/chamados/exportar`, metrics only).
 - `/admin/chamados/<number>`: thread with internal notes and quoting, composer with reply
   templates and send status, triage (assignee, priority, topic, queue), requester panel,
-  "Entrar como aluna" (administrators only).
+  "Entrar como aluna" (administrators only; also on `/admin/contas/<id>`).
 - `/admin/suporte/desempenho`: performance (overview, team, topics, person card).
 - `/admin/suporte/equipe`: team list, invite, role change, block.
 - `/admin/suporte/configuracoes`: hours, holidays, pause, deadlines, distribution, topics,
@@ -97,9 +97,35 @@ supervisors get 404 there. Create local staff with `bun run dev:equipe <email> <
   reason (`notice` in the JSON, `aviso_envio` in the URL without JavaScript) and the message goes
   with the good ones. A bucket failure is logged by error name and shown as a plain Portuguese
   sentence; the provider's message never reaches the screen (`attachmentErrorMessage`).
-- Staff visits ("Entrar como aluna") last 1 hour. Every write as the student is refused on the
-  server and logged in `support_impersonation_log` (`refuseDuringVisit`): opening tickets, sending
-  messages, closing or rating, creating logos. Profile changes are refused too.
+- Staff visits ("Entrar como aluna"):
+  - **Who:** `support.impersonate` (administrators). Refused for any team role (even mixed with
+    others, `user,support_agent`), the staff member's own account, blocked accounts and students
+    who have not created their password (`visitRefusalReason`). The button stays disabled and
+    says why.
+  - **Plugin:** enter and exit go through Server Actions (`support-desk/server/visit-actions.ts`)
+    calling `auth.api.impersonateUser` / `stopImpersonating`; `nextCookies` writes the cookie.
+    Every `/admin/*` HTTP route of the Better Auth admin plugin is in `disabledPaths`. Support
+    roles are defined with no plugin powers (`features/auth/auth-roles.ts`) and listed in
+    `adminRoles`, so the plugin itself refuses them as targets.
+  - **Time:** 1 hour from the session's `createdAt`, checked in `getSessionState` (status
+    `visit_over`, page `/visita-encerrada`). The plugin session lives 5 minutes longer so
+    "Voltar ao painel" can still restore the staff session.
+  - **Rules** (`support/visit-rules.ts`), applied by `runAsStudent(actionName, run)` on every
+    student Server Action and by `visitForRoute` on the student write routes:
+    - blocked (password, first password, sessions, name, photo, Shopee link, Shopee
+      publications and store changes, logo and assistant advice, ticket decisions, opening or
+      writing tickets as the student): refused, logged as `refused`, sent to `/visita-bloqueada`;
+    - quiet (read markers, presence, lesson position, FAQ feedback, WhatsApp clicks): not written;
+    - read-only: run, not logged;
+    - `signOut`: ends the visit instead;
+    - everything else runs and is logged with the staff member's id after it succeeds (a
+      `redirect()` counts, with its path and no query). A failed log write is logged, never undone.
+  - **Audit:** `support_impersonation_log` keeps `started` (session hook), each `action` or
+    `refused`, and `ended`, grouped by `session_id`, with the ticket that motivated the visit.
+    Only ids, action names and paths.
+  - **Guard tests:** `visit-guard.test.ts` fails when an exported student Server Action does not
+    start with `return runAsStudent('<name>', ...)`, when a student write route skips
+    `visitForRoute`, or when a rule names an action that no longer exists.
 - Ticket forms carry a submission id (`envio`, created by the page on the server, unique on
   `support_tickets.submission_id`). The same submission sent twice returns the ticket it already
   opened, even when both arrive at the same time.

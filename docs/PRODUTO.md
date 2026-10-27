@@ -119,6 +119,14 @@ Administradores podem organizar e editar boas-vindas, método e cursos; enviar m
 
 Em Contas, a admin busca qualquer conta por nome ou email e, na tela da conta, edita nome, apelido, email e função (aluna ou admin), pede uma senha nova no próximo acesso, libera ou remove produtos, desconecta a conta dos aparelhos e bloqueia ou desbloqueia o acesso com motivo. A própria conta não pode perder a função admin nem ser bloqueada por ela mesma. Apagar contas ainda não existe.
 
+No resumo de uma conta (e no chamado), a admin pode **Entrar como aluna**: vê a plataforma
+exatamente como ela por 1 hora, com uma faixa no topo dizendo de quem é a conta, até que horas e o
+que fica bloqueado (senha, nome, foto, Shopee, criação de logo, conselho do assistente e decisões
+do chamado). Tudo o que fizer fica registrado com o nome dela, e a visita não marca a aluna como
+online nem como leitora das respostas. "Voltar ao painel" encerra a visita. Contas da equipe,
+contas bloqueadas e alunas que ainda não criaram a senha não podem ser acessadas: o botão fica
+desligado e explica o motivo.
+
 No resumo de uma conta, a admin abre **Ver etapa atual**. A tela protegida em
 `/admin/contas/<id>/etapa` mostra a fase da Loja Pronta em que a aluna está, o próximo passo, as
 respostas salvas, o WhatsApp e a marca salva, com o logo escolhido. Ela usa as mesmas regras de
