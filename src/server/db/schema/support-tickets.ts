@@ -355,6 +355,10 @@ export const supportImpersonationLog = pgTable(
   (table) => [
     index('support_impersonation_log_student_idx').on(table.studentId, table.createdAt),
     index('support_impersonation_log_session_idx').on(table.sessionId),
+    // Uma saída por visita: um clique duplo em "Voltar ao painel" não grava a saída duas vezes.
+    uniqueIndex('support_impersonation_log_ended_idx')
+      .on(table.sessionId)
+      .where(sql`${table.kind} = 'ended'`),
   ],
 );
 

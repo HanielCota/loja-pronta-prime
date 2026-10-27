@@ -13,6 +13,7 @@ import {
 import { auth } from '@/server/auth/auth';
 import { readStaffSession } from '@/features/support/server/staff-guard';
 import { endVisit, STAFF_HOME } from '@/features/support/server/impersonation';
+import { closeOpenVisits, withStaffVisitLock } from '@/features/support/server/visit-lock';
 import {
   startVisitSchema,
   visitDestination,
@@ -74,11 +75,15 @@ export async function startVisit(form: FormData): Promise<VisitStartResult> {
 
   let sessionId: string;
   try {
-    const visit = await auth.api.impersonateUser({
-      body: { userId: aluna },
-      headers: await headers(),
+    // Um clique duplo espera o primeiro terminar; a visita anterior aberta é encerrada.
+    sessionId = await withStaffVisitLock(session.user.id, async () => {
+      await closeOpenVisits(session.user.id);
+      const visit = await auth.api.impersonateUser({
+        body: { userId: aluna },
+        headers: await headers(),
+      });
+      return visit.session.id;
     });
-    sessionId = visit.session.id;
   } catch (error) {
     console.error('[support-desk] não foi possível entrar na conta.', {
       error: error instanceof Error ? error.message : 'desconhecido',

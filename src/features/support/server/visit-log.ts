@@ -18,15 +18,19 @@ export type VisitLogEntry = {
  */
 export async function recordVisitStep(entry: VisitLogEntry): Promise<void> {
   try {
-    await db.insert(supportImpersonationLog).values({
-      kind: entry.kind,
-      sessionId: entry.sessionId,
-      staffId: entry.staffId,
-      studentId: entry.studentId,
-      action: entry.action,
-      path: entry.path ?? null,
-      ticketId: entry.ticketId ?? null,
-    });
+    await db
+      .insert(supportImpersonationLog)
+      .values({
+        kind: entry.kind,
+        sessionId: entry.sessionId,
+        staffId: entry.staffId,
+        studentId: entry.studentId,
+        action: entry.action,
+        path: entry.path ?? null,
+        ticketId: entry.ticketId ?? null,
+      })
+      // A saída repetida (clique duplo) bate no índice único e é ignorada.
+      .onConflictDoNothing();
   } catch (error) {
     console.error('[support] registro da visita falhou.', {
       kind: entry.kind,
