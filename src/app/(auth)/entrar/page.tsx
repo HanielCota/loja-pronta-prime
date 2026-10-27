@@ -54,7 +54,16 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         next={next}
         initialError={parseLoginReason(getParam(params.motivo), getParam(params.error))}
       />
+      {/* Quem não consegue entrar não chega no suporte de dentro: o pedido de ajuda é público. */}
       <p className="mt-6 text-center">
+        <Link
+          href="/suporte/acesso"
+          className="inline-flex min-h-11 items-center text-body font-semibold text-link underline underline-offset-4 hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        >
+          Não consegue entrar? Fale com o suporte
+        </Link>
+      </p>
+      <p className="mt-2 text-center">
         <Link
           href="/privacidade"
           className="inline-flex min-h-11 items-center text-sm font-medium text-link underline underline-offset-4 hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"

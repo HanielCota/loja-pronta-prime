@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { greetingName } from '../names';
 import { SllPage } from '@/features/sll/sll-area-shell';
 import { SllNextStepCard } from './sll-cards';
@@ -76,6 +77,16 @@ export function SllArea({
       />
       <SllStoreRow summary={storeSummary} hasLojaPronta={hasLojaPronta} />
       <SllToolShortcuts resources={resources} />
+      {/* O mesmo convite das aulas: quem trava antes de abrir uma aula também acha o suporte. */}
+      <p className="text-body text-muted-foreground">
+        Precisa de ajuda com o curso?{' '}
+        <Link
+          href="/suporte/novo?pagina=/sll"
+          className="inline-flex min-h-11 items-center font-semibold text-link underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        >
+          Fale com o suporte
+        </Link>
+      </p>
     </SllPage>
   );
 }

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { SllPage } from '@/features/sll/sll-area-shell';
@@ -43,6 +44,16 @@ export default async function SllLessonPage({
       }
     >
       <SllLessonViewer key={data.lesson.id} data={{ ...data, returnHref }} />
+      {/* O chamado já leva a aula junto: a equipe abre direto no que ela estava vendo. */}
+      <p className="text-body text-muted-foreground">
+        Problema com esta aula?{' '}
+        <Link
+          href={`/suporte/novo?tema=lessons&aula=${data.lesson.id}`}
+          className="inline-flex min-h-11 items-center font-semibold text-link underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        >
+          Fale com o suporte
+        </Link>
+      </p>
     </SllPage>
   );
 }

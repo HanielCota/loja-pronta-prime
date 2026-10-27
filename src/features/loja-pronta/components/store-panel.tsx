@@ -232,21 +232,29 @@ function NextStep({
         ) : (
           <p className="text-body text-pretty text-muted-foreground">{hero.note}</p>
         )}
-        {hero.action ? null : <TalkToTeam />}
+        {hero.action ? null : <TalkToTeam phase={phase} />}
       </div>
     </section>
   );
 }
 
-/** Keeps help available while members wait for the next stage. */
-function TalkToTeam() {
+/** Keeps help available while members wait for the next stage: o WhatsApp de sempre e, ao lado, o chamado. */
+function TalkToTeam({ phase }: { phase: number }) {
   return (
-    <Button asChild variant="soft" className="sm:w-auto sm:px-8">
-      <Link href="/perfil#suporte">
-        <MessageCircleIcon aria-hidden="true" />
-        Suporte no WhatsApp
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+      <Button asChild variant="soft" className="sm:w-auto sm:px-8">
+        <Link href="/perfil#suporte">
+          <MessageCircleIcon aria-hidden="true" />
+          Suporte no WhatsApp
+        </Link>
+      </Button>
+      <Link
+        href={`/suporte/novo?tema=store&fase=${phase}`}
+        className="inline-flex min-h-11 items-center justify-center text-body font-semibold text-link underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      >
+        ou abra um chamado
       </Link>
-    </Button>
+    </div>
   );
 }
 

@@ -11,6 +11,14 @@ type ErrorPageProps = {
   retry: () => void;
 };
 
+/** O chamado já sai com o tema "Entrar na plataforma", o código do erro e a página. */
+function supportHref(digest: string | undefined): string {
+  const params = new URLSearchParams({ tema: 'access' });
+  if (digest) params.set('erro', digest);
+  if (typeof window !== 'undefined') params.set('pagina', window.location.pathname);
+  return `/suporte/novo?${params}`;
+}
+
 /** Erro inesperado numa página: nunca mostra a mensagem técnica, só o que fazer. */
 export default function ErrorPage({ error, retry }: ErrorPageProps) {
   return (
@@ -27,6 +35,10 @@ export default function ErrorPage({ error, retry }: ErrorPageProps) {
           {/* O início leva pro login quem não estiver dentro: serve pras duas situações. */}
           <Button asChild variant="link" size="inline">
             <Link href="/">Voltar pro início</Link>
+          </Button>
+          {/* Leva o código do erro e a página junto, pra equipe achar o problema nos logs. */}
+          <Button asChild variant="link" size="inline">
+            <Link href={supportHref(error.digest)}>Falar com o suporte</Link>
           </Button>
           {error.digest ? (
             // Código pra ajudar o suporte a achar o erro nos logs do servidor.
