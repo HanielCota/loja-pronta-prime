@@ -16,6 +16,7 @@ import {
 import { briefFromPicks, missingStudioSteps, STUDIO_STEPS } from '../picks';
 import { isLastingTweak, isLogoTweak, type LogoTweak } from '../tweaks';
 import type { StudioView } from '../view';
+import { refuseDuringVisit } from '@/features/support/server/impersonation';
 import { drawLogo, logoImageKey, normalizeUploadedLogo, storeLogoImage } from './logo-images';
 import { view } from './load';
 import {
@@ -40,6 +41,9 @@ export type StudioResult = {
   /** Escolheu o logo: a tela vai pra cá (sem redirect na action, que a tela leria como erro). */
   next?: string;
 };
+
+/** Criar ou ajustar logo gasta a criação da aluna: visitando a conta, a equipe não usa. */
+const VISIT_BLOCKED = 'Visitando a conta da aluna, você não cria logo: isso gastaria uma criação dela.';
 
 async function studioContext() {
   const access = await requireBrandAction({ logo: true });
@@ -107,6 +111,7 @@ async function draw(
 /** "Criar meu logo": guarda as escolhas e desenha o logo com elas. */
 export async function createLogo(picks: unknown): Promise<StudioResult> {
   const { userId, storeName, answers } = await studioContext();
+  if (await refuseDuringVisit('criar ou ajustar logo', '/loja-pronta/marca')) return { studio: view(await getLogoStudio(userId)), error: VISIT_BLOCKED };
   const parsed = logoPicksSchema.safeParse(picks);
   const brief = parsed.success ? briefFromPicks(parsed.data, answers) : null;
   if (!parsed.success || !brief) {
@@ -129,6 +134,7 @@ export async function createLogo(picks: unknown): Promise<StudioResult> {
  */
 export async function tweakLogo(imageId: string, tweak: string): Promise<StudioResult> {
   const { userId, storeName } = await studioContext();
+  if (await refuseDuringVisit('criar ou ajustar logo', '/loja-pronta/marca')) return { studio: view(await getLogoStudio(userId)), error: VISIT_BLOCKED };
   const studio = await getLogoStudio(userId);
   const key = keyOf(userId, imageId);
   const brief = studio.logos.find((logo) => logo.key === key)?.brief;

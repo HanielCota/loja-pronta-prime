@@ -2,6 +2,7 @@ import {
   DeleteObjectCommand,
   DeleteObjectsCommand,
   GetObjectCommand,
+  HeadBucketCommand,
   ListObjectsV2Command,
   NoSuchKey,
   PutObjectCommand,
@@ -28,6 +29,8 @@ export type Storage = {
   remove(key: string): Promise<void>;
   /** Apaga tudo que começa com o prefixo (ex.: "logos/<aluna>/"). */
   removeAll(prefix: string): Promise<void>;
+  /** Confere se o bucket responde com as credenciais configuradas (falha: lança o erro). */
+  check(): Promise<void>;
 };
 
 export type StoredStream = {
@@ -105,6 +108,9 @@ function s3Storage(): Storage {
     async remove(key) {
       assertKey(key);
       await client.send(new DeleteObjectCommand({ Bucket, Key: key }));
+    },
+    async check() {
+      await client.send(new HeadBucketCommand({ Bucket }));
     },
     async removeAll(prefix) {
       // Um prefixo vazio ou curto demais apagaria o bucket inteiro: só pastas de verdade.

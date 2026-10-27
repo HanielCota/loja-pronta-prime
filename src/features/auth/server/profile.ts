@@ -27,6 +27,8 @@ export type ProfilePhotoResult = { error?: string; saved?: boolean; removed?: bo
 async function profileSession() {
   const session = await getActiveSession();
   if (!session || needsFirstPassword(session.user)) return null;
+  // Visitando a conta da aluna, a equipe não muda foto, nome nem senha dela.
+  if (session.session.impersonatedBy) return null;
   return session;
 }
 

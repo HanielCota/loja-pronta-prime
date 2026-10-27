@@ -28,6 +28,7 @@
     "db:import-sll-videos": "bun --env-file=.env.local --bun scripts/importar-videos-panda-sll.ts",
     "auth:schema": "bun x auth@1.7.7 generate --config src/server/auth/auth.ts --output src/server/db/schema/auth.ts -y",
     "dev:aluna": "bun scripts/criar-aluna-teste.ts",
+    "dev:equipe": "bun scripts/criar-equipe-teste.ts",
     "dev:video": "bun scripts/enviar-video.ts",
     "test": "bun test src",
     "test:integration": "bun scripts/run-tests-with-database.ts integration",

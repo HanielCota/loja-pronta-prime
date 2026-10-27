@@ -11,6 +11,7 @@ import {
   claimAssistantJob,
   processAssistantJob,
 } from '../src/features/assistant/server/operations';
+import { runSupportMaintenance } from '../src/features/support/server/maintenance';
 
 let stopping = false;
 process.on('SIGINT', () => {
@@ -45,6 +46,7 @@ async function run() {
   };
   let timer: ReturnType<typeof setInterval> | undefined;
   let nextBrandScan = 0;
+  let nextSupportRun = 0;
   let feedSync: Promise<void> | null = null;
   try {
     await heartbeat();
@@ -73,6 +75,12 @@ async function run() {
           .finally(() => {
             feedSync = null;
           });
+      // Suporte: prazos perdidos, encerramento automático, resumo das 8h e guarda de dados. Cada
+      // tarefa tem a própria trava no banco, então rodar a cada minuto não repete trabalho.
+      if (Date.now() >= nextSupportRun) {
+        nextSupportRun = Date.now() + 60_000;
+        await runSupportMaintenance().catch(() => console.error('[support] Manutenção indisponível.'));
+      }
       if (Date.now() >= nextBrandScan) {
         nextBrandScan = Date.now() + 60_000;
         await queueAutomaticBrands().catch(() =>
