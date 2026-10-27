@@ -66,6 +66,20 @@ supervisors get 404 there. Create local staff with `bun run dev:equipe <email> <
   The guided question and its example already help, and the old 20/40 character lock only slowed
   students down (owner's decision, 27/10/2026).
 
+- The subject is `"<situation or topic>: <excerpt>"`, cut at the last whole word and marked with an
+  ellipsis (`cutAtWord` in `plan-ticket.ts`, 60 characters for the excerpt and 120 for the whole
+  subject). It is the student's list row, the ticket's heading, the e-mail subject and a CSV
+  column, so stopping mid-word ("quero o dinheir") read as a bug.
+- Staff with a support role and **no product** land on their own panel after signing in or after
+  creating the first password (`staffLandingPath` feeding `resolvePostLoginPath`); "/" would show
+  them "Seu acesso ainda não foi liberado", which is a message for students. A `?next=` in the URL
+  still wins, so "Ver a área das alunas" keeps working, and staff who are also students keep
+  landing in their own area with the panel shortcut in the account menu.
+- Words for the two "situations": the ticket's state (Aguardando suporte, Respondido, Encerrado) is
+  **Situação** everywhere, including the staff queue and the CSV; the catalog situation the student
+  picked ("A aula não carrega") is **O que está acontecendo** in the CSV, the same question the
+  form asks. Nothing in the interface is called "Status".
+
 - Deadlines count only business hours (weekly hours, holidays and pause from the settings;
   Brasília is UTC−3 fixed). `due_at` is stored and recomputed when the clock, the priority or the
   settings change.

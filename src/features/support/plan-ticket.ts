@@ -36,9 +36,22 @@ function oneLine(text: string): string {
   return text.replace(/\s+/g, ' ').trim();
 }
 
+/**
+ * Corta na última palavra inteira e marca com reticências. O assunto aparece na lista da aluna, no
+ * título do chamado, no assunto do e-mail e na planilha: terminar no meio da palavra ("quero o
+ * dinheir") parece erro. Palavra única maior que o limite é cortada mesmo assim, pra sobrar texto.
+ */
+export function cutAtWord(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max - 1);
+  const lastSpace = cut.lastIndexOf(' ');
+  const kept = lastSpace > 0 ? cut.slice(0, lastSpace) : cut;
+  return `${kept.replace(/[\s,;:.!?-]+$/, '')}…`;
+}
+
 function subjectFor(label: string, description: string): string {
-  const excerpt = oneLine(description).slice(0, SUBJECT_EXCERPT).trim();
-  return `${label}: ${excerpt}`.slice(0, MAX_SUBJECT).trim();
+  const excerpt = cutAtWord(oneLine(description), SUBJECT_EXCERPT);
+  return cutAtWord(`${label}: ${excerpt}`.trim(), MAX_SUBJECT);
 }
 
 /**

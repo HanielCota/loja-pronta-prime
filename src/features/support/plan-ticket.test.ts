@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { DEFAULT_SUPPORT_CATALOG, OTHER_ISSUE_ID, visibleSituations } from './catalog';
-import { planSupportTicket } from './plan-ticket';
+import { cutAtWord, planSupportTicket } from './plan-ticket';
 
 const catalog = DEFAULT_SUPPORT_CATALOG;
 
@@ -110,5 +110,55 @@ describe('planSupportTicket', () => {
       description: 'A calculadora mostra um valor estranho.',
     });
     expect(result.ok).toBe(false);
+  });
+});
+
+describe('cutAtWord', () => {
+  test('mantém o texto que já cabe, sem reticências', () => {
+    expect(cutAtWord('curto', 10)).toBe('curto');
+  });
+
+  test('corta na última palavra inteira', () => {
+    expect(cutAtWord('quero o dinheiro de volta', 12)).toBe('quero o…');
+  });
+
+  test('tira a pontuação antes das reticências', () => {
+    expect(cutAtWord('o curso, quero o dinheiro', 12)).toBe('o curso…');
+  });
+
+  test('palavra única maior que o limite é cortada mesmo assim', () => {
+    expect(cutAtWord('supercalifragilistico', 10)).toBe('supercali…');
+  });
+});
+
+describe('assunto do chamado', () => {
+  const description =
+    'Comprei sem querer duas vezes o mesmo curso, quero o dinheiro de uma de volta.';
+
+  test('nunca termina no meio de uma palavra', () => {
+    const result = planSupportTicket(catalog, {
+      topicId: 'payment',
+      situationId: 'refund',
+      description,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const excerpt = result.ticket.subject.replace('Quero reembolso: ', '');
+    expect(excerpt.endsWith('…')).toBe(true);
+    const kept = excerpt.slice(0, -1);
+    expect(description.startsWith(kept)).toBe(true);
+    // O caractere seguinte do texto original não pode ser letra: aí o corte caiu dentro da palavra.
+    expect(/[\p{L}\p{N}]/u.test(description.charAt(kept.length))).toBe(false);
+  });
+
+  test('descrição curta vira assunto inteiro, sem reticências', () => {
+    const result = planSupportTicket(catalog, {
+      topicId: 'lessons',
+      situationId: 'video-not-loading',
+      description: 'A aula 3 trava no minuto 4.',
+    });
+    expect(result.ok && result.ticket.subject).toBe(
+      'A aula não carrega: A aula 3 trava no minuto 4.',
+    );
   });
 });

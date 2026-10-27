@@ -10,6 +10,7 @@ import { reportAuthError } from '@/server/auth/report-error';
 import { db } from '@/server/db';
 import { account, session as sessions, user } from '@/server/db/schema';
 import { ENHANCED_SUBMIT_FIELD } from '@/lib/forms';
+import { staffLandingPath } from '@/features/support/server/staff-landing';
 import { firstPasswordSchema } from '../schemas';
 import { resolvePostLoginPath } from './post-login';
 import { getActiveSession, needsFirstPassword } from './session';
@@ -36,9 +37,14 @@ export async function createFirstPassword(
     }
 
     const { password, next } = submission.value;
-    const destination = resolvePostLoginPath(next);
+    // Equipe convidada entra pelo painel do cargo; aluna, no início (ver `staffLandingPath`).
+    const landingFor = async (person: {
+      id: string;
+      role?: string | null | undefined;
+    }): Promise<string> =>
+      resolvePostLoginPath(next, { staffPanelPath: await staffLandingPath(person) });
     // Com JavaScript: a tela comemora e depois navega. Sem: redireciona direto.
-    const finish = (): FirstAccessResult => {
+    const finish = (destination: string): FirstAccessResult => {
       if (formData.get(ENHANCED_SUBMIT_FIELD)) return { redirectTo: destination };
       redirect(destination);
     };
@@ -79,7 +85,9 @@ export async function createFirstPassword(
         return { submission: reject(submission, 'unknown') };
       }
       // Fora do try: o redirect do Next funciona lançando uma exceção.
-      return same ? finish() : { submission: reject(submission, 'first_password_already_set') };
+      return same
+        ? finish(await landingFor(session.user))
+        : { submission: reject(submission, 'first_password_already_set') };
     };
 
     if (!needsFirstPassword(session.user)) return alreadyCreated();
@@ -130,6 +138,6 @@ export async function createFirstPassword(
 
     if (outcome === 'same-password') return { submission: reject(submission, 'same_password') };
     if (outcome === 'already-done') return alreadyCreated();
-    return finish();
+    return finish(await landingFor(session.user));
   });
 }

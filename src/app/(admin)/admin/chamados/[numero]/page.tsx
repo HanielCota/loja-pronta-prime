@@ -147,7 +147,18 @@ export default async function StaffTicketPage({ params }: { params: Promise<{ nu
               templates={detail.templates.map((template) => ({ id: template.id, title: template.title, body: template.body, statusAfter: template.statusAfter }))}
               closed={ticket.status === 'closed'}
             />
-            {ticket.status !== 'closed' ? <StatusButton number={ticket.number} next="closed" label="Encerrar sem responder" /> : null}
+            {ticket.status !== 'closed' ? (
+              <StatusButton
+                number={ticket.number}
+                next="closed"
+                label="Encerrar sem responder"
+                confirm={{
+                  title: `Encerrar o chamado #${ticket.number} sem responder?`,
+                  description: 'A aluna não recebe nenhuma mensagem. Se ela responder, o chamado reabre.',
+                  confirmLabel: 'Encerrar sem responder',
+                }}
+              />
+            ) : null}
           </section>
         </div>
         <aside aria-label="Atendimento e aluna" className="flex flex-col gap-6 xl:sticky xl:top-6">

@@ -16,6 +16,7 @@ import {
 } from '@/features/support/staff-access';
 import { requireStaff } from '@/features/support/server/staff-guard';
 import { blockStaff, changeStaffRole, inviteStaff } from '@/features/support-admin/server/actions';
+import { ConfirmAction } from '@/features/support-desk/components/confirm-action';
 import { getParam, type SearchParams } from '@/lib/search-params';
 import { cn } from '@/lib/utils';
 import { db } from '@/server/db';
@@ -25,6 +26,19 @@ export const metadata: Metadata = { title: 'Equipe do suporte', robots: { index:
 
 const selectClass =
   'min-h-11 w-full rounded-field border border-input bg-card px-3 text-body text-foreground outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary';
+
+/** Bloquear ou desbloquear alguém da equipe. Formulário de verdade: funciona sem JavaScript. */
+function BlockForm({ id, block, label, variant }: { id: string; block: boolean; label: string; variant: 'soft' | 'destructive' }) {
+  return (
+    <form action={blockStaff}>
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="bloquear" value={block ? '1' : '0'} />
+      <Button type="submit" variant={variant} size="inline" className="px-4">
+        {label}
+      </Button>
+    </form>
+  );
+}
 
 /** A equipe do suporte: quem é, o cargo, se está ativa, disponível e com quantos chamados. */
 export default async function SupportTeamPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
@@ -119,13 +133,19 @@ export default async function SupportTeamPage({ searchParams }: { searchParams: 
                         Salvar
                       </Button>
                     </form>
-                    <form action={blockStaff}>
-                      <input type="hidden" name="id" value={member.id} />
-                      <input type="hidden" name="bloquear" value={member.banned ? '0' : '1'} />
-                      <Button type="submit" variant={member.banned ? 'soft' : 'destructive'} size="inline" className="px-4">
-                        {member.banned ? 'Desbloquear' : 'Bloquear'}
-                      </Button>
-                    </form>
+                    {member.banned ? (
+                      <BlockForm id={member.id} block={false} label="Desbloquear" variant="soft" />
+                    ) : (
+                      // Bloquear derruba a pessoa na hora: confirma antes, com o nome dela na frente.
+                      <ConfirmAction
+                        label="Bloquear"
+                        variant="destructive"
+                        title={`Bloquear ${member.preferredName?.trim() || member.name}?`}
+                        description="Ela sai da plataforma agora e os aparelhos dela são desconectados. Dá pra desbloquear depois."
+                      >
+                        <BlockForm id={member.id} block label="Bloquear" variant="destructive" />
+                      </ConfirmAction>
+                    )}
                   </div>
                 )}
               </li>
