@@ -70,6 +70,12 @@ O comando de início executa `node start-production.mjs`: migrações primeiro, 
 `drizzle.__drizzle_migrations`, o mesmo histórico usado por `bun run db:migrate` no desenvolvimento.
 Não ative `RAILPACK_PRUNE_DEPS=true` nem use `bun install --production` no build.
 
+Banner exports also require the bundled DejaVu Sans regular and bold fonts in
+`assets/fonts/dejavu`. `prepare-runtime.ts` copies the fonts and their license into
+`build/runtime/assets/fonts`; the renderer registers both files explicitly before drawing SVG
+text. Keep these files in the final runtime even if the base image has no system fonts. A missing
+file rejects the export instead of returning a PNG with missing-glyph squares.
+
 A migração `0039_sll-panda-video-links.sql` também vincula os vídeos Panda às aulas SLL já existentes.
 Não substitui vídeos editados nem rascunhos pendentes e não muda publicação, acesso ou progresso.
 Depois das migrações, o inicializador importa e publica o inventário conferido nas trilhas ausentes:

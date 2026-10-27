@@ -10,6 +10,7 @@ await cp('.next/standalone', runtimeDirectory, { recursive: true, dereference: t
 await Promise.all([
   cp('scripts/start-production.mjs', path.join(runtimeDirectory, 'start-production.mjs')),
   cp('public', path.join(runtimeDirectory, 'public'), { recursive: true }),
+  cp('assets/fonts', path.join(runtimeDirectory, 'assets/fonts'), { recursive: true }),
   cp('.next/static', path.join(runtimeDirectory, '.next/static'), { recursive: true }),
   cp('drizzle', path.join(runtimeDirectory, 'drizzle'), { recursive: true }),
   cp('data/sll/tools', path.join(runtimeDirectory, 'data/sll/tools'), { recursive: true }),

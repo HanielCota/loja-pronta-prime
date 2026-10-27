@@ -1,5 +1,30 @@
+import { access } from 'node:fs/promises';
+import path from 'node:path';
 import sharp from 'sharp';
 import { bannerLines, escapeSvg, type BannerDraft, type BannerVariant } from '../model';
+
+let fontsReady: Promise<void> | undefined;
+
+function registerBannerFonts(): Promise<void> {
+  // Register the bundled fonts with Pango before librsvg renders any text.
+  // A slim production image may have no system fonts or Fontconfig configuration.
+  return (fontsReady ??= (async () => {
+    for (const [file, font] of [
+      ['DejaVuSans.ttf', 'DejaVu Sans 12'],
+      ['DejaVuSans-Bold.ttf', 'DejaVu Sans Bold 12'],
+    ] as const) {
+      const fontfile = path.resolve('assets/fonts/dejavu', file);
+      // Sharp can silently fall back when fontfile is missing; fail the request instead.
+      await access(fontfile);
+      await sharp({ text: { text: 'Ag', font, fontfile } })
+        .png()
+        .toBuffer();
+    }
+  })().catch((error: unknown) => {
+    fontsReady = undefined;
+    throw error;
+  }));
+}
 
 // These colors belong to exported artwork, never to the application interface.
 const palettes = {
@@ -15,6 +40,7 @@ export async function renderBanner(
   logo: Uint8Array,
   variant: BannerVariant,
 ): Promise<Buffer> {
+  await registerBannerFonts();
   const color = palettes[draft.palette];
   const height = variant === 'welcome' ? 300 : 500;
   const x = variant === 'welcome' ? 270 : 48;
