@@ -83,10 +83,19 @@ export const hotmartEvents = pgTable(
     buyerEmail: text('buyer_email').notNull(),
     productUcode: text('product_ucode').notNull(),
     productId: bigint('product_id', { mode: 'number' }),
+    productName: text('product_name'),
+    buyerName: text('buyer_name'),
+    eventVersion: text('event_version'),
+    eventCreatedAt: timestamp('event_created_at', { withTimezone: true }),
+    orderedAt: timestamp('ordered_at', { withTimezone: true }),
     result: text('result').notNull(),
     receivedAt: timestamp('received_at').defaultNow().notNull(),
   },
-  (table) => [index('hotmart_events_received_idx').on(table.receivedAt)],
+  (table) => [
+    index('hotmart_events_received_idx').on(table.receivedAt),
+    index('hotmart_events_result_idx').on(table.result),
+    index('hotmart_events_transaction_idx').on(table.transaction),
+  ],
 );
 
 /** Acessos manuais não podem ser removidos por um reembolso da Hotmart. */

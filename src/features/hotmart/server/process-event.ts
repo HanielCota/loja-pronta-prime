@@ -1,5 +1,5 @@
 import { revalidateAdminOverview } from '@/features/admin/server/overview-cache';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, ne, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { auth } from '@/server/auth/auth';
 import { DEFAULT_STUDENT_PASSWORD } from '@/server/auth/student-password';
@@ -9,6 +9,12 @@ import { hotmartEvents, hotmartProductMappings, hotmartPurchases, user } from '@
 import { reconcileProductAccess } from './product-access';
 import { productIdentityConflict, resolveProductIdentity } from './product-identity';
 import {
+  HOTMART_RETRYABLE_RESULTS,
+  isRetryableHotmartResult,
+  pendingRefundResult,
+} from '../recovery';
+export { isRetryableHotmartResult } from '../recovery';
+import {
   purchaseEffect,
   shouldApplyEvent,
   transactionMismatch,
@@ -16,11 +22,6 @@ import {
 } from '../event';
 
 const missingDateResult = 'Compra sem data original; acesso não liberado.';
-/** Avisos que a Hotmart precisa reenviar: a rota responde 503 e o processamento tenta de novo. */
-export const isRetryableHotmartResult = (result: string) =>
-  result === 'Produto sem acesso configurado.' ||
-  result === missingDateResult ||
-  result === productIdentityConflict;
 
 async function findOrCreateBuyer(email: string, name: string) {
   const existing = await db.query.user.findFirst({
@@ -107,6 +108,20 @@ async function purchaseEventResult(
   if (conflict) return productIdentityConflict;
   if (!mapping.length) return 'Produto sem acesso configurado.';
   if (context.effect === 'ignore') return 'Aviso sem mudança de acesso.';
+  // A retained refund must block approvals even across recovery batches or live redeliveries.
+  if (context.effect === 'grant') {
+    const refund = await tx.query.hotmartEvents.findFirst({
+      columns: { id: true },
+      where: and(
+        eq(hotmartEvents.transaction, context.transaction),
+        eq(hotmartEvents.productUcode, context.productUcode),
+        ne(hotmartEvents.id, context.event.id),
+        inArray(hotmartEvents.event, ['PURCHASE_REFUNDED', 'PURCHASE_CHARGEBACK']),
+        inArray(hotmartEvents.result, [...HOTMART_RETRYABLE_RESULTS]),
+      ),
+    });
+    if (refund) return pendingRefundResult;
+  }
   const previous = await tx.query.hotmartPurchases.findFirst({
     where: eq(hotmartPurchases.transaction, context.transaction),
   });
@@ -151,6 +166,7 @@ async function applyPurchaseEvent(
   if (
     !linkedUserId &&
     active &&
+    previous?.active !== false &&
     orderDate &&
     orderDate <= new Date() &&
     purchaseExpiresAt(orderDate) > new Date()
@@ -254,7 +270,7 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
 
   // Revalidate the mapping inside the purchase transaction before granting access.
   const known = await db.query.hotmartPurchases.findFirst({
-    columns: { buyerEmail: true, productUcode: true, productId: true, userId: true },
+    columns: { buyerEmail: true, productUcode: true, productId: true, userId: true, active: true },
     where: eq(hotmartPurchases.transaction, transaction),
   });
   const knownMismatch = transactionMismatch(known, {
@@ -272,6 +288,7 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
   let buyerId: string | null = null;
   if (
     effect === 'grant' &&
+    known?.active !== false &&
     !knownHistorical &&
     orderDate &&
     orderDate <= new Date() &&
@@ -308,6 +325,13 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
       where: eq(hotmartEvents.id, event.id),
     });
     if (duplicate && !isRetryableHotmartResult(duplicate.result)) return 'Aviso já recebido.';
+    const replayFields = {
+      productName: event.data.product.name ?? null,
+      buyerName: event.data.buyer.name ?? null,
+      eventVersion: event.version,
+      eventCreatedAt: createdAt,
+      orderedAt: orderDate,
+    };
     const historical = await tx.query.historicalSllPurchases.findFirst({
       where: eq(historicalSllPurchases.transaction, transaction),
     });
@@ -323,10 +347,16 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
           productUcode,
           productId: event.data.product.id,
           result,
+          ...replayFields,
         })
         .onConflictDoUpdate({
           target: hotmartEvents.id,
-          set: { result, productId: event.data.product.id, receivedAt: new Date() },
+          set: {
+            result,
+            productId: event.data.product.id,
+            receivedAt: new Date(),
+            ...replayFields,
+          },
         });
       return result;
     }
@@ -341,10 +371,11 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
         productUcode,
         productId: event.data.product.id,
         result,
+        ...replayFields,
       })
       .onConflictDoUpdate({
         target: hotmartEvents.id,
-        set: { result, productId: event.data.product.id, receivedAt: new Date() },
+        set: { result, productId: event.data.product.id, receivedAt: new Date(), ...replayFields },
       });
     return result;
   });

@@ -27,6 +27,7 @@ export type AdminOverviewData = {
     sll: number;
     lojaPronta: number;
     activePurchases: number;
+    pendingHotmart: number;
   };
   recentAccounts: { id: string; name: string; email: string; createdAt: Date }[];
   recentAccess: {
@@ -149,6 +150,22 @@ export function AdminOverview({
 
   return (
     <div className="flex flex-col gap-6">
+      {totals.pendingHotmart > 0 ? (
+        <section className={`${panelCard} gap-3`} aria-label="Pendências da Hotmart">
+          <p className="text-body font-semibold text-destructive">
+            {totals.pendingHotmart} avisos da Hotmart precisam de correção.
+          </p>
+          <p className="text-body text-muted-foreground">
+            Confira os produtos e recupere as compras que ainda estão pendentes.
+          </p>
+          <Link
+            href="/admin/hotmart#hotmart-pending"
+            className="inline-flex min-h-11 items-center gap-2 text-body text-link outline-none focus-visible:outline-2 focus-visible:outline-ring"
+          >
+            Ver pendências de acesso <ArrowRight aria-hidden="true" className="size-5" />
+          </Link>
+        </section>
+      ) : null}
       <section aria-label="Números do painel">
         {/* Duas colunas já no celular, como os widgets de números: os seis cabem numa olhada e
             as listas de baixo aparecem sem rolar tanto. */}

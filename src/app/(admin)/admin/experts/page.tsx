@@ -47,7 +47,9 @@ export default async function ExpertsPage({
       .orderBy(asc(learningLessons.title)),
     db.select().from(learningVideoVariants).where(eq(learningVideoVariants.expert, 'pri')),
   ]);
-  const result = getParam((await searchParams).resultado);
+  const params = await searchParams;
+  const result = getParam(params.resultado);
+  const pendingCode = (getParam(params.codigo) ?? '').slice(0, 150);
   return (
     <AdminPage title="Especialistas e vídeos">
       {result ? (
@@ -89,16 +91,19 @@ export default async function ExpertsPage({
           ))}
         </ul>
         <form action={saveExpertOffer} className="flex flex-col gap-4">
+          {pendingCode ? <input type="hidden" name="returnToHotmart" value="1" /> : null}
           <FloatingLabelInput
             id="expert-offer-code"
             name="code"
             label="Código do produto na Hotmart"
             required
             maxLength={150}
+            defaultValue={pendingCode}
           />
           <label htmlFor="expert-access-1" className="flex flex-col gap-2 text-body">
             Produto
             <SelectMenu id="expert-access-1" name="access">
+              <option value="">Selecione o acesso</option>
               <option value="sll">SLL</option>
               <option value="loja-pronta">Loja Pronta</option>
             </SelectMenu>
@@ -106,6 +111,7 @@ export default async function ExpertsPage({
           <label htmlFor="expert-expert-1" className="flex flex-col gap-2 text-body">
             Especialista
             <SelectMenu id="expert-expert-1" name="expert">
+              <option value="">Selecione o especialista</option>
               {EXPERT_IDS.map((expert) => (
                 <option key={expert} value={expert}>
                   {EXPERT_LABELS[expert]}

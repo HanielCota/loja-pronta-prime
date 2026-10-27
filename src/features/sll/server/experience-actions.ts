@@ -22,6 +22,7 @@ import { revalidateAdminOverview } from '@/features/admin/server/overview-cache'
 import { pandaVideoId } from '../panda-video';
 import { isProgressId } from '../progress-rules';
 import { cleanTypedText } from '@/lib/text';
+import { replayPendingHotmartEvents } from '@/features/hotmart/server/pending-events';
 
 export async function chooseExpert(form: FormData): Promise<void> {
   const { userId } = await requireProductAction('sll', null);
@@ -91,9 +92,12 @@ export async function saveExpertOffer(form: FormData): Promise<void> {
     }
     return true;
   });
+  const recovery = outcome ? await replayPendingHotmartEvents(code) : null;
   revalidateAdminOverview();
   revalidatePath('/', 'layout');
   revalidatePath('/admin/experts');
+  if (outcome && form.get('returnToHotmart') === '1')
+    redirect(`/admin/hotmart?resultado=${recovery?.failed ? 'retry-failed' : 'configured'}`);
   redirect(`/admin/experts?resultado=${outcome ? 'saved' : 'offer-used'}`);
 }
 

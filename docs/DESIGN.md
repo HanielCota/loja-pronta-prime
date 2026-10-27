@@ -311,6 +311,12 @@ o tema escuro e o alto contraste.
 
 ### Painel admin
 
+- Hotmart recovery uses the existing `AdminShell`, `panelCard`, `FloatingLabelInput`,
+  `Button` and disclosure patterns. Pending events appear before integration settings,
+  with product identity, buyer email, written status, search and pagination. The overview
+  links to unresolved events. Product configuration reuses the specialist form; no new
+  colors, typography, layout shell or component system is introduced.
+
 - Leads (`/leads`) reutiliza a moldura do admin (o mesmo grupo `(admin)` e o mesmo `layout.tsx`), os mesmos cartões, campos e selects. Os indicadores
   usam números reais e as etapas usam texto junto da cor. A lista vira cartões de contato no
   celular, sem rolagem horizontal. Cadastro, importação com prévia e contato com histórico ficam
