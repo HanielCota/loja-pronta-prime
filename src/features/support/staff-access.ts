@@ -84,6 +84,22 @@ export function staffRoleLabel(role: string | null | undefined): string | null {
   return STAFF_ROLE_LABELS[staffRole];
 }
 
+/** O atalho pro painel no menu da conta: aonde leva e o cargo que aparece embaixo. */
+export type StaffPanelLink = { href: string; label: string; roleLabel: string };
+
+/**
+ * O atalho da equipe no menu da conta, pelo cargo mais alto: o administrador entra na visão geral
+ * do painel; atendente e supervisor, direto nos chamados (a visão geral é só do administrador).
+ * Quem não é da equipe não tem atalho.
+ */
+export function staffPanelLinkOf(role: string | null | undefined): StaffPanelLink | null {
+  const staffRole = staffRoleOf(role);
+  if (!staffRole) return null;
+  const roleLabel = STAFF_ROLE_LABELS[staffRole];
+  if (staffRole === 'admin') return { href: '/admin', label: 'Painel administrativo', roleLabel };
+  return { href: '/admin/chamados', label: 'Painel de suporte', roleLabel };
+}
+
 /**
  * Troca o cargo de equipe da conta mantendo as outras funções (ex.: `user`). `null` tira a pessoa
  * da equipe. Sem nenhuma função sobrando, volta a ser `user`.

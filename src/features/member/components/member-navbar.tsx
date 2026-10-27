@@ -1,7 +1,7 @@
 import { SiteNavbar } from '@/components/brand/site-navbar';
 import { ThemeToggleButton } from '@/features/theme/theme-toggle-button';
 import type { ProductId } from '@/config/products';
-import { isStaffRole } from '@/features/support/staff-access';
+import { staffPanelLinkOf } from '@/features/support/staff-access';
 import { AccountMenu } from './account-menu';
 import { AreaNav } from './area-nav';
 
@@ -45,7 +45,7 @@ export function MemberNavbar({
           name={account.preferredName?.trim() || account.name}
           email={account.email}
           image={account.image}
-          isStaff={isStaffRole(account.role)}
+          staffPanel={staffPanelLinkOf(account.role)}
         />
       </div>
     </SiteNavbar>
