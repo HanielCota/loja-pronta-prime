@@ -16,9 +16,10 @@ export async function POST(request: Request) {
   const session = await getActiveSession();
   if (!session || needsFirstPassword(session.user))
     return failure('Entre na sua conta de novo.', 401);
-  // A equipe dentro da conta da aluna não muda o "continue de onde parou" dela.
+  // A equipe dentro da conta da aluna não muda o "continue de onde parou" dela. A tela lê o JSON
+  // da resposta: o mesmo resultado neutro da ação silenciosa, sem mensagem de erro.
   if ((await visitForRoute('recordSllLessonView')).status !== 'student')
-    return new Response(null, { status: 204, headers });
+    return Response.json({ saved: false, message: '' }, { headers });
   if (!(await getStudentProducts(session.user.id)).products.includes('sll'))
     return failure('Este curso não está disponível para esta conta.', 403);
   let location;

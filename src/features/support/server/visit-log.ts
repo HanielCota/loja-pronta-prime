@@ -34,6 +34,7 @@ export async function recordVisitStep(entry: VisitLogEntry): Promise<void> {
   } catch (error) {
     console.error('[support] registro da visita falhou.', {
       kind: entry.kind,
+      sessionId: entry.sessionId,
       action: entry.action,
       error: error instanceof Error ? error.message : 'desconhecido',
     });

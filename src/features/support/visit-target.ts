@@ -40,6 +40,17 @@ export function visitDestination(raw: string | null | undefined): string {
 /** O que o botão "Entrar como aluna" manda. */
 export const startVisitSchema = z.object({
   aluna: z.string().trim().min(1).max(64),
-  numero: z.coerce.number().int().positive().optional(),
   destino: z.string().trim().max(200).optional(),
 });
+
+/**
+ * O número do chamado que motivou a visita, ou `null`. Só dígitos e até 9 deles: cabe no
+ * `integer` do Postgres e recusa "1e3", "0x10", espaços e negativos.
+ */
+export function ticketNumberOf(raw: unknown): number | null {
+  if (typeof raw !== 'string' || !/^[1-9]\d{0,8}$/.test(raw)) return null;
+  return Number(raw);
+}
+
+/** O e-mail do chamado público ainda não foi confirmado: não dá pra saber se a conta é dela. */
+export const UNCONFIRMED_TICKET_REFUSAL = 'O e-mail do chamado ainda não foi confirmado.';

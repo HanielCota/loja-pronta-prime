@@ -97,17 +97,15 @@ async function createAccounts(role: string, count: number): Promise<string[]> {
       mustChangePassword: false,
     })),
   );
-  await db
-    .insert(account)
-    .values(
-      ids.map((id) => ({
-        id,
-        accountId: id,
-        providerId: 'credential',
-        userId: id,
-        password: hash,
-      })),
-    );
+  await db.insert(account).values(
+    ids.map((id) => ({
+      id,
+      accountId: id,
+      providerId: 'credential',
+      userId: id,
+      password: hash,
+    })),
+  );
   return ids;
 }
 
@@ -214,7 +212,7 @@ describe.skipIf(!enabled)('estresse do "Entrar como aluna"', () => {
             expect(refused).toEqual(Array(3).fill('/visita-bloqueada?acao=changePassword'));
             expect(skipped).toEqual(Array(3).fill('pulado'));
 
-            expect(await leaveVisit()).toEqual({ ok: true });
+            expect(await leaveVisit()).toEqual({ end: 'returned' });
             const back = await getSessionState();
             expect(back.status === 'active' ? back.session.user.id : null).toBe(adminId);
             return visit!.sessionId;
@@ -252,7 +250,7 @@ describe.skipIf(!enabled)('estresse do "Entrar como aluna"', () => {
             await Promise.all(
               Array.from({ length: 5 }, () => runAsStudent('chooseExpert', async () => null)),
             );
-            expect(await leaveVisit()).toEqual({ ok: true });
+            expect(await leaveVisit()).toEqual({ end: 'returned' });
             return visit!.sessionId;
           }),
         ),
@@ -302,7 +300,7 @@ describe.skipIf(!enabled)('estresse do "Entrar como aluna"', () => {
       inBrowser(cookies, async () => {
         for (let cycle = 0; cycle < 50; cycle += 1) {
           expect((await startVisit(visitForm(studentId!))).ok).toBe(true);
-          expect(await leaveVisit()).toEqual({ ok: true });
+          expect(await leaveVisit()).toEqual({ end: 'returned' });
         }
       }),
     );
@@ -353,8 +351,8 @@ describe.skipIf(!enabled)('estresse do "Entrar como aluna"', () => {
     expect(visit?.studentId).toBe(studentId);
 
     const leaves = await doubleClick(leaveVisit);
-    timings.push(`clique duplo em Voltar: ${JSON.stringify(leaves.map((item) => item.ok))}`);
-    expect(leaves.some((item) => item.ok)).toBe(true);
+    timings.push(`clique duplo em Voltar: ${JSON.stringify(leaves.map((item) => item.end))}`);
+    expect(leaves.some((item) => item.end === 'returned')).toBe(true);
     const state = await inBrowser(cookies, getSessionState);
     expect(state.status === 'active' ? state.session.user.id : null).toBe(adminId!);
     expect(await openVisitSessions([studentId!])).toEqual([]);
@@ -418,7 +416,7 @@ describe.skipIf(!enabled)('estresse do "Entrar como aluna"', () => {
             .where(eq(session.id, visit!.sessionId));
           const outcome = await redirected(() => runAsStudent('saveAnswer', async () => 'ok'));
           expect(outcome).toBe(minutes === 59 ? null : '/visita-encerrada');
-          expect(await leaveVisit()).toEqual({ ok: true });
+          expect(await leaveVisit()).toEqual({ end: 'returned' });
         }),
       ),
     );

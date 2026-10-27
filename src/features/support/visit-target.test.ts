@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   startVisitSchema,
+  ticketNumberOf,
   visitDestination,
   visitRefusalReason,
   type VisitTarget,
@@ -71,9 +72,30 @@ describe('página de início da visita', () => {
     }
   });
 
-  test('o formulário valida o id e o número do chamado', () => {
-    expect(startVisitSchema.safeParse({ aluna: 'id', numero: '12' }).data?.numero).toBe(12);
+  test('o formulário exige o id da aluna', () => {
+    expect(startVisitSchema.safeParse({ aluna: 'id' }).success).toBe(true);
     expect(startVisitSchema.safeParse({ aluna: '' }).success).toBe(false);
-    expect(startVisitSchema.safeParse({ aluna: 'id', numero: '-1' }).success).toBe(false);
+    expect(startVisitSchema.safeParse({ aluna: 'x'.repeat(65) }).success).toBe(false);
+  });
+
+  test('número do chamado: só dígitos que cabem no integer do Postgres', () => {
+    expect(ticketNumberOf('12')).toBe(12);
+    expect(ticketNumberOf('999999999')).toBe(999999999);
+    for (const raw of [
+      null,
+      '',
+      ' ',
+      '0',
+      '-1',
+      '1.5',
+      '1e3',
+      '0x10',
+      '012',
+      '3000000000',
+      'abc',
+      12,
+    ]) {
+      expect(ticketNumberOf(raw)).toBeNull();
+    }
   });
 });

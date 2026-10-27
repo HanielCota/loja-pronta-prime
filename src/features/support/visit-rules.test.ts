@@ -1,12 +1,36 @@
 import { describe, expect, test } from 'bun:test';
-import { redirectTargetOf, visitRuleFor } from './visit-rules';
+import {
+  BLOCKED_DURING_VISIT,
+  blockedMessage,
+  redirectTargetOf,
+  visitRuleFor,
+} from './visit-rules';
 
 describe('regras da visita', () => {
   test('ação bloqueada traz a recusa em português', () => {
     expect(visitRuleFor('changePassword')).toEqual({
       kind: 'blocked',
-      message: 'Não é possível trocar a senha da aluna enquanto você usa a conta dela.',
+      message: 'Não é possível trocar a senha dela enquanto você usa a conta da aluna.',
     });
+  });
+
+  test('toda recusa é uma frase completa, com o motivo depois', () => {
+    expect(blockedMessage('openTicket')).toBe(
+      'Não é possível abrir chamado ou escrever como ela enquanto você usa a conta da aluna. Responda pelo painel do suporte.',
+    );
+    for (const name of Object.keys(BLOCKED_DURING_VISIT)) {
+      const message = blockedMessage(name) ?? '';
+      expect(message).toMatch(
+        /^Não é possível [^.()]+ enquanto você usa a conta da aluna\.( [^()]+\.)?$/,
+      );
+    }
+  });
+
+  test('nomes herdados de Object não viram ação bloqueada', () => {
+    for (const name of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) {
+      expect(blockedMessage(name)).toBeNull();
+      expect(visitRuleFor(name).kind).toBe('recorded');
+    }
   });
 
   test('marcas pequenas são silenciosas, leituras não entram no registro', () => {

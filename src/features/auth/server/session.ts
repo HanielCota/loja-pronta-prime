@@ -6,8 +6,27 @@ import { isVisitOver } from '@/features/support/visit-window';
 // A regra mora num arquivo sem dependências de servidor, pra ser testada sozinha.
 export { needsFirstPassword } from '../first-password';
 
+function fetchSession(requestHeaders: Headers) {
+  return auth.api.getSession({ headers: requestHeaders });
+}
+
+/**
+ * Sessões já pedidas, por requisição. O `cache` do React só vale na renderização de páginas; em
+ * Server Actions e rotas ele não guarda nada, e cada guarda (mais o `runAsStudent`) ia ao banco de
+ * novo. O Next devolve o mesmo objeto de `headers()` durante toda a requisição, então ele serve de
+ * chave e some junto com ela.
+ */
+const sessionsByRequest = new WeakMap<Headers, ReturnType<typeof fetchSession>>();
+
 /** A sessão do cookie (lida uma vez por requisição, mesmo com várias guardas pedindo). */
-const readSession = cache(async () => auth.api.getSession({ headers: await headers() }));
+const readSession = cache(async () => {
+  const requestHeaders = await headers();
+  const known = sessionsByRequest.get(requestHeaders);
+  if (known) return known;
+  const pending = fetchSession(requestHeaders);
+  sessionsByRequest.set(requestHeaders, pending);
+  return pending;
+});
 
 type Session = NonNullable<Awaited<ReturnType<typeof readSession>>>;
 
@@ -68,7 +87,9 @@ export async function getVisit(): Promise<Visit | null> {
     sessionId: session.session.id,
     staffId,
     studentId: session.user.id,
-    studentName: session.user.preferredName?.trim() || session.user.name,
+    // Conta sem nome (cadastro incompleto): o e-mail diz de quem é a conta na faixa.
+    studentName:
+      session.user.preferredName?.trim() || session.user.name.trim() || session.user.email,
     startedAt,
     over: isVisitOver(startedAt),
   };

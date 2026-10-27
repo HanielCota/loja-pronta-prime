@@ -26,7 +26,7 @@ import {
   TopicForm,
 } from '@/features/support-desk/components/desk-forms';
 import { ImpersonateButton } from '@/features/support-desk/components/impersonate-button';
-import { visitRefusalReason } from '@/features/support/visit-target';
+import { UNCONFIRMED_TICKET_REFUSAL, visitRefusalReason } from '@/features/support/visit-target';
 import { StaffComposer } from '@/features/support-desk/components/staff-composer';
 import { markReadAction } from '@/features/support-desk/server/actions';
 import { getStaffTicket } from '@/features/support-desk/server/queries';
@@ -276,7 +276,7 @@ export default async function StaffTicketPage({ params }: { params: Promise<{ nu
                     ticketNumber={ticket.number}
                     back={`/admin/chamados/${ticket.number}`}
                     destination={`/suporte/${ticket.number}`}
-                    refusal={unconfirmed ? 'O e-mail do chamado ainda não foi confirmado.' : visitRefusalReason(requester, user.id)}
+                    refusal={unconfirmed ? UNCONFIRMED_TICKET_REFUSAL : visitRefusalReason(requester, user.id)}
                   />
                 ) : null}
               </>

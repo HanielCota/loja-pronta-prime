@@ -9,11 +9,14 @@ export const VISIT_MINUTES = 60;
  * a plataforma recusa tudo, mas "Voltar ao painel" ainda consegue devolver a sessão da equipe;
  * sem essa folga, a pessoa ficaria deslogada e teria que entrar de novo.
  */
-export const VISIT_GRACE_MINUTES = 5;
+const VISIT_GRACE_MINUTES = 5;
 
 export const VISIT_SESSION_SECONDS = (VISIT_MINUTES + VISIT_GRACE_MINUTES) * 60;
 
 export const VISIT_OVER_MESSAGE = 'O acesso à conta da aluna terminou. Volte ao painel.';
+
+/** Pra onde a equipe volta quando a visita termina (a página carrega inteira). */
+export const STAFF_HOME = '/admin/chamados';
 
 /** Pra onde as páginas mandam quem ainda está numa visita vencida. */
 export const VISIT_OVER_PATH = '/visita-encerrada';

@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, expect, mock, test } from 'bun:test';
+import { afterAll, beforeEach, expect, mock, spyOn, test } from 'bun:test';
 import { randomUUID } from 'node:crypto';
 import { and, eq, inArray } from 'drizzle-orm';
 
@@ -27,8 +27,12 @@ const cookieStore = {
   delete: (name: string) => jar.delete(name),
 };
 
+/** Quando preenchido, `headers()` devolve sempre o mesmo objeto, como numa requisição só do Next. */
+let sameRequest: Headers | null = null;
+
 const nextHeaders = () => ({
   headers: async () =>
+    sameRequest ??
     new Headers({
       cookie: [...jar].map(([name, value]) => `${name}=${value}`).join('; '),
       origin,
@@ -63,12 +67,14 @@ const { auth } = await import('@/server/auth/auth');
 const { db } = await import('@/server/db');
 const { account, session, supportImpersonationLog, user, userPresence } =
   await import('@/server/db/schema');
-const { getSessionState, getVisit } = await import('@/features/auth/server/session');
+const { getActiveSession, getSessionState, getVisit } =
+  await import('@/features/auth/server/session');
 const { runAsStudent } = await import('@/features/support/server/impersonation');
 const { leaveVisit, startVisit } = await import('@/features/support-desk/server/visit-actions');
 const { updateName } = await import('@/features/auth/server/profile');
 const { markMyTicketRead } = await import('@/features/support/server/actions');
 const { POST: presence } = await import('@/app/api/presence/route');
+const { POST: lessonView } = await import('@/app/api/sll/progress/view/route');
 
 const password = 'senha da equipe de teste';
 const users: string[] = [];
@@ -171,7 +177,7 @@ test('o admin entra, age com o próprio nome registrado e volta ao painel', asyn
     ),
   ).toBe('/sll/plano?resultado=ok');
 
-  expect(await leaveVisit()).toEqual({ ok: true });
+  expect(await leaveVisit()).toEqual({ end: 'returned' });
   const state = await getSessionState();
   expect(state.status === 'active' ? state.session.user.id : null).toBe(adminId);
 
@@ -229,7 +235,7 @@ test('depois de 1 hora tudo é recusado, mas ainda dá pra voltar ao painel', as
   expect(await redirectOf(() => runAsStudent('saveBrandName', async () => 'feito'))).toBe(
     '/visita-encerrada',
   );
-  expect(await leaveVisit()).toEqual({ ok: true });
+  expect(await leaveVisit()).toEqual({ end: 'returned' });
   const state = await getSessionState();
   expect(state.status === 'active' ? state.session.user.id : null).toBe(adminId);
 });
@@ -285,4 +291,65 @@ test('a rota HTTP do plugin admin está desligada', async () => {
     }),
   );
   expect(response.status).toBe(404);
+});
+
+test('se a sessão da equipe não volta, a visita é apagada e a pessoa entra de novo', async () => {
+  await startVisit(visitForm(studentId));
+  const visit = await getVisit();
+  // Cookie da volta perdido (outro aparelho, cookie apagado): o plugin não devolve a sessão.
+  const context = await auth.$context;
+  jar.delete(context.createAuthCookie('admin_session').name);
+  expect(await leaveVisit()).toEqual({ end: 'signed_out' });
+  expect(await getVisit()).toBeNull();
+  expect(await db.select().from(session).where(eq(session.id, visit!.sessionId))).toEqual([]);
+  const log = await logOf(studentId);
+  expect(log.at(-1)?.action).toBe('saída sem devolver a sessão');
+});
+
+test('visita abandonada que venceu sozinha ganha a saída "expirou" na próxima entrada', async () => {
+  await startVisit(visitForm(studentId));
+  const abandoned = await getVisit();
+  // A aba foi fechada sem "Voltar ao painel" e a sessão do plugin venceu.
+  await db
+    .update(session)
+    .set({ expiresAt: new Date(Date.now() - 1000) })
+    .where(eq(session.id, abandoned!.sessionId));
+  await signInAs(adminId);
+  await startVisit(visitForm(studentId));
+  await leaveVisit();
+  const ended = (await logOf(studentId)).filter(
+    (row) => row.sessionId === abandoned!.sessionId && row.kind === 'ended',
+  );
+  expect(ended.map((row) => row.action)).toEqual(['expirou']);
+});
+
+test('a aula do SLL aberta na visita responde JSON neutro, sem erro na tela', async () => {
+  await startVisit(visitForm(studentId));
+  const response = await lessonView(
+    new Request(`${origin}/api/sll/progress/view`, {
+      method: 'POST',
+      headers: { origin, 'content-type': 'application/json' },
+      body: JSON.stringify({ trackId: randomUUID(), lessonId: randomUUID() }),
+    }),
+  );
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ saved: false, message: '' });
+  await leaveVisit();
+});
+
+test('numa requisição, o wrapper e as guardas leem a sessão uma vez só', async () => {
+  const cookie = [...jar].map(([name, value]) => `${name}=${value}`).join('; ');
+  sameRequest = new Headers({ cookie, origin, host: new URL(origin).host });
+  const reads = spyOn(auth.api, 'getSession');
+  try {
+    await runAsStudent('saveBrandName', async () => {
+      await getActiveSession();
+      await getSessionState();
+      await runAsStudent('chooseExpert', async () => getVisit());
+    });
+    expect(reads).toHaveBeenCalledTimes(1);
+  } finally {
+    reads.mockRestore();
+    sameRequest = null;
+  }
 });

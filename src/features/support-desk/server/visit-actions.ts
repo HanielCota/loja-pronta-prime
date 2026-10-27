@@ -12,22 +12,30 @@ import {
 } from '@/server/db/schema';
 import { auth } from '@/server/auth/auth';
 import { readStaffSession } from '@/features/support/server/staff-guard';
-import { endVisit, STAFF_HOME } from '@/features/support/server/impersonation';
+import { endVisit, type VisitEnd } from '@/features/support/server/impersonation';
 import { closeOpenVisits, withStaffVisitLock } from '@/features/support/server/visit-lock';
 import {
   startVisitSchema,
+  ticketNumberOf,
   visitDestination,
   visitRefusalReason,
 } from '@/features/support/visit-target';
+import { STAFF_HOME } from '@/features/support/visit-window';
 
 export type VisitStartResult = { ok: true; redirectTo: string } | { ok: false; message: string };
 
-/** O chamado que motivou a visita vai pro registro da entrada e pro histórico do chamado. */
-async function linkTicket(number: number, staffId: string, sessionId: string): Promise<void> {
+/**
+ * O chamado que motivou a visita vai pro registro da entrada e pro histórico do chamado. Só um
+ * chamado da própria aluna: um número trocado no formulário não suja o histórico de outra.
+ */
+async function linkTicket(
+  number: number,
+  visit: { staffId: string; studentId: string; sessionId: string },
+): Promise<void> {
   const [ticket] = await db
     .select({ id: supportTickets.id })
     .from(supportTickets)
-    .where(eq(supportTickets.number, number))
+    .where(and(eq(supportTickets.number, number), eq(supportTickets.requesterId, visit.studentId)))
     .limit(1);
   if (!ticket) return;
   await db
@@ -35,13 +43,13 @@ async function linkTicket(number: number, staffId: string, sessionId: string): P
     .set({ ticketId: ticket.id })
     .where(
       and(
-        eq(supportImpersonationLog.sessionId, sessionId),
+        eq(supportImpersonationLog.sessionId, visit.sessionId),
         eq(supportImpersonationLog.kind, 'started'),
       ),
     );
   await db
     .insert(supportTicketEvents)
-    .values({ ticketId: ticket.id, actorId: staffId, type: 'impersonation_started' });
+    .values({ ticketId: ticket.id, actorId: visit.staffId, type: 'impersonation_started' });
 }
 
 /**
@@ -54,11 +62,12 @@ export async function startVisit(form: FormData): Promise<VisitStartResult> {
   if (!session) return { ok: false, message: 'Você não tem acesso a isso.' };
   const parsed = startVisitSchema.safeParse({
     aluna: form.get('aluna'),
-    numero: form.get('numero') || undefined,
     destino: form.get('destino') || undefined,
   });
   if (!parsed.success) return { ok: false, message: 'Conta não encontrada.' };
-  const { aluna, numero, destino } = parsed.data;
+  const { aluna, destino } = parsed.data;
+  // Número de chamado inválido não impede a visita: ela só fica sem chamado ligado.
+  const ticketNumber = ticketNumberOf(form.get('numero'));
 
   const [target] = await db
     .select({
@@ -90,8 +99,9 @@ export async function startVisit(form: FormData): Promise<VisitStartResult> {
     });
     return { ok: false, message: 'Não foi possível entrar na conta agora. Tente de novo.' };
   }
-  if (numero) {
-    await linkTicket(numero, session.user.id, sessionId).catch((error: unknown) =>
+  if (ticketNumber !== null) {
+    const visit = { staffId: session.user.id, studentId: aluna, sessionId };
+    await linkTicket(ticketNumber, visit).catch((error: unknown) =>
       console.error('[support-desk] não foi possível ligar o chamado à visita.', {
         error: error instanceof Error ? error.message : 'desconhecido',
       }),
@@ -111,12 +121,15 @@ export async function startVisitForm(form: FormData): Promise<void> {
 }
 
 /** "Voltar ao painel" com JavaScript: o navegador recarrega a página inteira depois. */
-export async function leaveVisit(): Promise<{ ok: boolean }> {
-  return { ok: await endVisit() };
+export async function leaveVisit(): Promise<{ end: VisitEnd }> {
+  return { end: await endVisit() };
 }
 
-/** "Voltar ao painel" sem JavaScript. Sem visita a encerrar, vai pro login (a sessão já acabou). */
+/**
+ * "Voltar ao painel" sem JavaScript. Quando a sessão da equipe não voltou (ou a visita já tinha
+ * acabado), vai pro login.
+ */
 export async function leaveVisitForm(): Promise<void> {
-  const ended = await endVisit();
-  redirect(ended ? STAFF_HOME : '/entrar');
+  const end = await endVisit();
+  redirect(end === 'returned' ? STAFF_HOME : '/entrar');
 }

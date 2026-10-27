@@ -12,28 +12,45 @@
  * - o resto é permitido e fica registrado com o nome de quem fez.
  */
 
-const SHOPEE_LINK = 'conectar ou desconectar a Shopee da aluna';
-const SHOPEE_STORE = 'mudar a loja da aluna na Shopee';
-const TICKET_DECISION = 'encerrar, reabrir ou avaliar o chamado pela aluna';
-const TICKET_WRITE = 'abrir chamado ou escrever como a aluna. Responda pelo painel do suporte';
+/** Uma ação recusada: o que não dá pra fazer e, quando ajuda, o porquê ou o que fazer. */
+type BlockedAction = { what: string; why?: string };
 
-/** O que fica bloqueado e como a recusa termina a frase "Não é possível ...". */
-export const BLOCKED_DURING_VISIT: Readonly<Record<string, string>> = {
+const SHOPEE_LINK: BlockedAction = { what: 'conectar ou desconectar a Shopee dela' };
+const SHOPEE_STORE: BlockedAction = { what: 'mudar a loja dela na Shopee' };
+const SHOPEE_PUBLISH: BlockedAction = {
+  what: 'publicar produtos na Shopee dela',
+  why: 'Quem confirma a publicação é a aluna.',
+};
+const LOGO: BlockedAction = {
+  what: 'criar ou ajustar logo',
+  why: 'Isso gastaria uma das criações da aluna.',
+};
+const TICKET_DECISION: BlockedAction = { what: 'encerrar, reabrir ou avaliar o chamado por ela' };
+const TICKET_WRITE: BlockedAction = {
+  what: 'abrir chamado ou escrever como ela',
+  why: 'Responda pelo painel do suporte.',
+};
+
+/** O que fica bloqueado durante a visita, pelo nome da ação ou da rota. */
+export const BLOCKED_DURING_VISIT: Readonly<Record<string, BlockedAction>> = {
   // Segurança da conta.
-  createFirstPassword: 'criar a senha da aluna',
-  changePassword: 'trocar a senha da aluna',
-  signOutOtherDevices: 'encerrar as sessões da aluna',
-  login: 'entrar em outra conta',
-  requestPasswordReset: 'pedir troca de senha',
-  resetPassword: 'trocar a senha da aluna',
-  requestTicketAccess: 'pedir link de acesso ao chamado',
+  createFirstPassword: { what: 'criar a senha dela' },
+  changePassword: { what: 'trocar a senha dela' },
+  signOutOtherDevices: { what: 'desconectar os aparelhos dela' },
+  login: { what: 'entrar em outra conta', why: 'Volte ao painel antes.' },
+  requestPasswordReset: { what: 'pedir troca de senha' },
+  resetPassword: { what: 'trocar a senha dela' },
+  requestTicketAccess: { what: 'pedir o link de acesso ao chamado' },
   // Identidade dela.
-  updateName: 'mudar o nome da aluna',
-  updateProfilePhoto: 'mudar a foto da aluna',
+  updateName: { what: 'mudar o nome dela' },
+  updateProfilePhoto: { what: 'mudar a foto dela' },
   // Gasta a cota de criações pagas dela.
-  createLogo: 'criar ou ajustar logo (gasta as criações da aluna)',
-  tweakLogo: 'criar ou ajustar logo (gasta as criações da aluna)',
-  requestAssistantAdvice: 'pedir conselho ao assistente (gasta os pedidos da aluna)',
+  createLogo: LOGO,
+  tweakLogo: LOGO,
+  requestAssistantAdvice: {
+    what: 'pedir conselho ao assistente',
+    why: 'Isso gastaria um dos pedidos da aluna.',
+  },
   // Vínculo com a conta da Shopee dela.
   confirmShopeeAccount: SHOPEE_LINK,
   connectShopee: SHOPEE_LINK,
@@ -42,8 +59,8 @@ export const BLOCKED_DURING_VISIT: Readonly<Record<string, string>> = {
   disconnectShopee: SHOPEE_LINK,
   shopeeCallback: SHOPEE_LINK,
   // Publica ou muda a loja pública dela (e o consentimento da publicação é dela).
-  startRecoveredPublication: 'publicar produtos na Shopee da aluna',
-  confirmRecoveredPublicationAction: 'publicar produtos na Shopee da aluna',
+  startRecoveredPublication: SHOPEE_PUBLISH,
+  confirmRecoveredPublicationAction: SHOPEE_PUBLISH,
   submitPublicationBatch: SHOPEE_STORE,
   confirmPublicationCorrection: SHOPEE_STORE,
   sendStoreBrand: SHOPEE_STORE,
@@ -92,16 +109,25 @@ export type VisitRule =
   | { kind: 'recorded' };
 
 export function visitRuleFor(actionName: string): VisitRule {
-  const blocked = BLOCKED_DURING_VISIT[actionName];
-  if (blocked !== undefined) return { kind: 'blocked', message: refusalMessage(blocked) };
+  const blocked = blockedMessage(actionName);
+  if (blocked !== null) return { kind: 'blocked', message: blocked };
   if (QUIET_DURING_VISIT.has(actionName)) return { kind: 'quiet' };
   if (READ_ONLY_DURING_VISIT.has(actionName)) return { kind: 'read' };
   if (ENDS_VISIT.has(actionName)) return { kind: 'ends_visit' };
   return { kind: 'recorded' };
 }
 
-export function refusalMessage(action: string): string {
-  return `Não é possível ${action} enquanto você usa a conta dela.`;
+/**
+ * A recusa de uma ação bloqueada, em frase completa, ou `null` se ela não é bloqueada. Só nomes da
+ * própria lista: `?acao=constructor` não pode puxar coisas herdadas de `Object`.
+ */
+export function blockedMessage(actionName: string): string | null {
+  if (!Object.hasOwn(BLOCKED_DURING_VISIT, actionName)) return null;
+  const blocked = BLOCKED_DURING_VISIT[actionName];
+  if (!blocked) return null;
+  const refusal = `Não é possível ${blocked.what} enquanto você usa a conta da aluna.`;
+  if (!blocked.why) return refusal;
+  return `${refusal} ${blocked.why}`;
 }
 
 /** O que fica bloqueado, em uma frase, pra faixa da visita. */
