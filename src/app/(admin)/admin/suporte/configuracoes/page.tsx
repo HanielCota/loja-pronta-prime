@@ -290,7 +290,7 @@ export default async function SupportSettingsPage({ searchParams }: { searchPara
             <div className="grid gap-3 sm:grid-cols-[1fr_16rem]">
               <FloatingLabelInput id={`resposta-${template?.id ?? 'nova'}-titulo`} name="titulo" label="Título" defaultValue={template?.title ?? ''} maxLength={60} required />
               <div className="flex flex-col gap-1">
-                <Label htmlFor={`resposta-${template?.id ?? 'nova'}-status`}>Status ao enviar</Label>
+                <Label htmlFor={`resposta-${template?.id ?? 'nova'}-status`}>Como o chamado fica ao enviar</Label>
                 <select id={`resposta-${template?.id ?? 'nova'}-status`} name="status" defaultValue={template?.statusAfter ?? ''} className={selectClass}>
                   <option value="">Padrão (respondido)</option>
                   {(['answered', 'open', 'closed'] as const).map((status) => (

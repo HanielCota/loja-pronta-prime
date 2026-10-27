@@ -25,7 +25,7 @@ export async function GET(request: Request) {
       headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'private, no-store' },
     });
   const csv = writeCsv([
-    ['Número', 'Assunto', 'Aluna', 'E-mail', 'Tema', 'Situação', 'Prioridade', 'Status', 'Responsável', 'Canal', 'Aberto em', 'Primeira resposta', 'Encerrado em', 'Nota'],
+    ['Número', 'Assunto', 'Aluna', 'E-mail', 'Tema', 'O que está acontecendo', 'Prioridade', 'Situação', 'Responsável', 'Canal', 'Aberto em', 'Primeira resposta', 'Encerrado em', 'Nota'],
     ...list.rows.map((row) => {
       const { topic, situation } = describeTopic(catalog, row.topicId, row.situationId);
       return [

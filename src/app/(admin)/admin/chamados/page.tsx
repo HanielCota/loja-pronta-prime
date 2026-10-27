@@ -99,14 +99,21 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
             )}
           >
             {STAFF_QUEUE_LABELS[queue]}
-            <span className="tabular-nums text-muted-foreground">{list.counts[queue] ?? 0}</span>
+            <span className="tabular-nums text-muted-foreground">
+              {list.counts[queue] ?? 0}
+              {/* As abas contam só quem está em aberto; o cartão conta a lista inteira, com os encerrados. */}
+              <span className="sr-only"> em aberto</span>
+            </span>
           </Link>
         ))}
       </nav>
       <section aria-labelledby="ticket-list" className={cn(panelCard, 'gap-5 !p-5 sm:!p-6')}>
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <h2 id="ticket-list" className="text-title font-semibold">
-            {STAFF_QUEUE_LABELS[filters.queue]} <span className="text-muted-foreground">({list.total})</span>
+            {STAFF_QUEUE_LABELS[filters.queue]}{' '}
+            <span className="text-muted-foreground">
+              ({list.total === 1 ? '1 chamado na lista' : `${list.total} chamados na lista`})
+            </span>
           </h2>
           {canExport ? (
             <a className={linkClass} href={`/admin/chamados/exportar?${params}`}>
@@ -121,9 +128,9 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
             <FloatingLabelInput id="ticket-search" label="Buscar por assunto, aluna, e-mail, número ou mensagem" name="q" type="search" defaultValue={filters.q} maxLength={120} />
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="filter-status">Status</Label>
+                <Label htmlFor="filter-status">Situação</Label>
                 <SelectMenu id="filter-status" name="status" defaultValue={filters.status}>
-                  <option value="">Todos os status</option>
+                  <option value="">Todas as situações</option>
                   {TICKET_STATUSES.map((value) => (
                     <option key={value} value={value}>
                       {STATUS_LABELS[value]}
@@ -203,7 +210,7 @@ export default async function TicketsPage({ searchParams }: { searchParams: Prom
                 <caption className="sr-only">Chamados da fila {STAFF_QUEUE_LABELS[filters.queue]}</caption>
                 <thead>
                   <tr className="border-b border-border text-sm text-muted-foreground">
-                    {['Nº e assunto', 'Aluna', 'Prioridade', 'Responsável', 'Status', 'Prazo', 'Atualizado'].map((label) => (
+                    {['Nº e assunto', 'Aluna', 'Prioridade', 'Responsável', 'Situação', 'Prazo', 'Atualizado'].map((label) => (
                       <th key={label} scope="col" className="px-3 py-3 font-semibold">
                         {label}
                       </th>
