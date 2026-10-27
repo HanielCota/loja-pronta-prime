@@ -469,6 +469,16 @@ o tema escuro e o alto contraste.
 - "Encerrar chamado" (aluna) é botão `soft`, roxo suave: no `ghost` ele sumia no tema escuro.
 - A página Suporte da aluna tem "Voltar ao SLL" (ou "Voltar à Loja Pronta", se ela só tem esse
   produto) no lugar da trilha, o mesmo link de voltar das páginas do SLL (`backLink` do `AreaShell`).
+- Pela mesma razão (27/10/2026), toda escolha do caminho do chamado usa `soft`, nunca `ghost`:
+  "Ainda preciso de ajuda" (depois da resposta automática) e "Abrir outro mesmo assim" (aviso de
+  chamado parecido). Quem veio pedir ajuda não pode ter o botão mais apagado da tela.
+- Ação da equipe que muda a vida de alguém num clique ("Encerrar sem responder", "Bloquear") pede
+  confirmação antes, pelo `ConfirmAction` (`support-desk/components/confirm-action.tsx`): um
+  `<details>` cujo título é o botão e que abre a explicação e o botão que faz de verdade, com
+  "Cancelar". É `<details>` de propósito, pra continuar funcionando sem JavaScript; a janela do
+  painel (`useAdminConfirmation`) segue valendo pras confirmações de conteúdo, que são só do admin.
+- Os números das abas da fila contam só os chamados em aberto; o cartão da lista diz "N chamados na
+  lista" porque inclui os encerrados. Dois números com nomes diferentes, nunca o mesmo nome.
 
 ## Assistente e experts (17/10/2026)
 
