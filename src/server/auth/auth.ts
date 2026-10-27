@@ -13,10 +13,26 @@ import { env } from '@/config/env';
 import { LEADS_ORIGIN } from '@/config/leads';
 import { db } from '@/server/db';
 import * as schema from '@/server/db/schema';
+import {
+  ADMIN_PLUGIN_PATHS,
+  AUTH_ADMIN_ROLES,
+  authAccessControl,
+  authRoles,
+} from '@/features/auth/auth-roles';
+import { recordVisitStep } from '@/features/support/server/visit-log';
+import { VISIT_SESSION_SECONDS } from '@/features/support/visit-window';
 import { sendPasswordResetEmail, sendVerificationEmail } from './emails';
 import { reportAuthError } from './report-error';
 
 const ONE_MINUTE = 60;
+
+/** Quem da equipe abriu a sessão com "Entrar como aluna", ou `null` na sessão da própria aluna. */
+function impersonatorOf(session: object): string | null {
+  if (!('impersonatedBy' in session)) return null;
+  const { impersonatedBy } = session;
+  if (typeof impersonatedBy !== 'string' || impersonatedBy.length === 0) return null;
+  return impersonatedBy;
+}
 const ONE_HOUR = 60 * 60;
 const ONE_DAY = 24 * ONE_HOUR;
 
@@ -113,6 +129,8 @@ export const auth = betterAuth({
     // Confere a senha de quem está logada: aberta, seria um jeito de chutar a senha sem o limite
     // de 5 por minuto da troca de senha (o "scope: server" dela não fecha o HTTP).
     '/verify-password',
+    // O plugin admin só é usado pelo servidor (auth.api.*), nunca pelo navegador.
+    ...ADMIN_PLUGIN_PATHS,
   ],
   rateLimit: {
     enabled: true,
@@ -127,6 +145,34 @@ export const auth = betterAuth({
     database: { joins: true },
   },
 
+  databaseHooks: {
+    session: {
+      create: {
+        // "Entrar como aluna": a entrada vai pro registro da visita com o nome de quem entrou.
+        after: async (session) => {
+          const staffId = impersonatorOf(session);
+          if (!staffId) return;
+          await recordVisitStep({
+            kind: 'started',
+            sessionId: session.id,
+            staffId,
+            studentId: session.userId,
+            action: 'entrar como aluna',
+          });
+        },
+      },
+    },
+  },
+
   // nextCookies precisa ser o último: grava os cookies de sessão nas Server Actions.
-  plugins: [admin(), nextCookies()],
+  plugins: [
+    admin({
+      ac: authAccessControl,
+      roles: authRoles,
+      adminRoles: AUTH_ADMIN_ROLES,
+      impersonationSessionDuration: VISIT_SESSION_SECONDS,
+      allowImpersonatingAdmins: false,
+    }),
+    nextCookies(),
+  ],
 });

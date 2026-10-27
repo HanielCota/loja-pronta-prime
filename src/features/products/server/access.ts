@@ -4,6 +4,7 @@ import { cache } from 'react';
 import { after } from 'next/server';
 import { PRODUCT_IDS, type ProductId } from '@/config/products';
 import { authHref } from '@/features/auth/links';
+import { VISIT_OVER_PATH } from '@/features/support/visit-window';
 import {
   getActiveSession,
   getSessionState,
@@ -62,6 +63,7 @@ export async function requireStudent(path: string) {
   // Bloqueada com a sessão aberta (reembolso, cancelamento): o login explica o motivo.
   if (state.status === 'banned') redirect('/entrar?motivo=conta-desativada');
   if (state.status === 'none') redirect(authHref('/entrar', next));
+  if (state.status === 'visit_over') redirect(VISIT_OVER_PATH);
   const { session } = state;
   if (needsFirstPassword(session.user)) redirect(authHref('/primeiro-acesso', next));
   return { session, ...(await getStudentProducts(session.user.id)) };

@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 import { authHref } from '@/features/auth/links';
 import { getSessionState, needsFirstPassword } from '@/features/auth/server/session';
 import { hasStaffPermission, isStaffRole, type StaffPermission } from '../staff-access';
+import { VISIT_OVER_PATH } from '../visit-window';
 
 /**
  * Guardas da equipe de suporte. Como o `requireAdmin`: conta bloqueada sai, sem sessão vai pro
@@ -12,6 +13,7 @@ export async function requireStaff(path: string, permission: StaffPermission) {
   const state = await getSessionState();
   if (state.status === 'banned') redirect('/entrar?motivo=conta-desativada');
   if (state.status === 'none') redirect(authHref('/entrar', path));
+  if (state.status === 'visit_over') redirect(VISIT_OVER_PATH);
   const { session } = state;
   if (needsFirstPassword(session.user)) redirect(authHref('/primeiro-acesso', path));
   if (!hasStaffPermission(session.user.role, permission)) notFound();
