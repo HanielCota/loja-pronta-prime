@@ -15,7 +15,10 @@ export type AdminSection =
   | 'bling'
   | 'experts'
   | 'assistant'
-  | 'support';
+  | 'tickets'
+  | 'support-performance'
+  | 'support-team'
+  | 'support-settings';
 
 /** O primeiro pedaço do endereço depois de `/admin` e a seção do menu que ele representa. */
 const SECTION_BY_SEGMENT: Readonly<Record<string, AdminSection>> = {
@@ -26,11 +29,18 @@ const SECTION_BY_SEGMENT: Readonly<Record<string, AdminSection>> = {
   bling: 'bling',
   experts: 'experts',
   assistente: 'assistant',
-  suporte: 'support',
+  chamados: 'tickets',
+  suporte: 'support-settings',
   textos: 'texts',
   recursos: 'resources',
   arquivados: 'archived',
   banners: 'banners',
+};
+
+const SUPPORT_SECTION_BY_SEGMENT: Readonly<Record<string, AdminSection>> = {
+  desempenho: 'support-performance',
+  equipe: 'support-team',
+  configuracoes: 'support-settings',
 };
 
 const CONTENT_AREAS: ReadonlySet<string> = new Set(['welcome', 'method', 'courses']);
@@ -47,6 +57,9 @@ export function adminSectionFor(pathname: string, area: string | null): AdminSec
     return 'overview';
   }
   if (!pathname.startsWith('/admin/')) return undefined;
-  const segment = pathname.slice('/admin/'.length).split('/')[0] ?? '';
+  const [segment = '', subsegment = ''] = pathname.slice('/admin/'.length).split('/');
+  // O grupo Suporte mora em /admin/suporte/<parte>; sem parte, é o endereço antigo (Configurações).
+  if (segment === 'suporte' && SUPPORT_SECTION_BY_SEGMENT[subsegment])
+    return SUPPORT_SECTION_BY_SEGMENT[subsegment];
   return SECTION_BY_SEGMENT[segment];
 }
