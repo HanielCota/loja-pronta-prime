@@ -178,7 +178,7 @@ export default async function PublishRecoveredProductPage({
               <p className="text-body text-muted-foreground">
                 Consulte o fornecedor agora. Os valores abaixo são informados por você e não são
                 atualizados automaticamente. A revisão vale por 15 minutos. Esta opção publica
-                produtos novos. Confira também as taxas da Shopee no seu preço.
+                produtos novos em lojas brasileiras. Confira também as taxas da Shopee no seu preço.
               </p>
               {context.problem ? (
                 <output className="text-body text-destructive">{context.problem}</output>

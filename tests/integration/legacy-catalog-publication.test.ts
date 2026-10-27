@@ -79,6 +79,8 @@ function api(
     timeout?: boolean;
     badModels?: boolean;
     duplicate?: string;
+    region?: string;
+    shopStatus?: string;
     revoke?: () => Promise<void>;
   } = {},
 ) {
@@ -91,7 +93,12 @@ function api(
     const body = typeof init?.body === 'string' ? JSON.parse(init.body) : null;
     calls.push({ path, body });
     let response: unknown;
-    if (path.endsWith('/get_shop_info')) response = { shop_name: 'Connected test store' };
+    if (path.endsWith('/get_shop_info'))
+      response = {
+        shop_name: 'Connected test store',
+        region: options.region ?? 'BR',
+        status: options.shopStatus ?? 'NORMAL',
+      };
     else if (path.endsWith('/get_item_list'))
       response = { item: options.duplicate ? [{ item_id: 101 }] : [], has_next_page: false };
     else if (path.endsWith('/get_category'))
@@ -381,4 +388,14 @@ test('recovered publication blocks duplicate SKUs, altered source records and co
   );
   expect(await executeRecoveredPublication(pool, drift.job, deps(driftApi))).toBe('blocked');
   expect(driftApi.calls).toHaveLength(0);
+});
+
+test('recovered publication rejects non-Brazilian or restricted shops before reading listing metadata', async () => {
+  for (const options of [{ region: 'SG' }, { shopStatus: 'FROZEN' }]) {
+    const blocked = api(options);
+    await expect(
+      recoveredPublicationOptions(config, { shopId: 321, accessToken: 'test' }, blocked.fetcher),
+    ).rejects.toThrow();
+    expect(blocked.calls.map((call) => call.path)).toEqual(['/api/v2/shop/get_shop_info']);
+  }
 });
