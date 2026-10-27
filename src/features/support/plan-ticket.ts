@@ -9,9 +9,6 @@ import {
   type TicketQueue,
 } from './catalog';
 
-/** Descrição mínima com uma situação conhecida e sem ela (ou em "Outro problema"). */
-export const MIN_DESCRIPTION_WITH_SITUATION = 20;
-export const MIN_DESCRIPTION_WITHOUT_SITUATION = 40;
 export const MAX_DESCRIPTION = 5000;
 export const MAX_SUBJECT = 120;
 const SUBJECT_EXCERPT = 60;
@@ -34,12 +31,6 @@ export type PlannedTicket = {
 export type PlanError = { field: 'topic' | 'situation' | 'description'; message: string };
 
 export type PlanResult = { ok: true; ticket: PlannedTicket } | { ok: false; error: PlanError };
-
-/** O mínimo que vale pra situação escolhida: o navegador e o servidor usam o mesmo número. */
-export function minimumDescription(situationId: string | null): number {
-  if (!situationId || situationId === OTHER_ISSUE_ID) return MIN_DESCRIPTION_WITHOUT_SITUATION;
-  return MIN_DESCRIPTION_WITH_SITUATION;
-}
 
 function oneLine(text: string): string {
   return text.replace(/\s+/g, ' ').trim();
@@ -72,11 +63,12 @@ export function planSupportTicket(catalog: readonly SupportTopic[], draft: Ticke
       error: { field: 'situation', message: 'Escolha o que está acontecendo.' },
     };
 
+  // Sem mínimo de caracteres: a pergunta e o exemplo já guiam, e uma trava só atrasava a aluna.
   const description = draft.description.trim();
-  if (description.length < minimumDescription(situationId))
+  if (description.length === 0)
     return {
       ok: false,
-      error: { field: 'description', message: 'Conte um pouco mais pra gente entender o caso.' },
+      error: { field: 'description', message: 'Escreva o que está acontecendo.' },
     };
   if (description.length > MAX_DESCRIPTION)
     return {

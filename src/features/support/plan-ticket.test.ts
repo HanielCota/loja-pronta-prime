@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { DEFAULT_SUPPORT_CATALOG, OTHER_ISSUE_ID, visibleSituations } from './catalog';
-import { minimumDescription, planSupportTicket } from './plan-ticket';
+import { planSupportTicket } from './plan-ticket';
 
 const catalog = DEFAULT_SUPPORT_CATALOG;
 
@@ -73,16 +73,11 @@ describe('planSupportTicket', () => {
     ).toBe(false);
   });
 
-  test('pede mais texto em "Outro problema" e sem situação', () => {
-    expect(minimumDescription('video-not-loading')).toBe(20);
-    expect(minimumDescription(OTHER_ISSUE_ID)).toBe(40);
-    expect(minimumDescription(null)).toBe(40);
-    const short = planSupportTicket(catalog, {
-      topicId: 'lessons',
-      situationId: OTHER_ISSUE_ID,
-      description: 'Uma dúvida rápida sobre a aula.',
-    });
-    expect(short.ok).toBe(false);
+  test('não tem mínimo de caracteres, só não aceita vazio', () => {
+    const short = planSupportTicket(catalog, { topicId: 'lessons', situationId: OTHER_ISSUE_ID, description: 'travou' });
+    expect(short.ok).toBe(true);
+    const empty = planSupportTicket(catalog, { topicId: 'lessons', situationId: OTHER_ISSUE_ID, description: '   ' });
+    expect(empty.ok).toBe(false);
   });
 
   test('"Outro problema" usa o rótulo do tema no assunto e corta em 120', () => {

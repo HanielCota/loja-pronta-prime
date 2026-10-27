@@ -7,7 +7,7 @@ import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ENHANCED_SUBMIT_FIELD } from '@/lib/forms';
-import { MAX_DESCRIPTION, MIN_DESCRIPTION_WITH_SITUATION } from '../plan-ticket';
+import { MAX_DESCRIPTION } from '../plan-ticket';
 
 /**
  * "Não consegue entrar?": o pedido de ajuda sem login. Funciona sem JavaScript (o formulário vai
@@ -72,7 +72,7 @@ export function PublicAccessForm({
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="acesso-descricao">Conte o que aparece quando você tenta entrar</Label>
-        <Textarea id="acesso-descricao" name="descricao" required minLength={MIN_DESCRIPTION_WITH_SITUATION} maxLength={MAX_DESCRIPTION} placeholder="Exemplo: aparece “email ou senha incorretos”, mesmo depois de trocar a senha." />
+        <Textarea id="acesso-descricao" name="descricao" required maxLength={MAX_DESCRIPTION} placeholder="Exemplo: aparece “email ou senha incorretos”, mesmo depois de trocar a senha." />
       </div>
       {message ? (
         <p role="alert" className="text-body text-destructive">

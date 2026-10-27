@@ -62,6 +62,10 @@ supervisors get 404 there. Create local staff with `bun run dev:equipe <email> <
 
 ## Rules worth knowing
 
+- No minimum length for the ticket description or the public form: only empty text is refused.
+  The guided question and its example already help, and the old 20/40 character lock only slowed
+  students down (owner's decision, 27/10/2026).
+
 - Deadlines count only business hours (weekly hours, holidays and pause from the settings;
   Brasília is UTC−3 fixed). `due_at` is stored and recomputed when the clock, the priority or the
   settings change.

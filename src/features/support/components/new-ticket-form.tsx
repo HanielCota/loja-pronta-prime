@@ -8,11 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ENHANCED_SUBMIT_FIELD } from '@/lib/forms';
-import { cn } from '@/lib/utils';
 import { visibleSituations, type SupportTopic } from '../catalog';
 import { responsePromise } from '../copy';
 import { answerFromFaq, type SupportAnswer } from '../faq';
-import { MAX_DESCRIPTION, minimumDescription } from '../plan-ticket';
+import { MAX_DESCRIPTION } from '../plan-ticket';
 import type { WhatsappContact } from '../whatsapp';
 import { faqFeedbackAction } from '../server/actions';
 import { appendAttachments, AttachmentPicker, useAttachments } from './attachment-picker';
@@ -113,7 +112,7 @@ function SimpleForm(props: NewTicketProps) {
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="ticket-description">Conte o que está acontecendo</Label>
-        <Textarea id="ticket-description" name="descricao" required minLength={20} maxLength={MAX_DESCRIPTION} />
+        <Textarea id="ticket-description" name="descricao" required maxLength={MAX_DESCRIPTION} />
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="ticket-files">Anexos (opcional)</Label>
@@ -180,7 +179,6 @@ function GuidedForm(props: NewTicketProps) {
     ? props.openTickets.find((ticket) => ticket.topicId === topicId && ticket.situationId === (situation?.id ?? null))
     : undefined;
   const issues = topic ? props.knownIssues.filter((issue) => issue.topicIds.length === 0 || issue.topicIds.includes(topic.id)) : [];
-  const minimum = minimumDescription(situation?.id ?? null);
   const priority = situation?.priority ?? 'normal';
   const showDetails = ready && (faq !== 'pending' || !faqAnswer) && (!duplicate || duplicateOk);
 
@@ -209,8 +207,8 @@ function GuidedForm(props: NewTicketProps) {
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (description.trim().length < minimum) {
-      setError('Conte um pouco mais pra gente entender o caso.');
+    if (description.trim().length === 0) {
+      setError('Escreva o que está acontecendo.');
       return;
     }
     setSending(true);
@@ -383,18 +381,13 @@ function GuidedForm(props: NewTicketProps) {
               name="descricao"
               value={description}
               maxLength={MAX_DESCRIPTION}
-              aria-describedby="ticket-example ticket-count"
-              aria-invalid={error && description.trim().length < minimum ? true : undefined}
+              aria-describedby="ticket-example"
+              aria-invalid={error && description.trim().length === 0 ? true : undefined}
               onChange={(event) => setDescription(event.target.value)}
               placeholder={`Exemplo: ${situation?.example ?? topic.example}`}
             />
             <p id="ticket-example" className="text-sm text-muted-foreground">
               Exemplo: {situation?.example ?? topic.example}
-            </p>
-            <p id="ticket-count" className={cn('text-sm', description.trim().length >= minimum ? 'text-muted-foreground' : 'text-foreground')}>
-              {description.trim().length >= minimum
-                ? 'Pronto pra enviar.'
-                : `Escreva pelo menos ${minimum} caracteres (faltam ${minimum - description.trim().length}).`}
             </p>
           </div>
           <AttachmentPicker attachments={attachments} hint={situation?.attachmentTip} />
