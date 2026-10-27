@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
 import { getVisit } from '@/features/auth/server/session';
 import { PresenceHeartbeat } from '@/features/presence/components/presence-heartbeat';
-import { VisitBanner } from '@/features/support/components/visit-banner';
-import { visitEndsAt } from '@/features/support/visit-window';
+import { StaffVisitBanner } from '@/features/support/server/staff-visit-banner';
 
 /**
  * As áreas das alunas avisam onde ela está, pro "Online agora" do admin. Quando alguém da equipe
@@ -13,7 +12,7 @@ export default async function MemberLayout({ children }: { children: ReactNode }
   const visit = await getVisit();
   return (
     <>
-      {visit ? <VisitBanner name={visit.studentName} until={visitEndsAt(visit.startedAt)} /> : null}
+      <StaffVisitBanner />
       {children}
       {visit ? null : <PresenceHeartbeat />}
     </>

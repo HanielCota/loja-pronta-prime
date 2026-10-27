@@ -17,6 +17,7 @@ import { storeChooserCard } from '@/features/loja-pronta/store-card';
 import { greetingName } from '@/features/products/names';
 import { PRODUCTS } from '@/features/products/catalog';
 import { requireStudent } from '@/features/products/server/access';
+import { StaffVisitBanner } from '@/features/support/server/staff-visit-banner';
 import { listLegacyStoresForUser } from '@/features/legacy-stores/server/queries';
 import { getStudentExperience } from '@/features/sll/server/experience';
 
@@ -48,20 +49,23 @@ export async function ProductLobby({ enterSingleProduct = false }: ProductLobbyP
 
   if (products.length === 0) {
     return (
-      <CenteredMemberPage account={user}>
-        <BrandCard expression="happy" compact>
-          <CardHeading
-            title="Seu acesso ainda não foi liberado"
-            description="Confira se este é o email da compra. Se o acesso não aparecer, consulte a compra na Hotmart e use os contatos do produtor."
-          />
-          {/* Link comum (recarrega a página): funciona sem JavaScript. */}
-          <Button asChild>
-            {/* Recarregar é necessário para consultar um acesso recém-liberado, sem o cache da navegação. */}
-            {/* oxlint-disable-next-line next/no-html-link-for-pages */}
-            <a href="/menu">Verificar de novo</a>
-          </Button>
-        </BrandCard>
-      </CenteredMemberPage>
+      <>
+        <StaffVisitBanner />
+        <CenteredMemberPage account={user}>
+          <BrandCard expression="happy" compact>
+            <CardHeading
+              title="Seu acesso ainda não foi liberado"
+              description="Confira se este é o email da compra. Se o acesso não aparecer, consulte a compra na Hotmart e use os contatos do produtor."
+            />
+            {/* Link comum (recarrega a página): funciona sem JavaScript. */}
+            <Button asChild>
+              {/* Recarregar é necessário para consultar um acesso recém-liberado, sem o cache da navegação. */}
+              {/* oxlint-disable-next-line next/no-html-link-for-pages */}
+              <a href="/menu">Verificar de novo</a>
+            </Button>
+          </BrandCard>
+        </CenteredMemberPage>
+      </>
     );
   }
 
@@ -79,25 +83,28 @@ export async function ProductLobby({ enterSingleProduct = false }: ProductLobbyP
   });
 
   return (
-    <CenteredMemberPage account={user} wide={products.length > 1}>
-      <div className="flex flex-col gap-6">
-        <Logo expression="happy" />
-        <CardHeading
-          className="mb-0"
-          title={name ? `Oi, ${name}! Pra onde vamos?` : 'Pra onde vamos?'}
-          description={course ? description.replace('do SLL', 'do Zé Mauro') : description}
-        />
-      </div>
-      <div className={products.length === 1 ? 'mx-auto w-full max-w-[512px]' : undefined}>
-        <ProductChooser
-          products={products}
-          lastArea={lastArea}
-          status={status}
-          primary={primary}
-          course={course}
-        />
-      </div>
-    </CenteredMemberPage>
+    <>
+      <StaffVisitBanner />
+      <CenteredMemberPage account={user} wide={products.length > 1}>
+        <div className="flex flex-col gap-6">
+          <Logo expression="happy" />
+          <CardHeading
+            className="mb-0"
+            title={name ? `Oi, ${name}! Pra onde vamos?` : 'Pra onde vamos?'}
+            description={course ? description.replace('do SLL', 'do Zé Mauro') : description}
+          />
+        </div>
+        <div className={products.length === 1 ? 'mx-auto w-full max-w-[512px]' : undefined}>
+          <ProductChooser
+            products={products}
+            lastArea={lastArea}
+            status={status}
+            primary={primary}
+            course={course}
+          />
+        </div>
+      </CenteredMemberPage>
+    </>
   );
 }
 
