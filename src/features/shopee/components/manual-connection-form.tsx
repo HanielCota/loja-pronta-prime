@@ -14,7 +14,7 @@ import {
 export function ManualConnectionForm({
   origin = 'loja-pronta',
 }: {
-  origin?: 'sll' | 'loja-pronta';
+  origin?: 'sll' | 'loja-pronta' | 'recovered';
 }) {
   const [start, startAction, starting] = useActionState(startManualShopeeAuthorization, undefined);
   const [result, completeAction, completing] = useActionState(

@@ -4,7 +4,7 @@ import { and, eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { env } from '@/config/env';
 import { SHOPEE_CONNECT_PATH } from '@/config/shopee';
-import { shopeeEntry, shopeeConnectionPath } from '../entry';
+import { shopeeEntry, shopeeConnectionPath, shopeeEntryProduct } from '../entry';
 import { getStorePhase } from '@/features/loja-pronta/server/store';
 import { requireProductAction } from '@/features/products/server/access';
 import { db } from '@/server/db';
@@ -38,7 +38,7 @@ export async function confirmShopeeAccount(): Promise<void> {
 
 export async function connectShopee(formData: FormData): Promise<void> {
   const origin = shopeeEntry(formData.get('origin'));
-  const { userId, session } = await requireProductAction(origin);
+  const { userId, session } = await requireProductAction(shopeeEntryProduct(origin));
   if (origin === 'loja-pronta' && (await getStorePhase(userId)) < 4) redirect('/loja-pronta');
   const config = getShopeeConfiguration();
   if (
@@ -67,7 +67,7 @@ export async function startManualShopeeAuthorization(
   formData: FormData,
 ): Promise<ManualShopeeStartResult> {
   const origin = shopeeEntry(formData.get('origin'));
-  const { userId, session } = await requireProductAction(origin);
+  const { userId, session } = await requireProductAction(shopeeEntryProduct(origin));
   if (origin === 'loja-pronta' && (await getStorePhase(userId)) < 4) redirect('/loja-pronta');
   const config = getShopeeConfiguration();
   if (
@@ -98,7 +98,7 @@ export async function completeManualShopeeAuthorization(
   formData: FormData,
 ): Promise<ManualShopeeResult> {
   const origin = shopeeEntry(formData.get('origin'));
-  const { userId, session } = await requireProductAction(origin);
+  const { userId, session } = await requireProductAction(shopeeEntryProduct(origin));
   if (origin === 'loja-pronta' && (await getStorePhase(userId)) < 4) redirect('/loja-pronta');
   const config = getShopeeConfiguration();
   if (
@@ -126,7 +126,7 @@ export async function completeManualShopeeAuthorization(
 
 export async function disconnectShopee(formData: FormData): Promise<void> {
   const origin = shopeeEntry(formData.get('origin'));
-  const { userId } = await requireProductAction(origin);
+  const { userId } = await requireProductAction(shopeeEntryProduct(origin));
   await removeShopeeConnection(userId);
   redirect(`${shopeeConnectionPath(origin)}?resultado=disconnected`);
 }

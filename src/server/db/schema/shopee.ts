@@ -51,7 +51,7 @@ export const shopeeAuthorizationStates = pgTable(
       .references(() => user.id, { onDelete: 'cascade' }),
     sessionId: text('session_id').notNull(),
     applicationId: text('application_id').notNull().default('legacy'),
-    origin: text('origin', { enum: ['sll', 'loja-pronta'] })
+    origin: text('origin', { enum: ['sll', 'loja-pronta', 'recovered'] })
       .notNull()
       .default('loja-pronta'),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
@@ -62,7 +62,7 @@ export const shopeeAuthorizationStates = pgTable(
     check('shopee_authorization_states_hash_check', sql`${table.stateHash} ~ '^[a-f0-9]{64}$'`),
     check(
       'shopee_authorization_states_origin_check',
-      sql`${table.origin} in ('sll', 'loja-pronta')`,
+      sql`${table.origin} in ('sll', 'loja-pronta', 'recovered')`,
     ),
   ],
 );

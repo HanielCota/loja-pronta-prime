@@ -8,6 +8,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { AreaPage, panelCard } from '@/features/member/components/area-shell';
 import { requireProduct } from '@/features/products/server/access';
 import { importedProduct } from '@/features/legacy-stores/server/catalog-data';
+import { recoveredPublication } from '@/features/legacy-stores/server/publication-data';
+import {
+  publicationLocked,
+  recoveredPublicationMessages,
+} from '@/features/legacy-stores/publication';
 import { saveRecoveredCatalogReview } from '@/features/legacy-stores/server/catalog-actions';
 import {
   RecoveredProductPhotos,
@@ -28,6 +33,8 @@ export default async function ReviewRecoveredProductPage({
   const row = await importedProduct(db.$client, session.user.id, id);
   if (!row) notFound();
   const product = row.product;
+  const publication = await recoveredPublication(db.$client, session.user.id, id);
+  const locked = publication ? publicationLocked(publication.status) : false;
   const result = (await searchParams).resultado;
   return (
     <AreaPage
@@ -52,37 +59,49 @@ export default async function ReviewRecoveredProductPage({
         </h2>
         <RecoveredProductPhotos product={product} />
         <form action={saveRecoveredCatalogReview} className="flex flex-col gap-5">
-          <input type="hidden" name="productId" value={id} />
-          <input type="hidden" name="revision" value={row.revision} />
-          <FloatingLabelInput
-            id="title"
-            name="title"
-            label="Nome do produto"
-            defaultValue={product.title}
-            maxLength={120}
-            required
-          />
-          <FloatingLabelInput
-            id="price"
-            name="price"
-            label="Preço de venda (R$)"
-            inputMode="decimal"
-            defaultValue={(product.priceCents / 100).toFixed(2).replace('.', ',')}
-            required
-          />
-          <label htmlFor="description" className="text-body font-semibold">
-            Descrição
-          </label>
-          <Textarea
-            id="description"
-            name="description"
-            defaultValue={product.description}
-            maxLength={5000}
-            required
-          />
-          <Button>Salvar revisão</Button>
+          <fieldset disabled={locked} className="flex min-w-0 flex-col gap-5">
+            <input type="hidden" name="productId" value={id} />
+            <input type="hidden" name="revision" value={row.revision} />
+            <FloatingLabelInput
+              id="title"
+              name="title"
+              label="Nome do produto"
+              defaultValue={product.title}
+              maxLength={120}
+              required
+            />
+            <FloatingLabelInput
+              id="price"
+              name="price"
+              label="Preço de venda (R$)"
+              inputMode="decimal"
+              defaultValue={(product.priceCents / 100).toFixed(2).replace('.', ',')}
+              required
+            />
+            <label htmlFor="description" className="text-body font-semibold">
+              Descrição
+            </label>
+            <Textarea
+              id="description"
+              name="description"
+              defaultValue={product.description}
+              maxLength={5000}
+              required
+            />
+            <Button>Salvar revisão</Button>
+          </fieldset>
         </form>
         <RecoveredProductVariations product={product} />
+        {publication ? (
+          <output className="text-body">
+            {recoveredPublicationMessages[publication.status]}
+          </output>
+        ) : null}
+        <Button asChild>
+          <Link href={`${path}/publish`}>
+            {locked ? 'Acompanhar publicação' : 'Preparar publicação na Shopee'}
+          </Link>
+        </Button>
         <p className="text-body text-muted-foreground">
           Produto importado para revisão. A publicação na Shopee depende de confirmar a conexão, o
           estoque, o custo e o frete atuais.

@@ -10,7 +10,7 @@ import {
   stores,
   studentProducts,
 } from '@/server/db/schema';
-import type { ShopeeEntry } from '../entry';
+import { shopeeEntryProduct, type ShopeeEntry } from '../entry';
 import {
   decryptShopeeToken,
   encryptShopeeToken,
@@ -113,7 +113,7 @@ export async function finishShopeeAuthorization(
         .where(
           and(
             eq(studentProducts.userId, input.userId),
-            eq(studentProducts.product, pending.origin),
+            eq(studentProducts.product, shopeeEntryProduct(pending.origin)),
             effectiveProductAccess(),
           ),
         );
