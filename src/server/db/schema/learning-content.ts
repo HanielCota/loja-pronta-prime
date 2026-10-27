@@ -16,6 +16,7 @@ import {
   type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
 import { user } from './auth';
+import { EXPERT_IDS } from '../../../config/experts';
 
 /** Resposta da pergunta de entrada da Etapa 2; o limite exato ainda depende de decisão de produto. */
 export const sllPlanStoreAge = pgEnum('sll_plan_store_age', [
@@ -57,6 +58,7 @@ export const learningTracks = pgTable(
   {
     id: uuid('id').defaultRandom().primaryKey(),
     kind: learningTrackKind('kind').notNull(),
+    expert: text('expert', { enum: EXPERT_IDS }).notNull().default('pri'),
     slug: text('slug').notNull(),
     title: text('title').notNull(),
     description: text('description'),
@@ -77,6 +79,7 @@ export const learningTracks = pgTable(
     index('learning_tracks_order_idx').on(table.position, table.id),
     check('learning_tracks_slug_check', sql`${table.slug} ~ '^[a-z0-9]+(-[a-z0-9]+)*$'`),
     check('learning_tracks_position_check', sql`${table.position} >= 0`),
+    check('learning_tracks_expert_check', sql`${table.expert} in ('pri', 'ze')`),
   ],
 );
 

@@ -7,4 +7,5 @@ export const SLL_CONTENT_SECONDS = 300;
 export function revalidateSllContent() {
   revalidateTag(SLL_CONTENT_TAG, { expire: 0 });
   revalidatePath('/sll', 'layout');
+  revalidatePath('/ze-mauro', 'layout');
 }

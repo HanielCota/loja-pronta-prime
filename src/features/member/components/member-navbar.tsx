@@ -21,18 +21,20 @@ export function MemberNavbar({
   hasSidebar = false,
   sticky = false,
   currentArea,
+  courseArea,
 }: {
   account: NavbarAccount;
   hasSidebar?: boolean;
   /** Presa no topo ao rolar (as áreas, que têm páginas longas). */
   sticky?: boolean;
   currentArea?: ProductId | undefined;
+  courseArea?: { href: string; label: string } | undefined;
 }) {
   return (
     <SiteNavbar
       hasSidebar={hasSidebar}
       sticky={sticky}
-      nav={currentArea ? <AreaNav current={currentArea} /> : undefined}
+      nav={currentArea ? <AreaNav current={currentArea} courseArea={courseArea} /> : undefined}
     >
       <div className="flex items-center gap-1">
         <ThemeToggleButton />

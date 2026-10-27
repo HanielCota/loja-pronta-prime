@@ -24,7 +24,7 @@ import { isProgressId } from '../progress-rules';
 import { cleanTypedText } from '@/lib/text';
 
 export async function chooseExpert(form: FormData): Promise<void> {
-  const { userId } = await requireProductAction('sll');
+  const { userId } = await requireProductAction('sll', null);
   const expert = form.get('expert');
   const experience = await getStudentExperience(userId);
   if (!isExpertId(expert) || !experience.allowed.includes(expert))
@@ -36,9 +36,8 @@ export async function chooseExpert(form: FormData): Promise<void> {
       target: studentExperiences.userId,
       set: { expert, updatedAt: new Date() },
     });
-  // Só a tela de quem escolheu: o conteúdo compartilhado não depende do apresentador dela.
   refresh();
-  redirect('/sll/plano?resultado=expert-saved');
+  redirect(expert === 'ze' ? '/ze-mauro' : '/sll/plano?resultado=expert-saved');
 }
 
 export async function saveExpertOffer(form: FormData): Promise<void> {
@@ -137,16 +136,22 @@ export async function saveVideoVariant(form: FormData): Promise<void> {
   const videoId = pandaVideoId(String(form.get('videoId') ?? ''));
   if (
     !isProgressId(blockId) ||
-    !isExpertId(expert) ||
+    expert !== 'pri' ||
     !['draft', 'publish', 'withdraw'].includes(String(mode)) ||
     (mode !== 'withdraw' && !videoId)
   )
     redirect('/admin/experts?resultado=invalid');
-  const [block] = await db
-    .select({ kind: learningContentBlocks.kind })
-    .from(learningContentBlocks)
-    .where(eq(learningContentBlocks.id, blockId));
-  if (block?.kind !== 'video') redirect('/admin/experts?resultado=invalid');
+  const block = await db.query.learningContentBlocks.findFirst({
+    columns: { kind: true },
+    where: eq(learningContentBlocks.id, blockId),
+    with: {
+      lesson: {
+        with: { module: { with: { stage: { with: { track: { columns: { expert: true } } } } } } },
+      },
+    },
+  });
+  if (block?.kind !== 'video' || block.lesson.module.stage.track.expert !== 'pri')
+    redirect('/admin/experts?resultado=invalid');
   const changes = {
     ...(mode === 'publish'
       ? { publishedVideoId: videoId, draftVideoId: videoId }

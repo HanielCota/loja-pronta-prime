@@ -27,7 +27,9 @@ async function lessonIsAvailable(trackId: string, lessonId: string) {
           stage: {
             columns: { id: true, status: true, archivedAt: true },
             with: {
-              track: { columns: { id: true, kind: true, status: true, archivedAt: true } },
+              track: {
+                columns: { id: true, kind: true, expert: true, status: true, archivedAt: true },
+              },
             },
           },
         },
@@ -43,6 +45,7 @@ async function lessonIsAvailable(trackId: string, lessonId: string) {
     lesson.module.stage.archivedAt === null &&
     lesson.module.stage.status === 'published' &&
     lesson.module.stage.track.id === trackId &&
+    lesson.module.stage.track.expert === 'pri' &&
     lesson.module.stage.track.archivedAt === null &&
     lesson.module.stage.track.status === 'published',
   );

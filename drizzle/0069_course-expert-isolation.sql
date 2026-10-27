@@ -1,0 +1,2 @@
+ALTER TABLE "learning_tracks" ADD COLUMN "expert" text DEFAULT 'pri' NOT NULL;--> statement-breakpoint
+ALTER TABLE "learning_tracks" ADD CONSTRAINT "learning_tracks_expert_check" CHECK ("learning_tracks"."expert" in ('pri', 'ze'));

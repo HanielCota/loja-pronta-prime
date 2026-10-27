@@ -484,6 +484,13 @@
       "when": 1793059309460,
       "tag": "0068_legacy-catalog-imports",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1793060586283,
+      "tag": "0069_course-expert-isolation",
+      "breakpoints": true
     }
   ]
 }

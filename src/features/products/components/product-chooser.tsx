@@ -19,6 +19,7 @@ type ProductChooserProps = {
   status?: Partial<Record<ProductId, ProductStatus>> | undefined;
   /** Produto recomendado (dito ao leitor de tela). Sem ele, vale a última área aberta (ou o primeiro). */
   primary?: ProductId | undefined;
+  course?: Pick<(typeof PRODUCTS)['sll'], 'title' | 'tag' | 'pitch' | 'path'> | undefined;
 };
 
 /**
@@ -32,13 +33,20 @@ type ProductChooserProps = {
  * por títulos. No alto contraste do Windows (forced-colors), as cores de fundo somem: as bordas
  * transparentes desenham o cartão e o botão, e a barra de etapas usa as cores do sistema.
  */
-export function ProductChooser({ products, lastArea, status, primary }: ProductChooserProps) {
+export function ProductChooser({
+  products,
+  lastArea,
+  status,
+  primary,
+  course,
+}: ProductChooserProps) {
   const ordered = ORDER.filter((product) => products.includes(product));
   const main = primary ?? lastArea ?? ordered[0];
   return (
     <ul className={cn('grid gap-4', ordered.length > 1 && 'sm:grid-cols-2 sm:gap-6')}>
       {ordered.map((product) => {
-        const { title, tag, pitch, path } = PRODUCTS[product];
+        const { title, tag, pitch, path } =
+          product === 'sll' && course ? course : PRODUCTS[product];
         const current = status?.[product];
         const isMain = product === main;
         const verb = current?.cta ?? (product === lastArea ? 'Continuar' : 'Entrar');

@@ -28,6 +28,7 @@ export const getPublishedSllTrack = cache(
           featured: true,
         },
         where: and(
+          eq(learningTracks.expert, 'pri'),
           eq(learningTracks.id, trackId),
           eq(learningTracks.status, 'published'),
           isNull(learningTracks.archivedAt),

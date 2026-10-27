@@ -61,8 +61,10 @@ export const getStudentExperience = cache(async (userId: string) => {
       .limit(1),
   ]);
   const allowed: ExpertId[] = [...new Set(purchases.map((row) => row.expert).filter(isExpertId))];
-  if ((manual.length || historical.length) && !allowed.includes('pri')) allowed.push('pri');
   const profile = settings[0];
+  const manualExpert = profile?.manualExpert ?? 'pri';
+  if (manual.length && !allowed.includes(manualExpert)) allowed.push(manualExpert);
+  if (historical.length && !allowed.includes('pri')) allowed.push('pri');
   if (profile?.manualExpert && !allowed.includes(profile.manualExpert))
     allowed.push(profile.manualExpert);
   if (!allowed.length) allowed.push('pri');
@@ -73,7 +75,8 @@ export const getStudentExperience = cache(async (userId: string) => {
 export async function studentContentBlocks<
   T extends { id: string; kind: ContentPreviewKind; data: unknown },
 >(userId: string, blocks: T[]) {
-  const { expert } = await getStudentExperience(userId);
+  const expert = 'pri';
+  if (!(await getStudentExperience(userId)).allowed.includes(expert)) return [];
   const videos = blocks.filter((block) => block.kind === 'video');
   const variants = videos.length
     ? await db

@@ -28,6 +28,7 @@ const readTrackIndex = cache(
       db.query.learningTracks.findMany({
         columns: { id: true, slug: true },
         where: and(
+          eq(learningTracks.expert, 'pri'),
           eq(learningTracks.status, 'published'),
           isNull(learningTracks.archivedAt),
           kind ? eq(learningTracks.kind, kind) : undefined,

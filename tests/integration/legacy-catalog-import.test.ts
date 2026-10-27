@@ -12,16 +12,31 @@ import { LEGACY_CATALOG_RUN } from '../../src/config/legacy-catalog';
 import { seedRecoveredCatalog } from '../support/recovered-catalog';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-afterAll(() => pool.end());
+const fixtureUsers: string[] = [];
+let fixture: Awaited<ReturnType<typeof seedRecoveredCatalog>> | undefined;
+afterAll(async () => {
+  try {
+    // The suite shares a database; orphaned customers would invalidate later import checks.
+    await pool.query('DELETE FROM "user" WHERE id=ANY($1::text[])', [fixtureUsers]);
+    if (fixture) {
+      await pool.query('DELETE FROM legacy_store_products WHERE id=ANY($1::uuid[])', [fixture.ids]);
+      await pool.query('DELETE FROM legacy_stores WHERE id=$1', [fixture.storeId]);
+      await pool.query('DELETE FROM legacy_customers WHERE id=$1', [fixture.customerId]);
+    }
+  } finally {
+    await pool.end();
+  }
+});
 test('imports only audited own products, preserves edits on retries, and isolates review and media', async () => {
   const owner = randomUUID(),
     other = randomUUID();
+  fixtureUsers.push(owner, other);
   for (const id of [owner, other])
     await pool.query(
       'INSERT INTO "user"(id,name,email,email_verified,must_change_password) VALUES($1,$1,$2,true,false)',
       [id, `${id}@example.invalid`],
     );
-  const fixture = await seedRecoveredCatalog(pool, owner);
+  fixture = await seedRecoveredCatalog(pool, owner);
   expect(await recoveredStores(pool, other)).toHaveLength(0);
   expect(await recoveredProduct(pool, other, fixture.ids[0]!)).toBeNull();
   await expect(
