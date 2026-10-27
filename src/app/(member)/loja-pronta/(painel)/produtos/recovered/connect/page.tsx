@@ -39,9 +39,9 @@ export default async function ConnectRecoveredCatalogPage({
               : 'Conexão em breve'}
         </h2>
         <p className="text-body text-muted-foreground">
-          Conecte a loja que receberá seus produtos recuperados. A autorização acontece na Shopee, e
-          sua senha fica com você. Antes de cada publicação, você confere a loja de destino e
-          confirma o envio.
+          Conecte a loja brasileira que receberá seus produtos recuperados. A autorização acontece
+          na Shopee, e sua senha fica com você. Antes de cada publicação, você confere a loja de
+          destino e confirma o envio.
         </p>
         {result && Object.hasOwn(SHOPEE_RESULT_MESSAGES, result) ? (
           <output className="rounded-2xl bg-primary-soft p-5 text-body">

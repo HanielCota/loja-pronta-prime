@@ -21,7 +21,11 @@ export async function recoveredPublicationOptions(
     config,
     access,
     '/api/v2/shop/get_shop_info',
-    z.object({ shop_name: z.string().min(1) }),
+    z.object({
+      shop_name: z.string().min(1),
+      region: z.literal('BR'),
+      status: z.literal('NORMAL'),
+    }),
     {},
     fetcher,
   );

@@ -13,7 +13,8 @@ shows that publication is coming soon. Enabling this switch preserves the curren
 ## Review and consent
 
 Preparation reads the destination shop, categories, attribute tree, brands, upload limits and
-shipping channels from Shopee. It does not upload media or create a listing. Customers enter
+shipping channels from Shopee. Only Brazilian shops in normal standing are accepted, because this
+flow collects prices in Brazilian reais. It does not upload media or create a listing. Customers enter
 current costs and stock for every recovered variation, sale prices, package weight and dimensions,
 barcodes when required, and the available shipping channels. These are seller-entered values;
 they are not represented as an automatic supplier synchronization. Only new products are supported.
