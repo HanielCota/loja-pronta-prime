@@ -1,6 +1,7 @@
 import { cache } from 'react';
 import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
-import { requireProduct } from '@/features/products/server/access';
+import { requireProduct, requireStudent } from '@/features/products/server/access';
+import { hasAdminRole } from '@/features/admin/access';
 import { getStudentExperience } from '@/features/sll/server/experience';
 import { db } from '@/server/db';
 import {
@@ -15,7 +16,10 @@ import { ZE_COURSE_PATH, ZE_COURSE_SLUG } from '../course';
 
 /** Authorization and private progress are resolved separately from the content hierarchy. */
 export const getZeCourse = cache(async (path: string = ZE_COURSE_PATH) => {
-  const student = await requireProduct('sll', path, 'ze');
+  const account = await requireStudent(path);
+  const preview = hasAdminRole(account.session.user.role);
+  // Administrators already manage this content; previewing it must not grant student access.
+  const student = preview ? account : await requireProduct('sll', path, 'ze');
   const course = await db.query.learningTracks.findFirst({
     where: and(
       eq(learningTracks.slug, ZE_COURSE_SLUG),
@@ -55,7 +59,7 @@ export const getZeCourse = cache(async (path: string = ZE_COURSE_PATH) => {
       stage.modules.flatMap((module) => module.lessons.map((lesson) => lesson.id)),
     ) ?? [];
   const [progress, experience] = await Promise.all([
-    lessonIds.length
+    !preview && lessonIds.length
       ? db
           .select({
             lessonId: learningLessonProgress.lessonId,
@@ -74,7 +78,8 @@ export const getZeCourse = cache(async (path: string = ZE_COURSE_PATH) => {
   return {
     ...student,
     course,
-    hasPri: experience.allowed.includes('pri'),
+    preview,
+    hasPri: student.products.includes('sll') && experience.allowed.includes('pri'),
     completed: new Set(progress.filter((item) => item.completedAt).map((item) => item.lessonId)),
   };
 });

@@ -33,6 +33,9 @@ defaults existing tracks to `pri`; the imported course is owned by `ze`.
 - Accounts entitled to both experts may open both areas, with separate progress.
 - A manual SLL grant uses the explicitly assigned manual expert, defaulting to Pri.
 - Expired or revoked underlying entitlements do not become valid through a remembered preference.
+- Active administrators can open the course and its lessons through a read-only preview,
+  even without a Zé student entitlement. The preview neither reads nor writes lesson progress
+  and never changes the account's purchases or grants. Student action guards remain enforced.
 
 Checks run on the server, including direct action calls and material/cover downloads. Pri's
 published catalog excludes Zé's tracks. Shared caches contain no account progress or access
@@ -45,6 +48,7 @@ the recordings are ready. Valid published video blocks become playable automatic
 enter the available-lesson progress total unless explicitly made optional in the editor. The expert administration screen maps real Hotmart
 offer codes to the corresponding expert and supports manual expert assignments. Its legacy
 video replacement controls now apply only to Pri's content; edit Zé's videos in his own course.
+The expert administration screen links directly to the administrator preview at `/ze-mauro`.
 
 Migration `0069_course-expert-isolation.sql` adds and validates track ownership. The normal
 production migration command imports the course before starting the server. Importing uses

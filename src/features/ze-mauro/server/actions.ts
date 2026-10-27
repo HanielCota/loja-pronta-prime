@@ -16,7 +16,8 @@ export async function setZeLessonCompletion(form: FormData): Promise<void> {
   const completed = form.get('completed');
   if (!isProgressId(lessonId) || (completed !== 'true' && completed !== 'false'))
     redirect('/ze-mauro?resultado=invalid');
-  const { course } = await getZeCourse();
+  const { course, preview } = await getZeCourse();
+  if (preview) redirect('/ze-mauro');
   const lesson = course?.stages
     .flatMap((stage) => stage.modules.flatMap((module) => module.lessons))
     .find((item) => item.id === lessonId);
