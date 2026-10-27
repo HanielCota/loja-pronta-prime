@@ -23,6 +23,11 @@ export function LegacyStoreHistory({
           Veja os dados salvos das suas lojas e as entregas registradas.
         </p>
       </div>
+      {basePath === '/loja-pronta/previous-stores' ? (
+        <Button asChild variant="soft" size="inline" className="w-fit px-5">
+          <Link href="/loja-pronta/produtos/recovered">Produtos recuperados</Link>
+        </Button>
+      ) : null}
       <ul className="divide-y divide-border">
         {stores.map((store) => (
           <li

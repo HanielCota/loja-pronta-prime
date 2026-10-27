@@ -509,3 +509,12 @@ Mesmas molduras, cartões, textos e fluxos; só espaço, alinhamento, hierarquia
   do navegador com `accent-color` roxo, iguala a cor das dicas dos campos e tem estilo de
   impressão (só o conteúdo, preto no branco, links externos com o endereço). Tabelas usam
   números tabulares.
+
+### Recovered customer catalog (October 26, 2026)
+
+Recovered products use the existing Loja Pronta panel route group, `AreaPage`, `panelCard`,
+`Button`, `FloatingLabelInput` and `Textarea`. Previous store history links to the customer's
+recovered catalog. Store selection, import and review are separate pages. Protected original
+photos and variation photos use the existing rounded image treatment; variation combinations
+are disclosed with native details. The interface distinguishes an internal draft import from
+marketplace publication and keeps the current visual system unchanged.
