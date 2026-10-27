@@ -127,6 +127,12 @@ supervisors get 404 there. Create local staff with `bun run dev:equipe <email> <
     member (own connection, outside the pool) and ends any visit still open (double click, tab
     closed without "Voltar ao painel"), logged as `ended` / `nova visita`. A unique index keeps
     one `ended` row per visit.
+  - **Leaving:** when the plugin cannot give the staff session back (return cookie lost, staff
+    session ended elsewhere), the visit session and cookies are deleted, logged as
+    `saída sem devolver a sessão`, and the person signs in again. Visits that expired on their own
+    get an `expirou` end on that staff member's next entry.
+  - **Session reads:** `readSession` memoizes per request on the `headers()` object, because
+    React `cache` does nothing in Server Actions and route handlers.
   - **Stress test:** `VISIT_STRESS=1 bun run test:integration -t estresse` (off by default):
     parallel visits, 500 simultaneous actions, 50 enter/exit cycles, double clicks, presence
     flood, the 1-hour boundary, staff targets and the closed plugin routes.
