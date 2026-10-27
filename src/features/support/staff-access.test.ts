@@ -5,6 +5,7 @@ import {
   isStaffRole,
   parsePlatformOwners,
   staffRoleLabel,
+  staffPanelLinkOf,
   staffRoleOf,
   withStaffRole,
 } from './staff-access';
@@ -44,6 +45,26 @@ describe('cargos da equipe', () => {
     expect(staffRoleOf('support_agent, support_supervisor')).toBe('support_supervisor');
     expect(staffRoleLabel('user,support_agent')).toBe('Atendente');
     expect(staffRoleLabel('user')).toBeNull();
+  });
+
+  test('o atalho do menu segue o cargo mais alto', () => {
+    expect(staffPanelLinkOf('user')).toBeNull();
+    expect(staffPanelLinkOf(null)).toBeNull();
+    expect(staffPanelLinkOf('user,support_agent')).toEqual({
+      href: '/admin/chamados',
+      label: 'Painel de suporte',
+      roleLabel: 'Atendente',
+    });
+    expect(staffPanelLinkOf('support_supervisor')).toEqual({
+      href: '/admin/chamados',
+      label: 'Painel de suporte',
+      roleLabel: 'Supervisor',
+    });
+    expect(staffPanelLinkOf('support_agent,admin')).toEqual({
+      href: '/admin',
+      label: 'Painel administrativo',
+      roleLabel: 'Administrador',
+    });
   });
 
   test('trocar o cargo mantém as outras funções', () => {

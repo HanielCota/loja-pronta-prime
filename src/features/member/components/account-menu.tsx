@@ -10,6 +10,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { signOut } from '@/features/auth/server/sign-out';
 import { TicketCountBadge } from '@/features/admin/components/ticket-count-badge';
 import { MyTicketsCount } from '@/features/support/components/my-tickets-count';
+import type { StaffPanelLink } from '@/features/support/staff-access';
 import { cn } from '@/lib/utils';
 
 const itemClass =
@@ -26,8 +27,8 @@ type AccountMenuProps = {
   variant?: 'avatar' | 'sidebar';
   /** No admin, o email completo usa a mesma superfície dos menus. */
   styledEmailTooltip?: boolean;
-  /** Atendente, supervisor ou admin: o menu leva direto pra fila de chamados. */
-  isStaff?: boolean;
+  /** Só pra quem é da equipe: o atalho pro painel do próprio cargo (ver `staffPanelLinkOf`). */
+  staffPanel?: StaffPanelLink | null;
 };
 
 /**
@@ -40,7 +41,7 @@ export function AccountMenu({
   image,
   variant = 'avatar',
   styledEmailTooltip = false,
-  isStaff = false,
+  staffPanel = null,
 }: AccountMenuProps) {
   const signOutForm = useRef<HTMLFormElement>(null);
   const inSidebar = variant === 'sidebar';
@@ -109,13 +110,19 @@ export function AccountMenu({
           </div>
           <DropdownMenu.Separator className="mx-3 my-1 h-px bg-border" />
 
-          {/* A equipe também navega pela área das alunas: o primeiro item leva de volta pra fila. */}
-          {isStaff ? (
+          {/* A equipe também navega pela área das alunas: o primeiro item leva de volta pro painel
+              do cargo, com o cargo embaixo pra ela saber até onde pode ir. */}
+          {staffPanel ? (
             <>
-              <DropdownMenu.Item asChild className={itemClass}>
-                <Link href="/admin/chamados">
-                  <HeadsetIcon aria-hidden="true" className="size-5 text-muted-foreground" />
-                  Painel de suporte
+              <DropdownMenu.Item asChild className={cn(itemClass, 'py-2')}>
+                <Link href={staffPanel.href}>
+                  <HeadsetIcon aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />
+                  <span className="flex min-w-0 flex-col">
+                    {staffPanel.label}
+                    <span className="text-sm font-normal text-muted-foreground">
+                      {staffPanel.roleLabel}
+                    </span>
+                  </span>
                   <TicketCountBadge />
                 </Link>
               </DropdownMenu.Item>
