@@ -1,5 +1,13 @@
 # Escala Shop — Platform overview
 
+## Independent Zé Mauro course (October 26, 2026)
+
+The platform includes `/ze-mauro`, with 57 supplied recordings and eight coming-soon entries.
+Its content and progress are separate from Pri's SLL. Active purchases or explicit manual
+assignments determine the allowed expert areas. The 16 shared Pri videos in the final source
+block were excluded at the owner's request. The current Escala Shop visual design is preserved.
+See [course inventory, access and deployment](ZE-MAURO-COURSE.md).
+
 ## Em uma frase
 
 Escala Shop ([membros.escalashop.com.br](https://membros.escalashop.com.br)) is a member platform for women beginning to sell on Shopee. It offers the SLL course and tools, plus the Loja Pronta journey, where students prepare their own brand and seller account one step at a time. See [the domain migration](ESCALA-SHOP-MIGRATION.md) for legacy links and integration routing.

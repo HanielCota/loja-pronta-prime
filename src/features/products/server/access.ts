@@ -13,6 +13,8 @@ import { db } from '@/server/db';
 import { studentProducts } from '@/server/db/schema';
 import { PRODUCTS } from '../catalog';
 import { effectiveProductAccess } from './eligibility';
+import type { ExpertId } from '@/config/experts';
+import { getStudentExperience } from '@/features/sll/server/experience';
 
 type StudentProducts = {
   /** Produtos da aluna, sempre na mesma ordem (a do catálogo). */
@@ -70,13 +72,15 @@ export async function requireStudent(path: string) {
  * área (o `layout.tsx`) só precisa saber se pode se desenhar. Quem decide pra onde mandar quem
  * não pode entrar continua sendo a guarda da página, que conhece o endereço de volta do login.
  */
-export async function readProductAccess(product: ProductId) {
+export async function readProductAccess(product: ProductId, expert: ExpertId = 'pri') {
   const state = await getSessionState();
   if (state.status !== 'active') return null;
   const { session } = state;
   if (needsFirstPassword(session.user)) return null;
   const { products } = await getStudentProducts(session.user.id);
   if (!products.includes(product)) return null;
+  if (product === 'sll' && !(await getStudentExperience(session.user.id)).allowed.includes(expert))
+    return null;
   return { session, products };
 }
 
@@ -111,9 +115,18 @@ const recordProductVisit = cache((userId: string, product: ProductId) => {
  * sessão em que ela abriu a área pela primeira vez: a página pode ser renderizada de novo logo em
  * seguida, e a saudação não pode trocar no meio da primeira visita.
  */
-export async function requireProduct(product: ProductId, path: string = PRODUCTS[product].path) {
+export async function requireProduct(
+  product: ProductId,
+  path: string = PRODUCTS[product].path,
+  expert: ExpertId = 'pri',
+) {
   const student = await requireStudent(path);
   if (!student.products.includes(product)) redirect('/');
+  if (product === 'sll') {
+    const experience = await getStudentExperience(student.session.user.id);
+    if (!experience.allowed.includes(expert))
+      redirect(experience.allowed.includes('ze') ? '/ze-mauro' : '/sll');
+  }
 
   const userId = student.session.user.id;
   // A visita já lida há menos de 10 minutos não seria regravada: nem vai ao banco.
@@ -129,11 +142,15 @@ export async function requireProduct(product: ProductId, path: string = PRODUCTS
  * A mesma regra, pras Server Actions (que podem ser chamadas direto, sem passar pela página):
  * sessão ativa, senha própria criada e o produto. Sem isso, nada: leva pro login ou pro início.
  */
-export async function requireProductAction(product: ProductId) {
+export async function requireProductAction(product: ProductId, expert: ExpertId | null = 'pri') {
   const session = await getActiveSession();
   if (!session || needsFirstPassword(session.user)) redirect('/entrar');
   const userId = session.user.id;
   const { products } = await getStudentProducts(userId);
   if (!products.includes(product)) redirect('/');
+  if (product === 'sll' && expert) {
+    const experience = await getStudentExperience(userId);
+    if (!experience.allowed.includes(expert)) redirect('/');
+  }
   return { session, userId };
 }

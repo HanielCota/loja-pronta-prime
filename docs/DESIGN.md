@@ -1,5 +1,10 @@
 # Escala Shop design system
 
+The independent Zé Mauro course at `/ze-mauro` reuses `SllAreaFrame`, `SllPage`, `panelCard`,
+`Button`, the Panda lesson player and the existing progress component. Its sidebar lists its
+own modules. Mobile navigation uses the existing disclosure pattern. Colors, typography,
+spacing, themes and card shapes follow the current design; course access is separate from Pri's SLL.
+
 On October 26, 2026, the owner requested the platform name **Escala Shop** and the member address
 `membros.escalashop.com.br`. This changes brand text only; the existing mascot, colors, typography,
 components and layouts remain the design standard. Loja Pronta and SLL remain product names.
