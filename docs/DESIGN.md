@@ -456,6 +456,17 @@ o tema escuro e o alto contraste.
 - A plataforma é automática: nada de "a equipe faz X".
 - Nada de fingir: se algo ainda não funciona, a tela diz "em breve", sem botão que finge.
 
+## Suporte (26/10/2026)
+
+- Telas da aluna copiam o Perfil (`AreaShell`, cartões `panelCard`); telas da equipe copiam Contas
+  e Leads (tabela no computador, lista no celular, filtros GET).
+- Situação sempre escrita: selos "Aguardando suporte", "Respondido", "Encerrado", prioridade e
+  prazo ("Vence em 3 h", "Atrasado 40 min"); atraso em tom de erro, nunca só pela cor.
+- Nota interna: borda tracejada e cadeado com o texto "Nota interna".
+- O WhatsApp aparece nas telas novas como segunda opção, em link discreto; nunca dentro da
+  conversa de um chamado.
+- Sem bolha flutuante e sem sino: contadores no menu da conta e no menu do admin.
+
 ## Assistente e experts (17/10/2026)
 
 ### Previous store records (October 21, 2026)
