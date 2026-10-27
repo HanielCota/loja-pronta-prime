@@ -6,7 +6,11 @@ import * as s from '@/server/db/schema';
 import { importZeCourse } from '@/features/ze-mauro/server/import-course';
 
 const [zeId, priId, dualId, manualZeId] = Array.from({ length: 4 }, () => randomUUID());
+const adminId = randomUUID();
+const entitledAdminId = randomUUID();
 let currentId = zeId!;
+let sessionStatus = 'active';
+let needsPassword = false;
 const priTrackId = randomUUID();
 const priStageId = randomUUID();
 const priModuleId = randomUUID();
@@ -23,15 +27,15 @@ const session = () => ({
     id: currentId,
     name: 'Course isolation',
     email: `${currentId}@example.invalid`,
-    role: 'user',
+    role: [adminId, entitledAdminId].includes(currentId) ? 'user,admin' : 'user',
     mustChangePassword: false,
   },
   session: { createdAt: new Date() },
 });
 mock.module('@/features/auth/server/session', () => ({
-  getSessionState: async () => ({ status: 'active', session: session() }),
+  getSessionState: async () => ({ status: sessionStatus, session: session() }),
   getActiveSession: async () => session(),
-  needsFirstPassword: () => false,
+  needsFirstPassword: () => needsPassword,
 }));
 mock.module('next/server', () => ({ after: () => {} }));
 mock.module('next/navigation', () => ({
@@ -78,6 +82,22 @@ beforeAll(async () => {
   await db
     .insert(s.studentExperiences)
     .values({ userId: manualZeId!, expert: 'ze', manualExpert: 'ze' });
+  for (const id of [adminId, entitledAdminId]) {
+    await db.insert(s.user).values({
+      id,
+      name: 'Administrator preview',
+      email: `${id}@example.invalid`,
+      role: 'admin',
+      mustChangePassword: false,
+    });
+  }
+  await db.insert(s.studentProducts).values({ userId: entitledAdminId, product: 'sll' });
+  await db.insert(s.manualProductGrants).values({ userId: entitledAdminId, product: 'sll' });
+  await db.insert(s.studentExperiences).values({
+    userId: entitledAdminId,
+    expert: 'ze',
+    manualExpert: 'ze',
+  });
   await db.insert(s.hotmartProductMappings).values([
     { productUcode: zeCode, access: 'sll', expert: 'ze', primary: false },
     { productUcode: priCode, access: 'sll', expert: 'pri', primary: false },
@@ -150,7 +170,9 @@ afterAll(async () => {
   await db
     .delete(s.hotmartProductMappings)
     .where(inArray(s.hotmartProductMappings.productUcode, [zeCode, priCode]));
-  await db.delete(s.user).where(inArray(s.user.id, [zeId!, priId!, dualId!, manualZeId!]));
+  await db
+    .delete(s.user)
+    .where(inArray(s.user.id, [zeId!, priId!, dualId!, manualZeId!, adminId, entitledAdminId]));
   await db.$client.end();
 });
 
@@ -241,6 +263,58 @@ test('Zé course completion rejects foreign lessons and keeps progress private',
   form.set('completed', 'false');
   await expect(setZeLessonCompletion(form)).rejects.toThrow('resultado=saved');
   expect((await getZeCourse()).completed.has(zeLessonId)).toBe(false);
+});
+
+test('administrator preview needs an active account but no student entitlement', async () => {
+  currentId = adminId;
+  const preview = await getZeCourse();
+  expect(preview.preview).toBe(true);
+  expect(preview.course?.id).toBe(zeTrackId);
+  expect(preview.hasPri).toBe(false);
+  expect(preview.products).toEqual([]);
+  expect(preview.completed.size).toBe(0);
+  await expect(requireProductAction('sll', 'ze')).rejects.toThrow('redirect:/');
+  expect(
+    await db.query.studentProducts.findMany({ where: eq(s.studentProducts.userId, adminId) }),
+  ).toEqual([]);
+  try {
+    sessionStatus = 'none';
+    await expect(getZeCourse()).rejects.toThrow('redirect:/entrar?next=%2Fze-mauro');
+    sessionStatus = 'banned';
+    await expect(getZeCourse()).rejects.toThrow('redirect:/entrar?motivo=conta-desativada');
+    sessionStatus = 'active';
+    needsPassword = true;
+    await expect(getZeCourse()).rejects.toThrow('redirect:/primeiro-acesso?next=%2Fze-mauro');
+  } finally {
+    sessionStatus = 'active';
+    needsPassword = false;
+  }
+});
+
+test('administrator preview hides progress and rejects completion even with a Ze entitlement', async () => {
+  currentId = entitledAdminId;
+  await db.insert(s.learningLessonProgress).values({
+    userId: currentId,
+    lessonId: zeLessonId,
+    completedAt: new Date(),
+  });
+  expect((await getZeCourse()).completed.size).toBe(0);
+  const form = new FormData();
+  form.set('lessonId', zeLessonId);
+  form.set('completed', 'false');
+  await expect(setZeLessonCompletion(form)).rejects.toThrow('redirect:/ze-mauro');
+  expect(
+    (
+      await db.query.learningLessonProgress.findFirst({
+        where: eq(s.learningLessonProgress.userId, currentId),
+      })
+    )?.completedAt,
+  ).not.toBeNull();
+  expect(
+    await db.query.learningTrackProgress.findMany({
+      where: eq(s.learningTrackProgress.userId, currentId),
+    }),
+  ).toEqual([]);
 });
 
 test('Zé course materials reject cross-course downloads before reaching storage', async () => {

@@ -23,7 +23,7 @@ export default async function ZeLessonPage({
 }) {
   const { lessonId } = await params;
   if (!isProgressId(lessonId)) notFound();
-  const { session, products, course, completed, hasPri } = await getZeCourse(
+  const { session, products, course, completed, hasPri, preview } = await getZeCourse(
     `/ze-mauro/aula/${lessonId}`,
   );
   const modules =
@@ -46,6 +46,7 @@ export default async function ZeLessonPage({
       account={session.user}
       hasChoice={products.length > 1}
       hasPri={hasPri}
+      preview={preview}
       stages={modules.map(({ module }) => module)}
       product="Curso Zé Mauro"
       title={lesson.title}
@@ -68,7 +69,7 @@ export default async function ZeLessonPage({
                 </p>
               ) : null;
             })}
-          {video ? (
+          {video && !preview ? (
             <form action={setZeLessonCompletion} className="flex flex-col gap-3">
               <input type="hidden" name="lessonId" value={lesson.id} />
               <input

@@ -9,7 +9,11 @@ import { closeDatabase, database, PASSWORD } from './support/students';
 import { expectNoA11yViolations, signIn } from './support/auth';
 
 const run = randomUUID();
-const emails = [`e2e-ze-${run}@example.invalid`, `e2e-pri-${run}@example.invalid`];
+const emails = [
+  `e2e-ze-${run}@example.invalid`,
+  `e2e-pri-${run}@example.invalid`,
+  `e2e-admin-${run}@example.invalid`,
+];
 const userIds: string[] = [];
 // Local cache/IP test headers trigger CORS preflights inside the external Panda player.
 test.use({ extraHTTPHeaders: {} });
@@ -28,11 +32,12 @@ test.beforeAll(async () => {
         email,
         password: PASSWORD,
         name: 'Course Browser Test',
-        role: 'user',
+        role: index === 2 ? 'admin' : 'user',
         data: { emailVerified: true, mustChangePassword: false },
       },
     });
     userIds.push(user.id);
+    if (index === 2) continue;
     await database().query("insert into student_products (user_id, product) values ($1, 'sll')", [
       user.id,
     ]);
@@ -57,6 +62,53 @@ test.beforeAll(async () => {
   lessonId = rows.find((row) => row.expert === 'ze' && row.video_id)!.id;
   pendingId = rows.find((row) => row.expert === 'ze' && !row.video_id)!.id;
   priLessonId = rows.find((row) => row.expert === 'pri' && row.video_id)!.id;
+});
+
+test('administrators can preview the entire course without buying it or saving progress', async ({
+  page,
+}, testInfo) => {
+  test.setTimeout(180_000);
+  await signIn(page, emails[2]!, PASSWORD, '/admin/experts');
+  await page.setExtraHTTPHeaders({});
+  await page.getByRole('link', { name: 'Ver área do Zé Mauro', exact: true }).click();
+  await expect(page).toHaveURL('/ze-mauro');
+  await mkdir('test-results/ze-mauro', { recursive: true });
+  for (const viewport of [
+    { width: 1440, height: 1000 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    for (const theme of ['light', 'dark']) {
+      await page.evaluate((value) => localStorage.setItem('theme', value), theme);
+      await page.goto('/ze-mauro');
+      await expect(page.getByRole('region', { name: 'Prévia de administrador' })).toBeVisible();
+      await expect(page.getByText('57 aulas disponíveis', { exact: true })).toBeVisible();
+      await expect(page.getByRole('progressbar')).toHaveCount(0);
+      await expect(page.getByRole('link', { name: 'Ir para o curso da Pri' })).toHaveCount(0);
+      await expectNoA11yViolations(page);
+      const screenshot = `test-results/ze-mauro/admin-${viewport.width}-${theme}.png`;
+      await page.screenshot({ path: screenshot });
+      await testInfo.attach(`administrator-preview-${viewport.width}-${theme}`, {
+        path: screenshot,
+        contentType: 'image/png',
+      });
+      await page.getByRole('link', { name: 'Ver primeira aula', exact: true }).click();
+      await expect(page).toHaveURL(`/ze-mauro/aula/${lessonId}`);
+      await expect(page.getByRole('region', { name: 'Prévia de administrador' })).toBeVisible();
+      await expect(page.locator('iframe')).toHaveAttribute('src', /v=4b6b9002/);
+      await expect(page.getByRole('button', { name: 'Marcar como concluída' })).toHaveCount(0);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      );
+      await expectNoA11yViolations(page, ['iframe']);
+    }
+  }
+  for (const table of ['student_products', 'learning_lesson_progress', 'learning_track_progress']) {
+    const { rows } = await database().query(`select 1 from ${table} where user_id=$1`, [
+      userIds[2],
+    ]);
+    expect(rows).toEqual([]);
+  }
 });
 
 test.afterAll(async () => {

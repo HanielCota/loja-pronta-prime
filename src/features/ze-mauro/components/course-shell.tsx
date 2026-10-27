@@ -2,6 +2,8 @@ import type { ComponentProps } from 'react';
 import Link from 'next/link';
 import { BookOpen, ChevronDown, GraduationCap } from 'lucide-react';
 import { SllAreaFrame, SllPage } from '@/features/sll/sll-area-shell';
+import { panelCard } from '@/features/member/components/area-shell';
+import { Button } from '@/components/ui/button';
 import type { NavbarAccount } from '@/features/member/components/member-navbar';
 import { cn } from '@/lib/utils';
 
@@ -63,11 +65,13 @@ export function ZeCourseShell({
   stages,
   hasPri,
   account,
+  preview,
   ...props
 }: ComponentProps<typeof SllPage> & {
   account: NavbarAccount;
   stages: Section[];
   hasPri: boolean;
+  preview: boolean;
 }) {
   return (
     <SllAreaFrame
@@ -80,7 +84,20 @@ export function ZeCourseShell({
         disclosure: <CourseNavigation stages={stages} hasPri={hasPri} disclosure />,
       }}
     >
-      <SllPage {...props} />
+      <SllPage {...props}>
+        {preview ? (
+          <section className={`${panelCard} gap-3`} aria-label="Prévia de administrador">
+            <p className="text-body font-semibold">Prévia de administrador</p>
+            <p className="text-body text-muted-foreground">
+              Você pode conferir as aulas. O progresso não é salvo nesta prévia.
+            </p>
+            <Button asChild variant="ghost" size="inline" className="self-start">
+              <Link href="/admin/experts">Voltar à administração</Link>
+            </Button>
+          </section>
+        ) : null}
+        {props.children}
+      </SllPage>
     </SllAreaFrame>
   );
 }

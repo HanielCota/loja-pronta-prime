@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { and, asc, eq } from 'drizzle-orm';
 import { db } from '@/server/db';
 import {
@@ -58,6 +59,18 @@ export default async function ExpertsPage({
               : 'Confira os campos. Nada foi alterado.'}
         </output>
       ) : null}
+      <section className={panelCard} aria-labelledby="ze-course-preview">
+        <h2 id="ze-course-preview" className="text-title font-semibold">
+          Curso Zé Mauro
+        </h2>
+        <p className="text-body text-muted-foreground">
+          Confira os módulos e as aulas na prévia de administrador. Para editar as aulas, abra
+          Cursos no painel.
+        </p>
+        <Button asChild className="sm:w-fit">
+          <Link href="/ze-mauro">Ver área do Zé Mauro</Link>
+        </Button>
+      </section>
       <section className={panelCard} aria-labelledby="expert-offers">
         <h2 id="expert-offers" className="text-title font-semibold">
           Origem das compras

@@ -11,7 +11,7 @@ import { zeLessonVideo } from '@/features/ze-mauro/course';
 export const metadata: Metadata = { title: 'Curso Zé Mauro' };
 
 export default async function ZeCoursePage() {
-  const { session, products, course, completed, hasPri } = await getZeCourse();
+  const { session, products, course, completed, hasPri, preview } = await getZeCourse();
   const lessons =
     course?.stages
       .flatMap((stage) => stage.modules.flatMap((module) => module.lessons))
@@ -23,6 +23,7 @@ export default async function ZeCoursePage() {
       account={session.user}
       hasChoice={products.length > 1}
       hasPri={hasPri}
+      preview={preview}
       stages={course?.stages.flatMap((stage) => stage.modules) ?? []}
       product="Curso Zé Mauro"
       title="Seu caminho com o Zé Mauro"
@@ -30,26 +31,37 @@ export default async function ZeCoursePage() {
     >
       {course ? (
         <>
-          <section className={`${panelCard} gap-4`} aria-label="Seu progresso">
+          <section
+            className={`${panelCard} gap-4`}
+            aria-label={preview ? 'Aulas disponíveis' : 'Seu progresso'}
+          >
             <p className="text-body text-muted-foreground">
-              {completedCount} de {lessons.length} aulas concluídas
+              {preview
+                ? `${lessons.length} aulas disponíveis`
+                : `${completedCount} de ${lessons.length} aulas concluídas`}
             </p>
-            <SllProgress
-              label="Progresso do curso"
-              completed={completedCount}
-              total={lessons.length}
-            />
+            {!preview ? (
+              <SllProgress
+                label="Progresso do curso"
+                completed={completedCount}
+                total={lessons.length}
+              />
+            ) : null}
             {next ? (
               <Button asChild className="sm:w-fit">
                 <Link href={`/ze-mauro/aula/${next.id}`}>
-                  {completedCount ? 'Continuar meu curso' : 'Começar meu curso'}
+                  {preview
+                    ? 'Ver primeira aula'
+                    : completedCount
+                      ? 'Continuar meu curso'
+                      : 'Começar meu curso'}
                 </Link>
               </Button>
-            ) : (
+            ) : !preview ? (
               <p className="text-body text-progress-text">
                 Você concluiu todas as aulas disponíveis.
               </p>
-            )}
+            ) : null}
           </section>
           {course.stages.map((stage) => (
             <section
