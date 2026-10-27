@@ -17,18 +17,18 @@ export default async function VisitOverPage() {
   return (
     <BrandCard>
       <CardHeading title="O acesso terminou" description={VISIT_OVER_MESSAGE} />
-      {visit ? (
-        <div className="flex justify-center">
+      <div className="flex justify-center">
+        {visit ? (
           <LeaveVisitButton className="px-6" />
-        </div>
-      ) : (
-        <Link
-          href="/entrar"
-          className="inline-flex min-h-11 items-center justify-center text-body font-semibold text-link underline underline-offset-4"
-        >
-          Entrar de novo
-        </Link>
-      )}
+        ) : (
+          <Link
+            href="/entrar"
+            className="inline-flex min-h-11 items-center justify-center text-body font-semibold text-link underline underline-offset-4"
+          >
+            Entrar de novo
+          </Link>
+        )}
+      </div>
     </BrandCard>
   );
 }

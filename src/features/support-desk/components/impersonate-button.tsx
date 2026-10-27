@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState, useTransition, type FormEvent } from 'react';
+import { useId, useRef, useState, useTransition, type FormEvent } from 'react';
 import { Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { startVisit, startVisitForm } from '../server/visit-actions';
@@ -19,9 +19,9 @@ type ImpersonateButtonProps = {
 };
 
 /**
- * "Entrar como aluna", com confirmação: a visita dura 1 hora e fica registrada. Depois de entrar,
- * a página carrega inteira (a troca de sessão precisa de um documento novo). Sem JavaScript, o
- * formulário funciona do mesmo jeito pelo servidor.
+ * "Entrar como aluna", com confirmação: a visita dura 1 hora e fica registrada. A confirmação é um
+ * `<details>`, então abre e fecha sem JavaScript e o foco fica no botão. Depois de entrar, a página
+ * carrega inteira (a troca de sessão precisa de um documento novo).
  */
 export function ImpersonateButton({
   userId,
@@ -32,8 +32,10 @@ export function ImpersonateButton({
   refusal,
 }: ImpersonateButtonProps) {
   const reasonId = useId();
-  const [confirming, setConfirming] = useState(false);
+  const details = useRef<HTMLDetailsElement>(null);
   const [message, setMessage] = useState('');
+  // Fica carregando até a página nova abrir: um segundo clique sairia já com a sessão da aluna.
+  const [leaving, setLeaving] = useState(false);
   const [pending, startTransition] = useTransition();
 
   if (refusal)
@@ -56,66 +58,83 @@ export function ImpersonateButton({
       </div>
     );
 
-  if (!confirming)
-    return (
-      <Button
-        type="button"
-        variant="soft"
-        className="w-fit px-5"
-        size="inline"
-        onClick={() => setConfirming(true)}
-      >
-        <Eye aria-hidden="true" />
-        Entrar como aluna
-      </Button>
-    );
-
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     setMessage('');
     startTransition(async () => {
-      const result = await startVisit(form);
-      if (!result.ok) {
-        setMessage(result.message);
-        return;
+      try {
+        const result = await startVisit(form);
+        if (!result.ok) {
+          setMessage(result.message);
+          return;
+        }
+        setLeaving(true);
+        window.location.assign(result.redirectTo);
+      } catch {
+        setMessage('Não foi possível entrar na conta agora. Tente de novo.');
       }
-      window.location.assign(result.redirectTo);
     });
   }
 
+  function cancel() {
+    if (!details.current) return;
+    details.current.open = false;
+    details.current.querySelector('summary')?.focus();
+  }
+
   return (
-    <form
-      action={startVisitForm}
-      onSubmit={submit}
-      className="flex flex-col gap-3 rounded-2xl bg-muted p-4"
-    >
-      <input type="hidden" name="aluna" value={userId} />
-      <input type="hidden" name="voltar" value={back} />
-      {ticketNumber ? <input type="hidden" name="numero" value={ticketNumber} /> : null}
-      {destination ? <input type="hidden" name="destino" value={destination} /> : null}
-      <p className="text-body">
-        Você vai usar a conta de {name} por 1 hora. Tudo o que fizer fica registrado com o seu nome.
-      </p>
-      <div className="flex flex-wrap gap-3">
-        <Button type="submit" variant="soft" className="w-fit px-5" size="inline" loading={pending}>
-          Entrar
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          className="w-fit px-4"
-          size="inline"
-          onClick={() => setConfirming(false)}
-        >
-          Cancelar
-        </Button>
-      </div>
-      {message ? (
-        <p role="alert" className="text-body text-destructive">
-          {message}
+    <details ref={details}>
+      <Button
+        asChild
+        variant="soft"
+        className="w-fit cursor-pointer list-none px-5 [&::-webkit-details-marker]:hidden"
+        size="inline"
+      >
+        <summary>
+          <Eye aria-hidden="true" />
+          Entrar como aluna
+        </summary>
+      </Button>
+      <form
+        action={startVisitForm}
+        onSubmit={submit}
+        className="mt-3 flex flex-col gap-3 rounded-2xl bg-muted p-4"
+      >
+        <input type="hidden" name="aluna" value={userId} />
+        <input type="hidden" name="voltar" value={back} />
+        {ticketNumber ? <input type="hidden" name="numero" value={ticketNumber} /> : null}
+        {destination ? <input type="hidden" name="destino" value={destination} /> : null}
+        <p className="text-body">
+          Você vai usar a conta de {name} por 1 hora. Tudo o que fizer fica registrado com o seu
+          nome.
         </p>
-      ) : null}
-    </form>
+        <div className="flex flex-wrap gap-3">
+          <Button
+            type="submit"
+            variant="soft"
+            className="w-fit px-5"
+            size="inline"
+            loading={pending || leaving}
+          >
+            Entrar
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-fit px-4"
+            size="inline"
+            onClick={cancel}
+          >
+            Cancelar
+          </Button>
+        </div>
+        {message ? (
+          <p role="alert" className="text-body text-destructive">
+            {message}
+          </p>
+        ) : null}
+      </form>
+    </details>
   );
 }
