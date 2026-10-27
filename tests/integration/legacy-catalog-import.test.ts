@@ -4,6 +4,7 @@ import { Pool } from 'pg';
 import {
   importRecoveredProducts,
   importedProduct,
+  importedProducts,
   recoveredProduct,
   recoveredStores,
   reviewImportedProduct,
@@ -48,6 +49,16 @@ test('imports only audited own products, preserves edits on retries, and isolate
       productIds: fixture.ids,
     }),
   ).toBe(2);
+  const selectedStore = await importedProducts(pool, owner, 1, fixture.storeId);
+  expect(selectedStore).toHaveLength(2);
+  expect(
+    selectedStore.every(
+      (row) => row.store_id === fixture!.storeId && row.publication_status === null,
+    ),
+  ).toBe(true);
+  expect(await importedProducts(pool, owner, 1, randomUUID())).toHaveLength(0);
+  expect(await importedProducts(pool, owner, 1, 'invalid-store')).toHaveLength(0);
+  expect(await importedProducts(pool, other, 1, fixture.storeId)).toHaveLength(0);
   const draft = await importedProduct(pool, owner, fixture.ids[0]!);
   expect(draft?.product.publicationReady).toBe(false);
   expect(draft?.product.variants.length).toBe(2);

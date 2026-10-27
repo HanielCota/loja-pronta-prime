@@ -5,6 +5,7 @@ import { seedRecoveredCatalog, fixtureImage } from '../support/recovered-catalog
 import {
   importRecoveredProducts,
   importedProduct,
+  importedProducts,
   reviewImportedProduct,
 } from '../../src/features/legacy-stores/server/catalog-data';
 import {
@@ -302,6 +303,11 @@ test('confirmed queue serializes retries, freezes edits and verifies variants be
     fake.calls.findIndex((call) => call.path.endsWith('/update_item')),
   );
   expect((await recoveredPublication(pool, owner, id))?.status).toBe('published');
+  expect(
+    (await importedProducts(pool, owner, 1, fixture.storeId)).find(
+      (product) => product.product_id === id,
+    )?.publication_status,
+  ).toBe('published');
   await executeRecoveredPublication(pool, job, deps(fake));
   expect(fake.calls.filter((call) => call.path.endsWith('/add_item'))).toHaveLength(1);
   expect(await claimRecoveredPublication(pool)).toBeNull();

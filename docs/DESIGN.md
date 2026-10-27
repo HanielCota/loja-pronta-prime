@@ -529,3 +529,12 @@ recovered catalog. Store selection, import and review are separate pages. Protec
 photos and variation photos use the existing rounded image treatment; variation combinations
 are disclosed with native details. The interface distinguishes an internal draft import from
 marketplace publication and keeps the current visual system unchanged.
+
+### Continuing a previous store (October 27, 2026)
+
+Previous store cards lead with **Retomar esta loja**. Starting another store remains available
+in a secondary disclosure below the history. The continuation page uses the existing narrow
+`AreaPage`, `panelCard`, `Button`, tokens and typography. It links directly to the existing
+import or review for that store, explains the actual connection/publication availability and
+does not promise a delivery date. The scoped review list preserves its store filter through
+pagination and shows each confirmed publication state. Administrative history remains read-only.

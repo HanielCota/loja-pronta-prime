@@ -3,10 +3,15 @@ import { expect, test } from '@playwright/test';
 import { auth } from '@/server/auth/auth';
 import { expectNoA11yViolations, signIn } from './support/auth';
 import { closeDatabase, database, PASSWORD } from './support/students';
+import { seedRecoveredCatalog, fixtureImage } from '../tests/support/recovered-catalog';
 
 const users: string[] = [];
 const customers: string[] = [];
 const stores: string[] = [];
+
+test.beforeEach(async ({ page }) => {
+  await page.route('**/api/presence', (route) => route.fulfill({ status: 204 }));
+});
 
 async function account(admin = false) {
   const email = `legacy-${randomUUID()}@example.invalid`;
@@ -20,11 +25,16 @@ async function account(admin = false) {
     },
   });
   users.push(user.id);
-  if (!admin)
+  if (!admin) {
     await database().query(
       "INSERT INTO student_products(user_id,product) VALUES($1,'loja-pronta')",
       [user.id],
     );
+    await database().query(
+      "INSERT INTO manual_product_grants(user_id,product) VALUES($1,'loja-pronta')",
+      [user.id],
+    );
+  }
   return { id: user.id, email };
 }
 
@@ -80,6 +90,7 @@ async function savedStore(owner: { id: string; email: string }, title: string, c
 }
 
 test.afterEach(async () => {
+  await database().query('DELETE FROM "user" WHERE id=ANY($1::text[])', [users.splice(0)]);
   await database().query('DELETE FROM legacy_store_products WHERE store_id=ANY($1::uuid[])', [
     stores,
   ]);
@@ -87,7 +98,6 @@ test.afterEach(async () => {
   await database().query('DELETE FROM legacy_customers WHERE id=ANY($1::uuid[])', [
     customers.splice(0),
   ]);
-  await database().query('DELETE FROM "user" WHERE id=ANY($1::text[])', [users.splice(0)]);
 });
 test.afterAll(closeDatabase);
 
@@ -108,9 +118,17 @@ for (const mobile of [false, true])
       );
       await signIn(page, student.email, PASSWORD, '/loja-pronta');
       await expect(page.getByRole('heading', { name: 'Suas lojas', exact: true })).toBeVisible();
+      await page.getByText('Quero montar outra loja', { exact: true }).click();
       await expect(
-        page.getByRole('link', { name: 'Começar minha loja', exact: true }),
+        page.getByRole('link', { name: 'Começar uma nova loja', exact: true }),
       ).toHaveAttribute('href', '/loja-pronta/conversa');
+      await page.getByText('Quero montar outra loja', { exact: true }).click();
+      await expect(page.getByRole('link', { name: 'Retomar esta loja', exact: true })).toHaveCount(
+        2,
+      );
+      await expect(
+        page.getByRole('heading', { name: 'Montar sua loja aqui', exact: true }),
+      ).toHaveCount(0);
       await expect(
         page.getByRole('heading', { name: 'Previous test store', exact: true }),
       ).toBeVisible();
@@ -118,8 +136,12 @@ for (const mobile of [false, true])
         page.getByRole('heading', { name: 'Second test store', exact: true }),
       ).toBeVisible();
       await expectNoA11yViolations(page);
+      await page.screenshot({
+        path: `/tmp/legacy-home-${mobile ? 'mobile' : 'desktop'}-${dark ? 'dark' : 'light'}.png`,
+        fullPage: true,
+      });
       await page
-        .getByRole('link', { name: 'Ver loja', exact: true })
+        .getByRole('link', { name: 'Ver dados salvos', exact: true })
         .and(page.locator(`[href="/loja-pronta/previous-stores/${id}"]`))
         .click();
       await expect(page).toHaveURL(new RegExp(`/loja-pronta/previous-stores/${id}$`));
@@ -146,8 +168,93 @@ for (const mobile of [false, true])
         path: `/tmp/legacy-store-${mobile ? 'mobile' : 'desktop'}-${dark ? 'dark' : 'light'}.png`,
         fullPage: true,
       });
+      await page.getByRole('link', { name: 'Retomar esta loja', exact: true }).click();
+      await expect(page).toHaveURL(new RegExp(`/loja-pronta/previous-stores/${id}/continue$`));
+      await expect(
+        page.getByRole('heading', { name: 'Continue sua loja anterior', exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.getByText(/Seus dados e 31 produtos salvos estão preservados/),
+      ).toBeVisible();
+      await expect(page.getByText(/Ainda não há uma data de entrega confirmada/)).toBeVisible();
+      await expect(
+        page.getByRole('heading', { name: 'Conexão com a Shopee em breve', exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole('button', { name: 'Autorizar na Shopee', exact: true }),
+      ).toHaveCount(0);
+      await expectNoA11yViolations(page);
+      await page.screenshot({
+        path: `/tmp/legacy-continuation-${mobile ? 'mobile' : 'desktop'}-${dark ? 'dark' : 'light'}.png`,
+        fullPage: true,
+      });
+      expect(
+        (await database().query('SELECT user_id FROM stores WHERE user_id=$1', [student.id]))
+          .rowCount,
+      ).toBe(0);
     });
   }
+
+test('previous stores can be resumed without JavaScript', async ({ browser, baseURL }) => {
+  const student = await account();
+  await savedStore(student, 'No JavaScript store', 20);
+  const context = await browser.newContext({
+    javaScriptEnabled: false,
+    ...(baseURL ? { baseURL } : {}),
+  });
+  const page = await context.newPage();
+  try {
+    await signIn(page, student.email, PASSWORD, '/loja-pronta');
+    await page.getByRole('link', { name: 'Retomar esta loja', exact: true }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Continue sua loja anterior', exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText(/Seus dados e 20 produtos salvos estão preservados/)).toBeVisible();
+  } finally {
+    await context.close();
+  }
+});
+
+test('continuation leads to the existing import and scoped review without restarting setup', async ({
+  page,
+}) => {
+  const student = await account();
+  const fixture = await seedRecoveredCatalog(database(), student.id);
+  customers.push(fixture.customerId);
+  stores.push(fixture.storeId);
+  await page.route('**/produtos/recovered/*/images/*', (route) =>
+    route.fulfill({ contentType: 'image/png', body: fixtureImage }),
+  );
+  await signIn(
+    page,
+    student.email,
+    PASSWORD,
+    `/loja-pronta/previous-stores/${fixture.storeId}/continue`,
+  );
+  await expect(
+    page.getByRole('heading', { name: 'Importe seus produtos antigos', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('link', { name: 'Escolher produtos para importar', exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/previous-stores/${fixture.storeId}/import$`));
+  await page
+    .getByRole('button', { name: 'Importar selecionados para minha lista', exact: true })
+    .click();
+  await expect(page).toHaveURL(
+    new RegExp(`/produtos/recovered\\?store=${fixture.storeId}&resultado=imported`),
+  );
+  await expect(page.getByRole('heading', { name: 'Minha lista (2)', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Revisar produto', exact: true })).toHaveCount(2);
+  await expectNoA11yViolations(page);
+  await page.goto(`/loja-pronta/previous-stores/${fixture.storeId}/continue`);
+  await page.getByRole('link', { name: 'Revisar produtos desta loja', exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/produtos/recovered\\?store=${fixture.storeId}$`));
+  expect((await page.goto(`/loja-pronta/produtos/recovered?store=${randomUUID()}`))?.status()).toBe(
+    404,
+  );
+  expect(
+    (await database().query('SELECT user_id FROM stores WHERE user_id=$1', [student.id])).rowCount,
+  ).toBe(0);
+});
 
 test('student ownership and blocked account administration preserve current setup', async ({
   page,
@@ -159,6 +266,7 @@ test('student ownership and blocked account administration preserve current setu
   await signIn(page, other.email, PASSWORD, `/loja-pronta/previous-stores/${id}`);
   await expect(page.getByRole('heading', { name: 'Protected original store' })).toHaveCount(0);
   expect((await page.goto(`/loja-pronta/previous-stores/${id}`))?.status()).toBe(404);
+  expect((await page.goto(`/loja-pronta/previous-stores/${id}/continue`))?.status()).toBe(404);
   await database().query('UPDATE "user" SET banned=true WHERE id=$1', [owner.id]);
   await database().query("INSERT INTO store_brand(user_id,name) VALUES($1,'Current setup brand')", [
     owner.id,
