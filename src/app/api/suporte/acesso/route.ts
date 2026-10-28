@@ -25,19 +25,19 @@ export async function POST(request: Request) {
   try {
     form = await readLimitedFormData(request, 64 * 1024);
   } catch {
-    return respond(request, true, { ok: false, message: 'Não foi possível ler o formulário.', status: 400, backTo: '/suporte/acesso' });
+    return respond(true, { ok: false, message: 'Não foi possível ler o formulário.', status: 400, backTo: '/suporte/acesso' });
   }
   const enhanced = isEnhanced(form);
   const email = text(form, 'email', 254).trim().toLowerCase();
   const name = text(form, 'nome', 80).trim();
   if (!emailSchema.safeParse(email).success || name.length < 2)
-    return respond(request, enhanced, { ok: false, message: 'Confira o seu nome e o e-mail da compra.', status: 400, backTo: '/suporte/acesso' });
+    return respond(enhanced, { ok: false, message: 'Confira o seu nome e o e-mail da compra.', status: 400, backTo: '/suporte/acesso' });
   const blocked = await consumeAttempts([
     ['supportPublicPerIp', await getClientIp()],
     ['supportPublicPerEmail', email],
   ]);
   if (blocked)
-    return respond(request, enhanced, { ok: false, message: 'Muitos pedidos em pouco tempo. Tente de novo daqui a uma hora.', status: 429, backTo: '/suporte/acesso' });
+    return respond(enhanced, { ok: false, message: 'Muitos pedidos em pouco tempo. Tente de novo daqui a uma hora.', status: 429, backTo: '/suporte/acesso' });
   const [account] = await db.select({ id: user.id }).from(user).where(eq(user.email, email)).limit(1);
   const situation = text(form, 'situacao', 64);
   const outcome = await openTicket({
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     submissionId: text(form, 'envio', 64) || null,
   });
   if (!outcome.ok)
-    return respond(request, enhanced, { ok: false, message: outcome.message, status: outcome.status, backTo: '/suporte/acesso' });
+    return respond(enhanced, { ok: false, message: outcome.message, status: outcome.status, backTo: '/suporte/acesso' });
   if (enhanced) return Response.json({ ok: true, message: SAME_ANSWER }, { headers: { 'Cache-Control': 'no-store' } });
-  return respond(request, false, { ok: true, redirectTo: '/suporte/acesso/recebido' });
+  return respond(false, { ok: true, redirectTo: '/suporte/acesso/recebido' });
 }

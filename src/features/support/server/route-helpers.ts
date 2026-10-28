@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { env } from '@/config/env';
 import { ENHANCED_SUBMIT_FIELD } from '@/lib/forms';
 import { withNotice } from '../send-notice';
 
@@ -16,7 +17,7 @@ export function isEnhanced(form: FormData): boolean {
   return form.get(ENHANCED_SUBMIT_FIELD) === '1';
 }
 
-export function respond(request: Request, enhanced: boolean, outcome: RouteOutcome) {
+export function respond(enhanced: boolean, outcome: RouteOutcome) {
   const headers = { 'Cache-Control': 'no-store' };
   if (enhanced) {
     if (outcome.ok)
@@ -29,8 +30,8 @@ export function respond(request: Request, enhanced: boolean, outcome: RouteOutco
       { status: outcome.status, headers },
     );
   }
-  if (outcome.ok) return NextResponse.redirect(new URL(withNotice(outcome.redirectTo, outcome.notice), request.url), 303);
-  const back = new URL(outcome.backTo, request.url);
+  if (outcome.ok) return NextResponse.redirect(new URL(withNotice(outcome.redirectTo, outcome.notice), env.BETTER_AUTH_URL), 303);
+  const back = new URL(outcome.backTo, env.BETTER_AUTH_URL);
   // `erro` já é o código de erro que vem das páginas de erro: a mensagem do envio tem nome próprio.
   back.searchParams.set('erro_envio', outcome.message);
   return NextResponse.redirect(back, 303);
