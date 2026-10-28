@@ -450,7 +450,7 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
                       aria-label={`Abrir aula ${lesson.sourceNumber ?? lesson.number}: ${lesson.title}`}
                       className={cn(
                         'flex min-h-12 items-center gap-3 rounded-2xl px-2 py-2 text-sm wrap-anywhere text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid motion-safe:transition-colors forced-colors:border forced-colors:border-[CanvasText]',
-                        // Faixa verde clara: a aluna vê de longe o que já concluiu na trilha.
+                        // Highlight completed lessons so students can scan their progress.
                         lesson.completed ? 'bg-progress/10 hover:bg-progress/20' : 'hover:bg-muted',
                       )}
                       href={sllLessonHref(
