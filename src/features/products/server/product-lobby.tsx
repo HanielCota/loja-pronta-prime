@@ -18,6 +18,7 @@ import { greetingName } from '@/features/products/names';
 import { PRODUCTS } from '@/features/products/catalog';
 import { requireStudent } from '@/features/products/server/access';
 import { listLegacyStoresForUser } from '@/features/legacy-stores/server/queries';
+import { getStudentExperience } from '@/features/sll/server/experience';
 
 type ProductLobbyProps = {
   /** Só a página inicial entra direto quando a aluna tem um único produto. */
@@ -27,9 +28,19 @@ type ProductLobbyProps = {
 /** Menu das áreas liberadas para a aluna; a marca da navbar sempre chega aqui. */
 export async function ProductLobby({ enterSingleProduct = false }: ProductLobbyProps) {
   const { session, products, lastArea } = await requireStudent(enterSingleProduct ? '/' : '/menu');
+  const experience = products.includes('sll') ? await getStudentExperience(session.user.id) : null;
+  const course =
+    experience?.expert === 'ze'
+      ? {
+          ...PRODUCTS.sll,
+          title: 'Curso Zé Mauro',
+          path: '/ze-mauro' as const,
+          pitch: 'Assista às aulas do Zé Mauro para preparar sua loja e vender na Shopee.',
+        }
+      : undefined;
   const [onlyProduct] = products;
   if (enterSingleProduct && products.length === 1 && onlyProduct) {
-    redirect(PRODUCTS[onlyProduct].path);
+    redirect(onlyProduct === 'sll' && course ? course.path : PRODUCTS[onlyProduct].path);
   }
 
   const { user } = session;
@@ -56,7 +67,9 @@ export async function ProductLobby({ enterSingleProduct = false }: ProductLobbyP
 
   const store = products.includes('loja-pronta') ? await storeCard(user.id) : undefined;
   const status: Partial<Record<ProductId, ProductStatus>> = {
-    sll: SLL_CHOOSER_STATUS,
+    sll: course
+      ? { label: 'Suas aulas com o Zé Mauro', cta: 'Acessar meu curso' }
+      : SLL_CHOOSER_STATUS,
     ...(store ? { 'loja-pronta': store.status } : {}),
   };
   const { primary, description } = chooserHeadline({
@@ -72,11 +85,17 @@ export async function ProductLobby({ enterSingleProduct = false }: ProductLobbyP
         <CardHeading
           className="mb-0"
           title={name ? `Oi, ${name}! Pra onde vamos?` : 'Pra onde vamos?'}
-          description={description}
+          description={course ? description.replace('do SLL', 'do Zé Mauro') : description}
         />
       </div>
       <div className={products.length === 1 ? 'mx-auto w-full max-w-[512px]' : undefined}>
-        <ProductChooser products={products} lastArea={lastArea} status={status} primary={primary} />
+        <ProductChooser
+          products={products}
+          lastArea={lastArea}
+          status={status}
+          primary={primary}
+          course={course}
+        />
       </div>
     </CenteredMemberPage>
   );

@@ -2,11 +2,14 @@
 
 import { eq, desc, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { db } from '@/server/db';
 import { hotmartEvents, hotmartProductMappings, hotmartSettings } from '@/server/db/schema';
 import { requireAdmin } from '@/features/admin/server/access';
 import { encryptHottok } from './secret';
 import { parseHotmartSettings } from '../settings-input';
+import { replayPendingHotmartEvents } from './pending-events';
+import { revalidateAdminOverview } from '@/features/admin/server/overview-cache';
 
 export type SettingsResult = { message: string; saved: boolean };
 
@@ -74,8 +77,21 @@ export async function saveHotmartSettings(
       .onConflictDoNothing();
     return { message: 'Configuração salva. Novos avisos já podem ser recebidos.', saved: true };
   });
-  if (outcome.saved) revalidatePath('/admin/hotmart');
+  if (outcome.saved) {
+    await replayPendingHotmartEvents(sll);
+    await replayPendingHotmartEvents(store);
+    revalidateAdminOverview();
+    revalidatePath('/admin/hotmart');
+  }
   return outcome;
+}
+
+export async function retryHotmartPendingEvents(): Promise<void> {
+  await requireAdmin('/admin/hotmart');
+  const result = await replayPendingHotmartEvents();
+  revalidateAdminOverview();
+  revalidatePath('/', 'layout');
+  redirect(`/admin/hotmart?resultado=${result.failed ? 'retry-failed' : 'retried'}`);
 }
 
 export async function getHotmartAdminState() {

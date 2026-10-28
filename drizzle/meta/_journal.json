@@ -463,6 +463,48 @@
       "when": 1792789692151,
       "tag": "0065_hotmart-numeric-product-identities",
       "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1793059291228,
+      "tag": "0066_legacy-catalog-recovery",
+      "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1793059291229,
+      "tag": "0067_legacy-catalog-account-deletion",
+      "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1793059309460,
+      "tag": "0068_legacy-catalog-imports",
+      "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1793060586283,
+      "tag": "0069_course-expert-isolation",
+      "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1793061950011,
+      "tag": "0070_recovered-publication-confirmation",
+      "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1793064262037,
+      "tag": "0071_hotmart-pending-event-recovery",
+      "breakpoints": true
     }
   ]
 }

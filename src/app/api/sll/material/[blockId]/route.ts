@@ -7,6 +7,7 @@ import { getLessonLockMessage } from '@/features/sll/server/stage-lock';
 import { db } from '@/server/db';
 import { learningContentBlocks } from '@/server/db/schema';
 import { storage } from '@/server/storage';
+import { getStudentExperience } from '@/features/sll/server/experience';
 
 type RouteContext = { params: Promise<{ blockId: string }> };
 
@@ -38,7 +39,9 @@ export async function GET(_request: Request, context: RouteContext) {
             with: {
               stage: {
                 columns: { id: true, status: true, archivedAt: true },
-                with: { track: { columns: { id: true, status: true, archivedAt: true } } },
+                with: {
+                  track: { columns: { id: true, expert: true, status: true, archivedAt: true } },
+                },
               },
             },
           },
@@ -48,6 +51,13 @@ export async function GET(_request: Request, context: RouteContext) {
   });
   if (!block || (block.kind !== 'image' && block.kind !== 'file'))
     return new Response(null, { status: 404 });
+  if (
+    !admin &&
+    !(await getStudentExperience(state.session.user.id)).allowed.includes(
+      block.lesson.module.stage.track.expert,
+    )
+  )
+    return new Response(null, { status: 404, headers: { 'Cache-Control': 'no-store' } });
 
   const published =
     block.lesson.archivedAt === null &&
@@ -70,6 +80,7 @@ export async function GET(_request: Request, context: RouteContext) {
   // Etapa do método ainda fechada: o material só abre junto com a aula.
   if (
     !admin &&
+    block.lesson.module.stage.track.expert === 'pri' &&
     (await getLessonLockMessage(
       state.session.user.id,
       block.lesson.module.stage.track.id,

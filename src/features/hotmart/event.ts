@@ -31,6 +31,7 @@ const purchaseEvent = z.object({
     product: z.object({
       ucode: identifier,
       id: absentWhenNull(z.number().int().positive().safe()),
+      name: absentWhenNull(z.string().max(2000).transform(cleanBuyerName)),
     }),
     buyer: z.object({
       // Espaço colado no checkout não pode recusar a compra: corta antes de validar.

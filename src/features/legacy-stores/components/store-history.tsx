@@ -8,9 +8,11 @@ import { legacyDeliveryLabel } from '../model';
 export function LegacyStoreHistory({
   stores,
   basePath,
+  canContinue = false,
 }: {
   stores: { id: string; record: LegacyStore; products: number }[];
   basePath: string;
+  canContinue?: boolean;
 }) {
   if (!stores.length) return null;
   return (
@@ -20,9 +22,16 @@ export function LegacyStoreHistory({
           Lojas anteriores
         </h2>
         <p className="mt-2 text-body text-muted-foreground">
-          Veja os dados salvos das suas lojas e as entregas registradas.
+          {canContinue
+            ? 'Escolha a loja que você quer continuar. Você não precisa responder tudo de novo. Os estados abaixo são do registro antigo.'
+            : 'Veja os dados salvos das suas lojas e as entregas registradas.'}
         </p>
       </div>
+      {basePath === '/loja-pronta/previous-stores' ? (
+        <Button asChild variant="soft" size="inline" className="w-fit px-5">
+          <Link href="/loja-pronta/produtos/recovered">Produtos recuperados</Link>
+        </Button>
+      ) : null}
       <ul className="divide-y divide-border">
         {stores.map((store) => (
           <li
@@ -42,12 +51,27 @@ export function LegacyStoreHistory({
                   : `${store.products} produtos salvos`}
               </p>
             </div>
-            <Button asChild variant="soft" size="inline" className="w-fit px-5">
-              <Link href={`${basePath}/${store.id}`}>
-                Ver loja
-                <ArrowRight aria-hidden="true" />
-              </Link>
-            </Button>
+            <div className="flex shrink-0 flex-col items-start gap-3">
+              {canContinue ? (
+                <Button asChild size="inline" className="w-fit px-5">
+                  <Link href={`${basePath}/${store.id}/continue`}>
+                    Retomar esta loja
+                    <ArrowRight aria-hidden="true" />
+                  </Link>
+                </Button>
+              ) : null}
+              <Button
+                asChild
+                variant={canContinue ? 'link' : 'soft'}
+                size="inline"
+                className="w-fit px-5"
+              >
+                <Link href={`${basePath}/${store.id}`}>
+                  {canContinue ? 'Ver dados salvos' : 'Ver loja'}
+                  <ArrowRight aria-hidden="true" />
+                </Link>
+              </Button>
+            </div>
           </li>
         ))}
       </ul>

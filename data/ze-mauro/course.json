@@ -1,0 +1,421 @@
+{
+  "slug": "ze-mauro",
+  "title": "Curso Zé Mauro",
+  "stages": [
+    {
+      "slug": "course",
+      "title": "Aulas do Zé Mauro",
+      "modules": [
+        {
+          "slug": "module-01",
+          "title": "Módulo 1 – Avisos Gerais",
+          "lessons": [
+            {
+              "title": "Cuidado com o Dinheiro",
+              "videoId": "4b6b9002-4a5a-4030-8d6a-20696b11e117",
+              "slug": "lesson-01"
+            },
+            {
+              "title": "O problema de ser",
+              "videoId": "90b755a7-9010-41ce-9435-d9b2d6415213",
+              "slug": "lesson-02"
+            },
+            {
+              "title": "Onde você está se metendo",
+              "videoId": "8864eaa2-4273-444e-9aac-fde3982ecc16",
+              "slug": "lesson-03"
+            }
+          ]
+        },
+        {
+          "slug": "module-02",
+          "title": "Módulo 2 – Tudo Sobre a Loja",
+          "lessons": [
+            {
+              "title": "Apresentação",
+              "videoId": "51529268-3c65-469c-983a-88cbdb6b057e",
+              "slug": "lesson-01"
+            },
+            {
+              "title": "CPF vs. CNPJ",
+              "videoId": "23731d90-c450-4e3a-adec-79badee296cf",
+              "slug": "lesson-02"
+            },
+            {
+              "title": "Diversificação",
+              "videoId": "73ebd9b3-f07d-4160-ac7c-977e3637e501",
+              "slug": "lesson-03"
+            },
+            {
+              "title": "Primeiras vendas",
+              "videoId": "fc80940f-97b2-4673-8904-767da2604bae",
+              "slug": "lesson-04"
+            }
+          ]
+        },
+        {
+          "slug": "module-03",
+          "title": "Módulo 3 – Entendendo o Jogo",
+          "lessons": [
+            {
+              "title": "Espionando os concorrentes",
+              "videoId": "ff8f3e1d-0368-4b36-a729-8098bc2b126c",
+              "slug": "lesson-01"
+            },
+            {
+              "title": "Planilha 3P na prática",
+              "videoId": "c5619d1a-605a-40d5-bad7-967d75e63c61",
+              "slug": "lesson-02"
+            }
+          ]
+        },
+        {
+          "slug": "module-04",
+          "title": "Módulo 4 – Sistema 3P na Prática",
+          "lessons": [
+            {
+              "title": "Introdução ao Sistema 3P",
+              "videoId": "b36728d7-dd2d-4082-b10b-0255fdf3168f",
+              "slug": "lesson-01"
+            },
+            {
+              "title": "P1 – Produto com demanda",
+              "videoId": "1319efe8-3e72-4fd9-85e9-0d33a1055635",
+              "slug": "lesson-02"
+            },
+            {
+              "title": "P2 – Preço competitivo",
+              "videoId": "804528c3-2fb8-44b3-8632-691b0d670edc",
+              "slug": "lesson-03"
+            }
+          ]
+        },
+        {
+          "slug": "module-05",
+          "title": "Módulo 5 – Operação Sem Estoque",
+          "lessons": [
+            {
+              "title": "Introdução",
+              "videoId": "fbed884f-9ac4-4a1d-84e6-71779d91c510",
+              "slug": "lesson-01"
+            },
+            {
+              "title": "Entendendo como tudo funciona",
+              "videoId": "7157001f-2121-4500-95b8-44158fe3e83e",
+              "slug": "lesson-02"
+            },
+            {
+              "title": "Fornecedores",
+              "videoId": "a2bc80ee-3447-4cc0-a126-105bf63be4ae",
+              "slug": "lesson-03"
+            },
+            {
+              "title": "Reservando o seu pedido",
+              "videoId": "64203afd-6156-4860-bd1d-2f63cdbba69c",
+              "slug": "lesson-04"
+            }
+          ]
+        },
+        {
+          "slug": "module-06",
+          "title": "Módulo 6 – Publicando Seu Produto",
+          "lessons": [
+            {
+              "title": "Introdução",
+              "videoId": "1dcec967-66c9-4e2a-9c6d-0b3cf4c26302",
+              "slug": "lesson-01"
+            },
+            {
+              "title": "Foto de capa 1-2-3-4",
+              "videoId": null,
+              "slug": "lesson-02"
+            },
+            {
+              "title": "Segunda foto",
+              "videoId": null,
+              "slug": "lesson-03"
+            },
+            {
+              "title": "Terceira foto",
+              "videoId": null,
+              "slug": "lesson-04"
+            },
+            {
+              "title": "Quarta foto",
+              "videoId": null,
+              "slug": "lesson-05"
+            },
+            {
+              "title": "Quinta foto",
+              "videoId": "50071242-ca08-4eca-a03f-271258a686c9",
+              "slug": "lesson-06"
+            },
+            {
+              "title": "Sexta foto",
+              "videoId": "e9d4cdd8-3ed5-4638-9acd-409451a47730",
+              "slug": "lesson-07"
+            },
+            {
+              "title": "Sétima foto",
+              "videoId": "b42011ad-b512-4254-990e-c42f4aa97b90",
+              "slug": "lesson-08"
+            },
+            {
+              "title": "Oitava foto",
+              "videoId": "a436d10c-71e5-47e8-9348-78406005a172",
+              "slug": "lesson-09"
+            },
+            {
+              "title": "Nona Foto",
+              "videoId": "9f22c7d3-865d-45b3-844a-96a040437593",
+              "slug": "lesson-10"
+            },
+            {
+              "title": "Vídeos dos anúncios",
+              "videoId": "d9883075-8ce8-4b5a-a074-94c3747b1ffd",
+              "slug": "lesson-11"
+            },
+            {
+              "title": "Descrição",
+              "videoId": "4557ca1f-36eb-44da-9358-e294073e16b5",
+              "slug": "lesson-12"
+            },
+            {
+              "title": "GTIN / EAN",
+              "videoId": "c0884c93-4ad1-4008-b9e4-d832ee7bca32",
+              "slug": "lesson-13"
+            },
+            {
+              "title": "Especificações",
+              "videoId": "3164e068-3a3a-4e78-b060-86e880e4f0dd",
+              "slug": "lesson-14"
+            },
+            {
+              "title": "Variações",
+              "videoId": "ed62b53c-a23f-4e81-990f-c18f14e108b6",
+              "slug": "lesson-15"
+            },
+            {
+              "title": "Canal Logístico",
+              "videoId": "b9877f47-50d0-4d3d-861a-cf25342bf7c5",
+              "slug": "lesson-16"
+            },
+            {
+              "title": "Informações fiscais",
+              "videoId": "49bc3c6a-9433-4f89-9575-b9137998540a",
+              "slug": "lesson-17"
+            }
+          ]
+        },
+        {
+          "slug": "module-07",
+          "title": "Módulo 7 – Central de Marketing (Básico)",
+          "lessons": [
+            {
+              "title": "Promoções de desconto (Cupons)",
+              "videoId": "ce2dd44c-7e4a-49ab-bb9d-f0e9fe1fcb93",
+              "slug": "lesson-01"
+            },
+            {
+              "title": "Cupom da loja",
+              "videoId": "27c8dcfe-c507-4f85-936d-cce868c8948e",
+              "slug": "lesson-02"
+            },
+            {
+              "title": "Cupom do produto",
+              "videoId": "ab8ea484-5037-4cee-bf6b-a4a0ab7f8a9c",
+              "slug": "lesson-03"
+            },
+            {
+              "title": "Cupom do seguidor",
+              "videoId": "736c4d13-2822-4c6e-a9a8-825090caf4bf",
+              "slug": "lesson-04"
+            },
+            {
+              "title": "Oferta relâmpago",
+              "videoId": "7ee1ff6f-83fd-4033-a8a0-1fe721c40ae5",
+              "slug": "lesson-05"
+            }
+          ]
+        },
+        {
+          "slug": "module-08",
+          "title": "Módulo 7.1 – Central de Marketing (Avançado)",
+          "lessons": [
+            {
+              "title": "Leve mais por menos",
+              "videoId": "253981e3-57fd-4af4-8394-c44718afd809",
+              "slug": "lesson-01"
+            },
+            {
+              "title": "Transmissão (Chat)",
+              "videoId": null,
+              "slug": "lesson-02"
+            },
+            {
+              "title": "Atualização da Shopee",
+              "videoId": null,
+              "slug": "lesson-03"
+            }
+          ]
+        },
+        {
+          "slug": "module-09",
+          "title": "Módulo 8 – Shopee Ads",
+          "lessons": [
+            {
+              "title": "Introdução",
+              "videoId": "cfa64801-c4e4-4e29-84c0-95dc50cd556d",
+              "slug": "lesson-01"
+            },
+            {
+              "title": "Principais erros",
+              "videoId": "4ef36e1b-a8fc-4ebe-bbb5-d4970b639fb3",
+              "slug": "lesson-02"
+            },
+            {
+              "title": "1º erro",
+              "videoId": "ee70b5dc-8631-48a5-8863-f223a301bc0f",
+              "slug": "lesson-03"
+            },
+            {
+              "title": "2º erro",
+              "videoId": "d709c927-f9f2-4a29-a52b-3bcead9d62d9",
+              "slug": "lesson-04"
+            },
+            {
+              "title": "3º erro",
+              "videoId": "4655fe99-7056-46fe-9c11-bb43016d7524",
+              "slug": "lesson-05"
+            },
+            {
+              "title": "Criando seu primeiro anúncio",
+              "videoId": "5ea85b4b-299c-4bc4-9aea-b0cc541e927c",
+              "slug": "lesson-06"
+            }
+          ]
+        },
+        {
+          "slug": "module-10",
+          "title": "Módulo 8.1 –Otimização",
+          "lessons": [
+            {
+              "title": "Métricas do anúncio",
+              "videoId": "709b02af-9484-4709-9f22-6b663967a19d",
+              "slug": "lesson-01"
+            },
+            {
+              "title": "Encontrando o ROAS perfeito",
+              "videoId": "ecf42b8d-6f16-4937-821f-304c0ad66d3a",
+              "slug": "lesson-02"
+            }
+          ]
+        },
+        {
+          "slug": "module-11",
+          "title": "Módulo 8.2 – Shopee Ads Avançado",
+          "lessons": [
+            {
+              "title": "Campanha aberta — Parte 1",
+              "videoId": "9b410971-4c00-4606-87d7-d91ba1879b12",
+              "slug": "lesson-01"
+            },
+            {
+              "title": "Campanha exclusiva — Parte 2",
+              "videoId": "43687d71-3915-4500-9408-96c4fc5e101e",
+              "slug": "lesson-02"
+            },
+            {
+              "title": "Atualização sobre afiliados",
+              "videoId": null,
+              "slug": "lesson-03"
+            }
+          ]
+        },
+        {
+          "slug": "module-12",
+          "title": "Módulo 9 – Informações Gerenciais",
+          "lessons": [
+            {
+              "title": "Informações Gerenciais",
+              "videoId": "e03f6126-70d1-420d-9ca5-b56d319a707c",
+              "slug": "lesson-01"
+            },
+            {
+              "title": "Entendendo seu caixa",
+              "videoId": null,
+              "slug": "lesson-02"
+            }
+          ]
+        },
+        {
+          "slug": "bonus-live",
+          "title": "Bônus · Shopee Live",
+          "lessons": [
+            {
+              "title": "Introdução - Por que a Shopee Live funciona tanto",
+              "videoId": "7edf4add-2365-4c73-be89-234790109fd9",
+              "slug": "lesson-01"
+            },
+            {
+              "title": "Roteiro simples de live que segura a atenção",
+              "videoId": "ac914fb1-fe7e-4099-abe9-14986a71cab4",
+              "slug": "lesson-02"
+            },
+            {
+              "title": "1-O que você precisa para começar",
+              "videoId": "f52c923f-48ef-4610-8d1e-87e546f4cb2f",
+              "slug": "lesson-03"
+            },
+            {
+              "title": "2-Gatilhos que aumentam vendas",
+              "videoId": "80344e55-338b-427c-be6d-63d286a487fe",
+              "slug": "lesson-04"
+            },
+            {
+              "title": "3-Roteiro simples de live que segura a atenção",
+              "videoId": "c5508aab-eb25-4f63-8506-626648ff862e",
+              "slug": "lesson-05"
+            }
+          ]
+        },
+        {
+          "slug": "bonus-video",
+          "title": "Bônus · Shopee Vídeo",
+          "lessons": [
+            {
+              "title": "introducao- Por que o Shopee Vídeo é uma mina de ouro hoje",
+              "videoId": "bd4dcb6b-7dea-4d99-b4a0-210b079a4821",
+              "slug": "lesson-01"
+            },
+            {
+              "title": "1-O que funciona de verdade no Shopee Vídeo (e o que não funciona)",
+              "videoId": "308d7e9a-2fd7-466e-bb5f-a94d3853afae",
+              "slug": "lesson-02"
+            },
+            {
+              "title": "2-Estrutura de um vídeo que converte (Roteiro simples)",
+              "videoId": "2c23cd61-4f9c-4a10-ab4b-021e6262923d",
+              "slug": "lesson-03"
+            },
+            {
+              "title": "3-Como postar da maneira certa",
+              "videoId": "3bc517af-5f35-4e74-9823-176ceaf70248",
+              "slug": "lesson-04"
+            },
+            {
+              "title": "4-Como postar da maneira certa",
+              "videoId": "766ffb46-ab81-4f3f-a0f8-830295f2dbc2",
+              "slug": "lesson-05"
+            },
+            {
+              "title": "5-Estratégia de volume e constância",
+              "videoId": "037fa10e-803c-4607-a7d1-c16f0e35fbb1",
+              "slug": "lesson-06"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

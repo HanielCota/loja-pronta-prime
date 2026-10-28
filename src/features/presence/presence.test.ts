@@ -22,6 +22,15 @@ describe('normalizePresencePath', () => {
 });
 
 describe('describePresence', () => {
+  test('names the independent Zé course and resolves its lesson titles', () => {
+    expect(describePresence('/ze-mauro')).toEqual({ area: 'Curso Zé Mauro', page: 'Meu curso' });
+    const id = '3f2b7c1e-8a4d-4f6b-9c2e-1a2b3c4d5e6f';
+    expect(describePresence(`/ze-mauro/aula/${id}`)).toEqual({
+      area: 'Curso Zé Mauro',
+      page: 'Assistindo uma aula',
+      lessonId: id,
+    });
+  });
   test('nomeia as páginas do SLL, da Loja Pronta e do perfil', () => {
     expect(describePresence('/sll')).toEqual({ area: 'SLL', page: 'Painel' });
     expect(describePresence('/sll/metodo/etapa/abc')).toEqual({

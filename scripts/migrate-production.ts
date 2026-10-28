@@ -3,6 +3,7 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { Pool } from 'pg';
 import pandaCatalog from '../data/sll/panda-videos.json';
 import { importInitialSllContent } from '../src/features/sll/server/import-initial-content';
+import { importZeCourse } from '../src/features/ze-mauro/server/import-course';
 import { importSllTools } from '../src/features/sll/tools/server/import-tools';
 import { publishToolMaterials } from '../src/features/sll/tools/server/publish-materials';
 import { ensureInitialAssistantPlaybooks } from '../src/features/assistant/server/initial-playbooks';
@@ -19,6 +20,10 @@ async function applyMigrations(): Promise<void> {
     console.log('Migrações aplicadas com sucesso.');
     // O banco online não recebe os importadores locais; leva o conteúdo conferido na própria imagem.
     const imported = await importInitialSllContent(pool);
+    const ze = await importZeCourse(pool);
+    console.log(
+      `Zé Mauro course imported: ${ze.tracks} tracks, ${ze.lessons} lessons, ${ze.videos} videos, ${ze.pending} pending.`,
+    );
     console.log(
       `Conteúdo SLL importado: ${imported.tracks} trilhas, ${imported.lessons} aulas, ${imported.videos} vídeos e ${imported.resources} recursos.`,
     );

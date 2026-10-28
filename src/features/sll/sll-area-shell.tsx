@@ -75,6 +75,8 @@ type SllAreaFrameProps = {
   account: NavbarAccount;
   /** Tem os dois produtos: o menu oferece ir pra Minha loja. */
   hasChoice: boolean;
+  navigation?: { rail: ReactNode; disclosure: ReactNode; label: string };
+  courseArea?: { href: string; label: string };
   children: ReactNode;
 };
 
@@ -87,7 +89,13 @@ type SllAreaFrameProps = {
  * ao trocar de página, o menu fica parado e só o conteúdo muda (com o esboço de carregamento
  * enquanto a página nova não chega).
  */
-export function SllAreaFrame({ account, hasChoice, children }: SllAreaFrameProps) {
+export function SllAreaFrame({
+  account,
+  hasChoice,
+  navigation,
+  courseArea,
+  children,
+}: SllAreaFrameProps) {
   const accountName = account.preferredName?.trim() || account.name;
 
   return (
@@ -102,7 +110,7 @@ export function SllAreaFrame({ account, hasChoice, children }: SllAreaFrameProps
       </nav>
       <div className="min-h-dvh lg:grid lg:grid-cols-[18rem_minmax(0,1fr)]">
         <aside
-          aria-label="Navegação do SLL"
+          aria-label={navigation?.label ?? 'Navegação do SLL'}
           className="hidden lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:gap-6 lg:border-r lg:border-border lg:bg-card lg:px-4 lg:pt-5 lg:pb-4 forced-colors:border-[CanvasText]"
         >
           <div className="flex items-center justify-between gap-2">
@@ -110,7 +118,7 @@ export function SllAreaFrame({ account, hasChoice, children }: SllAreaFrameProps
             <ThemeToggleButton />
           </div>
           <ScrollFade className="-mx-1 min-h-0 flex-1 px-1">
-            <SllSidebar variant="rail" />
+            {navigation?.rail ?? <SllSidebar variant="rail" />}
           </ScrollFade>
           <div className="flex flex-col gap-2 border-t border-border pt-4">
             {hasChoice ? (
@@ -134,7 +142,11 @@ export function SllAreaFrame({ account, hasChoice, children }: SllAreaFrameProps
         </aside>
         <div className="flex min-w-0 flex-col">
           <div className="lg:hidden">
-            <MemberNavbar account={account} currentArea={hasChoice ? 'sll' : undefined} />
+            <MemberNavbar
+              account={account}
+              currentArea={hasChoice ? 'sll' : undefined}
+              courseArea={courseArea}
+            />
           </div>
           <PageMain
             id="sll-content"
@@ -142,7 +154,7 @@ export function SllAreaFrame({ account, hasChoice, children }: SllAreaFrameProps
             className="mx-auto flex w-full max-w-[1200px] flex-col gap-8 px-4 pt-6 pb-12 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring sm:px-6 sm:pt-8 lg:px-10 lg:pt-10"
           >
             <div className="lg:hidden">
-              <SllSidebar variant="disclosure" />
+              {navigation?.disclosure ?? <SllSidebar variant="disclosure" />}
             </div>
             <NavigationPending fallback={<PageLoading />}>{children}</NavigationPending>
           </PageMain>

@@ -17,7 +17,13 @@ const ORDER: ProductId[] = ['loja-pronta', ...PRODUCT_IDS.filter((id) => id !== 
  * troca de área, sem passar pela escolha do início. São links de verdade (funcionam sem
  * JavaScript); o leitor de tela ouve "página atual" na da vez.
  */
-export function AreaNav({ current }: { current: ProductId }) {
+export function AreaNav({
+  current,
+  courseArea,
+}: {
+  current: ProductId;
+  courseArea?: { href: string; label: string } | undefined;
+}) {
   return (
     <nav aria-label="Suas áreas" className="flex">
       <ul className="flex gap-6">
@@ -27,7 +33,7 @@ export function AreaNav({ current }: { current: ProductId }) {
           return (
             <li key={id} className="flex">
               <Link
-                href={PRODUCTS[id].path}
+                href={id === 'sll' && courseArea ? courseArea.href : PRODUCTS[id].path}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
                   // O traço é um ::after colado no pé da barra (-bottom-px: por cima da linha de
@@ -39,7 +45,7 @@ export function AreaNav({ current }: { current: ProductId }) {
                 )}
               >
                 <Icon aria-hidden="true" className={cn('size-5 shrink-0', active && 'text-link')} />
-                {PRODUCTS[id].tab}
+                {id === 'sll' && courseArea ? courseArea.label : PRODUCTS[id].tab}
               </Link>
             </li>
           );

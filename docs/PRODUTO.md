@@ -1,5 +1,22 @@
 # Escala Shop — Platform overview
 
+## Previous store continuation (October 27, 2026)
+
+Members with saved stores see **Retomar esta loja** before the option to start another store.
+The owner-scoped continuation page reuses existing import, review, Shopee connection and explicit
+publication confirmation. Members do not repeat onboarding or brand creation. The review list
+can show only the selected store and reports persisted publication states rather than calling
+every imported product a draft. Availability follows current integration and pilot settings;
+connecting does not publish products or establish a delivery deadline.
+
+## Independent Zé Mauro course (October 26, 2026)
+
+The platform includes `/ze-mauro`, with 57 supplied recordings and eight coming-soon entries.
+Its content and progress are separate from Pri's SLL. Active purchases or explicit manual
+assignments determine the allowed expert areas. The 16 shared Pri videos in the final source
+block were excluded at the owner's request. The current Escala Shop visual design is preserved.
+See [course inventory, access and deployment](ZE-MAURO-COURSE.md).
+
 ## Em uma frase
 
 Escala Shop ([membros.escalashop.com.br](https://membros.escalashop.com.br)) is a member platform for women beginning to sell on Shopee. It offers the SLL course and tools, plus the Loja Pronta journey, where students prepare their own brand and seller account one step at a time. See [the domain migration](ESCALA-SHOP-MIGRATION.md) for legacy links and integration routing.
@@ -158,3 +175,12 @@ Não conecta contas das alunas nem publica anúncios. Ver `docs/INTEGRACAO-BLING
 The confirmed name, logo and description can now be queued automatically after a live Shopee connection, independently of the supplier catalog. The worker requires `SHOPEE_BRAND_PUBLICATION_ENABLED`, an eligible account and a confirmed current brand snapshot. Editing the brand requires confirmation again; existing brands require a one-time confirmation. Real Shopee permissions and the controlled live pilot remain unverified by this implementation.
 
 The banner kit provides two editable PNG compositions, protected previews, approval tied to the exact draft and brand, and approved downloads. The dashboard and brand-completion page link to the kit. Seller Centre instructions explain manual upload, preview and publication while an official decoration API remains unconfirmed. This does not publish banners automatically. See [implementation and operating limits](BRAND-AND-BANNERS.md).
+
+## Recovered customer products (October 26, 2026)
+
+The audited recovery run with 27,972 products is available through Loja Pronta → previous
+stores → recovered products. Each eligible customer can import their own recovered products
+into a private review list, inspect photos and variations, and edit the title, description
+and selling price. Repeating an import preserves existing edits. The original historical
+records remain unchanged. This import does not publish marketplace listings or advance setup.
+Other store recoveries remain stopped. See [recovery and imports](LEGACY-CATALOG-RECOVERY.md).

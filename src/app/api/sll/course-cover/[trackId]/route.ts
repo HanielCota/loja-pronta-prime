@@ -21,6 +21,7 @@ import {
 } from '@/features/admin/server/node-drafts';
 import { removeStorageKeyIfUnused } from '@/features/admin/server/storage-references';
 import { readLimitedFormData, RequestBodyTooLargeError } from '@/lib/request-body';
+import { getStudentExperience } from '@/features/sll/server/experience';
 
 const MAX_BYTES = 20 * 1024 * 1024;
 type Context = { params: Promise<{ trackId: string }> };
@@ -32,18 +33,27 @@ function error(message: string, status: number) {
 async function access() {
   const state = await getSessionState();
   if (state.status !== 'active' || needsFirstPassword(state.session.user))
-    return { admin: false, student: false };
+    return { admin: false, student: false, experts: [] };
   const admin = hasAdminRole(state.session.user.role);
   const student =
     admin || (await getStudentProducts(state.session.user.id)).products.includes('sll');
-  return { admin, student };
+  const experts =
+    student && !admin ? (await getStudentExperience(state.session.user.id)).allowed : [];
+  return { admin, student, experts };
 }
 
 async function courseFromParams(context: Context) {
   const id = z.uuid().safeParse((await context.params).trackId);
   if (!id.success) return null;
   return db.query.learningTracks.findFirst({
-    columns: { id: true, kind: true, status: true, coverStorageKey: true, coverAlt: true },
+    columns: {
+      id: true,
+      kind: true,
+      expert: true,
+      status: true,
+      coverStorageKey: true,
+      coverAlt: true,
+    },
     where: and(
       eq(learningTracks.id, id.data),
       eq(learningTracks.kind, 'complementary_course'),
@@ -81,6 +91,8 @@ export async function GET(request: Request, context: Context) {
   const permission = await access();
   if (!permission.student) return error('Entre para ver este curso.', 401);
   const course = await courseFromParams(context);
+  if (course && !permission.admin && !permission.experts.includes(course.expert))
+    return error('Este curso não está disponível para esta conta.', 404);
   if (!course || (course.status !== 'published' && !permission.admin))
     return error('Este curso ainda não tem capa.', 404);
   const query = new URL(request.url).searchParams;

@@ -50,6 +50,10 @@ const STORE_PAGES: [RegExp, string][] = [
 
 /** Traduz o caminho guardado em "onde ela está", em palavras. */
 export function describePresence(path: string): PresencePlace {
+  const zeLesson = /^\/ze-mauro\/aula\/([0-9a-f-]{36})\/?$/i.exec(path);
+  if (zeLesson?.[1])
+    return { area: 'Curso Zé Mauro', page: 'Assistindo uma aula', lessonId: zeLesson[1] };
+  if (/^\/ze-mauro\/?$/.test(path)) return { area: 'Curso Zé Mauro', page: 'Meu curso' };
   const lesson = /^\/sll\/aula\/([0-9a-f-]{36})\/?$/i.exec(path);
   if (lesson?.[1]) return { area: 'SLL', page: 'Assistindo uma aula', lessonId: lesson[1] };
   for (const [pattern, page] of SLL_PAGES) if (pattern.test(path)) return { area: 'SLL', page };

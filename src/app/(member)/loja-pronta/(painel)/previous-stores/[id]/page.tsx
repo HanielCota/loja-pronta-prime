@@ -3,13 +3,15 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { AreaPage } from '@/features/member/components/area-shell';
+import { AreaPage, panelCard } from '@/features/member/components/area-shell';
 import { requireProduct } from '@/features/products/server/access';
 import { LegacyStoreDetail } from '@/features/legacy-stores/components/store-detail';
 import {
   getLegacyStoreForUser,
   LEGACY_PRODUCTS_PAGE_SIZE,
 } from '@/features/legacy-stores/server/queries';
+import { recoveredStores } from '@/features/legacy-stores/server/catalog-data';
+import { db } from '@/server/db';
 import { parsePageNumber } from '@/lib/search-params';
 
 export const metadata: Metadata = { title: 'Loja anterior' };
@@ -28,6 +30,9 @@ export default async function PreviousStorePage({
   const { session, products } = await requireProduct('loja-pronta', basePath);
   const data = await getLegacyStoreForUser(session.user.id, id, page);
   if (!data || (page > 1 && (page - 1) * LEGACY_PRODUCTS_PAGE_SIZE >= data.total)) notFound();
+  const recovery = (await recoveredStores(db.$client, session.user.id)).find(
+    (row) => row.id === (data.linked?.id ?? id),
+  );
   return (
     <AreaPage
       hasChoice={products.length > 1}
@@ -41,6 +46,25 @@ export default async function PreviousStorePage({
           Voltar às minhas lojas
         </Link>
       </Button>
+      <section aria-labelledby="continue-store" className={`${panelCard} gap-4`}>
+        <h2 id="continue-store" className="text-title font-semibold">
+          Continue com esta loja
+        </h2>
+        <p className="text-body text-muted-foreground">
+          O nome, a descrição e os produtos salvos continuam aqui. Confira o próximo passo sem
+          refazer o cadastro ou a marca.
+        </p>
+        <Button asChild className="w-fit">
+          <Link href={`${basePath}/continue`}>Retomar esta loja</Link>
+        </Button>
+      </section>
+      {recovery ? (
+        <Button asChild variant="soft" size="inline" className="w-fit px-5">
+          <Link href={`/loja-pronta/previous-stores/${recovery.id}/import`}>
+            Importar produtos recuperados
+          </Link>
+        </Button>
+      ) : null}
       <LegacyStoreDetail
         store={data.record}
         linked={data.linked}

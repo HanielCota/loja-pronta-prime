@@ -307,3 +307,44 @@ test('retorno colado mantém sessão e uso único antes de persistir a conexão'
   });
   await removeShopeeConnection(userId);
 });
+
+test('recovered products can connect before setup without advancing the setup phase', async () => {
+  const id = randomUUID();
+  await db
+    .insert(user)
+    .values({ id, name: 'Recovered catalog test', email: `${id}@example.invalid` });
+  try {
+    await db.insert(stores).values({ userId: id, phase: 1 });
+    await db.insert(studentProducts).values({ userId: id, product: 'loja-pronta' });
+    await db.insert(manualProductGrants).values({ userId: id, product: 'loja-pronta' });
+    const url = new URL(
+      await beginShopeeAuthorization(id, 'session', config, 'https://example.invalid', 'recovered'),
+    );
+    expect(
+      await finishShopeeAuthorization(
+        { ...callback(url.searchParams.get('state')!, id), shopId: 987123460 },
+        config,
+        accepted,
+      ),
+    ).toBe('connected');
+    expect((await db.select().from(stores).where(eq(stores.userId, id)))[0]?.phase).toBe(1);
+    const next = new URL(
+      await beginShopeeAuthorization(id, 'session', config, 'https://example.invalid', 'recovered'),
+    );
+    await db.delete(studentProducts).where(eq(studentProducts.userId, id));
+    let calls = 0;
+    expect(
+      await finishShopeeAuthorization(
+        { ...callback(next.searchParams.get('state')!, id), shopId: 987123460 },
+        config,
+        transport(() => {
+          calls++;
+          return tokens();
+        }),
+      ),
+    ).toBe('expired');
+    expect(calls).toBe(0);
+  } finally {
+    await db.delete(user).where(eq(user.id, id));
+  }
+});

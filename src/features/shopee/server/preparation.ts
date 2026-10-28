@@ -122,21 +122,15 @@ export async function prepareShopeeProduct(
     }
     if (!found) throw new Error('Marca de produto indisponível.');
   }
-  const reusable =
-    JSON.stringify(previous?.sourceImages) === JSON.stringify(product.images.slice(0, 9));
-  const imageIds: string[] = reusable ? [...previous!.image.image_id_list] : [];
-  for (const image of reusable ? [] : product.images.slice(0, 9)) {
-    const remote = await downloader(image, imageHosts, 10_000_000);
-    if (!/^image\/(jpeg|png|webp)(;|$)/i.test(remote.contentType))
-      throw new Error('Formato de imagem indisponível.');
-    const bytes = await sharp(remote.bytes, { limitInputPixels: 40_000_000 })
-      .rotate()
-      .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
-      .flatten({ background: '#ffffff' })
-      .jpeg({ quality: 88 })
-      .toBuffer();
-    imageIds.push(await uploadShopeeImage(config, access, bytes, fetcher));
-  }
+  const imageIds = await uploadShopeeProductImages(
+    config,
+    access,
+    product.images,
+    imageHosts,
+    fetcher,
+    previous,
+    downloader,
+  );
   return publicationPayloadSchema.parse({
     item_sku: product.sku,
     item_name: product.title,
@@ -169,4 +163,30 @@ export async function prepareShopeeProduct(
     sourceImages: product.images.slice(0, 9),
     variations: buildProductVariations(product),
   });
+}
+
+export async function uploadShopeeProductImages(
+  config: ShopeeConfiguration,
+  access: { shopId: number; accessToken: string },
+  images: string[],
+  imageHosts: string[],
+  fetcher: typeof fetch = fetch,
+  previous?: PublicationPayload,
+  downloader: typeof downloadPublicFile = downloadPublicFile,
+) {
+  const reusable = JSON.stringify(previous?.sourceImages) === JSON.stringify(images.slice(0, 9));
+  const imageIds: string[] = reusable ? [...previous!.image.image_id_list] : [];
+  for (const image of reusable ? [] : images.slice(0, 9)) {
+    const remote = await downloader(image, imageHosts, 10_000_000);
+    if (!/^image\/(jpeg|png|webp)(;|$)/i.test(remote.contentType))
+      throw new Error('Formato de imagem indisponível.');
+    const bytes = await sharp(remote.bytes, { limitInputPixels: 40_000_000 })
+      .rotate()
+      .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+      .flatten({ background: '#ffffff' })
+      .jpeg({ quality: 88 })
+      .toBuffer();
+    imageIds.push(await uploadShopeeImage(config, access, bytes, fetcher));
+  }
+  return imageIds;
 }

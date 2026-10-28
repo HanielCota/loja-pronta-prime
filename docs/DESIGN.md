@@ -1,5 +1,10 @@
 # Escala Shop design system
 
+The independent Zé Mauro course at `/ze-mauro` reuses `SllAreaFrame`, `SllPage`, `panelCard`,
+`Button`, the Panda lesson player and the existing progress component. Its sidebar lists its
+own modules. Mobile navigation uses the existing disclosure pattern. Colors, typography,
+spacing, themes and card shapes follow the current design; course access is separate from Pri's SLL.
+
 On October 26, 2026, the owner requested the platform name **Escala Shop** and the member address
 `membros.escalashop.com.br`. This changes brand text only; the existing mascot, colors, typography,
 components and layouts remain the design standard. Loja Pronta and SLL remain product names.
@@ -306,6 +311,12 @@ o tema escuro e o alto contraste.
 
 ### Painel admin
 
+- Hotmart recovery uses the existing `AdminShell`, `panelCard`, `FloatingLabelInput`,
+  `Button` and disclosure patterns. Pending events appear before integration settings,
+  with product identity, buyer email, written status, search and pagination. The overview
+  links to unresolved events. Product configuration reuses the specialist form; no new
+  colors, typography, layout shell or component system is introduced.
+
 - Leads (`/leads`) reutiliza a moldura do admin (o mesmo grupo `(admin)` e o mesmo `layout.tsx`), os mesmos cartões, campos e selects. Os indicadores
   usam números reais e as etapas usam texto junto da cor. A lista vira cartões de contato no
   celular, sem rolagem horizontal. Cadastro, importação com prévia e contato com histórico ficam
@@ -509,3 +520,21 @@ Mesmas molduras, cartões, textos e fluxos; só espaço, alinhamento, hierarquia
   do navegador com `accent-color` roxo, iguala a cor das dicas dos campos e tem estilo de
   impressão (só o conteúdo, preto no branco, links externos com o endereço). Tabelas usam
   números tabulares.
+
+### Recovered customer catalog (October 26, 2026)
+
+Recovered products use the existing Loja Pronta panel route group, `AreaPage`, `panelCard`,
+`Button`, `FloatingLabelInput` and `Textarea`. Previous store history links to the customer's
+recovered catalog. Store selection, import and review are separate pages. Protected original
+photos and variation photos use the existing rounded image treatment; variation combinations
+are disclosed with native details. The interface distinguishes an internal draft import from
+marketplace publication and keeps the current visual system unchanged.
+
+### Continuing a previous store (October 27, 2026)
+
+Previous store cards lead with **Retomar esta loja**. Starting another store remains available
+in a secondary disclosure below the history. The continuation page uses the existing narrow
+`AreaPage`, `panelCard`, `Button`, tokens and typography. It links directly to the existing
+import or review for that store, explains the actual connection/publication availability and
+does not promise a delivery date. The scoped review list preserves its store filter through
+pagination and shows each confirmed publication state. Administrative history remains read-only.

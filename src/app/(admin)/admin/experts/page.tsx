@@ -1,10 +1,14 @@
 import type { Metadata } from 'next';
-import { asc, eq } from 'drizzle-orm';
+import Link from 'next/link';
+import { and, asc, eq } from 'drizzle-orm';
 import { db } from '@/server/db';
 import {
   hotmartProductMappings,
   learningContentBlocks,
   learningLessons,
+  learningModules,
+  learningStages,
+  learningTracks,
   learningVideoVariants,
 } from '@/server/db/schema';
 import { EXPERT_IDS, EXPERT_LABELS } from '@/config/experts';
@@ -36,11 +40,16 @@ export default async function ExpertsPage({
       .select({ id: learningContentBlocks.id, title: learningLessons.title })
       .from(learningContentBlocks)
       .innerJoin(learningLessons, eq(learningContentBlocks.lessonId, learningLessons.id))
-      .where(eq(learningContentBlocks.kind, 'video'))
+      .innerJoin(learningModules, eq(learningLessons.moduleId, learningModules.id))
+      .innerJoin(learningStages, eq(learningModules.stageId, learningStages.id))
+      .innerJoin(learningTracks, eq(learningStages.trackId, learningTracks.id))
+      .where(and(eq(learningContentBlocks.kind, 'video'), eq(learningTracks.expert, 'pri')))
       .orderBy(asc(learningLessons.title)),
-    db.select().from(learningVideoVariants),
+    db.select().from(learningVideoVariants).where(eq(learningVideoVariants.expert, 'pri')),
   ]);
-  const result = getParam((await searchParams).resultado);
+  const params = await searchParams;
+  const result = getParam(params.resultado);
+  const pendingCode = (getParam(params.codigo) ?? '').slice(0, 150);
   return (
     <AdminPage title="Especialistas e vídeos">
       {result ? (
@@ -52,13 +61,25 @@ export default async function ExpertsPage({
               : 'Confira os campos. Nada foi alterado.'}
         </output>
       ) : null}
+      <section className={panelCard} aria-labelledby="ze-course-preview">
+        <h2 id="ze-course-preview" className="text-title font-semibold">
+          Curso Zé Mauro
+        </h2>
+        <p className="text-body text-muted-foreground">
+          Confira os módulos e as aulas na prévia de administrador. Para editar as aulas, abra
+          Cursos no painel.
+        </p>
+        <Button asChild className="sm:w-fit">
+          <Link href="/ze-mauro">Ver área do Zé Mauro</Link>
+        </Button>
+      </section>
       <section className={panelCard} aria-labelledby="expert-offers">
         <h2 id="expert-offers" className="text-title font-semibold">
           Origem das compras
         </h2>
         <p className="text-body text-muted-foreground">
-          Cadastre o código real do produto Hotmart vendido por cada especialista. A compra define
-          os vídeos disponíveis, mantendo a mesma plataforma. Um código cadastrado não troca de
+          Cadastre o código real do produto Hotmart vendido por cada especialista. A compra define a
+          área do curso disponível, mantendo a mesma plataforma. Um código cadastrado não troca de
           experiência.
         </p>
         <ul className="space-y-2 text-body">
@@ -70,16 +91,19 @@ export default async function ExpertsPage({
           ))}
         </ul>
         <form action={saveExpertOffer} className="flex flex-col gap-4">
+          {pendingCode ? <input type="hidden" name="returnToHotmart" value="1" /> : null}
           <FloatingLabelInput
             id="expert-offer-code"
             name="code"
             label="Código do produto na Hotmart"
             required
             maxLength={150}
+            defaultValue={pendingCode}
           />
           <label htmlFor="expert-access-1" className="flex flex-col gap-2 text-body">
             Produto
             <SelectMenu id="expert-access-1" name="access">
+              <option value="">Selecione o acesso</option>
               <option value="sll">SLL</option>
               <option value="loja-pronta">Loja Pronta</option>
             </SelectMenu>
@@ -87,6 +111,7 @@ export default async function ExpertsPage({
           <label htmlFor="expert-expert-1" className="flex flex-col gap-2 text-body">
             Especialista
             <SelectMenu id="expert-expert-1" name="expert">
+              <option value="">Selecione o especialista</option>
               {EXPERT_IDS.map((expert) => (
                 <option key={expert} value={expert}>
                   {EXPERT_LABELS[expert]}
@@ -99,13 +124,11 @@ export default async function ExpertsPage({
       </section>
       <section className={`${panelCard} mt-6`} aria-labelledby="expert-videos">
         <h2 id="expert-videos" className="text-title font-semibold">
-          Vídeos por especialista
+          Vídeos alternativos da Pri
         </h2>
         <p className="text-body text-muted-foreground">
-          As aulas e o progresso continuam compartilhados. A versão da Pri mantém o vídeo atual
-          quando não há substituição. Para Zé, publique o vídeo correspondente em cada aula;
-          enquanto isso, a aula informa que o vídeo está em preparação. Um mesmo vídeo autorizado
-          pode ser publicado para ambos.
+          O curso do Zé Mauro tem aulas e progresso separados, na área “Curso Zé Mauro”. Edite essas
+          aulas em Conteúdo. As substituições abaixo alteram somente os vídeos da Pri.
         </p>
         {videos.length ? (
           <form action={saveVideoVariant} className="flex flex-col gap-4">
@@ -119,16 +142,7 @@ export default async function ExpertsPage({
                 ))}
               </SelectMenu>
             </label>
-            <label htmlFor="expert-expert-2" className="flex flex-col gap-2 text-body">
-              Especialista
-              <SelectMenu id="expert-expert-2" name="expert">
-                {EXPERT_IDS.map((expert) => (
-                  <option key={expert} value={expert}>
-                    {EXPERT_LABELS[expert]}
-                  </option>
-                ))}
-              </SelectMenu>
-            </label>
+            <input type="hidden" name="expert" value="pri" />
             <FloatingLabelInput
               id="expert-video"
               name="videoId"
