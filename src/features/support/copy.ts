@@ -37,7 +37,7 @@ export function describeDeadline(minutes: number): string {
 
 /** A promessa embaixo do botão de enviar, calculada da configuração. */
 export function responsePromise(priority: 'normal' | 'high', deadlineMinutes: number): string {
-  const when = `Respondemos em até ${describeDeadline(deadlineMinutes)}. A resposta chega por e-mail e aqui no suporte.`;
+  const when = `Respondemos em até ${describeDeadline(deadlineMinutes)}. Acompanhe a resposta aqui no suporte.`;
   if (priority === 'high') return `Casos como o seu são respondidos primeiro. ${when}`;
   return when;
 }

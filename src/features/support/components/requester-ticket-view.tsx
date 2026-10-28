@@ -1,3 +1,4 @@
+import { SUPPORT_EMAIL_ENABLED } from '../email-policy';
 import { Info } from 'lucide-react';
 import { panelCard } from '@/features/member/components/area-shell';
 import { cn } from '@/lib/utils';
@@ -144,7 +145,11 @@ export function RequesterTicketView({
         <div className="flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:items-start sm:justify-between">
           {ticket.status !== 'closed' ? <CloseTicketForm number={ticket.number} token={token} /> : <span />}
           <div className="flex flex-col gap-1 sm:items-end">
-            <EmailRepliesToggle number={ticket.number} enabled={ticket.emailReplies} token={token} />
+            {SUPPORT_EMAIL_ENABLED ? (
+              <EmailRepliesToggle number={ticket.number} enabled={ticket.emailReplies} token={token} />
+            ) : (
+              <p className="text-body text-muted-foreground">Acompanhe as respostas aqui no suporte. Os avisos por e-mail estão desativados.</p>
+            )}
           </div>
         </div>
       </section>

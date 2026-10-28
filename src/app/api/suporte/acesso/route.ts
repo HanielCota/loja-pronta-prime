@@ -1,3 +1,4 @@
+import { SUPPORT_EMAIL_ENABLED, SUPPORT_EMAIL_UNAVAILABLE } from '@/features/support/email-policy';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { visitForRoute } from '@/features/support/server/impersonation';
@@ -33,6 +34,8 @@ export async function POST(request: Request) {
   const visit = await visitForRoute('requestTicketAccess');
   if (visit.status === 'over' || visit.status === 'refused')
     return respond(enhanced, { ok: false, message: visit.message, status: 403, backTo: '/suporte/acesso' });
+  if (!SUPPORT_EMAIL_ENABLED)
+    return respond(enhanced, { ok: false, message: SUPPORT_EMAIL_UNAVAILABLE, status: 503, backTo: '/suporte/acesso' });
   const email = text(form, 'email', 254).trim().toLowerCase();
   const name = text(form, 'nome', 80).trim();
   if (!emailSchema.safeParse(email).success || name.length < 2)

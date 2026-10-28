@@ -1,3 +1,4 @@
+import { SUPPORT_EMAIL_ENABLED } from '../email-policy';
 import { and, avg, count, eq, gte, inArray, isNotNull, isNull, lt, lte, ne, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
 import {
@@ -73,6 +74,7 @@ export async function flagMissedDeadlines(now = new Date()): Promise<number> {
   await db
     .insert(supportTicketEvents)
     .values(late.map((ticket) => ({ ticketId: ticket.id, automatic: true, type: 'deadline_missed' as const })));
+  if (!SUPPORT_EMAIL_ENABLED) return late.length;
   const staff = await loadStaffDirectory();
   const supervisors = staff.filter((member) => hasStaffPermission(member.role, 'support.assign_others') && !member.role?.includes('admin'));
   for (const ticket of late) {
@@ -87,6 +89,7 @@ export async function flagMissedDeadlines(now = new Date()): Promise<number> {
 
 /** Resumo das 8h (Brasília) pros supervisores: aguardando, atrasados, sem responsável, nota de ontem. */
 export async function sendDailySummary(now = new Date()): Promise<boolean> {
+  if (!SUPPORT_EMAIL_ENABLED) return false;
   if (brasiliaHour(now) !== 8) return false;
   if (!(await claimWindow(`daily-summary:${brasiliaDate(now)}`, 2 * DAY_MS / 1000))) return false;
   const staff = await loadStaffDirectory();
