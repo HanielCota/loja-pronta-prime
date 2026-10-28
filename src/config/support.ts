@@ -4,12 +4,6 @@
  */
 export const TEAM_WHATSAPP: string = '3192560307';
 
-/** Email do suporte, mostrado no perfil ("Precisa de ajuda?" e como trocar o email). */
-export const SUPPORT_EMAIL = 'suporte@lojaprontaprime.com.br';
-
-/** Email de contato sobre dados pessoais (LGPD), mostrado na Política de Privacidade. */
-export const PRIVACY_EMAIL = SUPPORT_EMAIL;
-
 /** The company responsible for student data and the Escala Shop platform. */
 export const DATA_CONTROLLER = {
   name: 'Mentalidade Sem Limite Ltda (MSL)',

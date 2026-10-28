@@ -5,6 +5,13 @@ recorded separately from code integration.
 
 ## 2026-10-28
 
+### Privacy contact on WhatsApp
+
+- Replace both privacy-policy email links with the configured technical WhatsApp contact and
+  a privacy-request message. Update the policy revision date and remove unused email constants.
+- Preserve public access and existing privacy rights/response periods. Missing or unavailable
+  contact configuration shows a coming-soon state without an email fallback.
+
 ### WhatsApp-only profile support
 
 - Remove the profile support email row and email-change fallback. Expiring-access help uses the

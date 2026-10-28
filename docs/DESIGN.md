@@ -5,6 +5,9 @@
 The owner requested retiring the internal ticket inbox to consolidate support on WhatsApp.
 The account menu, profile, course and store help use the existing subject-specific contacts.
 Public login help shows the configured technical WhatsApp contact and password recovery.
+Both privacy-policy contact links also use the configured technical WhatsApp number, with a
+privacy-request message and a coming-soon state when no contact is available. The policy has no
+email contact action and stays readable without login or an available database.
 Profile support, email-change help and expiring-access help use only configured WhatsApp contacts.
 There is no support email action or email fallback in the profile. Missing phone numbers keep the
 existing coming-soon state; the privacy policy remains available as an informational link.

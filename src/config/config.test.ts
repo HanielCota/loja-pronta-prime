@@ -3,7 +3,7 @@ import { PRODUCTS } from '@/features/products/catalog';
 import { ONBOARDING_BLOCKS, ONBOARDING_QUESTIONS } from './onboarding';
 import { PRODUCT_IDS } from './products';
 import { STORE_PHASES } from './store-phases';
-import { DATA_CONTROLLER, PRIVACY_EMAIL, TEAM_WHATSAPP } from './support';
+import { DATA_CONTROLLER, TEAM_WHATSAPP } from './support';
 
 describe('configuração', () => {
   test('7 fases da loja (o banco confere 1 a 7 com essa mesma lista)', () => {
@@ -28,8 +28,7 @@ describe('configuração', () => {
     if (TEAM_WHATSAPP) expect(TEAM_WHATSAPP).toMatch(/^[1-9]\d{9,10}$/);
   });
 
-  test('contato da privacidade: um email e o CNPJ formatado', () => {
-    expect(PRIVACY_EMAIL).toMatch(/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/);
+  test('the privacy policy identifies the data controller by its formatted CNPJ', () => {
     expect(DATA_CONTROLLER.cnpj).toMatch(/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/);
   });
 });
