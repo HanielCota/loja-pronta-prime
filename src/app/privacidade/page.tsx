@@ -1,9 +1,12 @@
 import type { Metadata } from 'next';
+import { connection } from 'next/server';
 import type { ReactNode } from 'react';
 import { BrandCard } from '@/components/brand/brand-card';
 import { CardHeading } from '@/components/brand/card-heading';
 import { PageShell } from '@/components/brand/page-shell';
-import { DATA_CONTROLLER, PRIVACY_EMAIL } from '@/config/support';
+import { DATA_CONTROLLER } from '@/config/support';
+import { getSupportPhones } from '@/features/support/server/contacts';
+import { whatsappLink } from '@/features/loja-pronta/whatsapp';
 import { getActiveSession } from '@/features/auth/server/session';
 import { MemberNavbar } from '@/features/member/components/member-navbar';
 
@@ -13,11 +16,11 @@ export const metadata: Metadata = {
     'Quais dados o Escala Shop guarda, pra quê, com quem compartilha e como pedir para ver ou apagar os seus.',
 };
 
-/** Muda sempre que o texto mudar: a lei pede a data da última atualização. */
-const UPDATED_AT = '26 de outubro de 2026';
+/** Update the displayed revision date whenever the policy text changes. */
+const UPDATED_AT = '28 de outubro de 2026';
 
-const emailLinkClass =
-  'font-medium wrap-anywhere text-link underline underline-offset-4 hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
+const contactLinkClass =
+  'inline-flex min-h-11 items-center font-medium wrap-anywhere text-link underline underline-offset-4 hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -42,18 +45,33 @@ function Text({ children }: { children: ReactNode }) {
   return <p className="text-body text-pretty">{children}</p>;
 }
 
-function EmailLink() {
+function PrivacyContact({ phone }: { phone: string }) {
+  if (!phone) return <span>Contato pelo WhatsApp em breve</span>;
   return (
-    <a href={`mailto:${PRIVACY_EMAIL}`} className={emailLinkClass}>
-      {PRIVACY_EMAIL}
+    <a
+      href={whatsappLink(
+        phone,
+        'Oi! Quero fazer um pedido sobre meus dados pessoais no Escala Shop.',
+      )}
+      className={contactLinkClass}
+      target="_blank"
+      rel="noreferrer"
+    >
+      Falar no WhatsApp
+      <span className="sr-only"> (abre em outra aba)</span>
     </a>
   );
 }
 
 export default async function PrivacyPage() {
+  await connection();
   // Página pública: quem está dentro vê a própria conta no topo; sem sessão (ou com o banco fora
   // do ar), a barra de quem não entrou. A política não pode depender do login.
-  const session = await getActiveSession().catch(() => null);
+  const [session, phones] = await Promise.all([
+    getActiveSession().catch(() => null),
+    getSupportPhones().catch(() => null),
+  ]);
+  const phone = phones?.technical ?? '';
 
   return (
     <PageShell wide navbar={session ? <MemberNavbar account={session.user} /> : undefined}>
@@ -70,7 +88,7 @@ export default async function PrivacyPage() {
               seguindo a Lei Geral de Proteção de Dados (LGPD, Lei 13.709/2018).
             </Text>
             <Text>
-              Dúvidas ou pedidos sobre os seus dados: <EmailLink />.
+              Dúvidas ou pedidos sobre os seus dados: <PrivacyContact phone={phone} />.
             </Text>
           </Section>
 
@@ -160,8 +178,9 @@ export default async function PrivacyPage() {
               ]}
             />
             <Text>
-              Mande um email para <EmailLink /> com o email da sua compra. Respondemos em até 15
-              dias. Você também pode reclamar na Autoridade Nacional de Proteção de Dados (ANPD).
+              Faça seu pedido pelo WhatsApp e informe o email da sua compra:{' '}
+              <PrivacyContact phone={phone} />. Respondemos em até 15 dias. Você também pode
+              reclamar na Autoridade Nacional de Proteção de Dados (ANPD).
             </Text>
           </Section>
 

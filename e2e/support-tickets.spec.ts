@@ -27,6 +27,11 @@ test('retired ticket URLs lead to WhatsApp help and cannot accept new messages',
   await signIn(page, email, PASSWORD, '/perfil');
   await expect(page.locator('a[href^="mailto:"]')).toHaveCount(0);
   await expect(page.getByRole('link', { name: /Email do suporte/ })).toHaveCount(0);
+  await page.goto('/privacidade');
+  await expect(page.locator('a[href^="mailto:"]')).toHaveCount(0);
+  await expect(page.getByText('Contato pelo WhatsApp em breve')).toHaveCount(2);
+  await expect(page.locator('a[href*="wa.me"]')).toHaveCount(0);
+  await page.goto('/perfil');
   for (const mobile of [false, true]) {
     for (const dark of [false, true]) {
       await page.setViewportSize(
@@ -97,6 +102,13 @@ test('administrators retain WhatsApp settings and public help works in both them
   }
   const context = await browser.newContext();
   const publicHelp = await context.newPage();
+  const privacy = await context.newPage();
+  await privacy.goto('/privacidade');
+  await expect(privacy.getByRole('link', { name: /Falar no WhatsApp/ })).toHaveCount(2);
+  await expect(privacy.locator('a[href^="mailto:"]')).toHaveCount(0);
+  for (const link of await privacy.getByRole('link', { name: /Falar no WhatsApp/ }).all()) {
+    await expect(link).toHaveAttribute('href', /^https:\/\/wa.me\/5511999991234\?text=/);
+  }
   try {
     await publicHelp.goto('/suporte/acesso');
     await expect(publicHelp.getByRole('link', { name: /Chamar Mylena no WhatsApp/ })).toBeVisible();
@@ -108,7 +120,7 @@ test('administrators retain WhatsApp settings and public help works in both them
     expect(whatsapp.headers().location).toMatch(/^https:\/\/wa.me\/5511999991234\?/);
     for (const mobile of [false, true]) {
       for (const dark of [false, true]) {
-        for (const target of [page, publicHelp]) {
+        for (const target of [page, publicHelp, privacy]) {
           await target.setViewportSize(
             mobile ? { width: 390, height: 844 } : { width: 1440, height: 1000 },
           );
@@ -122,7 +134,7 @@ test('administrators retain WhatsApp settings and public help works in both them
             await target.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
           ).toBe(true);
           await target.screenshot({
-            path: `.data/whatsapp-${target === page ? 'admin' : 'public'}-${mobile ? 'mobile' : 'desktop'}-${dark ? 'dark' : 'light'}.png`,
+            path: `.data/whatsapp-${target === page ? 'admin' : target === privacy ? 'privacy' : 'public'}-${mobile ? 'mobile' : 'desktop'}-${dark ? 'dark' : 'light'}.png`,
             fullPage: true,
           });
         }
@@ -149,6 +161,12 @@ test('WhatsApp help and contact editing work without JavaScript', async ({ brows
     await page.goto('/suporte/acesso');
     await expect(page.getByRole('link', { name: /Chamar Mylena no WhatsApp/ })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Redefinir minha senha' })).toBeVisible();
+    await page.goto('/privacidade');
+    await expect(page.getByRole('link', { name: /Falar no WhatsApp/ })).toHaveCount(2);
+    await expect(page.locator('a[href^="mailto:"]')).toHaveCount(0);
+    for (const link of await page.getByRole('link', { name: /Falar no WhatsApp/ }).all()) {
+      await expect(link).toHaveAttribute('href', /^https:\/\/wa.me\/5511999994321\?text=/);
+    }
   } finally {
     await context.close();
   }

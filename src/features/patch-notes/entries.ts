@@ -14,6 +14,12 @@ export const patchNotes: readonly PatchNoteDay[] = [
     changes: [
       {
         kind: 'Melhoria',
+        title: 'Pedidos de privacidade pelo WhatsApp',
+        description:
+          'Após a publicação desta atualização, os dois contatos da Política de Privacidade passam a usar o WhatsApp configurado para acesso e suporte. A página deixa de oferecer links de e-mail e orienta como enviar pedidos sobre dados pessoais pelo WhatsApp.',
+      },
+      {
+        kind: 'Melhoria',
         title: 'Contatos de suporte somente pelo WhatsApp',
         description:
           'Após a publicação desta atualização, o perfil deixa de oferecer contato com o suporte por e-mail. A ajuda para trocar o e-mail e continuar um acesso usa o WhatsApp configurado para acesso e erros. Sem número configurado, não há encaminhamento para e-mail.',
