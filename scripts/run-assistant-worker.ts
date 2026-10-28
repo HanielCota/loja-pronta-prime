@@ -1,3 +1,4 @@
+import { runSupportMaintenance } from '../src/features/support/server/maintenance';
 import { setTimeout as delay } from 'node:timers/promises';
 import { db } from '../src/server/db';
 import { randomUUID } from 'node:crypto';
@@ -11,7 +12,6 @@ import {
   claimAssistantJob,
   processAssistantJob,
 } from '../src/features/assistant/server/operations';
-import { runSupportMaintenance } from '../src/features/support/server/maintenance';
 
 let stopping = false;
 process.on('SIGINT', () => {
@@ -46,7 +46,6 @@ async function run() {
   };
   let timer: ReturnType<typeof setInterval> | undefined;
   let nextBrandScan = 0;
-  let nextSupportRun = 0;
   let feedSync: Promise<void> | null = null;
   try {
     await heartbeat();
@@ -64,6 +63,7 @@ async function run() {
           process.exitCode = 1;
         });
     }, 15_000);
+    let nextSupportRun = 0;
     let failures = 0;
     for (;;) {
       if (stopping) break;
@@ -75,11 +75,12 @@ async function run() {
           .finally(() => {
             feedSync = null;
           });
-      // Suporte: prazos perdidos, encerramento automático, resumo das 8h e guarda de dados. Cada
-      // tarefa tem a própria trava no banco, então rodar a cada minuto não repete trabalho.
+      // Preserve retention for historical records without running the retired inbox.
       if (Date.now() >= nextSupportRun) {
         nextSupportRun = Date.now() + 60_000;
-        await runSupportMaintenance().catch(() => console.error('[support] Manutenção indisponível.'));
+        await runSupportMaintenance().catch(() =>
+          console.error('[support] Retention unavailable.'),
+        );
       }
       if (Date.now() >= nextBrandScan) {
         nextBrandScan = Date.now() + 60_000;

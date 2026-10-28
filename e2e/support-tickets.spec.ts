@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { auth } from '@/server/auth/auth';
 import { closeDatabase, database, PASSWORD, studentEmail } from './support/students';
 import { expectNoA11yViolations, signIn } from './support/auth';
@@ -6,189 +6,131 @@ import { expectNoA11yViolations, signIn } from './support/auth';
 test.afterAll(closeDatabase);
 test.setTimeout(240_000);
 
-async function createAccount(kind: string, name: string, role: string) {
+async function createAccount(kind: string, role: 'user' | 'admin' = 'user') {
   const email = studentEmail(kind);
   await auth.api.createUser({
     body: {
       email,
       password: PASSWORD,
-      name,
-      // O plugin admin só tipa os papéis que conhece; o campo guarda texto livre.
-      role: role as 'admin',
+      name: 'Support test',
+      role,
       data: { emailVerified: true, mustChangePassword: false },
     },
   });
   return email;
 }
 
-async function openGuidedTicket(page: Page) {
-  await page.goto('/suporte/novo');
-  await page.getByRole('button', { name: 'Aulas do curso' }).click();
-  await page.getByRole('button', { name: /A aula não carrega/ }).click();
-  // A resposta automática aparece antes de enviar.
-  await expect(page.getByRole('heading', { name: 'Tente estes passos antes' })).toBeVisible();
-  await page.getByRole('button', { name: 'Ainda preciso de ajuda' }).click();
-  await page
-    .getByRole('textbox')
-    .fill('Etapa 2, aula 5: a tela fica preta e o vídeo não começa no Chrome.');
-  await page.getByRole('button', { name: 'Enviar chamado' }).click();
-  await expect(page).toHaveURL(/\/suporte\/\d+\?enviado=1$/);
-  return Number(new URL(page.url()).pathname.split('/').at(-1));
-}
+test('retired ticket URLs lead to WhatsApp help and cannot accept new messages', async ({
+  page,
+}) => {
+  const email = await createAccount('retired-ticket-member');
+  await signIn(page, email, PASSWORD, '/perfil');
+  const before = (await database().query('select count(*)::int as total from support_tickets'))
+    .rows[0].total;
+  for (const path of ['/suporte', '/suporte/novo', '/suporte/123']) {
+    await page.goto(path);
+    await expect(page).toHaveURL(/\/perfil#suporte$/);
+    await expect(page.getByRole('heading', { name: 'Chamados de suporte' })).toHaveCount(0);
+  }
+  await page.getByRole('button', { name: 'Sua conta' }).click();
+  await expect(page.getByRole('menuitem', { name: 'Meus chamados' })).toHaveCount(0);
+  await expect(page.getByRole('menuitem', { name: 'Suporte no WhatsApp' })).toBeVisible();
+  for (const path of [
+    '/api/suporte/acesso',
+    '/api/suporte/chamados',
+    '/api/suporte/chamados/123/mensagens',
+  ]) {
+    const response = await page.request.post(path, {
+      multipart: { mensagem: 'This must never create a ticket.' },
+    });
+    expect(response.status()).toBe(410);
+  }
+  for (const path of ['/api/suporte/anexos/old-file', '/admin/chamados/exportar']) {
+    expect((await page.request.get(path)).status()).toBe(410);
+  }
+  expect(
+    (await database().query('select count(*)::int as total from support_tickets')).rows[0].total,
+  ).toBe(before);
+});
 
-test('a aluna abre um chamado guiado, a equipe responde e o atendimento entra no Desempenho', async ({
+test('administrators retain WhatsApp settings and public help works in both themes and sizes', async ({
   page,
   browser,
 }) => {
-  const studentAddress = await createAccount('suporte-aluna', 'Maria Clara', 'user');
-  const agentAddress = await createAccount('suporte-atendente', 'Ana Atendente', 'support_agent');
-  const supervisorAddress = await createAccount(
-    'suporte-supervisor',
-    'Sara Supervisora',
-    'support_supervisor',
-  );
-
-  await signIn(page, studentAddress, PASSWORD, '/suporte');
-  await expect(page.getByRole('heading', { name: 'Suporte', level: 1 })).toBeVisible();
-  await expectNoA11yViolations(page);
-  const number = await openGuidedTicket(page);
-  await expect(page.getByText('Aguardando suporte').first()).toBeVisible();
-  await expectNoA11yViolations(page);
-
-  const agentContext = await browser.newContext();
-  const agent = await agentContext.newPage();
-  const supervisorContext = await browser.newContext();
-  const supervisor = await supervisorContext.newPage();
+  const email = await createAccount('whatsapp-settings-admin', 'admin');
+  await signIn(page, email, PASSWORD, '/admin/suporte');
+  await expect(page.getByRole('heading', { name: 'Contatos por assunto' })).toBeVisible();
+  for (const label of ['Chamados', 'Desempenho', 'Equipe']) {
+    await expect(page.getByRole('link', { name: label, exact: true })).toHaveCount(0);
+  }
+  await page.getByLabel('WhatsApp de Mylena').fill('11999991234');
+  await page.getByRole('button', { name: 'Salvar contatos' }).click();
+  await expect(
+    page.getByText('Contatos de suporte salvos.', { exact: true }).first(),
+  ).toBeVisible();
+  for (const path of [
+    '/admin/chamados',
+    '/admin/chamados/123',
+    '/admin/suporte/desempenho',
+    '/admin/suporte/equipe',
+  ]) {
+    await page.goto(path);
+    await expect(page).toHaveURL(/\/admin\/suporte\/configuracoes#whatsapp$/);
+  }
+  const context = await browser.newContext();
+  const publicHelp = await context.newPage();
   try {
-    // A atendente só vê os Chamados: o resto do admin nem existe pra ela.
-    await signIn(agent, agentAddress, PASSWORD, '/admin');
-    await expect(agent).toHaveURL(/\/admin\/chamados$/);
-    const menu = agent.getByRole('navigation', { name: 'Seções da administração' }).first();
-    await expect(menu.getByRole('link', { name: /Chamados/ })).toBeVisible();
-    await expect(menu.getByRole('link', { name: 'Contas' })).toHaveCount(0);
-    await expect(menu.getByRole('link', { name: 'Desempenho' })).toHaveCount(0);
-    expect((await agent.goto('/admin/contas'))?.status()).toBe(404);
-    expect((await agent.goto('/admin/suporte/desempenho'))?.status()).toBe(404);
-
-    await agent.goto(`/admin/chamados/${number}`);
-    await agent.getByRole('button', { name: 'Assumir chamado' }).click();
-    await expect(agent.getByText('Responsável salva.')).toBeVisible();
-    await agent.getByRole('button', { name: 'Nota interna' }).click();
-    await agent.locator('#staff-reply').fill('Conferi o vídeo: está publicado.');
-    await agent.getByRole('button', { name: 'Salvar nota' }).click();
-    await expect(agent.getByText('Nota interna salva.')).toBeVisible();
-    await agent.getByRole('button', { name: 'Nota interna' }).click();
-    await agent.locator('#staff-reply').fill('Oi, Maria! Atualize a página e me diga se voltou.');
-    await agent.getByRole('button', { name: 'Enviar', exact: true }).click();
-    await expect(agent.getByText('Resposta enviada à aluna.')).toBeVisible();
-    await expectNoA11yViolations(agent);
-
-    // A aluna não vê a nota interna e responde que ainda não resolveu: o chamado volta pra fila.
-    await page.reload();
-    await expect(page.getByText('Conferi o vídeo: está publicado.')).toHaveCount(0);
-    await expect(page.getByText('Oi, Maria! Atualize a página e me diga se voltou.')).toBeVisible();
-    await page.getByRole('button', { name: 'Ainda não', exact: true }).click();
-    await expect(page.getByText('Ainda não resolveu.', { exact: true })).toBeVisible();
-    const [waiting] = (
-      await database().query('select status from support_tickets where number = $1', [number])
-    ).rows;
-    expect(waiting.status).toBe('open');
-
-    await agent.reload();
-    await agent.locator('#staff-reply').fill('Arrumei o vídeo. Pode testar de novo?');
-    await agent.getByRole('button', { name: 'Enviar', exact: true }).click();
-    await expect(agent.getByText('Resposta enviada à aluna.')).toBeVisible();
-
-    await page.reload();
-    await page.getByRole('button', { name: 'Sim, resolveu' }).click();
-    await expect(page.getByText('Chamado encerrado.')).toBeVisible();
-    await page.waitForTimeout(6500);
-    await page.reload();
-    await page.locator('label', { hasText: '5 estrelas' }).click();
-    await page.getByRole('button', { name: 'Enviar avaliação' }).click();
-    await expect(page.getByText(/Você avaliou este atendimento com 5 de 5/)).toBeVisible();
-
-    // O supervisor vê o atendimento resolvido no Desempenho.
-    await signIn(supervisor, supervisorAddress, PASSWORD, '/admin/suporte/desempenho');
-    await expect(supervisor.getByRole('heading', { name: 'Desempenho do suporte' })).toBeVisible();
-    await expect(supervisor.getByText('Resolvidos').first()).toBeVisible();
-    await expectNoA11yViolations(supervisor);
-    for (const width of [1440, 390]) {
-      await supervisor.setViewportSize({ width, height: 1000 });
-      for (const theme of ['light', 'dark']) {
-        await supervisor.evaluate((value) => localStorage.setItem('theme', value), theme);
-        await supervisor.reload();
-        await expect(
-          supervisor.getByRole('heading', { name: 'Desempenho do suporte' }),
-        ).toBeVisible();
-        await expect(supervisor.locator('html')).toHaveClass(new RegExp(theme));
-        expect(
-          await supervisor.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-        ).toBe(true);
-        await expectNoA11yViolations(supervisor);
-        await supervisor.screenshot({
-          path: `.data/support-performance/report-${width}-${theme}.png`,
-          fullPage: true,
-        });
+    await publicHelp.goto('/suporte/acesso');
+    await expect(publicHelp.getByRole('link', { name: /Chamar Mylena no WhatsApp/ })).toBeVisible();
+    await expect(publicHelp.getByRole('button', { name: 'Enviar pedido de ajuda' })).toHaveCount(0);
+    const whatsapp = await publicHelp.request.get('/suporte/whatsapp/technical?origem=login', {
+      maxRedirects: 0,
+    });
+    expect(whatsapp.status()).toBe(302);
+    expect(whatsapp.headers().location).toMatch(/^https:\/\/wa.me\/5511999991234\?/);
+    for (const mobile of [false, true]) {
+      for (const dark of [false, true]) {
+        for (const target of [page, publicHelp]) {
+          await target.setViewportSize(
+            mobile ? { width: 390, height: 844 } : { width: 1440, height: 1000 },
+          );
+          await target.evaluate(
+            (theme) => localStorage.setItem('theme', theme),
+            dark ? 'dark' : 'light',
+          );
+          await target.reload();
+          await expectNoA11yViolations(target);
+          expect(
+            await target.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+          ).toBe(true);
+          await target.screenshot({
+            path: `.data/whatsapp-${target === page ? 'admin' : 'public'}-${mobile ? 'mobile' : 'desktop'}-${dark ? 'dark' : 'light'}.png`,
+            fullPage: true,
+          });
+        }
       }
     }
-    const events = (
-      await database().query(
-        `select type from support_ticket_events e join support_tickets t on t.id = e.ticket_id where t.number = $1 order by e.id`,
-        [number],
-      )
-    ).rows.map((row) => row.type);
-    expect(events).toEqual(expect.arrayContaining(['assigned', 'status_changed', 'rated']));
+    await publicHelp.goto('/suporte/acesso/old-token');
+    await expect(publicHelp).toHaveURL(/\/suporte\/acesso$/);
   } finally {
-    await agentContext.close();
-    await supervisorContext.close();
+    await context.close();
   }
 });
 
-test('quem não consegue entrar pede ajuda sem login, e o WhatsApp de sempre continua igual', async ({
-  page,
-}) => {
-  await page.goto('/entrar');
-  await page.getByRole('link', { name: 'Não consegue entrar? Fale com o suporte' }).click();
-  await expect(page).toHaveURL(/\/suporte\/acesso$/);
-  await expectNoA11yViolations(page);
-  await page.getByLabel('Seu nome').fill('Joana');
-  await page.getByLabel('E-mail da compra').fill(studentEmail('suporte-sem-conta'));
-  await page.getByRole('combobox', { name: 'O que está acontecendo?' }).click();
-  await page.getByRole('option', { name: 'Não consigo entrar', exact: true }).click();
-  await page
-    .getByLabel('Conte o que aparece quando você tenta entrar')
-    .fill('Aparece senha incorreta mesmo depois de trocar.');
-  await page.getByRole('button', { name: 'Pedir ajuda' }).click();
-  await expect(page.getByText(/Recebemos\. Se este for o e-mail da compra/)).toBeVisible();
-  const [ticket] = (
-    await database().query(
-      `select channel, email_confirmed_at from support_tickets where requester_email = $1`,
-      [studentEmail('suporte-sem-conta')],
-    )
-  ).rows;
-  expect(ticket.channel).toBe('public_form');
-  // Até abrir o link do e-mail, o e-mail não está confirmado.
-  expect(ticket.email_confirmed_at).toBeNull();
-});
-
-test('public support form submits without JavaScript', async ({ browser, baseURL }) => {
-  const context = await browser.newContext({
-    javaScriptEnabled: false,
-    ...(baseURL ? { baseURL } : {}),
-  });
+test('WhatsApp help and contact editing work without JavaScript', async ({ browser }) => {
+  const email = await createAccount('whatsapp-no-js-admin', 'admin');
+  const context = await browser.newContext({ javaScriptEnabled: false });
   try {
     const page = await context.newPage();
+    await signIn(page, email, PASSWORD, '/admin/suporte');
+    await page.getByLabel('WhatsApp de Mylena').fill('11999994321');
+    await page.getByRole('button', { name: 'Salvar contatos' }).click();
+    await expect(
+      page.getByText('Contatos de suporte salvos.', { exact: true }).first(),
+    ).toBeVisible();
     await page.goto('/suporte/acesso');
-    await page.getByLabel('Seu nome').fill('Ana');
-    await page.getByLabel('E-mail da compra').fill(studentEmail('support-no-js'));
-    await page.getByLabel('O que está acontecendo?').selectOption({ label: 'Não consigo entrar' });
-    await page
-      .getByLabel('Conte o que aparece quando você tenta entrar')
-      .fill('Não consigo entrar depois de trocar de aparelho.');
-    await page.getByRole('button', { name: 'Pedir ajuda' }).click();
-    await expect(page).toHaveURL(/\/suporte\/acesso\/recebido$/);
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Chamar Mylena no WhatsApp/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Redefinir minha senha' })).toBeVisible();
   } finally {
     await context.close();
   }

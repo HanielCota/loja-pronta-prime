@@ -132,7 +132,7 @@ export function blockedMessage(actionName: string): string | null {
 
 /** O que fica bloqueado, em uma frase, pra faixa da visita. */
 export const BLOCKED_SUMMARY =
-  'Senha, nome, foto, Shopee, criação de logo, conselho do assistente e decisões do chamado ficam bloqueados.';
+  'Senha, nome, foto, Shopee, criação de logo e conselho do assistente ficam bloqueados.';
 
 /** Pra onde vai uma recusa: a página que explica, com o nome da ação (nunca texto livre). */
 export const VISIT_BLOCKED_PATH = '/visita-bloqueada';

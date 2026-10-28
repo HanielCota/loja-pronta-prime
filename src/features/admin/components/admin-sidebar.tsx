@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
   Archive,
-  BarChart3,
   BookOpen,
   ChevronDown,
   FileText,
@@ -13,13 +12,11 @@ import {
   KeyRound,
   LayoutDashboard,
   LibraryBig,
-  MessageCircle,
   PanelLeft,
   Radio,
   ReceiptText,
   Rocket,
   Settings2,
-  ShieldCheck,
   UsersRound,
   Wrench,
 } from 'lucide-react';
@@ -27,7 +24,6 @@ import { cn } from '@/lib/utils';
 import type { StaffPermission } from '@/features/support/staff-access';
 import { OnlineCountBadge } from './online-count-badge';
 import { RememberedGroup } from './remembered-group';
-import { TicketCountBadge } from './ticket-count-badge';
 import { adminSectionFor, type AdminSection } from '../admin-section';
 
 export type { AdminSection } from '../admin-section';
@@ -82,32 +78,11 @@ const groups: readonly NavGroup[] = [
     label: 'Suporte',
     links: [
       {
-        href: '/admin/chamados',
-        label: 'Chamados',
-        section: 'tickets',
-        Icon: MessageCircle,
-        requires: 'support.answer',
-      },
-      {
-        href: '/admin/suporte/desempenho',
-        label: 'Desempenho',
-        section: 'support-performance',
-        Icon: BarChart3,
-        requires: 'support.metrics',
-      },
-      {
-        href: '/admin/suporte/equipe',
-        label: 'Equipe',
-        section: 'support-team',
-        Icon: ShieldCheck,
-        requires: 'team.manage',
-      },
-      {
         href: '/admin/suporte/configuracoes',
-        label: 'Configurações',
+        label: 'Contatos no WhatsApp',
         section: 'support-settings',
         Icon: Settings2,
-        requires: 'support.settings',
+        requires: 'admin',
       },
     ],
   },
@@ -260,8 +235,6 @@ function NavLinks({
             {label}
             {/* Quantas pessoas estão online, atualizado sozinho. */}
             {section === 'online' ? <OnlineCountBadge /> : null}
-            {/* Chamados esperando o suporte, atualizado sozinho. */}
-            {section === 'tickets' ? <TicketCountBadge /> : null}
           </Link>
         </li>
       ))}
@@ -303,8 +276,8 @@ function Navigation({
 
 /**
  * As seções do painel. `rail`: a lista do menu lateral fixo (computador). `disclosure`: o mesmo
- * conteúdo recolhível acima do título (celular e tablet). Cada pessoa vê só o que o cargo usa:
- * atendente vê os Chamados; administrador vê tudo.
+ * conteúdo recolhível acima do título (celular e tablet). Only administrator sections remain
+ * after the internal ticket inbox is retired.
  */
 export function AdminSidebar({
   variant,

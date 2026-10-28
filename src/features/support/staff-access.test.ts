@@ -50,16 +50,8 @@ describe('cargos da equipe', () => {
   test('o atalho do menu segue o cargo mais alto', () => {
     expect(staffPanelLinkOf('user')).toBeNull();
     expect(staffPanelLinkOf(null)).toBeNull();
-    expect(staffPanelLinkOf('user,support_agent')).toEqual({
-      href: '/admin/chamados',
-      label: 'Painel de suporte',
-      roleLabel: 'Atendente',
-    });
-    expect(staffPanelLinkOf('support_supervisor')).toEqual({
-      href: '/admin/chamados',
-      label: 'Painel de suporte',
-      roleLabel: 'Supervisor',
-    });
+    expect(staffPanelLinkOf('user,support_agent')).toBeNull();
+    expect(staffPanelLinkOf('support_supervisor')).toBeNull();
     expect(staffPanelLinkOf('support_agent,admin')).toEqual({
       href: '/admin',
       label: 'Painel administrativo',
@@ -69,7 +61,9 @@ describe('cargos da equipe', () => {
 
   test('trocar o cargo mantém as outras funções', () => {
     expect(withStaffRole('user', 'support_agent')).toBe('user,support_agent');
-    expect(withStaffRole('user,support_agent', 'support_supervisor')).toBe('user,support_supervisor');
+    expect(withStaffRole('user,support_agent', 'support_supervisor')).toBe(
+      'user,support_supervisor',
+    );
     expect(withStaffRole('user,support_agent', null)).toBe('user');
     expect(withStaffRole('support_agent', null)).toBe('user');
     expect(withStaffRole(null, 'admin')).toBe('admin');
@@ -77,7 +71,9 @@ describe('cargos da equipe', () => {
 });
 
 describe('dono da plataforma', () => {
-  const owners = parsePlatformOwners(' Dona@Exemplo.com, ,outra@exemplo.com,dona@exemplo.com,sem-arroba');
+  const owners = parsePlatformOwners(
+    ' Dona@Exemplo.com, ,outra@exemplo.com,dona@exemplo.com,sem-arroba',
+  );
   const owner = { email: 'dona@exemplo.com', emailVerified: true, role: 'admin' };
 
   test('a lista ignora vazios, repetidos e o que não é e-mail', () => {

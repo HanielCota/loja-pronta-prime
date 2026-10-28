@@ -1,5 +1,18 @@
 # Escala Shop design system
 
+## WhatsApp support (October 28, 2026)
+
+The owner requested retiring the internal ticket inbox to consolidate support on WhatsApp.
+The account menu, profile, course and store help use the existing subject-specific contacts.
+Public login help shows the configured technical WhatsApp contact and password recovery.
+Legacy ticket pages redirect to the appropriate help page; ticket APIs return HTTP 410 and
+previously loaded ticket actions cannot write. Administrators retain only the WhatsApp contact
+settings; the ticket queue, reports, team screens, counters and overview card are removed.
+The worker only retains the established historical data retention job. No records are removed
+as part of this change, and no database migration is required.
+Existing cards, typography, themes and components remain in use. This supersedes earlier ticket
+UI and operating instructions below. Production rollout must be verified separately.
+
 The administrator-only updates page at `/admin/novidades` uses `AdminPage`, `panelCard` and
 the existing neutral status badges. Each dated card contains plain-language changes, newest
 day first, with written labels for additions, improvements and fixes. The shortcut belongs to

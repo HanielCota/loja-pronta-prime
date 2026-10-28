@@ -82,7 +82,7 @@ export default async function PrivacyPage() {
                 'Do que você faz aqui: respostas da conversa inicial, WhatsApp que você informar, marca e logo da sua loja, aulas vistas e progresso.',
                 'Da sua loja na Shopee, só se você conectar: o número da loja, a autorização da Shopee (guardada cifrada) e os números dos seus produtos, como visualizações e cliques. Não acessamos dados dos seus compradores.',
                 'Do acesso: endereço IP, navegador, horário de entrada e a página aberta no momento. Servem para manter você conectada, proteger a conta e mostrar quem está online para a administração.',
-                'Do suporte: as mensagens e os arquivos que você manda nos chamados, a aula ou a fase que vai junto, e a avaliação do atendimento. Servem pra equipe responder e melhorar o suporte.',
+                'Do suporte anterior: mensagens, arquivos, aula ou fase e avaliações dos chamados já enviados ficam no histórico. Novos atendimentos são pelo WhatsApp.',
               ]}
             />
           </Section>
@@ -134,8 +134,8 @@ export default async function PrivacyPage() {
               Enquanto sua conta existir. Se você pedir para apagar, apagamos em até 30 dias, menos
               o que a lei obriga a guardar por mais tempo. Se você desconectar a loja da Shopee, a
               autorização dela é apagada na hora. Nos chamados de suporte, os arquivos anexados são
-              apagados 180 dias depois do encerramento, e o nome, o e-mail e as mensagens de chamados
-              encerrados há mais de 5 anos também.
+              apagados 180 dias depois do encerramento, e o nome, o e-mail e as mensagens de
+              chamados encerrados há mais de 5 anos também.
             </Text>
           </Section>
 

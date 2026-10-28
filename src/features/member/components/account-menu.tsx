@@ -1,6 +1,12 @@
 'use client';
 
-import { ChevronDownIcon, HeadsetIcon, LogOutIcon, MessageCircleIcon, MessagesSquareIcon, UserRoundIcon } from 'lucide-react';
+import {
+  ChevronDownIcon,
+  HeadsetIcon,
+  LogOutIcon,
+  MessageCircleIcon,
+  UserRoundIcon,
+} from 'lucide-react';
 import Link from 'next/link';
 import { DropdownMenu, Tooltip } from 'radix-ui';
 import { useRef, type ReactNode } from 'react';
@@ -8,8 +14,6 @@ import { useFormStatus } from 'react-dom';
 import { Avatar } from '@/components/ui/avatar';
 import { Spinner } from '@/components/ui/spinner';
 import { signOut } from '@/features/auth/server/sign-out';
-import { TicketCountBadge } from '@/features/admin/components/ticket-count-badge';
-import { MyTicketsCount } from '@/features/support/components/my-tickets-count';
 import type { StaffPanelLink } from '@/features/support/staff-access';
 import { cn } from '@/lib/utils';
 
@@ -116,14 +120,16 @@ export function AccountMenu({
             <>
               <DropdownMenu.Item asChild className={cn(itemClass, 'py-2')}>
                 <Link href={staffPanel.href}>
-                  <HeadsetIcon aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />
+                  <HeadsetIcon
+                    aria-hidden="true"
+                    className="size-5 shrink-0 text-muted-foreground"
+                  />
                   <span className="flex min-w-0 flex-col">
                     {staffPanel.label}
                     <span className="text-sm font-normal text-muted-foreground">
                       {staffPanel.roleLabel}
                     </span>
                   </span>
-                  <TicketCountBadge />
                 </Link>
               </DropdownMenu.Item>
               <DropdownMenu.Separator className="mx-3 my-1 h-px bg-border" />
@@ -138,14 +144,6 @@ export function AccountMenu({
           </DropdownMenu.Item>
 
           <DropdownMenu.Separator className="mx-3 my-1 h-px bg-border" />
-
-          <DropdownMenu.Item asChild className={itemClass}>
-            <Link href="/suporte">
-              <MessagesSquareIcon aria-hidden="true" className="size-5 text-muted-foreground" />
-              Meus chamados
-              <MyTicketsCount />
-            </Link>
-          </DropdownMenu.Item>
 
           <DropdownMenu.Item asChild className={itemClass}>
             <Link href="/perfil#suporte">
