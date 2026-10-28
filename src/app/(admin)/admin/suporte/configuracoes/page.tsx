@@ -1,3 +1,4 @@
+import { SelectMenu } from '@/components/ui/select-menu';
 import { readClock } from '@/features/support/clock';
 import type { Metadata } from 'next';
 import { asc, count, gt, isNull, or } from 'drizzle-orm';
@@ -239,14 +240,14 @@ export default async function SupportSettingsPage({ searchParams }: { searchPara
               <FloatingLabelInput id={`tema-${topic.id}-rotulo`} name="rotulo" label="Nome do tema" defaultValue={topic.label} maxLength={60} required />
               <div className="flex flex-col gap-1">
                 <Label htmlFor={`tema-${topic.id}-responsavel`}>Responsável padrão</Label>
-                <select id={`tema-${topic.id}-responsavel`} name="responsavel" defaultValue={topic.defaultAssigneeId ?? ''} className={selectClass}>
+                <SelectMenu id={`tema-${topic.id}-responsavel`} name="responsavel" defaultValue={topic.defaultAssigneeId ?? ''} className={selectClass}>
                   <option value="">Ninguém (vai pra fila)</option>
                   {answerStaff.map((member) => (
                     <option key={member.id} value={member.id}>
                       {member.name}
                     </option>
                   ))}
-                </select>
+                </SelectMenu>
               </div>
               <FloatingLabelInput id={`tema-${topic.id}-pergunta`} name="pergunta" label="Pergunta (sem situação)" defaultValue={topic.question} maxLength={200} />
               <FloatingLabelInput id={`tema-${topic.id}-exemplo`} name="exemplo" label="Exemplo de resposta" defaultValue={topic.example} maxLength={300} />
@@ -263,10 +264,10 @@ export default async function SupportSettingsPage({ searchParams }: { searchPara
                     <FloatingLabelInput id={`situacao-${topic.id}-${item.id}`} name={`situacao-${item.id}-rotulo`} label="Situação" defaultValue={item.label} maxLength={80} />
                     <div className="flex flex-col gap-1">
                       <Label htmlFor={`situacao-${topic.id}-${item.id}-prioridade`}>Prioridade</Label>
-                      <select id={`situacao-${topic.id}-${item.id}-prioridade`} name={`situacao-${item.id}-prioridade`} defaultValue={item.priority} className={selectClass}>
+                      <SelectMenu id={`situacao-${topic.id}-${item.id}-prioridade`} name={`situacao-${item.id}-prioridade`} defaultValue={item.priority} className={selectClass}>
                         <option value="normal">Normal</option>
                         <option value="high">Alta</option>
-                      </select>
+                      </SelectMenu>
                     </div>
                     <label className={checkboxRow}>
                       <input type="checkbox" name={`situacao-${item.id}-ativo`} value="1" defaultChecked={item.active} className="size-5" />
@@ -291,14 +292,14 @@ export default async function SupportSettingsPage({ searchParams }: { searchPara
               <FloatingLabelInput id={`resposta-${template?.id ?? 'nova'}-titulo`} name="titulo" label="Título" defaultValue={template?.title ?? ''} maxLength={60} required />
               <div className="flex flex-col gap-1">
                 <Label htmlFor={`resposta-${template?.id ?? 'nova'}-status`}>Como o chamado fica ao enviar</Label>
-                <select id={`resposta-${template?.id ?? 'nova'}-status`} name="status" defaultValue={template?.statusAfter ?? ''} className={selectClass}>
+                <SelectMenu id={`resposta-${template?.id ?? 'nova'}-status`} name="status" defaultValue={template?.statusAfter ?? ''} className={selectClass}>
                   <option value="">Padrão (respondido)</option>
                   {(['answered', 'open', 'closed'] as const).map((status) => (
                     <option key={status} value={status}>
                       {STATUS_LABELS[status]}
                     </option>
                   ))}
-                </select>
+                </SelectMenu>
               </div>
             </div>
             <Label htmlFor={`resposta-${template?.id ?? 'nova'}-texto`}>Texto</Label>

@@ -82,7 +82,7 @@ test('a aluna abre um chamado guiado, a equipe responde e o atendimento entra no
     await expect(page.getByText('Conferi o vídeo: está publicado.')).toHaveCount(0);
     await expect(page.getByText('Oi, Maria! Atualize a página e me diga se voltou.')).toBeVisible();
     await page.getByRole('button', { name: 'Ainda não', exact: true }).click();
-    await expect(page.getByText('Avisamos o suporte que ainda não resolveu.')).toBeVisible();
+    await expect(page.getByText('Ainda não resolveu.', { exact: true })).toBeVisible();
     const [waiting] = (await database().query('select status from support_tickets where number = $1', [number])).rows;
     expect(waiting.status).toBe('open');
 
@@ -125,7 +125,8 @@ test('quem não consegue entrar pede ajuda sem login, e o WhatsApp de sempre con
   await expectNoA11yViolations(page);
   await page.getByLabel('Seu nome').fill('Joana');
   await page.getByLabel('E-mail da compra').fill(studentEmail('suporte-sem-conta'));
-  await page.getByLabel('O que está acontecendo?').selectOption({ label: 'Não consigo entrar' });
+  await page.getByRole('combobox', { name: 'O que está acontecendo?' }).click();
+  await page.getByRole('option', { name: 'Não consigo entrar', exact: true }).click();
   await page.getByLabel('Conte o que aparece quando você tenta entrar').fill('Aparece senha incorreta mesmo depois de trocar.');
   await page.getByRole('button', { name: 'Pedir ajuda' }).click();
   await expect(page.getByText(/Recebemos\. Se este for o e-mail da compra/)).toBeVisible();
@@ -137,4 +138,21 @@ test('quem não consegue entrar pede ajuda sem login, e o WhatsApp de sempre con
   expect(ticket.channel).toBe('public_form');
   // Até abrir o link do e-mail, o e-mail não está confirmado.
   expect(ticket.email_confirmed_at).toBeNull();
+});
+
+test('public support form submits without JavaScript', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false, ...(baseURL ? { baseURL } : {}) });
+  try {
+    const page = await context.newPage();
+    await page.goto('/suporte/acesso');
+    await page.getByLabel('Seu nome').fill('Ana');
+    await page.getByLabel('E-mail da compra').fill(studentEmail('support-no-js'));
+    await page.getByLabel('O que está acontecendo?').selectOption({ label: 'Não consigo entrar' });
+    await page.getByLabel('Conte o que aparece quando você tenta entrar').fill('Não consigo entrar depois de trocar de aparelho.');
+    await page.getByRole('button', { name: 'Pedir ajuda' }).click();
+    await expect(page).toHaveURL(/\/suporte\/acesso\/recebido$/);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  } finally {
+    await context.close();
+  }
 });

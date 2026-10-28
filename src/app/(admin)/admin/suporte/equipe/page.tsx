@@ -1,3 +1,4 @@
+import { SelectMenu } from '@/components/ui/select-menu';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { and, count, desc, eq, ilike, inArray, ne, or } from 'drizzle-orm';
@@ -24,8 +25,7 @@ import { session, supportStaffStatus, supportTickets, user } from '@/server/db/s
 
 export const metadata: Metadata = { title: 'Equipe do suporte', robots: { index: false, follow: false } };
 
-const selectClass =
-  'min-h-11 w-full rounded-field border border-input bg-card px-3 text-body text-foreground outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary';
+
 
 /** Bloquear ou desbloquear alguém da equipe. Formulário de verdade: funciona sem JavaScript. */
 function BlockForm({ id, block, label, variant }: { id: string; block: boolean; label: string; variant: 'soft' | 'destructive' }) {
@@ -120,14 +120,14 @@ export default async function SupportTeamPage({ searchParams }: { searchParams: 
                       <input type="hidden" name="id" value={member.id} />
                       <div className="flex flex-col gap-1">
                         <Label htmlFor={`cargo-${member.id}`}>Cargo</Label>
-                        <select id={`cargo-${member.id}`} name="cargo" defaultValue={role ?? ''} className={selectClass}>
+                        <SelectMenu id={`cargo-${member.id}`} name="cargo" defaultValue={role ?? ''}>
                           {STAFF_ROLES.map((item) => (
                             <option key={item} value={item}>
                               {STAFF_ROLE_LABELS[item]}
                             </option>
                           ))}
                           <option value="remover">Tirar da equipe</option>
-                        </select>
+                        </SelectMenu>
                       </div>
                       <Button type="submit" variant="soft" size="inline" className="px-4">
                         Salvar
