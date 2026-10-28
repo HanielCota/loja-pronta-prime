@@ -353,3 +353,25 @@ test('numa requisição, o wrapper e as guardas leem a sessão uma vez só', asy
     sameRequest = null;
   }
 });
+
+test('HTTP sign-out cannot bypass the audited visit exit', async () => {
+  await startVisit(visitForm(studentId));
+  const visit = await getVisit();
+  const response = await auth.handler(
+    new Request(`${origin}/api/auth/sign-out`, {
+      method: 'POST',
+      headers: {
+        origin,
+        'content-type': 'application/json',
+        cookie: [...jar].map(([name, value]) => `${name}=${value}`).join('; '),
+      },
+      body: '{}',
+    }),
+  );
+  expect(response.status).toBe(404);
+  expect((await getVisit())?.sessionId).toBe(visit?.sessionId);
+  const { signOut } = await import('@/features/auth/server/sign-out');
+  expect(await redirectOf(signOut)).toBe('/admin/chamados');
+  expect(await getVisit()).toBeNull();
+  expect((await logOf(studentId)).some((entry) => entry.sessionId === visit?.sessionId && entry.kind === 'ended')).toBe(true);
+});

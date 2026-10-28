@@ -108,7 +108,7 @@ export const auth = betterAuth({
 
   // As telas usam Server Actions (com limite próprio por email, em rate-limit.ts). As mesmas
   // ações via HTTP ficam desligadas pra não existir um caminho alternativo sem esse limite.
-  // Continuam ativos: os links de email (GET /reset-password/:token, /verify-email), sessão e sair.
+  // Email links and session reads remain available over HTTP.
   disabledPaths: [
     '/sign-in/email',
     '/sign-up/email',
@@ -116,6 +116,8 @@ export const auth = betterAuth({
     '/reset-password',
     '/send-verification-email',
     '/change-password',
+    // Sign-out must use the Server Action so staff visits return and record their exit.
+    '/sign-out',
     // Nada na plataforma usa estas: fechadas até existir uma tela (e regras) pra elas. Sem isso,
     // uma aluna logada trocaria o próprio nome (que aparece na saudação) pela API.
     '/update-user',
