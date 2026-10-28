@@ -120,7 +120,7 @@ describe('entrega dos emails de acesso pela Resend', () => {
   });
 });
 
-describe('disabled support email delivery', () => {
+describe('disabled support email notifications', () => {
   test('does not contact the provider even with production credentials', async () => {
     Object.assign(process.env, { NODE_ENV: 'production' });
     const request = spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({ id: 'email-id' }));
@@ -137,7 +137,7 @@ describe('disabled support email delivery', () => {
     expect(request).not.toHaveBeenCalled();
   });
 
-  test('continues delivering unrelated background emails', async () => {
+  test.each(['account', 'support-access'])('continues delivering %s emails', async (tag) => {
     Object.assign(process.env, { NODE_ENV: 'production' });
     const request = spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({ id: 'email-id' }));
     sendEmailInBackground(
@@ -147,7 +147,7 @@ describe('disabled support email delivery', () => {
         text: 'Your account has changed.',
         idempotencyKey: 'account:test:update',
       },
-      'account',
+      tag,
     );
     await Promise.resolve();
     expect(request).toHaveBeenCalledTimes(1);

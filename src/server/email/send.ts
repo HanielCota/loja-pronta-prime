@@ -1,4 +1,4 @@
-import { SUPPORT_EMAIL_ENABLED } from '@/features/support/email-policy';
+import { SUPPORT_EMAIL_NOTIFICATIONS_ENABLED } from '@/features/support/email-policy';
 import { createHash } from 'node:crypto';
 import { setTimeout } from 'node:timers/promises';
 import { env } from '@/config/env';
@@ -77,8 +77,8 @@ export async function sendEmail(email: OutgoingEmail): Promise<void> {
 
 /** Envia sem esperar e sem deixar a falha subir: o log não leva e-mail nem conteúdo. */
 export function sendEmailInBackground(email: OutgoingEmail, tag: string): void {
-  // Block every support message, including maintenance jobs and public access links.
-  if (tag === 'support' && !SUPPORT_EMAIL_ENABLED) return;
+  // Block support notifications while preserving access links and authentication emails.
+  if (tag === 'support' && !SUPPORT_EMAIL_NOTIFICATIONS_ENABLED) return;
   void sendEmail(email).catch((error: unknown) => {
     console.error(`[${tag}] e-mail não enviado: ${error instanceof Error ? error.name : 'erro'}`);
   });

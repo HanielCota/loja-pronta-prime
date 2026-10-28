@@ -1,6 +1,6 @@
 'use server';
 
-import { SUPPORT_EMAIL_ENABLED } from '../email-policy';
+import { SUPPORT_EMAIL_NOTIFICATIONS_ENABLED } from '../email-policy';
 import { runAsStudent } from '@/features/support/server/impersonation';
 import { and, eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
@@ -189,7 +189,7 @@ export async function emailRepliesAction(
   form: FormData,
 ): Promise<TicketActionState> {
   return runAsStudent('emailRepliesAction', async () => {
-    const enabled = SUPPORT_EMAIL_ENABLED && form.get('email') === '1';
+    const enabled = SUPPORT_EMAIL_NOTIFICATIONS_ENABLED && form.get('email') === '1';
     return act(
       form,
       (who) =>
@@ -197,7 +197,7 @@ export async function emailRepliesAction(
           .update(supportTickets)
           .set({ emailReplies: enabled })
           .where(eq(supportTickets.id, who.ticket.id)),
-      !SUPPORT_EMAIL_ENABLED
+      !SUPPORT_EMAIL_NOTIFICATIONS_ENABLED
         ? 'Os avisos dos chamados por e-mail estão desativados. Acompanhe as respostas aqui no suporte.'
         : enabled
           ? 'Você vai receber as respostas por e-mail.'
