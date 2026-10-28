@@ -1,5 +1,6 @@
 'use client';
 
+import { SelectMenu } from '@/components/ui/select-menu';
 import { useActionState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -52,9 +53,9 @@ function SelectForm({
       <input type="hidden" name="numero" value={number} />
       <Label htmlFor={id}>{label}</Label>
       <div className="flex gap-2">
-        <select id={id} name={name} defaultValue={value} className={selectClass}>
+        <SelectMenu id={id} name={name} defaultValue={value} className={selectClass}>
           {children}
-        </select>
+        </SelectMenu>
         <Button type="submit" variant="soft" size="inline" className="px-4" loading={pending}>
           Salvar
         </Button>

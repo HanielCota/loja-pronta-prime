@@ -1,5 +1,6 @@
 'use client';
 
+import { SelectMenu } from '@/components/ui/select-menu';
 import { useState } from 'react';
 import { Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -59,7 +60,7 @@ export function PublicAccessForm({
       <FloatingLabelInput id="acesso-email" name="email" label="E-mail da compra" type="email" required maxLength={254} autoComplete="email" />
       <div className="flex flex-col gap-2">
         <Label htmlFor="acesso-situacao">O que está acontecendo?</Label>
-        <select id="acesso-situacao" name="situacao" required defaultValue="" className="min-h-12 rounded-field border border-input bg-card px-4 text-body text-foreground">
+        <SelectMenu id="acesso-situacao" name="situacao" required defaultValue="" className="min-h-12 rounded-field border border-input bg-card px-4 text-body text-foreground">
           <option value="" disabled>
             Escolha o mais próximo
           </option>
@@ -68,7 +69,7 @@ export function PublicAccessForm({
               {item.label}
             </option>
           ))}
-        </select>
+        </SelectMenu>
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="acesso-descricao">Conte o que aparece quando você tenta entrar</Label>

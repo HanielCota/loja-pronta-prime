@@ -1,5 +1,6 @@
 'use client';
 
+import { SelectMenu } from '@/components/ui/select-menu';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Lock, Quote, Send } from 'lucide-react';
@@ -161,9 +162,9 @@ export function StaffComposer({
       {!internal && templates.length ? (
         <div className="flex flex-col gap-2">
           <Label htmlFor="staff-template">Respostas prontas</Label>
-          <select
+          <SelectMenu
             id="staff-template"
-            defaultValue=""
+            value=""
             onChange={(event) => {
               applyTemplate(event.target.value);
               event.target.value = '';
@@ -176,7 +177,7 @@ export function StaffComposer({
                 {template.title}
               </option>
             ))}
-          </select>
+          </SelectMenu>
         </div>
       ) : null}
       <Textarea
@@ -218,7 +219,7 @@ export function StaffComposer({
         {!internal ? (
           <div className="flex flex-col gap-2 sm:w-72">
             <Label htmlFor="staff-send-option">Opções de envio</Label>
-            <select
+            <SelectMenu
               id="staff-send-option"
               value={statusAfter}
               onChange={(event) => setStatusAfter(event.target.value as TicketStatus)}
@@ -229,7 +230,7 @@ export function StaffComposer({
                   {option.label}
                 </option>
               ))}
-            </select>
+            </SelectMenu>
           </div>
         ) : null}
         <Button type="submit" loading={sending} loadingText="Enviando…" className="sm:w-auto sm:px-8">

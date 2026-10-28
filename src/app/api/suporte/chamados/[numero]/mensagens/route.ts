@@ -79,12 +79,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ num
       error instanceof RequestBodyTooLargeError
         ? 'Os arquivos passaram do limite. Envie até 3 arquivos de 5 MB.'
         : 'Não foi possível ler a mensagem. Tente de novo.';
-    return respond(request, true, { ok: false, message, status: 400, backTo: `/suporte/${number}` });
+    return respond(true, { ok: false, message, status: 400, backTo: `/suporte/${number}` });
   }
   const enhanced = isEnhanced(form);
   const author = await resolveAuthor(form, number);
   if (!author)
-    return respond(request, enhanced, {
+    return respond(enhanced, {
       ok: false,
       message: 'Chamado não encontrado.',
       status: 404,
@@ -94,13 +94,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ num
   if (author.side === 'requester') {
     const visit = await visitForRoute('sendTicketMessage');
     if (visit.status === 'over' || visit.status === 'refused')
-      return respond(request, enhanced, { ok: false, message: visit.message, status: 403, backTo: author.backTo });
+      return respond(enhanced, { ok: false, message: visit.message, status: 403, backTo: author.backTo });
   }
   const internal = author.side === 'staff' && form.get('interna') === '1';
   const body = text(form, 'mensagem', MAX_DESCRIPTION + 1).trim();
   const minimum = internal ? 2 : 1;
   if (body.length < minimum || body.length > MAX_DESCRIPTION)
-    return respond(request, enhanced, {
+    return respond(enhanced, {
       ok: false,
       message: body.length > MAX_DESCRIPTION ? `Escreva até ${MAX_DESCRIPTION} caracteres.` : 'Escreva a mensagem antes de enviar.',
       status: 400,
@@ -109,14 +109,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ num
     });
   const files = filesFromForm(form);
   if (files.length && !(await consumeAttempt('supportFilesPerUser', author.id ?? `ticket:${author.ticket.id}`)))
-    return respond(request, enhanced, {
+    return respond(enhanced, {
       ok: false,
       message: 'Você enviou muitos arquivos em pouco tempo. Espere alguns minutos.',
       status: 429,
       backTo: author.backTo,
     });
   if (author.side === 'staff' && author.ticket.status === 'closed' && !internal)
-    return respond(request, enhanced, {
+    return respond(enhanced, {
       ok: false,
       message: 'Reabra o chamado antes de responder.',
       status: 409,
@@ -127,7 +127,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ num
   try {
     ({ stored: attachments, refused } = await storeAttachments(author.ticket.id, files));
   } catch (error) {
-    return respond(request, enhanced, {
+    return respond(enhanced, {
       ok: false,
       message: attachmentErrorMessage(error),
       status: 400,
@@ -154,7 +154,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ num
     const message =
       error instanceof TicketActionError ? error.message : 'Não foi possível enviar agora. Tente de novo.';
     if (!(error instanceof TicketActionError)) console.error('[support] mensagem não gravada.');
-    return respond(request, enhanced, { ok: false, message, status: 409, backTo: author.backTo });
+    return respond(enhanced, { ok: false, message, status: 409, backTo: author.backTo });
   }
-  return respond(request, enhanced, { ok: true, redirectTo: `${author.backTo}#fim`, notice: refusedFilesNotice(refused) });
+  return respond(enhanced, { ok: true, redirectTo: `${author.backTo}#fim`, notice: refusedFilesNotice(refused) });
 }
