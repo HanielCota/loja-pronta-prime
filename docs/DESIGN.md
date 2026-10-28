@@ -1,5 +1,10 @@
 # Escala Shop design system
 
+The administrator-only updates page at `/admin/novidades` uses `AdminPage`, `panelCard` and
+the existing neutral status badges. Each dated card contains plain-language changes, newest
+day first, with written labels for additions, improvements and fixes. The shortcut belongs to
+the main panel navigation on desktop and the existing navigation disclosure on mobile.
+
 The independent Zé Mauro course at `/ze-mauro` reuses `SllAreaFrame`, `SllPage`, `panelCard`,
 `Button`, the Panda lesson player and the existing progress component. Its sidebar lists its
 own modules. Mobile navigation uses the existing disclosure pattern. Colors, typography,

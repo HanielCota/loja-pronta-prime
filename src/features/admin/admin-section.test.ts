@@ -13,6 +13,7 @@ describe('adminSectionFor', () => {
     expect(adminSectionFor('/admin/contas/123/etapa', null)).toBe('accounts');
     expect(adminSectionFor('/admin/assistente', null)).toBe('assistant');
     expect(adminSectionFor('/admin/online', 'method')).toBe('online');
+    expect(adminSectionFor('/admin/novidades', null)).toBe('updates');
   });
 
   test('o grupo Suporte marca cada parte', () => {

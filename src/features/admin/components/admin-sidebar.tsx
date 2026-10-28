@@ -8,6 +8,7 @@ import {
   BookOpen,
   ChevronDown,
   FileText,
+  History,
   Images,
   KeyRound,
   LayoutDashboard,
@@ -54,8 +55,27 @@ const groups: readonly NavGroup[] = [
   {
     label: 'Painel',
     links: [
-      { href: '/admin', label: 'Visão geral', section: 'overview', Icon: LayoutDashboard, requires: 'admin' },
-      { href: '/admin/online', label: 'Online agora', section: 'online', Icon: Radio, requires: 'admin' },
+      {
+        href: '/admin',
+        label: 'Visão geral',
+        section: 'overview',
+        Icon: LayoutDashboard,
+        requires: 'admin',
+      },
+      {
+        href: '/admin/online',
+        label: 'Online agora',
+        section: 'online',
+        Icon: Radio,
+        requires: 'admin',
+      },
+      {
+        href: '/admin/novidades',
+        label: 'Novidades',
+        section: 'updates',
+        Icon: History,
+        requires: 'admin',
+      },
     ],
   },
   {
@@ -94,7 +114,13 @@ const groups: readonly NavGroup[] = [
   {
     label: 'Alunas e vendas',
     links: [
-      { href: '/admin/contas', label: 'Contas', section: 'accounts', Icon: UsersRound, requires: 'admin' },
+      {
+        href: '/admin/contas',
+        label: 'Contas',
+        section: 'accounts',
+        Icon: UsersRound,
+        requires: 'admin',
+      },
       {
         href: '/admin/acessos',
         label: 'Acessos das alunas',
@@ -159,7 +185,13 @@ const groups: readonly NavGroup[] = [
         Icon: FileText,
         requires: 'admin',
       },
-      { href: '/admin/recursos', label: 'Recursos', section: 'resources', Icon: Wrench, requires: 'admin' },
+      {
+        href: '/admin/recursos',
+        label: 'Recursos',
+        section: 'resources',
+        Icon: Wrench,
+        requires: 'admin',
+      },
       // Ícone próprio: o de livros já é dos cursos.
       {
         href: '/admin/arquivados',
@@ -181,7 +213,13 @@ const groups: readonly NavGroup[] = [
         Icon: Wrench,
         requires: 'admin',
       },
-      { href: '/admin/bling', label: 'Conexão Bling', section: 'bling', Icon: Wrench, requires: 'admin' },
+      {
+        href: '/admin/bling',
+        label: 'Conexão Bling',
+        section: 'bling',
+        Icon: Wrench,
+        requires: 'admin',
+      },
     ],
   },
 ];

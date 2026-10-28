@@ -1,5 +1,6 @@
 export type AdminSection =
   | 'overview'
+  | 'updates'
   | 'leads'
   | 'online'
   | 'welcome'
@@ -22,6 +23,7 @@ export type AdminSection =
 
 /** O primeiro pedaço do endereço depois de `/admin` e a seção do menu que ele representa. */
 const SECTION_BY_SEGMENT: Readonly<Record<string, AdminSection>> = {
+  novidades: 'updates',
   online: 'online',
   contas: 'accounts',
   acessos: 'access',
