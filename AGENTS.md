@@ -69,6 +69,18 @@ claro e escuro).
 
 ## Git
 
+### Administrative patch notes
+
+- For each platform behavior change, update `src/features/patch-notes/entries.ts` in the same
+  change. Group entries by the current date in `America/Sao_Paulo`, newest date first; append
+  to the existing day rather than creating duplicate dates. Do not add entries for days without changes.
+- Write the rendered notes in simple Brazilian Portuguese, describing what changed and its
+  practical effect. Use `Novo`, `Melhoria`, or `Correção`. Clearly state pending rollout or
+  coming-soon limits; never claim an unverified production deployment.
+- Keep `/admin/novidades` restricted to administrators through `requireAdmin`. The curated
+  notes are maintained with the source and published with the application, without runtime GitHub access.
+- Use `CHANGELOG.md` for English technical and operational details when applicable.
+
 - Tudo em inglês: commits, branches, PRs. Conventional Commits (`feat(logo): ...`), corpo explicando
   o porquê, um assunto por commit, cada um passando no typecheck e no lint.
 - Branch `type/short-description` a partir da `main` e PR pra `main`. Nunca commit direto na `main`.
