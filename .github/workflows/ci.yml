@@ -66,6 +66,8 @@ jobs:
           bun-version: 1.4.2
       - run: bun install --frozen-lockfile
       - run: bun run test:integration
+      - run: bunx playwright install --with-deps chromium
+      - run: bun run test:e2e --config=playwright.support.config.ts
 
   build:
     name: Production build
