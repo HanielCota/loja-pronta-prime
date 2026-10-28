@@ -13,6 +13,60 @@ export const patchNotes: readonly PatchNoteDay[] = [
     date: '2026-10-28',
     changes: [
       {
+        kind: 'Melhoria',
+        title: 'Relatórios do suporte com menos processamento',
+        description:
+          'Após a publicação desta atualização, o relatório de desempenho passa a organizar os dados por chamado e reaproveitar os cálculos da mesma consulta. Isso reduz o processamento de históricos maiores, mantendo as regras de notas, prazos e retornos.',
+      },
+      {
+        kind: 'Melhoria',
+        title: 'Banners reaproveitam a mesma prévia',
+        description:
+          'Após a publicação desta atualização, prévias e downloads da mesma versão passam a reaproveitar a imagem pronta. A geração simultânea tem limite para reduzir picos de memória. O acesso à conta e a aprovação para baixar continuam sendo conferidos a cada pedido.',
+      },
+      {
+        kind: 'Correção',
+        title: 'Recursos liberados ao preparar fotos',
+        description:
+          'Após a publicação desta atualização, a preparação de fotos e logos libera os recursos de imagem também quando o navegador não consegue concluir o processamento.',
+      },
+      {
+        kind: 'Melhoria',
+        title: 'Menos processamento quando o banco está indisponível',
+        description:
+          'Após a publicação desta atualização, o limite temporário em memória evita repetir verificações completas quando está cheio. Os limites ativos continuam preservados.',
+      },
+      {
+        kind: 'Correção',
+        title: 'Gravação e limite dos chamados',
+        description:
+          'Após a publicação desta atualização, envios simultâneos passam a respeitar o limite de três chamados abertos. As respostas do suporte também passam a usar a mesma conexão do banco durante a gravação, evitando falhas quando vários envios chegam juntos.',
+      },
+      {
+        kind: 'Correção',
+        title: 'Anexos preservados quando o link falha',
+        description:
+          'Após a publicação desta atualização, uma falha ao enviar o link de acesso não apaga os anexos de um chamado já salvo. Repetir o mesmo envio tenta mandar o link novamente, sem abrir outro chamado.',
+      },
+      {
+        kind: 'Correção',
+        title: 'Conferência do estoque das variações',
+        description:
+          'Após a publicação desta atualização, a ativação dos anúncios também confere o estoque de cada variação. Estoques diferentes ou ausentes pedem conferência. A publicação real continua dependendo das liberações e do piloto da integração.',
+      },
+      {
+        kind: 'Melhoria',
+        title: 'Carregamento das aulas do Zé Mauro',
+        description:
+          'Após a publicação desta atualização, o curso reaproveita o catálogo publicado e carrega o conteúdo completo apenas da aula aberta. O acesso e o progresso continuam sendo conferidos por conta.',
+      },
+      {
+        kind: 'Correção',
+        title: 'Estabilidade na atualização do fornecedor',
+        description:
+          'Após a publicação desta atualização, falhas ao encerrar uma atualização do fornecedor deixam de manter uma conexão do banco ocupada. A disponibilidade do catálogo continua dependendo da configuração e dos dados reais do fornecedor.',
+      },
+      {
         kind: 'Novo',
         title: 'Histórico de novidades no painel',
         description:

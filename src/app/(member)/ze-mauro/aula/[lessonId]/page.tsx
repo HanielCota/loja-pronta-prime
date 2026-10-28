@@ -8,7 +8,7 @@ import { SllLessonVideo } from '@/features/sll/components/sll-lesson-video';
 import { isProgressId } from '@/features/sll/progress-rules';
 import { ZeCourseShell } from '@/features/ze-mauro/components/course-shell';
 import { ZeLessonList } from '@/features/ze-mauro/components/lesson-list';
-import { getZeCourse } from '@/features/ze-mauro/server/catalog';
+import { getZeLesson } from '@/features/ze-mauro/server/catalog';
 import { setZeLessonCompletion } from '@/features/ze-mauro/server/actions';
 import { zeLessonVideo } from '@/features/ze-mauro/course';
 
@@ -23,15 +23,13 @@ export default async function ZeLessonPage({
 }) {
   const { lessonId } = await params;
   if (!isProgressId(lessonId)) notFound();
-  const { session, products, course, completed, hasPri, preview } = await getZeCourse(
-    `/ze-mauro/aula/${lessonId}`,
-  );
+  const { session, products, course, completed, hasPri, preview, lesson } =
+    await getZeLesson(lessonId);
   const modules =
     course?.stages.flatMap((stage) => stage.modules.map((module) => ({ stage, module }))) ?? [];
   const location = modules.find(({ module }) =>
     module.lessons.some((item) => item.id === lessonId),
   );
-  const lesson = location?.module.lessons.find((item) => item.id === lessonId);
   if (!course || !lesson || !location) notFound();
   const video = zeLessonVideo(lesson.blocks);
   const available = modules

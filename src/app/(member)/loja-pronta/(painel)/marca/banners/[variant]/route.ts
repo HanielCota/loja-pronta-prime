@@ -1,13 +1,12 @@
 import { getOwnBrandForImage } from '@/features/brand/server/brand';
 import { brandFingerprint } from '@/features/brand/server/fingerprint';
 import { readBannerKit } from '@/features/brand/banner-kit/server/kit';
-import { renderBanner } from '@/features/brand/banner-kit/server/render';
+import { readBannerImage } from '@/features/brand/banner-kit/server/images';
 import {
   bannerVariants,
   kitIsApproved,
   type BannerVariant,
 } from '@/features/brand/banner-kit/model';
-import { storage } from '@/server/storage';
 
 export async function GET(request: Request, context: { params: Promise<{ variant: string }> }) {
   const { variant } = await context.params;
@@ -26,9 +25,16 @@ export async function GET(request: Request, context: { params: Promise<{ variant
   if (download && !kitIsApproved(kit, fingerprint))
     return new Response('Aprove esta versão antes de baixar.', { status: 403 });
   try {
-    const logo = await storage().get(owner.brand.logoImage);
-    if (!logo) return new Response('Logo indisponível', { status: 404 });
-    const png = await renderBanner(kit, owner.brand.name, logo, kind);
+    const png = await readBannerImage({
+      userId: owner.userId,
+      revision: kit.revision,
+      fingerprint,
+      variant: kind,
+      draft: kit,
+      name: owner.brand.name,
+      logoKey: owner.brand.logoImage,
+    });
+    if (!png) return new Response('Logo indisponível', { status: 404 });
     return new Response(new Uint8Array(png), {
       headers: {
         'Content-Type': 'image/png',

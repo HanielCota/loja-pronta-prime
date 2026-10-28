@@ -609,7 +609,14 @@ test('retoma somente a ativação de variações confirmadas sem criar outro an�
       if (url.pathname.endsWith('get_model_list'))
         return envelope({
           tier_variation: variations.tier_variation,
-          model: [{ model_sku: 'new-blue', tier_index: [0], price_info: [{ original_price: 20 }] }],
+          model: [
+            {
+              model_sku: 'new-blue',
+              tier_index: [0],
+              price_info: [{ original_price: 20 }],
+              stock_info_v2: { summary_info: { total_available_stock: 5 } },
+            },
+          ],
         });
       throw new Error('Consulta inesperada');
     });

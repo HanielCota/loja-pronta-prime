@@ -3,6 +3,36 @@
 Dates use the America/Sao_Paulo time zone. Operational verification and rollout limits are
 recorded separately from code integration.
 
+## 2026-10-28
+
+### CPU and memory resource fixes
+
+- Index support resolutions by ticket and repeat subject, preserving stable timestamp ties,
+  rating windows and seven-day returns. Reuse calculated facts within each report render.
+- Cache banner PNGs by account, brand fingerprint, revision and variant for five minutes.
+  Cap cached output at 8 MiB/64 entries and generation at two active jobs/16 pending keys.
+  Every request still checks ownership, current revision and download approval before reuse.
+- Skip saturated in-memory rate-limit scans until an existing entry can expire. Weakly held
+  expiry metadata does not retain otherwise unused limiter maps.
+- Release decoded bitmaps and canvas backing storage on success and all failure paths.
+- Local synthetic Node measurements reduced the 10,000-ticket resolution calculation from
+  about 2,628 ms to 10 ms and 20,000 saturated limiter checks from about 659 ms to 3 ms.
+  These are development-machine measurements, not production latency or capacity guarantees.
+
+### Review fixes and course performance
+
+- Reuse the current transaction for support settings and holiday reads, avoiding nested pool
+  acquisition while holding ticket locks.
+- Serialize the open-ticket limit and insertion per account, preserving submission idempotency.
+- Separate committed support tickets and attachments from public-link delivery failures; retries
+  resend the access link without creating another ticket or removing committed files.
+- Require matching, present variation stock before activating or reconciling Shopee listings.
+- Cache the published Zé Mauro navigation and video availability with the shared content tag;
+  load full blocks only for the selected lesson. Access and progress remain private and uncached.
+- Refresh private completion state without invalidating shared published course content.
+- Always release supplier lock connections and discard connections whose unlock failed.
+- Production rollout and real Shopee publication remain unverified by these local changes.
+
 ## 2026-10-26
 
 ### Escala Shop identity and member access

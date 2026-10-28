@@ -239,3 +239,75 @@ test('purchases from one expert cannot open the other expert course through dire
     await context.close();
   }
 });
+
+test('published course cache survives private completion and publication invalidates it', async ({
+  page,
+  browser,
+}) => {
+  test.setTimeout(120_000);
+  await signIn(page, emails[0]!, PASSWORD, `/ze-mauro/aula/${lessonId}`);
+  await page.setExtraHTTPHeaders({});
+  const {
+    rows: [original],
+  } = await database().query<{ description: string | null }>(
+    'select description from learning_lessons where id=$1',
+    [lessonId],
+  );
+  const changedDescription = `Updated published course description ${run}`;
+  const textId = randomUUID();
+  const lessonText = `Selected lesson text ${run}`;
+  const operatorContext = await browser.newContext();
+  try {
+    await database().query('update learning_lessons set description=$1 where id=$2', [
+      changedDescription,
+      lessonId,
+    ]);
+    await database().query(
+      "insert into learning_content_blocks (id, lesson_id, kind, position, data) values ($1, $2, 'text', 100, $3::jsonb)",
+      [textId, lessonId, JSON.stringify({ text: lessonText })],
+    );
+    await page.reload();
+    await expect(page.getByText(changedDescription, { exact: true })).toHaveCount(0);
+    const completion = page.getByRole('button', { name: 'Desfazer conclusão', exact: true });
+    await completion.click();
+    await expect(
+      page.getByRole('button', { name: 'Marcar como concluída', exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText(changedDescription, { exact: true })).toHaveCount(0);
+
+    const operator = await operatorContext.newPage();
+    await signIn(operator, emails[2]!, PASSWORD, '/admin/textos');
+    const group = operator
+      .locator('details')
+      .filter({ has: operator.locator('input[name="groupIndex"][value="0"]') });
+    await group.locator('summary').click();
+    await group
+      .getByLabel('Texto de boas-vindas', { exact: true })
+      .fill(`Course cache invalidation ${run}`);
+    await group.getByRole('button', { name: 'Salvar rascunho', exact: true }).click();
+    await group.getByRole('button', { name: 'Publicar para alunas', exact: true }).click();
+    await expect(
+      group.getByText('Textos publicados. As alunas já veem esta versão.', { exact: true }),
+    ).toBeVisible();
+    await page.reload();
+    await expect(page.getByText(changedDescription, { exact: true })).toBeVisible();
+    await expect(page.getByText(lessonText, { exact: true })).toBeVisible();
+    await operator.goto(`/ze-mauro/aula/${lessonId}`);
+    await expect(operator.getByText(lessonText, { exact: true })).toBeVisible();
+    await expect(operator.getByRole('button', { name: 'Marcar como concluída' })).toHaveCount(0);
+
+    await database().query("delete from manual_product_grants where user_id=$1 and product='sll'", [
+      userIds[0],
+    ]);
+    await page.goto(`/ze-mauro/aula/${lessonId}`);
+    await expect(page).toHaveURL('/');
+    await expect(page.getByText(lessonText, { exact: true })).toHaveCount(0);
+  } finally {
+    await database().query('update learning_lessons set description=$1 where id=$2', [
+      original!.description,
+      lessonId,
+    ]);
+    await database().query('delete from learning_content_blocks where id=$1', [textId]);
+    await operatorContext.close();
+  }
+});

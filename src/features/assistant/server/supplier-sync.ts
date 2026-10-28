@@ -225,8 +225,15 @@ export async function syncSupplierFeeds(
             ),
           );
     } finally {
-      await client.query('select pg_advisory_unlock(hashtext($1))', [key]);
-      client.release();
+      let discard = false;
+      try {
+        await client.query('select pg_advisory_unlock(hashtext($1))', [key]);
+      } catch {
+        // A failed unlock leaves ownership uncertain; discard rather than reuse the connection.
+        discard = true;
+      } finally {
+        client.release(discard);
+      }
     }
   }
 }

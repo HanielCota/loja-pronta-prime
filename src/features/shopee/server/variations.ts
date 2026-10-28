@@ -50,6 +50,7 @@ export function modelsMatchPublication(
       actual.model.some(
         (row) =>
           row.model_sku === model.model_sku &&
+          row.stock_info_v2?.summary_info.total_available_stock === model.normal_stock &&
           JSON.stringify(row.tier_index) === JSON.stringify(model.tier_index) &&
           row.price_info?.some(
             (price) =>

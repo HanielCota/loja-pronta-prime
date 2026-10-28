@@ -1160,7 +1160,14 @@ test('uma resposta perdida nas variações conserva o ID do pai e não cria outr
     if (url.pathname.endsWith('get_model_list'))
       return envelope({
         tier_variation: mapped.variations!.tier_variation,
-        model: [{ model_sku: `${sku}-p`, tier_index: [0], price_info: [{ original_price: 20 }] }],
+        model: [
+          {
+            model_sku: `${sku}-p`,
+            tier_index: [0],
+            price_info: [{ original_price: 20 }],
+            stock_info_v2: { summary_info: { total_available_stock: 2 } },
+          },
+        ],
       });
     throw new Error('A conciliação não deve escrever');
   });
