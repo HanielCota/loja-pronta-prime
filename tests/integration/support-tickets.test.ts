@@ -3,6 +3,9 @@ import { randomUUID } from 'node:crypto';
 import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import { db } from '@/server/db';
 import {
+  hiddenUserPresence,
+  userPresence,
+  supportTicketAttachments,
   staffAuditLog,
   supportTicketEvents,
   supportTicketMessages,
@@ -12,7 +15,7 @@ import {
 
 // O worker apaga anexos vencidos e manda e-mails: aqui nada disso pode sair da máquina.
 // O bucket é falso: `failPut` simula o provedor recusando a credencial.
-const bucket = { failPut: false, puts: 0 };
+const bucket = { failPut: false, puts: 0, failRemove: false, removals: [] as string[] };
 mock.module('@/server/storage', () => ({
   storage: () => ({
     put: async () => {
@@ -23,7 +26,10 @@ mock.module('@/server/storage', () => ({
         );
       bucket.puts += 1;
     },
-    remove: async () => {},
+    remove: async (key: string) => {
+      if (bucket.failRemove) throw new Error('Storage unavailable');
+      bucket.removals.push(key);
+    },
     delete: async () => {},
   }),
 }));
@@ -34,7 +40,8 @@ mock.module('@/server/email/send', () => ({
 
 const { appendStaffMessage, createTicket, markTicketRead } =
   await import('@/features/support/server/tickets');
-const { closeIdleTickets } = await import('@/features/support/server/maintenance');
+const { closeIdleTickets, applyRetention } = await import('@/features/support/server/maintenance');
+const { getStaffTicket } = await import('@/features/support-desk/server/queries');
 const { countMyUnread, listMyTickets } = await import('@/features/support/server/queries');
 
 const studentId = randomUUID();
@@ -328,4 +335,57 @@ test('ação da equipe fica registrada e sobrevive à conta apagada, sem nome', 
     .where(eq(staffAuditLog.targetId, agentId));
   expect(entry).toEqual({ actorId: null, area: 'team', action: 'team.blocked', targetId: agentId });
   await db.delete(staffAuditLog).where(eq(staffAuditLog.targetId, agentId));
+});
+
+
+test('requester context hides ombudsman tickets from agents but keeps them for supervisors', async () => {
+  const current = await openTicket();
+  const complaint = await openTicket();
+  await db.update(supportTickets).set({ queue: 'ombudsman', subject: 'Private complaint' }).where(eq(supportTickets.id, complaint.id));
+  const agentView = await getStaffTicket(current.number, agent);
+  expect(agentView?.requester?.otherTickets.some((ticket) => ticket.number === complaint.number)).toBe(false);
+  const supervisorView = await getStaffTicket(current.number, { ...agent, role: 'support_supervisor' });
+  expect(supervisorView?.requester?.otherTickets.some((ticket) => ticket.number === complaint.number)).toBe(true);
+});
+
+test('support requester context respects hidden presence', async () => {
+  const current = await openTicket();
+  await db.insert(userPresence).values({ userId: studentId, path: '/sll', lastSeenAt: new Date() });
+  try {
+    const visible = await getStaffTicket(current.number, agent);
+    expect(visible?.requester?.online).toBe(true);
+    await db.insert(hiddenUserPresence).values({ userId: studentId });
+    const hidden = await getStaffTicket(current.number, agent);
+    expect(hidden?.requester?.lastSeenAt).toBeNull();
+    expect(hidden?.requester?.online).toBe(false);
+  } finally {
+    await db.delete(hiddenUserPresence).where(eq(hiddenUserPresence.userId, studentId));
+    await db.delete(userPresence).where(eq(userPresence.userId, studentId));
+  }
+});
+
+test('retention retries failed bucket deletions and marks only successful deletions as purged', async () => {
+  const current = await openTicket();
+  const [message] = await db.select({ id: supportTicketMessages.id }).from(supportTicketMessages).where(eq(supportTicketMessages.ticketId, current.id));
+  const key = `support/${current.id}/retention.png`;
+  const [attachment] = await db.insert(supportTicketAttachments).values({
+    ticketId: current.id,
+    messageId: message!.id,
+    storageKey: key,
+    fileName: 'retention.png',
+    mimeType: 'image/png',
+    sizeBytes: 1,
+  }).returning({ id: supportTicketAttachments.id });
+  await db.update(supportTickets).set({ status: 'closed', closedAt: new Date(Date.now() - 200 * DAY_MS) }).where(eq(supportTickets.id, current.id));
+  const readAttachment = async () => (await db.select().from(supportTicketAttachments).where(eq(supportTicketAttachments.id, attachment!.id)))[0]!;
+  bucket.failRemove = true;
+  try {
+    await applyRetention();
+    expect((await readAttachment()).purgedAt).toBeNull();
+  } finally {
+    bucket.failRemove = false;
+  }
+  await applyRetention();
+  expect((await readAttachment()).purgedAt).toBeInstanceOf(Date);
+  expect(bucket.removals).toContain(key);
 });

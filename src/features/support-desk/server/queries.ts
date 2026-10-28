@@ -33,6 +33,7 @@ import {
 import { hasStaffPermission } from '@/features/support/staff-access';
 import { canSeeQueue, loadStaffDirectory, type StaffMember } from '@/features/support/server/tickets';
 import { getAccessValidity } from '@/features/products/server/access-validity';
+import { visiblePresenceCondition } from '@/features/admin/server/presence-visibility';
 import { STAFF_PAGE_SIZE, STAFF_QUEUES, type StaffQueue, type StaffTicketFilters } from '../filters';
 
 export type Viewer = { id: string; role: string | null | undefined };
@@ -245,12 +246,12 @@ export async function getStaffTicket(number: number, viewer: Viewer) {
       .from(supportReplyTemplates)
       .where(eq(supportReplyTemplates.active, true))
       .orderBy(asc(supportReplyTemplates.position)),
-    ticket.requesterId ? loadRequesterProfile(ticket.requesterId, ticket.id) : Promise.resolve(null),
+    ticket.requesterId ? loadRequesterProfile(ticket.requesterId, ticket.id, viewer) : Promise.resolve(null),
   ]);
   return { ticket, messages, attachments, events, reads, staff, templates, requester };
 }
 
-async function loadRequesterProfile(userId: string, currentTicketId: string) {
+async function loadRequesterProfile(userId: string, currentTicketId: string, viewer: Viewer) {
   const [account] = await db
     .select({
       id: user.id,
@@ -277,7 +278,7 @@ async function loadRequesterProfile(userId: string, currentTicketId: string) {
       .where(eq(learningLessonProgress.userId, userId))
       .orderBy(desc(learningLessonProgress.lastViewedAt))
       .limit(1),
-    db.select({ lastSeenAt: userPresence.lastSeenAt }).from(userPresence).where(eq(userPresence.userId, userId)).limit(1),
+    db.select({ lastSeenAt: userPresence.lastSeenAt }).from(userPresence).where(and(eq(userPresence.userId, userId), visiblePresenceCondition())).limit(1),
     db
       .select({
         number: supportTickets.number,
@@ -286,7 +287,11 @@ async function loadRequesterProfile(userId: string, currentTicketId: string) {
         updatedAt: supportTickets.updatedAt,
       })
       .from(supportTickets)
-      .where(and(eq(supportTickets.requesterId, userId), ne(supportTickets.id, currentTicketId)))
+      .where(and(
+        eq(supportTickets.requesterId, userId),
+        ne(supportTickets.id, currentTicketId),
+        hasStaffPermission(viewer.role, 'support.ombudsman') ? undefined : eq(supportTickets.queue, 'general'),
+      ))
       .orderBy(desc(supportTickets.updatedAt))
       .limit(5),
   ]);

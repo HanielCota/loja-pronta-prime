@@ -131,7 +131,12 @@ export async function applyRetention(now = new Date()): Promise<void> {
     .where(and(isNull(supportTicketAttachments.purgedAt), eq(supportTickets.status, 'closed'), lt(supportTickets.closedAt, attachmentLimit)))
     .limit(BATCH);
   for (const file of files) {
-    await storage().remove(file.key).catch(() => undefined);
+    try {
+      await storage().remove(file.key);
+    } catch {
+      console.error('[support] attachment retention deletion failed; it will be retried.');
+      continue;
+    }
     await db.update(supportTicketAttachments).set({ purgedAt: now }).where(eq(supportTicketAttachments.id, file.id));
   }
   const ticketLimit = new Date(now.getTime() - settings.ticketRetentionYears * 365 * DAY_MS);
