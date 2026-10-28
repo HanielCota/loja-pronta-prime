@@ -538,3 +538,8 @@ in a secondary disclosure below the history. The continuation page uses the exis
 import or review for that store, explains the actual connection/publication availability and
 does not promise a delivery date. The scoped review list preserves its store filter through
 pagination and shows each confirmed publication state. Administrative history remains read-only.
+
+Completed lessons in the SLL lesson list use `bg-progress/10` (`bg-progress/20` on hover),
+with `border-progress` and `text-progress-text` on the number ring and check icon. The current
+lesson keeps its primary purple treatment. The check icon continues to label completion for
+assistive technology, so completion never depends on color alone.
