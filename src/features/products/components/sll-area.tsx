@@ -81,7 +81,7 @@ export function SllArea({
       <p className="text-body text-muted-foreground">
         Precisa de ajuda com o curso?{' '}
         <Link
-          href="/suporte/novo?pagina=/sll"
+          href="/perfil#suporte"
           className="inline-flex min-h-11 items-center font-semibold text-link underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         >
           Fale com o suporte

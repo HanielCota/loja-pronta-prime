@@ -7,7 +7,6 @@ import {
   AttentionGroup,
   DevicesGroup,
   HelpGroup,
-  TicketsGroup,
 } from '@/features/auth/components/profile-groups';
 import { ProfileSettings } from '@/features/auth/components/profile-forms';
 import { SignOutRow } from '@/features/auth/components/sign-out-button';
@@ -73,7 +72,6 @@ export default async function ProfilePage() {
         help={
           // A âncora "/perfil#suporte" (menu da conta e painel da loja) cai direto aqui.
           <div id="suporte" className="flex scroll-mt-24 flex-col gap-8">
-            <TicketsGroup />
             <HelpGroup phones={phones} />
           </div>
         }

@@ -14,6 +14,12 @@ export const patchNotes: readonly PatchNoteDay[] = [
     changes: [
       {
         kind: 'Melhoria',
+        title: 'Atendimento concentrado no WhatsApp',
+        description:
+          'Após a publicação desta atualização, o atendimento passa a ser pelo WhatsApp. As telas de chamados, os formulários e a fila da equipe são retirados. Os contatos continuam no perfil e na ajuda para entrar; os registros anteriores ficam preservados.',
+      },
+      {
+        kind: 'Melhoria',
         title: 'Relatórios do suporte com menos processamento',
         description:
           'Após a publicação desta atualização, o relatório de desempenho passa a organizar os dados por chamado e reaproveitar os cálculos da mesma consulta. Isso reduz o processamento de históricos maiores, mantendo as regras de notas, prazos e retornos.',

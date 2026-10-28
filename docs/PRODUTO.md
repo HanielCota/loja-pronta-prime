@@ -1,5 +1,18 @@
 # Escala Shop — Platform overview
 
+## WhatsApp support (October 28, 2026)
+
+The owner requested retiring the internal ticket inbox to consolidate support on WhatsApp.
+The account menu, profile, course and store help use the existing subject-specific contacts.
+Public login help shows the configured technical WhatsApp contact and password recovery.
+Legacy ticket pages redirect to the appropriate help page; ticket APIs return HTTP 410 and
+previously loaded ticket actions cannot write. Administrators retain only the WhatsApp contact
+settings; the ticket queue, reports, team screens, counters and overview card are removed.
+The worker only retains the established historical data retention job. No records are removed
+as part of this change, and no database migration is required.
+Existing cards, typography, themes and components remain in use. This supersedes earlier ticket
+UI and operating instructions below. Production rollout must be verified separately.
+
 ## Previous store continuation (October 27, 2026)
 
 Members with saved stores see **Retomar esta loja** before the option to start another store.

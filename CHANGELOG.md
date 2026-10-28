@@ -5,6 +5,15 @@ recorded separately from code integration.
 
 ## 2026-10-28
 
+### Consolidate support on WhatsApp
+
+- Retire member and public ticket forms, conversations, staff queues, reports and team screens.
+  Old page links lead to WhatsApp help; ticket APIs return HTTP 410 and stale actions cannot write.
+- Keep subject-specific WhatsApp contacts and administrator contact settings. Remove ticket
+  counters, dashboard queries and ticket links from the profile, courses and store journey.
+- Stop deadline and auto-close jobs; retain the established historical retention policy.
+  No database migration or immediate record deletion is included. Production rollout is unverified.
+
 ### CPU and memory resource fixes
 
 - Index support resolutions by ticket and repeat subject, preserving stable timestamp ties,

@@ -87,17 +87,13 @@ export function staffRoleLabel(role: string | null | undefined): string | null {
 /** O atalho pro painel no menu da conta: aonde leva e o cargo que aparece embaixo. */
 export type StaffPanelLink = { href: string; label: string; roleLabel: string };
 
-/**
- * O atalho da equipe no menu da conta, pelo cargo mais alto: o administrador entra na visão geral
- * do painel; atendente e supervisor, direto nos chamados (a visão geral é só do administrador).
- * Quem não é da equipe não tem atalho.
- */
+/** Only administrators retain a panel shortcut after the ticket inbox is retired. */
 export function staffPanelLinkOf(role: string | null | undefined): StaffPanelLink | null {
   const staffRole = staffRoleOf(role);
   if (!staffRole) return null;
   const roleLabel = STAFF_ROLE_LABELS[staffRole];
   if (staffRole === 'admin') return { href: '/admin', label: 'Painel administrativo', roleLabel };
-  return { href: '/admin/chamados', label: 'Painel de suporte', roleLabel };
+  return null;
 }
 
 /**
@@ -126,7 +122,11 @@ export function parsePlatformOwners(raw: string | null | undefined): readonly st
  * o dono convida, muda o cargo ou bloqueia a equipe; assim um administrador não rebaixa outro.
  */
 export function isPlatformOwner(
-  account: { email?: string | null | undefined; emailVerified?: boolean | null | undefined; role?: string | null | undefined },
+  account: {
+    email?: string | null | undefined;
+    emailVerified?: boolean | null | undefined;
+    role?: string | null | undefined;
+  },
   owners: readonly string[],
 ): boolean {
   if (!account.email || account.emailVerified !== true) return false;

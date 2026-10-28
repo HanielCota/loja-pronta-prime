@@ -1,13 +1,8 @@
-import { readClock } from '@/features/support/clock';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { hasAdminRole } from '@/features/admin/access';
 import { requireAdmin } from '@/features/admin/server/access';
 import { readStaffFrameSession } from '@/features/support/server/staff-guard';
-import { SupportNowCard } from '@/features/support-desk/components/support-now-card';
-import { loadSupportNow } from '@/features/support-desk/server/queries';
-import { loadSupportSchedule, isPaused } from '@/features/support/server/settings';
-import { isWithinSupportHours } from '@/features/support/support-hours';
 import { LearningContentTree } from '@/features/admin/components/learning-content-tree';
 import { AdminPage } from '@/features/admin/components/admin-shell';
 import { AdminLiveOverview } from '@/features/admin/components/admin-live-overview';
@@ -32,26 +27,18 @@ export default async function AdminHomePage({
 }: {
   searchParams: Promise<{ area?: string }>;
 }) {
-  // Atendente e supervisor não veem o painel geral: entram direto nos chamados.
+  // Former ticket staff use the same WhatsApp contacts as members.
   const staff = await readStaffFrameSession();
-  if (staff && !hasAdminRole(staff.user.role)) redirect('/admin/chamados');
+  if (staff && !hasAdminRole(staff.user.role)) redirect('/perfil#suporte');
   await requireAdmin();
   const { area } = await searchParams;
   if (area !== 'welcome' && area !== 'method' && area !== 'courses') {
-    const [overview, { now, rows: online, total: onlineTotal }, supportNow, { settings, schedule }] = await Promise.all([
+    const [overview, { now, rows: online, total: onlineTotal }] = await Promise.all([
       getAdminOverview(),
       getOnlineStudents(),
-      loadSupportNow(),
-      loadSupportSchedule(),
     ]);
-    const supportState = isPaused(settings)
-      ? 'Em pausa'
-      : isWithinSupportHours(readClock(), schedule)
-        ? 'Aberto agora'
-        : 'Fora do horário';
     return (
       <AdminPage title="Visão geral" intro="Os números da plataforma e o que mudou por último.">
-        <SupportNowCard now={{ ...supportNow, state: supportState }} />
         <AdminLiveOverview initial={{ now, online, onlineTotal, overview }} />
       </AdminPage>
     );

@@ -1,5 +1,18 @@
 import { SUPPORT_EMAIL_NOTIFICATIONS_ENABLED } from '../email-policy';
-import { and, avg, count, eq, gte, inArray, isNotNull, isNull, lt, lte, ne, sql } from 'drizzle-orm';
+import {
+  and,
+  avg,
+  count,
+  eq,
+  gte,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  lte,
+  ne,
+  sql,
+} from 'drizzle-orm';
 import { db } from '@/server/db';
 import {
   supportAccessTokens,
@@ -68,21 +81,49 @@ export async function flagMissedDeadlines(now = new Date()): Promise<number> {
   const late = await db
     .update(supportTickets)
     .set({ lateNotifiedAt: now })
-    .where(and(eq(supportTickets.status, 'open'), isNotNull(supportTickets.dueAt), lt(supportTickets.dueAt, now), isNull(supportTickets.lateNotifiedAt)))
+    .where(
+      and(
+        eq(supportTickets.status, 'open'),
+        isNotNull(supportTickets.dueAt),
+        lt(supportTickets.dueAt, now),
+        isNull(supportTickets.lateNotifiedAt),
+      ),
+    )
     .returning();
   if (late.length === 0) return 0;
-  await db
-    .insert(supportTicketEvents)
-    .values(late.map((ticket) => ({ ticketId: ticket.id, automatic: true, type: 'deadline_missed' as const })));
+  await db.insert(supportTicketEvents).values(
+    late.map((ticket) => ({
+      ticketId: ticket.id,
+      automatic: true,
+      type: 'deadline_missed' as const,
+    })),
+  );
   if (!SUPPORT_EMAIL_NOTIFICATIONS_ENABLED) return late.length;
   const staff = await loadStaffDirectory();
-  const supervisors = staff.filter((member) => hasStaffPermission(member.role, 'support.assign_others') && !member.role?.includes('admin'));
+  const supervisors = staff.filter(
+    (member) =>
+      hasStaffPermission(member.role, 'support.assign_others') && !member.role?.includes('admin'),
+  );
   for (const ticket of late) {
-    const message = deadlineMissedEmail(ticketCode(ticket.number), ticket.subject, absoluteUrl(`/admin/chamados/${ticket.number}`));
+    const message = deadlineMissedEmail(
+      ticketCode(ticket.number),
+      ticket.subject,
+      absoluteUrl(`/admin/chamados/${ticket.number}`),
+    );
     const assignee = staff.find((member) => member.id === ticket.assigneeId);
-    const recipients = [...(assignee ? [assignee] : []), ...supervisors.filter((member) => member.id !== assignee?.id)];
+    const recipients = [
+      ...(assignee ? [assignee] : []),
+      ...supervisors.filter((member) => member.id !== assignee?.id),
+    ];
     for (const member of recipients)
-      sendEmailInBackground({ to: member.email, ...message, idempotencyKey: `ticket:${ticket.id}:late:${ticket.dueAt?.toISOString()}:${member.id}` }, 'support');
+      sendEmailInBackground(
+        {
+          to: member.email,
+          ...message,
+          idempotencyKey: `ticket:${ticket.id}:late:${ticket.dueAt?.toISOString()}:${member.id}`,
+        },
+        'support',
+      );
   }
   return late.length;
 }
@@ -91,13 +132,18 @@ export async function flagMissedDeadlines(now = new Date()): Promise<number> {
 export async function sendDailySummary(now = new Date()): Promise<boolean> {
   if (!SUPPORT_EMAIL_NOTIFICATIONS_ENABLED) return false;
   if (brasiliaHour(now) !== 8) return false;
-  if (!(await claimWindow(`daily-summary:${brasiliaDate(now)}`, 2 * DAY_MS / 1000))) return false;
+  if (!(await claimWindow(`daily-summary:${brasiliaDate(now)}`, (2 * DAY_MS) / 1000))) return false;
   const staff = await loadStaffDirectory();
-  const answerIds = staff.filter((member) => hasStaffPermission(member.role, 'support.answer')).map((member) => member.id);
+  const answerIds = staff
+    .filter((member) => hasStaffPermission(member.role, 'support.answer'))
+    .map((member) => member.id);
   const yesterday = new Date(now.getTime() - DAY_MS);
   const [[waiting], [late], [unassigned], [rating]] = await Promise.all([
     db.select({ total: count() }).from(supportTickets).where(eq(supportTickets.status, 'open')),
-    db.select({ total: count() }).from(supportTickets).where(and(eq(supportTickets.status, 'open'), lt(supportTickets.dueAt, now))),
+    db
+      .select({ total: count() })
+      .from(supportTickets)
+      .where(and(eq(supportTickets.status, 'open'), lt(supportTickets.dueAt, now))),
     db
       .select({ total: count() })
       .from(supportTickets)
@@ -109,7 +155,10 @@ export async function sendDailySummary(now = new Date()): Promise<boolean> {
             : undefined,
         ),
       ),
-    db.select({ average: avg(supportTickets.rating) }).from(supportTickets).where(and(gte(supportTickets.ratedAt, yesterday), lte(supportTickets.ratedAt, now))),
+    db
+      .select({ average: avg(supportTickets.rating) })
+      .from(supportTickets)
+      .where(and(gte(supportTickets.ratedAt, yesterday), lte(supportTickets.ratedAt, now))),
   ]);
   const message = dailySummaryEmail({
     waiting: waiting?.total ?? 0,
@@ -119,7 +168,14 @@ export async function sendDailySummary(now = new Date()): Promise<boolean> {
     url: absoluteUrl('/admin/chamados'),
   });
   for (const member of staff.filter((item) => hasStaffPermission(item.role, 'support.metrics')))
-    sendEmailInBackground({ to: member.email, ...message, idempotencyKey: `support:daily:${brasiliaDate(now)}:${member.id}` }, 'support');
+    sendEmailInBackground(
+      {
+        to: member.email,
+        ...message,
+        idempotencyKey: `support:daily:${brasiliaDate(now)}:${member.id}`,
+      },
+      'support',
+    );
   return true;
 }
 
@@ -131,7 +187,13 @@ export async function applyRetention(now = new Date()): Promise<void> {
     .select({ id: supportTicketAttachments.id, key: supportTicketAttachments.storageKey })
     .from(supportTicketAttachments)
     .innerJoin(supportTickets, eq(supportTickets.id, supportTicketAttachments.ticketId))
-    .where(and(isNull(supportTicketAttachments.purgedAt), eq(supportTickets.status, 'closed'), lt(supportTickets.closedAt, attachmentLimit)))
+    .where(
+      and(
+        isNull(supportTicketAttachments.purgedAt),
+        eq(supportTickets.status, 'closed'),
+        lt(supportTickets.closedAt, attachmentLimit),
+      ),
+    )
     .limit(BATCH);
   for (const file of files) {
     try {
@@ -140,13 +202,22 @@ export async function applyRetention(now = new Date()): Promise<void> {
       console.error('[support] attachment retention deletion failed; it will be retried.');
       continue;
     }
-    await db.update(supportTicketAttachments).set({ purgedAt: now }).where(eq(supportTicketAttachments.id, file.id));
+    await db
+      .update(supportTicketAttachments)
+      .set({ purgedAt: now })
+      .where(eq(supportTicketAttachments.id, file.id));
   }
   const ticketLimit = new Date(now.getTime() - settings.ticketRetentionYears * 365 * DAY_MS);
   const old = await db
     .select({ id: supportTickets.id })
     .from(supportTickets)
-    .where(and(isNull(supportTickets.anonymizedAt), eq(supportTickets.status, 'closed'), lt(supportTickets.closedAt, ticketLimit)))
+    .where(
+      and(
+        isNull(supportTickets.anonymizedAt),
+        eq(supportTickets.status, 'closed'),
+        lt(supportTickets.closedAt, ticketLimit),
+      ),
+    )
     .limit(BATCH);
   if (old.length) {
     const ids = old.map((ticket) => ticket.id);
@@ -158,34 +229,32 @@ export async function applyRetention(now = new Date()): Promise<void> {
       await tx
         .update(supportTicketMessages)
         .set({ authorName: 'Aluna' })
-        .where(and(inArray(supportTicketMessages.ticketId, ids), eq(supportTicketMessages.fromStaff, false)));
+        .where(
+          and(
+            inArray(supportTicketMessages.ticketId, ids),
+            eq(supportTicketMessages.fromStaff, false),
+          ),
+        );
       await tx
         .update(supportTickets)
-        .set({ requesterName: 'Aluna', requesterEmail: '', requesterId: null, subject: '[Chamado antigo]', anonymizedAt: now })
+        .set({
+          requesterName: 'Aluna',
+          requesterEmail: '',
+          requesterId: null,
+          subject: '[Chamado antigo]',
+          anonymizedAt: now,
+        })
         .where(inArray(supportTickets.id, ids));
     });
   }
-  await db.delete(supportAccessTokens).where(lt(supportAccessTokens.expiresAt, new Date(now.getTime() - DAY_MS)));
+  await db
+    .delete(supportAccessTokens)
+    .where(lt(supportAccessTokens.expiresAt, new Date(now.getTime() - DAY_MS)));
 }
 
-/**
- * Uma volta do worker: prazos a cada 5 minutos, encerramento automático a cada hora, resumo às 8h
- * e guarda de dados uma vez por dia. Erro numa tarefa não derruba as outras.
- */
+/** Only historical retention remains active after the ticket inbox is retired. */
 export async function runSupportMaintenance(now = new Date()): Promise<void> {
-  const fiveMinutes = Math.floor(now.getTime() / (5 * 60 * 1000));
-  const hour = Math.floor(now.getTime() / (60 * 60 * 1000));
-  const tasks: [string, number, () => Promise<unknown>][] = [
-    [`deadlines:${fiveMinutes}`, 10 * 60, () => flagMissedDeadlines(now)],
-    [`auto-close:${hour}`, 2 * 60 * 60, () => closeIdleTickets(now)],
-    [`retention:${brasiliaDate(now)}`, 2 * 24 * 60 * 60, () => applyRetention(now)],
-  ];
-  for (const [key, ttl, task] of tasks) {
-    try {
-      if (await claimWindow(key, ttl)) await task();
-    } catch (error) {
-      console.error(`[support] tarefa ${key.split(':')[0]} falhou: ${error instanceof Error ? error.name : 'erro'}`);
-    }
+  if (await claimWindow(`retention:${brasiliaDate(now)}`, 2 * 24 * 60 * 60)) {
+    await applyRetention(now);
   }
-  await sendDailySummary(now).catch(() => console.error('[support] resumo diário falhou.'));
 }
