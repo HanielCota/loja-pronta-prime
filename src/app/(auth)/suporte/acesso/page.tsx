@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { connection } from 'next/server';
 import { BrandCard } from '@/components/brand/brand-card';
 import { CardHeading } from '@/components/brand/card-heading';
 import { WhatsappAlternatives } from '@/features/support/components/whatsapp-alternatives';
@@ -9,6 +10,7 @@ import { whatsappContacts } from '@/features/support/whatsapp';
 export const metadata: Metadata = { title: 'Não consegue entrar?' };
 
 export default async function PublicAccessPage() {
+  await connection();
   const contacts = whatsappContacts(await getSupportPhones()).filter(
     (contact) => contact.topic === 'technical',
   );
