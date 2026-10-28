@@ -15,6 +15,16 @@ describe('adminSectionFor', () => {
     expect(adminSectionFor('/admin/online', 'method')).toBe('online');
   });
 
+  test('o grupo Suporte marca cada parte', () => {
+    expect(adminSectionFor('/admin/chamados', null)).toBe('tickets');
+    expect(adminSectionFor('/admin/chamados/1042', null)).toBe('tickets');
+    expect(adminSectionFor('/admin/suporte/desempenho', null)).toBe('support-performance');
+    expect(adminSectionFor('/admin/suporte/equipe', null)).toBe('support-team');
+    expect(adminSectionFor('/admin/suporte/configuracoes', null)).toBe('support-settings');
+    // O endereço antigo da página de contatos agora leva às Configurações.
+    expect(adminSectionFor('/admin/suporte', null)).toBe('support-settings');
+  });
+
   test('os contatos ficam fora de /admin e marcam Contatos', () => {
     expect(adminSectionFor('/leads', null)).toBe('leads');
     expect(adminSectionFor('/leads/importar', null)).toBe('leads');

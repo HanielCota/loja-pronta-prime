@@ -5,6 +5,8 @@ import {
   LaptopIcon,
   MailIcon,
   MessageCircleIcon,
+  MessageSquarePlusIcon,
+  MessagesSquareIcon,
   ReceiptTextIcon,
   ShieldCheckIcon,
   SmartphoneIcon,
@@ -74,6 +76,15 @@ export function AttentionGroup({
           actionLabel={`Falar com o suporte sobre o acesso à ${PRODUCTS[product].name}`}
         />
       ))}
+      {/* O WhatsApp continua como está; o chamado entra ao lado, já com o assunto certo. */}
+      <LinkRow
+        href="/suporte/novo?tema=access&situacao=access-expiring"
+        icon={<MessageSquarePlusIcon />}
+        label="Prefere por escrito?"
+        value="Abrir um chamado sobre o acesso"
+        action="Abrir"
+        actionLabel="Abrir um chamado sobre o acesso que está acabando"
+      />
     </SettingsGroup>
   );
 }
@@ -209,6 +220,33 @@ function DeviceRow({ device }: { device: AccountDevice }) {
         <span aria-hidden="true" />
       )}
     </li>
+  );
+}
+
+/**
+ * Chamados de suporte: abrir um chamado e acompanhar os que já abriu. Fica antes do "Precisa de
+ * ajuda?" (o WhatsApp de sempre continua igual, logo abaixo).
+ */
+export function TicketsGroup() {
+  return (
+    <SettingsGroup id="perfil-chamados" title="Chamados de suporte">
+      <LinkRow
+        href="/suporte/novo"
+        icon={<MessageSquarePlusIcon />}
+        label="Precisa de ajuda com o curso, a loja ou o acesso?"
+        value="Abrir chamado"
+        action="Abrir"
+        actionLabel="Abrir um chamado de suporte"
+      />
+      <LinkRow
+        href="/suporte"
+        icon={<MessagesSquareIcon />}
+        label="Respostas do suporte"
+        value="Meus chamados"
+        action="Ver"
+        actionLabel="Ver os meus chamados"
+      />
+    </SettingsGroup>
   );
 }
 

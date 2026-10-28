@@ -456,6 +456,30 @@ o tema escuro e o alto contraste.
 - A plataforma é automática: nada de "a equipe faz X".
 - Nada de fingir: se algo ainda não funciona, a tela diz "em breve", sem botão que finge.
 
+## Suporte (26/10/2026)
+
+- Telas da aluna copiam o Perfil (`AreaShell`, cartões `panelCard`); telas da equipe copiam Contas
+  e Leads (tabela no computador, lista no celular, filtros GET).
+- Situação sempre escrita: selos "Aguardando suporte", "Respondido", "Encerrado", prioridade e
+  prazo ("Vence em 3 h", "Atrasado 40 min"); atraso em tom de erro, nunca só pela cor.
+- Nota interna: borda tracejada e cadeado com o texto "Nota interna".
+- O WhatsApp aparece nas telas novas como segunda opção, em link discreto; nunca dentro da
+  conversa de um chamado.
+- Sem bolha flutuante e sem sino: contadores no menu da conta e no menu do admin.
+- "Encerrar chamado" (aluna) é botão `soft`, roxo suave: no `ghost` ele sumia no tema escuro.
+- A página Suporte da aluna tem "Voltar ao SLL" (ou "Voltar à Loja Pronta", se ela só tem esse
+  produto) no lugar da trilha, o mesmo link de voltar das páginas do SLL (`backLink` do `AreaShell`).
+- Pela mesma razão (27/10/2026), toda escolha do caminho do chamado usa `soft`, nunca `ghost`:
+  "Ainda preciso de ajuda" (depois da resposta automática) e "Abrir outro mesmo assim" (aviso de
+  chamado parecido). Quem veio pedir ajuda não pode ter o botão mais apagado da tela.
+- Ação da equipe que muda a vida de alguém num clique ("Encerrar sem responder", "Bloquear") pede
+  confirmação antes, pelo `ConfirmAction` (`support-desk/components/confirm-action.tsx`): um
+  `<details>` cujo título é o botão e que abre a explicação e o botão que faz de verdade, com
+  "Cancelar". É `<details>` de propósito, pra continuar funcionando sem JavaScript; a janela do
+  painel (`useAdminConfirmation`) segue valendo pras confirmações de conteúdo, que são só do admin.
+- Os números das abas da fila contam só os chamados em aberto; o cartão da lista diz "N chamados na
+  lista" porque inclui os encerrados. Dois números com nomes diferentes, nunca o mesmo nome.
+
 ## Assistente e experts (17/10/2026)
 
 ### Previous store records (October 21, 2026)

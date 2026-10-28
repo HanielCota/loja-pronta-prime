@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
   Archive,
+  BarChart3,
   BookOpen,
   ChevronDown,
   FileText,
@@ -11,87 +12,196 @@ import {
   KeyRound,
   LayoutDashboard,
   LibraryBig,
+  MessageCircle,
   PanelLeft,
   Radio,
   ReceiptText,
   Rocket,
+  Settings2,
+  ShieldCheck,
   UsersRound,
   Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { StaffPermission } from '@/features/support/staff-access';
 import { OnlineCountBadge } from './online-count-badge';
 import { RememberedGroup } from './remembered-group';
+import { TicketCountBadge } from './ticket-count-badge';
 import { adminSectionFor, type AdminSection } from '../admin-section';
 
 export type { AdminSection } from '../admin-section';
 
-const groups = [
+/** `requires`: `admin` (só administrador) ou a permissão de equipe que a página confere. */
+type NavLink = {
+  href: string;
+  label: string;
+  section: AdminSection;
+  Icon: typeof Wrench;
+  requires: 'admin' | StaffPermission;
+};
+
+type NavGroup = {
+  label: string;
+  links: readonly NavLink[];
+  /** Grupos secundários lembram se estavam abertos e abrem quando a página atual é deles. */
+  storageKey?: string;
+};
+
+/** O que a conta pode ver no menu: o servidor manda, a página confere de novo. */
+export type AdminMenuAccess = { admin: boolean; permissions: readonly StaffPermission[] };
+
+const groups: readonly NavGroup[] = [
   {
     label: 'Painel',
     links: [
-      { href: '/admin', label: 'Visão geral', section: 'overview', Icon: LayoutDashboard },
-      { href: '/admin/online', label: 'Online agora', section: 'online', Icon: Radio },
+      { href: '/admin', label: 'Visão geral', section: 'overview', Icon: LayoutDashboard, requires: 'admin' },
+      { href: '/admin/online', label: 'Online agora', section: 'online', Icon: Radio, requires: 'admin' },
+    ],
+  },
+  {
+    label: 'Suporte',
+    links: [
+      {
+        href: '/admin/chamados',
+        label: 'Chamados',
+        section: 'tickets',
+        Icon: MessageCircle,
+        requires: 'support.answer',
+      },
+      {
+        href: '/admin/suporte/desempenho',
+        label: 'Desempenho',
+        section: 'support-performance',
+        Icon: BarChart3,
+        requires: 'support.metrics',
+      },
+      {
+        href: '/admin/suporte/equipe',
+        label: 'Equipe',
+        section: 'support-team',
+        Icon: ShieldCheck,
+        requires: 'team.manage',
+      },
+      {
+        href: '/admin/suporte/configuracoes',
+        label: 'Configurações',
+        section: 'support-settings',
+        Icon: Settings2,
+        requires: 'support.settings',
+      },
     ],
   },
   {
     label: 'Alunas e vendas',
     links: [
-      { href: '/admin/contas', label: 'Contas', section: 'accounts', Icon: UsersRound },
-      { href: '/admin/acessos', label: 'Acessos das alunas', section: 'access', Icon: KeyRound },
-      { href: '/leads', label: 'Contatos', section: 'leads', Icon: UsersRound },
+      { href: '/admin/contas', label: 'Contas', section: 'accounts', Icon: UsersRound, requires: 'admin' },
+      {
+        href: '/admin/acessos',
+        label: 'Acessos das alunas',
+        section: 'access',
+        Icon: KeyRound,
+        requires: 'admin',
+      },
+      { href: '/leads', label: 'Contatos', section: 'leads', Icon: UsersRound, requires: 'admin' },
       {
         href: '/admin/hotmart',
         label: 'Compras da Hotmart',
         section: 'hotmart',
         Icon: ReceiptText,
+        requires: 'admin',
       },
     ],
   },
   {
     label: 'Conteúdo das alunas',
-    // Secondary sections remember their state and open when their current page is active.
-    collapsible: true,
     storageKey: 'admin-menu-content',
     links: [
-      { href: '/admin?area=welcome', label: 'Comece aqui', section: 'welcome', Icon: Rocket },
-      { href: '/admin?area=method', label: 'Método SLL', section: 'method', Icon: BookOpen },
+      {
+        href: '/admin?area=welcome',
+        label: 'Comece aqui',
+        section: 'welcome',
+        Icon: Rocket,
+        requires: 'admin',
+      },
+      {
+        href: '/admin?area=method',
+        label: 'Método SLL',
+        section: 'method',
+        Icon: BookOpen,
+        requires: 'admin',
+      },
       {
         href: '/admin?area=courses',
         // Curto no menu, pra caber numa linha; o título da página continua completo.
         label: 'Cursos',
         section: 'courses',
         Icon: LibraryBig,
+        requires: 'admin',
       },
       {
         href: '/admin/experts',
         label: 'Especialistas e vídeos',
         section: 'experts',
         Icon: UsersRound,
+        requires: 'admin',
       },
-      { href: '/admin/banners', label: 'Banners do painel', section: 'banners', Icon: Images },
-      { href: '/admin/textos', label: 'Textos das páginas', section: 'texts', Icon: FileText },
-      { href: '/admin/recursos', label: 'Recursos', section: 'resources', Icon: Wrench },
+      {
+        href: '/admin/banners',
+        label: 'Banners do painel',
+        section: 'banners',
+        Icon: Images,
+        requires: 'admin',
+      },
+      {
+        href: '/admin/textos',
+        label: 'Textos das páginas',
+        section: 'texts',
+        Icon: FileText,
+        requires: 'admin',
+      },
+      { href: '/admin/recursos', label: 'Recursos', section: 'resources', Icon: Wrench, requires: 'admin' },
       // Ícone próprio: o de livros já é dos cursos.
-      { href: '/admin/arquivados', label: 'Itens arquivados', section: 'archived', Icon: Archive },
+      {
+        href: '/admin/arquivados',
+        label: 'Itens arquivados',
+        section: 'archived',
+        Icon: Archive,
+        requires: 'admin',
+      },
     ],
   },
   {
     label: 'Operação',
-    collapsible: true,
     storageKey: 'admin-menu-operations',
     links: [
-      { href: '/admin/assistente', label: 'Planos e operação', section: 'assistant', Icon: Wrench },
-      { href: '/admin/bling', label: 'Conexão Bling', section: 'bling', Icon: Wrench },
-      { href: '/admin/suporte', label: 'Suporte', section: 'support', Icon: UsersRound },
+      {
+        href: '/admin/assistente',
+        label: 'Planos e operação',
+        section: 'assistant',
+        Icon: Wrench,
+        requires: 'admin',
+      },
+      { href: '/admin/bling', label: 'Conexão Bling', section: 'bling', Icon: Wrench, requires: 'admin' },
     ],
   },
-] as const;
+];
+
+function visibleGroups(access: AdminMenuAccess): NavGroup[] {
+  return groups
+    .map((group) => ({
+      ...group,
+      links: group.links.filter((link) =>
+        link.requires === 'admin' ? access.admin : access.permissions.includes(link.requires),
+      ),
+    }))
+    .filter((group) => group.links.length > 0);
+}
 
 function NavLinks({
   links,
   current,
 }: {
-  links: (typeof groups)[number]['links'];
+  links: readonly NavLink[];
   current: AdminSection | undefined;
 }) {
   return (
@@ -112,6 +222,8 @@ function NavLinks({
             {label}
             {/* Quantas pessoas estão online, atualizado sozinho. */}
             {section === 'online' ? <OnlineCountBadge /> : null}
+            {/* Chamados esperando o suporte, atualizado sozinho. */}
+            {section === 'tickets' ? <TicketCountBadge /> : null}
           </Link>
         </li>
       ))}
@@ -119,11 +231,17 @@ function NavLinks({
   );
 }
 
-function Navigation({ current }: { current: AdminSection | undefined }) {
+function Navigation({
+  current,
+  menu,
+}: {
+  current: AdminSection | undefined;
+  menu: readonly NavGroup[];
+}) {
   return (
     <nav aria-label="Seções da administração" className="flex flex-col gap-4">
-      {groups.map((group) =>
-        'collapsible' in group ? (
+      {menu.map((group) =>
+        group.storageKey ? (
           <RememberedGroup
             containsCurrent={group.links.some((link) => link.section === current)}
             // Recomeça a cada seção, como quando cada página montava o menu: abre o grupo da
@@ -147,13 +265,21 @@ function Navigation({ current }: { current: AdminSection | undefined }) {
 
 /**
  * As seções do painel. `rail`: a lista do menu lateral fixo (computador). `disclosure`: o mesmo
- * conteúdo recolhível acima do título (celular e tablet).
+ * conteúdo recolhível acima do título (celular e tablet). Cada pessoa vê só o que o cargo usa:
+ * atendente vê os Chamados; administrador vê tudo.
  */
-export function AdminSidebar({ variant }: { variant: 'rail' | 'disclosure' }) {
+export function AdminSidebar({
+  variant,
+  access,
+}: {
+  variant: 'rail' | 'disclosure';
+  access: AdminMenuAccess;
+}) {
   // A seção sai do endereço: a moldura mora no `layout.tsx`, e o menu acompanha a troca na hora.
   const current = adminSectionFor(usePathname(), useSearchParams().get('area'));
-  if (variant === 'rail') return <Navigation current={current} />;
-  const currentLabel = groups
+  const menu = visibleGroups(access);
+  if (variant === 'rail') return <Navigation current={current} menu={menu} />;
+  const currentLabel = menu
     .map((group) => group.links.find((link) => link.section === current)?.label)
     .find((label) => label !== undefined);
   return (
@@ -176,7 +302,7 @@ export function AdminSidebar({ variant }: { variant: 'rail' | 'disclosure' }) {
         />
       </summary>
       <div className="mt-4 border-t border-border pt-4">
-        <Navigation current={current} />
+        <Navigation current={current} menu={menu} />
       </div>
     </details>
   );

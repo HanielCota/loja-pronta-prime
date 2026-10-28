@@ -37,6 +37,13 @@ export default function GlobalError({ error, retry }: GlobalErrorProps) {
               <Button type="button" onClick={() => retry()}>
                 Tentar de novo
               </Button>
+              {/* Leva o código do erro pro chamado (a moldura do app caiu: um link simples). */}
+              <a
+                href={`/suporte/novo?tema=access${error.digest ? `&erro=${encodeURIComponent(error.digest)}` : ''}`}
+                className="inline-flex min-h-11 items-center justify-center text-body font-semibold text-link underline underline-offset-4"
+              >
+                Falar com o suporte
+              </a>
               {error.digest ? (
                 // Código pra ajudar o suporte a achar o erro nos logs do servidor.
                 <p className="text-center text-sm text-muted-foreground">

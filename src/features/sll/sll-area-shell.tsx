@@ -4,6 +4,7 @@ import { ArrowLeft, Store } from 'lucide-react';
 import { BrandLink } from '@/components/brand/site-navbar';
 import { Button } from '@/components/ui/button';
 import { AccountMenu } from '@/features/member/components/account-menu';
+import { staffPanelLinkOf } from '@/features/support/staff-access';
 import { MemberNavbar, type NavbarAccount } from '@/features/member/components/member-navbar';
 import { PRODUCTS } from '@/features/products/catalog';
 import { ThemeToggleButton } from '@/features/theme/theme-toggle-button';
@@ -137,6 +138,7 @@ export function SllAreaFrame({
               name={accountName}
               email={account.email}
               image={account.image}
+              staffPanel={staffPanelLinkOf(account.role)}
             />
           </div>
         </aside>

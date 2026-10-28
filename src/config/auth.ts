@@ -50,4 +50,11 @@ export const RATE_LIMITS_PER_MINUTE = {
 export const RATE_LIMITS_LONG = {
   recoverPerEmailPerDay: { max: 10, windowSeconds: 24 * 60 * 60 },
   speechPerUserPerDay: { max: 30, windowSeconds: 24 * 60 * 60 },
+  /** Chamados novos por aluna por dia: abre o que precisar, sem encher a fila. */
+  supportTicketsPerUserPerDay: { max: 5, windowSeconds: 24 * 60 * 60 },
+  /** Mensagens com arquivo: limita o uso do bucket (30 a cada 10 minutos por conta). */
+  supportFilesPerUser: { max: 30, windowSeconds: 10 * 60 },
+  /** Formulário público "Não consegue entrar?": por IP e por e-mail, 3 por hora. */
+  supportPublicPerIp: { max: 3, windowSeconds: 60 * 60 },
+  supportPublicPerEmail: { max: 3, windowSeconds: 60 * 60 },
 } as const;

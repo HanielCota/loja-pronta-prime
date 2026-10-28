@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { AccountMenu } from '@/features/member/components/account-menu';
 import { MemberNavbar, type NavbarAccount } from '@/features/member/components/member-navbar';
 import { ThemeToggleButton } from '@/features/theme/theme-toggle-button';
-import { AdminSidebar } from './admin-sidebar';
+import { AdminSidebar, type AdminMenuAccess } from './admin-sidebar';
 import { StudentAreaLink } from './student-area-link';
 import { NavigationPending } from '@/components/ui/navigation-pending';
 import { PageLoading } from '@/components/ui/page-loading';
@@ -63,6 +63,8 @@ export function AdminPage({ title, intro, backLink, actions, children }: AdminPa
 
 type AdminFrameProps = {
   account: NavbarAccount;
+  /** O que a conta vê no menu (o cargo na equipe). */
+  access: AdminMenuAccess;
   children: ReactNode;
 };
 
@@ -74,7 +76,7 @@ type AdminFrameProps = {
  * Mora no `layout.tsx`: ao trocar de seção, o menu fica parado e só o conteúdo muda (com o
  * esboço de carregamento enquanto a página nova não chega). A seção marcada no menu sai do endereço (`AdminSidebar`).
  */
-export function AdminFrame({ account, children }: AdminFrameProps) {
+export function AdminFrame({ account, access, children }: AdminFrameProps) {
   const accountName = account.preferredName?.trim() || account.name;
 
   return (
@@ -97,7 +99,7 @@ export function AdminFrame({ account, children }: AdminFrameProps) {
             <ThemeToggleButton />
           </div>
           <ScrollFade className="-mx-1 min-h-0 flex-1 px-1">
-            <AdminSidebar variant="rail" />
+            <AdminSidebar variant="rail" access={access} />
           </ScrollFade>
           <div className="flex flex-col gap-2 border-t border-border pt-4">
             <StudentAreaLink />
@@ -120,7 +122,7 @@ export function AdminFrame({ account, children }: AdminFrameProps) {
             className="mx-auto flex w-full max-w-[1400px] flex-col gap-8 px-4 pt-6 pb-12 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring sm:px-6 sm:pt-8 lg:px-10 lg:pt-10"
           >
             <div className="lg:hidden">
-              <AdminSidebar variant="disclosure" />
+              <AdminSidebar variant="disclosure" access={access} />
             </div>
             <NavigationPending fallback={<PageLoading />}>{children}</NavigationPending>
           </PageMain>

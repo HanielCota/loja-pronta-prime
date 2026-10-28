@@ -1,6 +1,7 @@
 import { SiteNavbar } from '@/components/brand/site-navbar';
 import { ThemeToggleButton } from '@/features/theme/theme-toggle-button';
 import type { ProductId } from '@/config/products';
+import { staffPanelLinkOf } from '@/features/support/staff-access';
 import { AccountMenu } from './account-menu';
 import { AreaNav } from './area-nav';
 
@@ -10,6 +11,8 @@ export type NavbarAccount = {
   preferredName?: string | null | undefined;
   email: string;
   image?: string | null | undefined;
+  /** Papéis da conta (`user.role`), pra mostrar o atalho da equipe no menu. */
+  role?: string | null | undefined;
 };
 
 /**
@@ -42,6 +45,7 @@ export function MemberNavbar({
           name={account.preferredName?.trim() || account.name}
           email={account.email}
           image={account.image}
+          staffPanel={staffPanelLinkOf(account.role)}
         />
       </div>
     </SiteNavbar>

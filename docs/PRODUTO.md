@@ -160,6 +160,16 @@ um canal Shopee e nenhum produto ativo. Esse canal é da loja anterior; a nova c
 continua em cadastro e ainda não foi conectada ao ERP.
 Não conecta contas das alunas nem publica anúncios. Ver `docs/INTEGRACAO-BLING.md`.
 
+## Suporte por chamados
+
+Além do WhatsApp por assunto (que continua igual), a aluna abre chamados guiados em `/suporte`:
+escolhe o tema e a situação, vê uma resposta automática quando existe, e acompanha a conversa,
+o prazo e a situação do chamado. Quem não consegue entrar pede ajuda em `/suporte/acesso`, pelo
+link da tela de login. A equipe (Atendente, Supervisor e Administrador) atende em
+`/admin/chamados`, com filas, prazos em horas de atendimento, respostas prontas e nota interna;
+supervisores veem o Desempenho e a Ouvidoria; o administrador configura horário, temas e
+respostas e convida a equipe. Detalhes em `docs/SUPORTE.md`.
+
 ## Glossário
 
 - **SLL:** Sistema Loja Lucrativa, o curso com ferramentas.
