@@ -14,6 +14,12 @@ export const patchNotes: readonly PatchNoteDay[] = [
     changes: [
       {
         kind: 'Melhoria',
+        title: 'Contatos de suporte somente pelo WhatsApp',
+        description:
+          'Após a publicação desta atualização, o perfil deixa de oferecer contato com o suporte por e-mail. A ajuda para trocar o e-mail e continuar um acesso usa o WhatsApp configurado para acesso e erros. Sem número configurado, não há encaminhamento para e-mail.',
+      },
+      {
+        kind: 'Melhoria',
         title: 'Atendimento concentrado no WhatsApp',
         description:
           'Após a publicação desta atualização, o atendimento passa a ser pelo WhatsApp. As telas de chamados, os formulários e a fila da equipe são retirados. Os contatos continuam no perfil e na ajuda para entrar; os registros anteriores ficam preservados.',

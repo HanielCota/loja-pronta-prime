@@ -5,6 +5,12 @@ recorded separately from code integration.
 
 ## 2026-10-28
 
+### WhatsApp-only profile support
+
+- Remove the profile support email row and email-change fallback. Expiring-access help uses the
+  configured technical WhatsApp contact instead of a separate hardcoded number and email fallback.
+- Preserve the privacy-policy link and coming-soon states for unconfigured WhatsApp contacts.
+
 ### Consolidate support on WhatsApp
 
 - Retire member and public ticket forms, conversations, staff queues, reports and team screens.
