@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionState } from '@/features/auth/server/session';
 import { getSupportPhones } from '@/features/support/server/contacts';
+import { visitForRoute } from '@/features/support/server/impersonation';
 import { isWhatsappTopic, whatsappContacts, whatsappHref } from '@/features/support/whatsapp';
 import { db } from '@/server/db';
 import { supportWhatsappClicks } from '@/server/db/schema';
@@ -18,6 +19,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ assu
   const contact = whatsappContacts(await getSupportPhones()).find((item) => item.topic === assunto);
   const href = contact ? whatsappHref(contact) : null;
   if (!href) return NextResponse.redirect(new URL(source === 'login' ? '/suporte/acesso' : '/suporte', request.url), 303);
+  // A equipe dentro da conta da aluna não entra na conta de cliques do suporte.
+  if ((await visitForRoute('recordWhatsappClick')).status !== 'student') return NextResponse.redirect(href, 302);
   const state = await getSessionState();
   await db
     .insert(supportWhatsappClicks)

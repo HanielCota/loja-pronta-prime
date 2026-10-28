@@ -1,5 +1,6 @@
 'use server';
 
+import { runAsStudent } from '@/features/support/server/impersonation';
 import { requireProductAction } from '@/features/products/server/access';
 import { suggestPrice, simulateDiscount, advertisingLimits } from '../calculations';
 import { readCalculatorInput, type CalculatorKind } from '../form-input';
@@ -45,11 +46,17 @@ async function calculate(kind: CalculatorKind, form: FormData): Promise<Calculat
 }
 
 export async function calculatePrice(_previous: CalculatorState, form: FormData) {
-  return calculate('price', form);
+  return runAsStudent('calculatePrice', async () => {
+    return calculate('price', form);
+  });
 }
 export async function calculateDiscount(_previous: CalculatorState, form: FormData) {
-  return calculate('discount', form);
+  return runAsStudent('calculateDiscount', async () => {
+    return calculate('discount', form);
+  });
 }
 export async function calculateAds(_previous: CalculatorState, form: FormData) {
-  return calculate('ads', form);
+  return runAsStudent('calculateAds', async () => {
+    return calculate('ads', form);
+  });
 }

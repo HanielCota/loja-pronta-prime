@@ -16,6 +16,8 @@ mock.module('next/navigation', () => ({
 }));
 let currentUser = '';
 mock.module('@/features/auth/server/session', () => ({
+  // Sem visita da equipe ("Entrar como aluna"): a sessão é da própria pessoa.
+  getVisit: async () => null,
   getActiveSession: async () => ({ user: { id: currentUser } }),
   needsFirstPassword: () => false,
 }));

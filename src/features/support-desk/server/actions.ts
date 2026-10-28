@@ -1,16 +1,11 @@
 'use server';
 
 import { eq } from 'drizzle-orm';
-import { cookies, headers } from 'next/headers';
-import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/server/db';
-import { supportStaffStatus, supportTicketEvents, supportTickets, user } from '@/server/db/schema';
-import { auth } from '@/server/auth/auth';
-import { hasAdminRole } from '@/features/admin/access';
-import { RETURN_COOKIE } from '@/features/support/server/impersonation';
+import { supportStaffStatus, supportTickets } from '@/server/db/schema';
 import { SUPPORT_TICKET_TOPICS } from '@/features/support/catalog';
-import { hasStaffPermission, isStaffRole } from '@/features/support/staff-access';
+import { hasStaffPermission } from '@/features/support/staff-access';
 import { readStaffSession } from '@/features/support/server/staff-guard';
 import {
   assignTicket,
@@ -136,46 +131,4 @@ export async function getWaitingTicketCount(): Promise<number> {
   const staff = await actor('support.answer');
   if (!staff) return 0;
   return countWaitingTickets(staff);
-}
-
-/**
- * "Entrar como aluna" (só administrador): abre a sessão da aluna por 1 hora pelo plugin admin,
- * guarda a página de volta e registra no histórico do chamado. Conta da equipe não é visitada.
- */
-export async function startVisitAction(_state: DeskActionState, form: FormData): Promise<DeskActionState> {
-  const session = await readStaffSession('support.impersonate');
-  if (!session) return { ok: false, message: 'Você não tem acesso a isso.' };
-  const userId = String(form.get('aluna') ?? '');
-  const number = Number(form.get('numero'));
-  const [target] = await db.select({ id: user.id, role: user.role }).from(user).where(eq(user.id, userId)).limit(1);
-  if (!target || target.id === session.user.id) return { ok: false, message: 'Conta não encontrada.' };
-  if (isStaffRole(target.role) || hasAdminRole(target.role))
-    return { ok: false, message: 'Contas da equipe não podem ser visitadas.' };
-  try {
-    await auth.api.impersonateUser({ body: { userId }, headers: await headers() });
-  } catch {
-    console.error('[support-desk] não foi possível entrar na conta.');
-    return { ok: false, message: 'Não foi possível entrar na conta agora. Tente de novo.' };
-  }
-  const back = Number.isInteger(number) && number > 0 ? `/admin/chamados/${number}` : '/admin/chamados';
-  (await cookies()).set(RETURN_COOKIE, back, { httpOnly: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 });
-  if (Number.isInteger(number) && number > 0) {
-    const [ticket] = await db.select({ id: supportTickets.id }).from(supportTickets).where(eq(supportTickets.number, number)).limit(1);
-    if (ticket)
-      await db.insert(supportTicketEvents).values({ ticketId: ticket.id, actorId: session.user.id, type: 'impersonation_started' });
-  }
-  redirect('/');
-}
-
-/** "Voltar ao admin": encerra a visita e volta pra página de onde saiu. */
-export async function stopVisitAction(): Promise<void> {
-  const store = await cookies();
-  const back = store.get(RETURN_COOKIE)?.value ?? '/admin/chamados';
-  try {
-    await auth.api.stopImpersonating({ headers: await headers() });
-  } catch {
-    console.error('[support-desk] não foi possível sair da visita.');
-  }
-  store.delete(RETURN_COOKIE);
-  redirect(/^\/admin\/[\w/-]*$/.test(back) ? back : '/admin/chamados');
 }

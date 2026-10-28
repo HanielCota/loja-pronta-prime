@@ -1,5 +1,6 @@
 'use server';
 
+import { runAsStudent } from '@/features/support/server/impersonation';
 import { redirect } from 'next/navigation';
 import { AiUnavailableError } from '@/server/ai/errors';
 import { requireBrandAction } from '../../server/brand';
@@ -16,7 +17,6 @@ import {
 import { briefFromPicks, missingStudioSteps, STUDIO_STEPS } from '../picks';
 import { isLastingTweak, isLogoTweak, type LogoTweak } from '../tweaks';
 import type { StudioView } from '../view';
-import { refuseDuringVisit } from '@/features/support/server/impersonation';
 import { drawLogo, logoImageKey, normalizeUploadedLogo, storeLogoImage } from './logo-images';
 import { view } from './load';
 import {
@@ -42,9 +42,6 @@ export type StudioResult = {
   next?: string;
 };
 
-/** Criar ou ajustar logo gasta a criação da aluna: visitando a conta, a equipe não usa. */
-const VISIT_BLOCKED = 'Visitando a conta da aluna, você não cria logo: isso gastaria uma criação dela.';
-
 async function studioContext() {
   const access = await requireBrandAction({ logo: true });
   // O logo vem depois do nome (a página já leva pra lá; aqui, por quem chama a action direto).
@@ -54,9 +51,11 @@ async function studioContext() {
 
 /** Guarda as escolhas (a cada "Continuar"): ela sai e volta de onde parou. */
 export async function saveStudioPicks(picks: unknown): Promise<void> {
-  const { userId } = await studioContext();
-  const parsed = logoPicksSchema.safeParse(picks);
-  if (parsed.success) await saveLogoPicks(userId, parsed.data);
+  return runAsStudent('saveStudioPicks', async () => {
+    const { userId } = await studioContext();
+    const parsed = logoPicksSchema.safeParse(picks);
+    if (parsed.success) await saveLogoPicks(userId, parsed.data);
+  });
 }
 
 /**
@@ -110,22 +109,23 @@ async function draw(
 
 /** "Criar meu logo": guarda as escolhas e desenha o logo com elas. */
 export async function createLogo(picks: unknown): Promise<StudioResult> {
-  const { userId, storeName, answers } = await studioContext();
-  if (await refuseDuringVisit('criar ou ajustar logo', '/loja-pronta/marca')) return { studio: view(await getLogoStudio(userId)), error: VISIT_BLOCKED };
-  const parsed = logoPicksSchema.safeParse(picks);
-  const brief = parsed.success ? briefFromPicks(parsed.data, answers) : null;
-  if (!parsed.success || !brief) {
-    const missing = parsed.success ? missingStudioSteps(parsed.data) : [];
-    const error = missing.length
-      ? `Falta escolher: ${missing.map((step) => STUDIO_STEPS[step].label).join(', ')}. Complete essas etapas antes de criar o logo.`
-      : 'Falta escolher alguma coisa. Confira as escolhas e tente de novo.';
-    return {
-      studio: view(await getLogoStudio(userId)),
-      error,
-    };
-  }
-  const studio = await saveLogoPicks(userId, parsed.data);
-  return draw(userId, storeName, studio, brief);
+  return runAsStudent('createLogo', async () => {
+    const { userId, storeName, answers } = await studioContext();
+    const parsed = logoPicksSchema.safeParse(picks);
+    const brief = parsed.success ? briefFromPicks(parsed.data, answers) : null;
+    if (!parsed.success || !brief) {
+      const missing = parsed.success ? missingStudioSteps(parsed.data) : [];
+      const error = missing.length
+        ? `Falta escolher: ${missing.map((step) => STUDIO_STEPS[step].label).join(', ')}. Complete essas etapas antes de criar o logo.`
+        : 'Falta escolher alguma coisa. Confira as escolhas e tente de novo.';
+      return {
+        studio: view(await getLogoStudio(userId)),
+        error,
+      };
+    }
+    const studio = await saveLogoPicks(userId, parsed.data);
+    return draw(userId, storeName, studio, brief);
+  });
 }
 
 /**
@@ -133,16 +133,19 @@ export async function createLogo(picks: unknown): Promise<StudioResult> {
  * resumo daquele logo, e o ajuste continua valendo nos próximos (menos "Outro desenho").
  */
 export async function tweakLogo(imageId: string, tweak: string): Promise<StudioResult> {
-  const { userId, storeName } = await studioContext();
-  if (await refuseDuringVisit('criar ou ajustar logo', '/loja-pronta/marca')) return { studio: view(await getLogoStudio(userId)), error: VISIT_BLOCKED };
-  const studio = await getLogoStudio(userId);
-  const key = keyOf(userId, imageId);
-  const brief = studio.logos.find((logo) => logo.key === key)?.brief;
-  if (!isLogoTweak(tweak) || !brief) {
-    return { studio: view(studio), error: 'Esse logo não dá pra ajustar. Crie outro.' };
-  }
-  const tweaks = [...new Set([...(brief.tweaks ?? []), ...(isLastingTweak(tweak) ? [tweak] : [])])];
-  return draw(userId, storeName, studio, { ...brief, tweaks }, tweak);
+  return runAsStudent('tweakLogo', async () => {
+    const { userId, storeName } = await studioContext();
+    const studio = await getLogoStudio(userId);
+    const key = keyOf(userId, imageId);
+    const brief = studio.logos.find((logo) => logo.key === key)?.brief;
+    if (!isLogoTweak(tweak) || !brief) {
+      return { studio: view(studio), error: 'Esse logo não dá pra ajustar. Crie outro.' };
+    }
+    const tweaks = [
+      ...new Set([...(brief.tweaks ?? []), ...(isLastingTweak(tweak) ? [tweak] : [])]),
+    ];
+    return draw(userId, storeName, studio, { ...brief, tweaks }, tweak);
+  });
 }
 
 /**
@@ -150,51 +153,53 @@ export async function tweakLogo(imageId: string, tweak: string): Promise<StudioR
  * criado (sem gastar criação).
  */
 export async function uploadLogo(form: FormData): Promise<StudioResult> {
-  const { userId } = await studioContext();
-  const studio = await getLogoStudio(userId);
-  const file = form.get('logo');
-  if (!(file instanceof File) || file.size === 0) {
-    return { studio: view(studio), error: 'Escolha a imagem do seu logo.' };
-  }
-  if (file.size > MAX_UPLOAD_BYTES) {
-    return { studio: view(studio), error: 'Essa imagem é grande demais. Tente outra.' };
-  }
-  // A vaga vem antes de abrir a imagem: abrir até 40 megapixels custa CPU, e quem já usou todas
-  // as vagas podia mandar imagens sem parar só pra serem abertas e recusadas.
-  if (!(await reserveUpload(userId, MAX_UPLOADS))) {
-    return {
-      studio: view(studio),
-      error: 'Você já mandou muitas imagens. Escolha uma das que estão aqui.',
-    };
-  }
-  const png = await normalizeUploadedLogo(new Uint8Array(await file.arrayBuffer()));
-  if (!png) {
-    await releaseUpload(userId);
-    return {
-      studio: view(studio),
-      error: 'Não consegui abrir essa imagem. Mande uma foto ou imagem (PNG ou JPG).',
-    };
-  }
-  let key: string;
-  try {
-    key = await storeLogoImage(userId, png);
-  } catch (error) {
-    // A vaga só é consumida quando a imagem chega ao bucket. Registra apenas metadados seguros.
-    try {
-      await releaseUpload(userId);
-    } catch (releaseError) {
-      console.error(
-        '[logo-upload] não consegui devolver a vaga reservada',
-        uploadErrorDetails(releaseError),
-      );
+  return runAsStudent('uploadLogo', async () => {
+    const { userId } = await studioContext();
+    const studio = await getLogoStudio(userId);
+    const file = form.get('logo');
+    if (!(file instanceof File) || file.size === 0) {
+      return { studio: view(studio), error: 'Escolha a imagem do seu logo.' };
     }
-    console.error('[logo-upload] falha ao guardar a imagem', uploadErrorDetails(error));
-    return {
-      studio: view(await getLogoStudio(userId)),
-      error: 'Não consegui salvar essa imagem agora. Tente de novo daqui a pouco.',
-    };
-  }
-  return { studio: view(await addLogo(userId, { key, uploaded: true })) };
+    if (file.size > MAX_UPLOAD_BYTES) {
+      return { studio: view(studio), error: 'Essa imagem é grande demais. Tente outra.' };
+    }
+    // A vaga vem antes de abrir a imagem: abrir até 40 megapixels custa CPU, e quem já usou todas
+    // as vagas podia mandar imagens sem parar só pra serem abertas e recusadas.
+    if (!(await reserveUpload(userId, MAX_UPLOADS))) {
+      return {
+        studio: view(studio),
+        error: 'Você já mandou muitas imagens. Escolha uma das que estão aqui.',
+      };
+    }
+    const png = await normalizeUploadedLogo(new Uint8Array(await file.arrayBuffer()));
+    if (!png) {
+      await releaseUpload(userId);
+      return {
+        studio: view(studio),
+        error: 'Não consegui abrir essa imagem. Mande uma foto ou imagem (PNG ou JPG).',
+      };
+    }
+    let key: string;
+    try {
+      key = await storeLogoImage(userId, png);
+    } catch (error) {
+      // A vaga só é consumida quando a imagem chega ao bucket. Registra apenas metadados seguros.
+      try {
+        await releaseUpload(userId);
+      } catch (releaseError) {
+        console.error(
+          '[logo-upload] não consegui devolver a vaga reservada',
+          uploadErrorDetails(releaseError),
+        );
+      }
+      console.error('[logo-upload] falha ao guardar a imagem', uploadErrorDetails(error));
+      return {
+        studio: view(await getLogoStudio(userId)),
+        error: 'Não consegui salvar essa imagem agora. Tente de novo daqui a pouco.',
+      };
+    }
+    return { studio: view(await addLogo(userId, { key, uploaded: true })) };
+  });
 }
 
 /** Código e status bastam pra investigar sem registrar chaves, caminhos ou dados do logo. */
@@ -232,16 +237,18 @@ function keyOf(userId: string, imageId: string): string | null {
 
 /** Escolhe um logo do estúdio: vira o logo da loja e ela segue (ou volta pra revisão). */
 export async function chooseLogo(imageId: string, editing: boolean): Promise<StudioResult> {
-  const { userId, revising, logoOnly } = await studioContext();
-  const studio = await getLogoStudio(userId);
-  const key = keyOf(userId, imageId);
-  // Só um logo que está no estúdio dela (nada de chave inventada).
-  if (!key || !studio.logos.some((logo) => logo.key === key)) {
-    return { studio: view(studio), error: 'Esse logo não está mais aqui. Escolha outro.' };
-  }
-  await saveBrand(userId, { logoImage: key });
-  const next = logoOnly
-    ? '/loja-pronta'
-    : brandStepPath(editing || revising ? 'revisao' : 'descricao');
-  return { studio: view(studio), next };
+  return runAsStudent('chooseLogo', async () => {
+    const { userId, revising, logoOnly } = await studioContext();
+    const studio = await getLogoStudio(userId);
+    const key = keyOf(userId, imageId);
+    // Só um logo que está no estúdio dela (nada de chave inventada).
+    if (!key || !studio.logos.some((logo) => logo.key === key)) {
+      return { studio: view(studio), error: 'Esse logo não está mais aqui. Escolha outro.' };
+    }
+    await saveBrand(userId, { logoImage: key });
+    const next = logoOnly
+      ? '/loja-pronta'
+      : brandStepPath(editing || revising ? 'revisao' : 'descricao');
+    return { studio: view(studio), next };
+  });
 }

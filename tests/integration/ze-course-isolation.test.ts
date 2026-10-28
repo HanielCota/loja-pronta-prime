@@ -33,6 +33,8 @@ const session = () => ({
   session: { createdAt: new Date() },
 });
 mock.module('@/features/auth/server/session', () => ({
+  // Sem visita da equipe ("Entrar como aluna"): a sessão é da própria pessoa.
+  getVisit: async () => null,
   getSessionState: async () => ({ status: sessionStatus, session: session() }),
   getActiveSession: async () => session(),
   needsFirstPassword: () => needsPassword,

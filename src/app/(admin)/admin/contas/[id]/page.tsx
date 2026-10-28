@@ -15,6 +15,9 @@ import { ProductAccessManager } from '@/features/admin/components/product-access
 import { hasAdminRole, isStudentRole } from '@/features/admin/access';
 import { productLabel } from '@/features/admin/account-labels';
 import { requireAdmin } from '@/features/admin/server/access';
+import { ImpersonateButton } from '@/features/support-desk/components/impersonate-button';
+import { hasStaffPermission } from '@/features/support/staff-access';
+import { visitRefusalReason } from '@/features/support/visit-target';
 import { getAccount } from '@/features/admin/server/accounts';
 import { RESET_LINK_TTL_HOURS } from '@/config/auth';
 import { DEFAULT_STUDENT_PASSWORD } from '@/server/auth/student-password';
@@ -151,6 +154,14 @@ export default async function AdminAccountPage({
               <dt className="text-muted-foreground">Criada em</dt>
               <dd className="text-foreground">{dateFormat.format(account.createdAt)}</dd>
             </dl>
+            {hasStaffPermission(session.user.role, 'support.impersonate') ? (
+              <ImpersonateButton
+                userId={account.id}
+                name={account.preferredName?.trim() || account.name}
+                back={`/admin/contas/${encodeURIComponent(account.id)}`}
+                refusal={visitRefusalReason(account, session.user.id)}
+              />
+            ) : null}
           </section>
 
           {presence?.device ? (

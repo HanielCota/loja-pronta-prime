@@ -1,5 +1,6 @@
 'use server';
 
+import { runAsStudent } from '@/features/support/server/impersonation';
 import { and, eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/features/admin/server/access';
@@ -7,7 +8,6 @@ import { getSessionState, needsFirstPassword } from '@/features/auth/server/sess
 import { db } from '@/server/db';
 import { supportContacts, supportFaqFeedback, supportTickets } from '@/server/db/schema';
 import { parseSupportPhones, type SupportTopicId } from '../contacts';
-import { refuseDuringVisit } from './impersonation';
 import { notifyRequesterReplied } from './notify';
 import { countMyUnread } from './queries';
 import {
@@ -90,12 +90,10 @@ async function act(
   form: FormData,
   change: (who: Requester) => Promise<unknown>,
   success: string,
-  options: { blockVisit?: boolean; revalidate?: boolean } = {},
+  options: { revalidate?: boolean } = {},
 ): Promise<TicketActionState> {
   const who = await requester(form);
   if (!who) return { ok: false, message: 'Chamado não encontrado.' };
-  if (options.blockVisit && (await refuseDuringVisit('encerrar ou avaliar chamado', who.path)))
-    return { ok: false, message: 'Visitando a conta da aluna, você não encerra nem avalia por ela.' };
   try {
     await change(who);
   } catch (error) {
@@ -111,83 +109,139 @@ async function act(
 }
 
 /** "Sim, resolveu" e "Encerrar chamado". */
-export async function closeTicketAction(_state: TicketActionState, form: FormData): Promise<TicketActionState> {
-  return act(form, (who) => closeByRequester(who.ticket.id, who.id), 'Chamado encerrado. Se precisar, é só responder que ele reabre.', {
-    blockVisit: true,
+export async function closeTicketAction(
+  _state: TicketActionState,
+  form: FormData,
+): Promise<TicketActionState> {
+  return runAsStudent('closeTicketAction', async () => {
+    return act(
+      form,
+      (who) => closeByRequester(who.ticket.id, who.id),
+      'Chamado encerrado. Se precisar, é só responder que ele reabre.',
+    );
   });
 }
 
 /** "Sim, resolveu": encerra sem recarregar a página (a tela mostra o desfazer por 5 segundos). */
-export async function resolveTicketAction(_state: TicketActionState, form: FormData): Promise<TicketActionState> {
-  return act(form, (who) => closeByRequester(who.ticket.id, who.id), 'Chamado encerrado.', {
-    blockVisit: true,
-    revalidate: false,
+export async function resolveTicketAction(
+  _state: TicketActionState,
+  form: FormData,
+): Promise<TicketActionState> {
+  return runAsStudent('resolveTicketAction', async () => {
+    return act(form, (who) => closeByRequester(who.ticket.id, who.id), 'Chamado encerrado.', {
+      revalidate: false,
+    });
   });
 }
 
 /** Desfaz o "Sim, resolveu" nos primeiros segundos. */
-export async function undoCloseAction(_state: TicketActionState, form: FormData): Promise<TicketActionState> {
-  return act(form, (who) => undoRequesterClose(who.ticket.id, who.id), 'Pronto, o chamado continua aberto.');
+export async function undoCloseAction(
+  _state: TicketActionState,
+  form: FormData,
+): Promise<TicketActionState> {
+  return runAsStudent('undoCloseAction', async () => {
+    return act(
+      form,
+      (who) => undoRequesterClose(who.ticket.id, who.id),
+      'Pronto, o chamado continua aberto.',
+    );
+  });
 }
 
 /** "Ainda não": responde na hora e devolve o chamado pra fila (não só preenche a caixa). */
-export async function notResolvedAction(_state: TicketActionState, form: FormData): Promise<TicketActionState> {
-  return act(
-    form,
-    async (who) => {
-      const ticket = await reopenNotResolved(who.ticket.id, { id: who.id, name: who.name });
-      void notifyRequesterReplied(ticket).catch(() => console.error('[support] aviso à responsável falhou.'));
-    },
-    'Avisamos o suporte que ainda não resolveu.',
-  );
+export async function notResolvedAction(
+  _state: TicketActionState,
+  form: FormData,
+): Promise<TicketActionState> {
+  return runAsStudent('notResolvedAction', async () => {
+    return act(
+      form,
+      async (who) => {
+        const ticket = await reopenNotResolved(who.ticket.id, { id: who.id, name: who.name });
+        void notifyRequesterReplied(ticket).catch(() =>
+          console.error('[support] aviso à responsável falhou.'),
+        );
+      },
+      'Avisamos o suporte que ainda não resolveu.',
+    );
+  });
 }
 
-export async function rateAction(_state: TicketActionState, form: FormData): Promise<TicketActionState> {
-  const rating = Number(form.get('nota'));
-  const comment = String(form.get('comentario') ?? '');
-  return act(form, (who) => rateTicket(who.ticket.id, who.id, rating, comment), 'Obrigada pela avaliação!', {
-    blockVisit: true,
+export async function rateAction(
+  _state: TicketActionState,
+  form: FormData,
+): Promise<TicketActionState> {
+  return runAsStudent('rateAction', async () => {
+    const rating = Number(form.get('nota'));
+    const comment = String(form.get('comentario') ?? '');
+    return act(
+      form,
+      (who) => rateTicket(who.ticket.id, who.id, rating, comment),
+      'Obrigada pela avaliação!',
+    );
   });
 }
 
 /** Liga ou desliga o aviso por e-mail das respostas deste chamado. */
-export async function emailRepliesAction(_state: TicketActionState, form: FormData): Promise<TicketActionState> {
-  const enabled = form.get('email') === '1';
-  return act(
-    form,
-    (who) => db.update(supportTickets).set({ emailReplies: enabled }).where(eq(supportTickets.id, who.ticket.id)),
-    enabled ? 'Você vai receber as respostas por e-mail.' : 'Você não vai mais receber as respostas por e-mail.',
-  );
+export async function emailRepliesAction(
+  _state: TicketActionState,
+  form: FormData,
+): Promise<TicketActionState> {
+  return runAsStudent('emailRepliesAction', async () => {
+    const enabled = form.get('email') === '1';
+    return act(
+      form,
+      (who) =>
+        db
+          .update(supportTickets)
+          .set({ emailReplies: enabled })
+          .where(eq(supportTickets.id, who.ticket.id)),
+      enabled
+        ? 'Você vai receber as respostas por e-mail.'
+        : 'Você não vai mais receber as respostas por e-mail.',
+    );
+  });
 }
 
 /** Marca como lido até a mensagem que apareceu na tela. Visitando a conta, não conta. */
 export async function markMyTicketRead(number: number, messageId: string): Promise<void> {
-  const state = await getSessionState();
-  if (state.status !== 'active' || state.session.session.impersonatedBy) return;
-  const form = new FormData();
-  form.set('numero', String(number));
-  const who = await requester(form);
-  if (!who?.id) return;
-  await markTicketRead(who.ticket.id, who.id, messageId);
+  return runAsStudent('markMyTicketRead', async () => {
+    const state = await getSessionState();
+    if (state.status !== 'active' || state.session.session.impersonatedBy) return;
+    const form = new FormData();
+    form.set('numero', String(number));
+    const who = await requester(form);
+    if (!who?.id) return;
+    await markTicketRead(who.ticket.id, who.id, messageId);
+  });
 }
 
 /** "Resolveu" / "Ainda preciso de ajuda" na resposta automática (alimenta o Desempenho). */
-export async function faqFeedbackAction(answerId: string, topicId: string, situationId: string | null, resolved: boolean) {
-  const state = await getSessionState();
-  if (state.status !== 'active') return;
-  if (!/^[\w-]{1,64}$/.test(answerId) || !/^[\w-]{1,32}$/.test(topicId)) return;
-  await db.insert(supportFaqFeedback).values({
-    answerId,
-    topicId,
-    situationId: situationId && /^[\w-]{1,64}$/.test(situationId) ? situationId : null,
-    resolved,
-    userId: state.session.session.impersonatedBy ? null : state.session.user.id,
+export async function faqFeedbackAction(
+  answerId: string,
+  topicId: string,
+  situationId: string | null,
+  resolved: boolean,
+) {
+  return runAsStudent('faqFeedbackAction', async () => {
+    const state = await getSessionState();
+    if (state.status !== 'active') return;
+    if (!/^[\w-]{1,64}$/.test(answerId) || !/^[\w-]{1,32}$/.test(topicId)) return;
+    await db.insert(supportFaqFeedback).values({
+      answerId,
+      topicId,
+      situationId: situationId && /^[\w-]{1,64}$/.test(situationId) ? situationId : null,
+      resolved,
+      userId: state.session.session.impersonatedBy ? null : state.session.user.id,
+    });
   });
 }
 
 /** O número ao lado de "Meus chamados" no menu da conta. */
 export async function getMyUnreadSupportCount(): Promise<number> {
-  const state = await getSessionState();
-  if (state.status !== 'active') return 0;
-  return countMyUnread(state.session.user.id);
+  return runAsStudent('getMyUnreadSupportCount', async () => {
+    const state = await getSessionState();
+    if (state.status !== 'active') return 0;
+    return countMyUnread(state.session.user.id);
+  });
 }

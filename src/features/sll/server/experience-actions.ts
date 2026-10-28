@@ -1,5 +1,6 @@
 'use server';
 
+import { runAsStudent } from '@/features/support/server/impersonation';
 import { asc, eq, and, isNotNull, sql } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { refresh, revalidatePath } from 'next/cache';
@@ -25,20 +26,22 @@ import { cleanTypedText } from '@/lib/text';
 import { replayPendingHotmartEvents } from '@/features/hotmart/server/pending-events';
 
 export async function chooseExpert(form: FormData): Promise<void> {
-  const { userId } = await requireProductAction('sll', null);
-  const expert = form.get('expert');
-  const experience = await getStudentExperience(userId);
-  if (!isExpertId(expert) || !experience.allowed.includes(expert))
-    redirect('/sll/plano?resultado=expert-invalid');
-  await db
-    .insert(studentExperiences)
-    .values({ userId, expert })
-    .onConflictDoUpdate({
-      target: studentExperiences.userId,
-      set: { expert, updatedAt: new Date() },
-    });
-  refresh();
-  redirect(expert === 'ze' ? '/ze-mauro' : '/sll/plano?resultado=expert-saved');
+  return runAsStudent('chooseExpert', async () => {
+    const { userId } = await requireProductAction('sll', null);
+    const expert = form.get('expert');
+    const experience = await getStudentExperience(userId);
+    if (!isExpertId(expert) || !experience.allowed.includes(expert))
+      redirect('/sll/plano?resultado=expert-invalid');
+    await db
+      .insert(studentExperiences)
+      .values({ userId, expert })
+      .onConflictDoUpdate({
+        target: studentExperiences.userId,
+        set: { expert, updatedAt: new Date() },
+      });
+    refresh();
+    redirect(expert === 'ze' ? '/ze-mauro' : '/sll/plano?resultado=expert-saved');
+  });
 }
 
 export async function saveExpertOffer(form: FormData): Promise<void> {

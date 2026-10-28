@@ -261,6 +261,7 @@ async function loadRequesterProfile(userId: string, currentTicketId: string, vie
       image: user.image,
       banned: user.banned,
       role: user.role,
+      mustChangePassword: user.mustChangePassword,
       createdAt: user.createdAt,
     })
     .from(user)

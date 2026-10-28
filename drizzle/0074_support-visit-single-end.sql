@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "support_impersonation_log_ended_idx" ON "support_impersonation_log" USING btree ("session_id") WHERE "support_impersonation_log"."kind" = 'ended';

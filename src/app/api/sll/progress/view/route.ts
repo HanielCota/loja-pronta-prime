@@ -1,6 +1,7 @@
 import { getActiveSession, needsFirstPassword } from '@/features/auth/server/session';
 import { getStudentProducts } from '@/features/products/server/access';
 import { parseProgressLocation } from '@/features/sll/progress-rules';
+import { visitForRoute } from '@/features/support/server/impersonation';
 import { recordSllLessonView } from '@/features/sll/server/progress-actions';
 import { hasTrustedOrigin } from '@/server/request/origin';
 import { readLimitedBody, RequestBodyTooLargeError } from '@/lib/request-body';
@@ -15,6 +16,10 @@ export async function POST(request: Request) {
   const session = await getActiveSession();
   if (!session || needsFirstPassword(session.user))
     return failure('Entre na sua conta de novo.', 401);
+  // A equipe dentro da conta da aluna não muda o "continue de onde parou" dela. A tela lê o JSON
+  // da resposta: o mesmo resultado neutro da ação silenciosa, sem mensagem de erro.
+  if ((await visitForRoute('recordSllLessonView')).status !== 'student')
+    return Response.json({ saved: false, message: '' }, { headers });
   if (!(await getStudentProducts(session.user.id)).products.includes('sll'))
     return failure('Este curso não está disponível para esta conta.', 403);
   let location;

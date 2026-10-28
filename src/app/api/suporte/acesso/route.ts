@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { visitForRoute } from '@/features/support/server/impersonation';
 import { openTicket } from '@/features/support/server/new-ticket';
 import { isEnhanced, respond, text } from '@/features/support/server/route-helpers';
 import { consumeAttempts } from '@/server/auth/rate-limit';
@@ -28,6 +29,10 @@ export async function POST(request: Request) {
     return respond(true, { ok: false, message: 'Não foi possível ler o formulário.', status: 400, backTo: '/suporte/acesso' });
   }
   const enhanced = isEnhanced(form);
+  // Durante "Entrar como aluna", nada de mandar e-mail pra ela em nome do formulário público.
+  const visit = await visitForRoute('requestTicketAccess');
+  if (visit.status === 'over' || visit.status === 'refused')
+    return respond(enhanced, { ok: false, message: visit.message, status: 403, backTo: '/suporte/acesso' });
   const email = text(form, 'email', 254).trim().toLowerCase();
   const name = text(form, 'nome', 80).trim();
   if (!emailSchema.safeParse(email).success || name.length < 2)

@@ -1,5 +1,6 @@
 'use server';
 
+import { runAsStudent } from '@/features/support/server/impersonation';
 import {
   setSllLessonCompletionForm as setLessonCompletion,
   recordSllLessonView as recordLessonView,
@@ -14,19 +15,29 @@ export async function setSllLessonCompletionForm(
   previous: SllProgressActionResult,
   formData: FormData,
 ): Promise<SllProgressActionResult> {
-  return setLessonCompletion(previous, formData);
+  return runAsStudent('setSllLessonCompletionForm', async () => {
+    return setLessonCompletion(previous, formData);
+  });
 }
 
 export async function recordSllLessonView(
   trackId: string,
   lessonId: string,
 ): Promise<SllProgressActionResult> {
-  return recordLessonView(trackId, lessonId);
+  return runAsStudent(
+    'recordSllLessonView',
+    async () => {
+      return recordLessonView(trackId, lessonId);
+    },
+    { saved: false, message: '' },
+  );
 }
 
 export async function saveSllPlanIntake(
   previous: SllPlanIntakeActionResult,
   formData: FormData,
 ): Promise<SllPlanIntakeActionResult> {
-  return savePlanIntake(previous, formData);
+  return runAsStudent('saveSllPlanIntake', async () => {
+    return savePlanIntake(previous, formData);
+  });
 }
