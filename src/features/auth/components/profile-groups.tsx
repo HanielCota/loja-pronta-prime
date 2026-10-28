@@ -3,7 +3,6 @@ import {
   ClockAlertIcon,
   GraduationCapIcon,
   LaptopIcon,
-  MailIcon,
   MessageCircleIcon,
   ReceiptTextIcon,
   ShieldCheckIcon,
@@ -15,7 +14,6 @@ import {
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { ProductId } from '@/config/products';
-import { SUPPORT_EMAIL, TEAM_WHATSAPP } from '@/config/support';
 import { SUPPORT_TOPICS, type SupportPhones } from '@/features/support/contacts';
 import { whatsappLink } from '@/features/loja-pronta/whatsapp';
 import {
@@ -46,7 +44,9 @@ export function AttentionGroup({
   products,
   validity,
   now,
+  phones,
 }: {
+  phones: SupportPhones;
   products: ProductId[];
   validity: Partial<Record<ProductId, AccessValidity>>;
   now: Date;
@@ -65,8 +65,15 @@ export function AttentionGroup({
       {ending.map(({ product, term }) => (
         <LinkRow
           key={product}
-          href={supportHref(`Oi! Meu acesso à ${PRODUCTS[product].name} está acabando.`)}
-          external={Boolean(TEAM_WHATSAPP)}
+          href={
+            phones.technical
+              ? whatsappLink(
+                  phones.technical,
+                  `Oi! Meu acesso à ${PRODUCTS[product].name} está acabando.`,
+                )
+              : '/perfil#suporte'
+          }
+          external={Boolean(phones.technical)}
           icon={<ClockAlertIcon className="text-warning" />}
           label={PRODUCTS[product].title}
           value={<span className="text-warning">{accessValidityLabel(term, now)}</span>}
@@ -76,12 +83,6 @@ export function AttentionGroup({
       ))}
     </SettingsGroup>
   );
-}
-
-/** O contato do suporte: o WhatsApp quando configurado, senão o email. */
-function supportHref(message: string) {
-  if (TEAM_WHATSAPP) return whatsappLink(TEAM_WHATSAPP, message);
-  return `mailto:${SUPPORT_EMAIL}`;
 }
 
 /**
@@ -212,11 +213,7 @@ function DeviceRow({ device }: { device: AccountDevice }) {
   );
 }
 
-/**
- * Precisa de ajuda?: os caminhos de contato num lugar só, no fim do perfil. Cada assunto leva à
- * pessoa certa no WhatsApp quando o número está configurado no admin; sem número, a linha diz
- * "Em breve" (sem botão que finge). O email do suporte e a política aparecem sempre.
- */
+/** Support uses configured WhatsApp contacts; missing numbers show a coming-soon state. */
 export function HelpGroup({ phones }: { phones: SupportPhones }) {
   return (
     <SettingsGroup id="perfil-ajuda" title="Precisa de ajuda?">
@@ -246,14 +243,6 @@ export function HelpGroup({ phones }: { phones: SupportPhones }) {
           </li>
         ),
       )}
-      <LinkRow
-        href={`mailto:${SUPPORT_EMAIL}`}
-        icon={<MailIcon />}
-        label="Email do suporte"
-        value={SUPPORT_EMAIL}
-        action="Escrever"
-        actionLabel="Escrever um email pro suporte"
-      />
       <LinkRow
         href="/privacidade"
         icon={<ShieldCheckIcon />}

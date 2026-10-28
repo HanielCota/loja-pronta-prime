@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Avatar } from '@/components/ui/avatar';
 import { getSupportPhones } from '@/features/support/server/contacts';
-import { SUPPORT_EMAIL } from '@/config/support';
 import {
   AccessGroup,
   AttentionGroup,
@@ -60,7 +59,12 @@ export default async function ProfilePage() {
       }
     >
       {/* Antes de tudo, só quando há algo a fazer (o aviso da conta Apple). */}
-      <AttentionGroup products={products} validity={validity.byProduct} now={validity.checkedAt} />
+      <AttentionGroup
+        products={products}
+        validity={validity.byProduct}
+        now={validity.checkedAt}
+        phones={phones}
+      />
       <ProfileSettings
         name={profileName}
         email={user.email}
@@ -76,9 +80,9 @@ export default async function ProfilePage() {
           </div>
         }
         emailHelp={
-          <>
-            Pra trocar o email,{' '}
-            {phones.technical ? (
+          phones.technical ? (
+            <>
+              Pra trocar o email,{' '}
               <a
                 href={whatsappLink(phones.technical, 'Oi! Quero trocar o email da minha conta.')}
                 target="_blank"
@@ -88,19 +92,11 @@ export default async function ProfilePage() {
                 fale com o suporte no WhatsApp
                 <span className="sr-only"> (abre em outra aba)</span>
               </a>
-            ) : (
-              <>
-                escreva pro suporte em{' '}
-                <a
-                  href={`mailto:${SUPPORT_EMAIL}`}
-                  className="font-semibold text-link underline underline-offset-4"
-                >
-                  {SUPPORT_EMAIL}
-                </a>
-              </>
-            )}
-            .
-          </>
+              .
+            </>
+          ) : (
+            <>Ajuda pra trocar o email pelo WhatsApp: em breve.</>
+          )
         }
       />
       <SignOutRow />

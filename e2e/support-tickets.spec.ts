@@ -25,6 +25,24 @@ test('retired ticket URLs lead to WhatsApp help and cannot accept new messages',
 }) => {
   const email = await createAccount('retired-ticket-member');
   await signIn(page, email, PASSWORD, '/perfil');
+  await expect(page.locator('a[href^="mailto:"]')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /Email do suporte/ })).toHaveCount(0);
+  for (const mobile of [false, true]) {
+    for (const dark of [false, true]) {
+      await page.setViewportSize(
+        mobile ? { width: 390, height: 844 } : { width: 1440, height: 1000 },
+      );
+      await page.evaluate((theme) => localStorage.setItem('theme', theme), dark ? 'dark' : 'light');
+      await page.reload();
+      await expect(page.locator('a[href^="mailto:"]')).toHaveCount(0);
+      await expectNoA11yViolations(page);
+      await page.screenshot({
+        path: `.data/whatsapp-profile-${mobile ? 'mobile' : 'desktop'}-${dark ? 'dark' : 'light'}.png`,
+        fullPage: true,
+      });
+    }
+  }
+
   const before = (await database().query('select count(*)::int as total from support_tickets'))
     .rows[0].total;
   for (const path of ['/suporte', '/suporte/novo', '/suporte/123']) {

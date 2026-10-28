@@ -5,6 +5,9 @@
 The owner requested retiring the internal ticket inbox to consolidate support on WhatsApp.
 The account menu, profile, course and store help use the existing subject-specific contacts.
 Public login help shows the configured technical WhatsApp contact and password recovery.
+Profile support, email-change help and expiring-access help use only configured WhatsApp contacts.
+There is no support email action or email fallback in the profile. Missing phone numbers keep the
+existing coming-soon state; the privacy policy remains available as an informational link.
 Legacy ticket pages redirect to the appropriate help page; ticket APIs return HTTP 410 and
 previously loaded ticket actions cannot write. Administrators retain only the WhatsApp contact
 settings; the ticket queue, reports, team screens, counters and overview card are removed.
