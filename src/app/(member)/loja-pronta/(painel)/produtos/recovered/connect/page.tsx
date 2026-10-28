@@ -45,7 +45,9 @@ export default async function ConnectRecoveredCatalogPage({
         </p>
         {result && Object.hasOwn(SHOPEE_RESULT_MESSAGES, result) ? (
           <output className="rounded-2xl bg-primary-soft p-5 text-body">
-            {SHOPEE_RESULT_MESSAGES[result]}
+            {result === 'connected'
+              ? 'Sua loja foi conectada. Agora revise os dados de cada produto e confirme a publicação quando estiver disponível para sua conta.'
+              : SHOPEE_RESULT_MESSAGES[result]}
           </output>
         ) : null}
         {enabled && !connected ? (
@@ -59,7 +61,11 @@ export default async function ConnectRecoveredCatalogPage({
           )
         ) : null}
         <Button asChild variant="soft">
-          <Link href="/loja-pronta/produtos/recovered">Voltar aos produtos recuperados</Link>
+          <Link href="/loja-pronta/produtos/recovered">
+            {connected
+              ? 'Revisar produtos e acompanhar publicação'
+              : 'Voltar aos produtos recuperados'}
+          </Link>
         </Button>
       </section>
     </AreaPage>

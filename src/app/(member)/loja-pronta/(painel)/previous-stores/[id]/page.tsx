@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { AreaPage } from '@/features/member/components/area-shell';
+import { AreaPage, panelCard } from '@/features/member/components/area-shell';
 import { requireProduct } from '@/features/products/server/access';
 import { LegacyStoreDetail } from '@/features/legacy-stores/components/store-detail';
 import {
@@ -46,6 +46,18 @@ export default async function PreviousStorePage({
           Voltar às minhas lojas
         </Link>
       </Button>
+      <section aria-labelledby="continue-store" className={`${panelCard} gap-4`}>
+        <h2 id="continue-store" className="text-title font-semibold">
+          Continue com esta loja
+        </h2>
+        <p className="text-body text-muted-foreground">
+          O nome, a descrição e os produtos salvos continuam aqui. Confira o próximo passo sem
+          refazer o cadastro ou a marca.
+        </p>
+        <Button asChild className="w-fit">
+          <Link href={`${basePath}/continue`}>Retomar esta loja</Link>
+        </Button>
+      </section>
       {recovery ? (
         <Button asChild variant="soft" size="inline" className="w-fit px-5">
           <Link href={`/loja-pronta/previous-stores/${recovery.id}/import`}>

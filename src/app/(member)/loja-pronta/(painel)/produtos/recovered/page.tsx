@@ -1,11 +1,16 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { db } from '@/server/db';
 import { Button } from '@/components/ui/button';
 import { AreaPage, panelCard } from '@/features/member/components/area-shell';
 import { requireProduct } from '@/features/products/server/access';
 import { recoveredStores, importedProducts } from '@/features/legacy-stores/server/catalog-data';
+import {
+  publicationLocked,
+  recoveredPublicationMessages,
+} from '@/features/legacy-stores/publication';
 
 export const metadata: Metadata = { title: 'Produtos recuperados' };
 const path = '/loja-pronta/produtos/recovered';
@@ -13,7 +18,7 @@ const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: '
 export default async function RecoveredCatalogPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; resultado?: string; quantidade?: string }>;
+  searchParams: Promise<{ page?: string; resultado?: string; quantidade?: string; store?: string }>;
 }) {
   const { session, products } = await requireProduct('loja-pronta', path);
   const params = await searchParams;
@@ -21,16 +26,24 @@ export default async function RecoveredCatalogPage({
     /^\d{1,5}$/.test(params.page ?? '') && Number(params.page) > 0 ? Number(params.page) : 1;
   const [stores, imported] = await Promise.all([
     recoveredStores(db.$client, session.user.id),
-    importedProducts(db.$client, session.user.id, page),
+    importedProducts(db.$client, session.user.id, page, params.store),
   ]);
-  const total = stores.reduce((sum, store) => sum + store.imported, 0);
+  const selected = params.store ? stores.find((store) => store.id === params.store) : undefined;
+  if (params.store && !selected) notFound();
+  const visibleStores = selected ? [selected] : stores;
+  const total = visibleStores.reduce((sum, store) => sum + store.imported, 0);
+  const paginationPath = selected ? `${path}?store=${selected.id}&` : `${path}?`;
   return (
     <AreaPage
       hasChoice={products.length > 1}
       area="loja-pronta"
       crumb="Produtos recuperados"
       title="Produtos recuperados"
-      intro="Importe seus produtos antigos para revisar antes de publicar novamente."
+      intro={
+        selected
+          ? `Produtos de ${selected.name}. Revise e acompanhe cada publicação.`
+          : 'Importe seus produtos antigos para revisar antes de publicar novamente.'
+      }
     >
       <Button asChild variant="soft" size="inline" className="w-fit px-5">
         <Link href="/loja-pronta">Voltar à minha loja</Link>
@@ -77,11 +90,20 @@ export default async function RecoveredCatalogPage({
                   <h3 className="text-body font-semibold wrap-anywhere">{row.product.title}</h3>
                   <p className="text-body">{currency.format(row.product.priceCents / 100)}</p>
                   <p className="text-sm text-muted-foreground">
-                    Importado para revisão · {row.product.variants.length} variações
+                    {row.publication_status
+                      ? recoveredPublicationMessages[row.publication_status]
+                      : 'Importado para revisão'}{' '}
+                    · {row.product.variants.length} variações
                   </p>
                 </div>
                 <Button asChild variant="soft" size="inline" className="w-fit px-5">
-                  <Link href={`${path}/${row.product_id}`}>Revisar produto</Link>
+                  <Link
+                    href={`${path}/${row.product_id}${row.publication_status && publicationLocked(row.publication_status) ? '/publish' : ''}`}
+                  >
+                    {row.publication_status && publicationLocked(row.publication_status)
+                      ? 'Acompanhar publicação'
+                      : 'Revisar produto'}
+                  </Link>
                 </Button>
               </li>
             ))}
@@ -94,7 +116,7 @@ export default async function RecoveredCatalogPage({
           >
             {page > 1 ? (
               <Button asChild variant="soft" size="inline">
-                <Link href={`${path}?page=${page - 1}`}>Anterior</Link>
+                <Link href={`${paginationPath}page=${page - 1}`}>Anterior</Link>
               </Button>
             ) : null}
             <p className="text-body">
@@ -102,7 +124,7 @@ export default async function RecoveredCatalogPage({
             </p>
             {page * 30 < total ? (
               <Button asChild variant="soft" size="inline">
-                <Link href={`${path}?page=${page + 1}`}>Próxima</Link>
+                <Link href={`${paginationPath}page=${page + 1}`}>Próxima</Link>
               </Button>
             ) : null}
           </nav>
@@ -112,13 +134,13 @@ export default async function RecoveredCatalogPage({
         <h2 id="recoverable-stores" className="text-title font-semibold">
           Importar de uma loja anterior
         </h2>
-        {!stores.length ? (
+        {!visibleStores.length ? (
           <p className="text-body text-muted-foreground">
             Nenhum produto recuperado está disponível para esta conta.
           </p>
         ) : (
           <ul className="divide-y divide-border">
-            {stores.map((store) => (
+            {visibleStores.map((store) => (
               <li
                 key={store.id}
                 className="flex flex-col gap-3 py-5 first:pt-0 sm:flex-row sm:items-center sm:justify-between"

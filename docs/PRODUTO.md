@@ -1,5 +1,14 @@
 # Escala Shop — Platform overview
 
+## Previous store continuation (October 27, 2026)
+
+Members with saved stores see **Retomar esta loja** before the option to start another store.
+The owner-scoped continuation page reuses existing import, review, Shopee connection and explicit
+publication confirmation. Members do not repeat onboarding or brand creation. The review list
+can show only the selected store and reports persisted publication states rather than calling
+every imported product a draft. Availability follows current integration and pilot settings;
+connecting does not publish products or establish a delivery deadline.
+
 ## Independent Zé Mauro course (October 26, 2026)
 
 The platform includes `/ze-mauro`, with 57 supplied recordings and eight coming-soon entries.
