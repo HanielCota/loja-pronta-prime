@@ -95,7 +95,7 @@ describe('frases dos eventos', () => {
 describe('promessa de resposta', () => {
   test('calculada do prazo configurado', () => {
     expect(responsePromise('normal', 480)).toBe(
-      'Respondemos em até 8 horas de atendimento. A resposta chega por e-mail e aqui no suporte.',
+      'Respondemos em até 8 horas de atendimento. Acompanhe a resposta aqui no suporte.',
     );
     expect(responsePromise('high', 240).startsWith('Casos como o seu são respondidos primeiro.')).toBe(true);
   });

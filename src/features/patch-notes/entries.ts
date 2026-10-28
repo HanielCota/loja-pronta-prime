@@ -18,6 +18,12 @@ export const patchNotes: readonly PatchNoteDay[] = [
         description:
           'A administração agora tem uma página para consultar as mudanças da plataforma por data. O histórico fica no menu do painel e é exclusivo para administradores.',
       },
+      {
+        kind: 'Melhoria',
+        title: 'Avisos dos chamados por e-mail desativados',
+        description:
+          'Após a publicação desta atualização, as atualizações dos chamados, os avisos à equipe, os alertas de atraso e os resumos deixam de ser enviados por e-mail. As respostas continuam no suporte da plataforma. Os e-mails de acesso, recuperação de senha e o link do chamado aberto sem login continuam funcionando.',
+      },
     ],
   },
   {

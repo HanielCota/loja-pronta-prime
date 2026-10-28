@@ -9,6 +9,7 @@ const emailEnv: { RESEND_API_KEY?: string; EMAIL_FROM?: string; EMAIL_REPLY_TO?:
 mock.module('@/config/env', () => ({ env: emailEnv }));
 mock.module('node:timers/promises', () => ({ setTimeout: async () => {} }));
 const { sendPasswordResetEmail, sendVerificationEmail } = await import('@/server/auth/emails');
+const { sendEmailInBackground } = await import('@/server/email/send');
 
 const email = {
   to: 'aluna@example.invalid',
@@ -116,5 +117,39 @@ describe('entrega dos emails de acesso pela Resend', () => {
     await sendPasswordResetEmail(email);
     expect(log).toHaveBeenCalledWith(expect.stringContaining(email.url));
     expect(request).not.toHaveBeenCalled();
+  });
+});
+
+describe('disabled support email notifications', () => {
+  test('does not contact the provider even with production credentials', async () => {
+    Object.assign(process.env, { NODE_ENV: 'production' });
+    const request = spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({ id: 'email-id' }));
+    sendEmailInBackground(
+      {
+        to: email.to,
+        subject: 'Support ticket update',
+        text: 'A ticket has changed.',
+        idempotencyKey: 'ticket:test:reply',
+      },
+      'support',
+    );
+    await Promise.resolve();
+    expect(request).not.toHaveBeenCalled();
+  });
+
+  test.each(['account', 'support-access'])('continues delivering %s emails', async (tag) => {
+    Object.assign(process.env, { NODE_ENV: 'production' });
+    const request = spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({ id: 'email-id' }));
+    sendEmailInBackground(
+      {
+        to: email.to,
+        subject: 'Account update',
+        text: 'Your account has changed.',
+        idempotencyKey: 'account:test:update',
+      },
+      tag,
+    );
+    await Promise.resolve();
+    expect(request).toHaveBeenCalledTimes(1);
   });
 });

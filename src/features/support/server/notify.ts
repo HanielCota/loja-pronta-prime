@@ -1,3 +1,4 @@
+import { SUPPORT_EMAIL_NOTIFICATIONS_ENABLED } from '../email-policy';
 import { absoluteUrl, sendEmailInBackground } from '@/server/email/send';
 import { ticketCode } from '../copy';
 import {
@@ -20,6 +21,7 @@ function staffTicketUrl(ticket: TicketRow) {
 
 /** Chamado novo: avisa a responsável, ou a equipe disponível quando ficou na fila. */
 export async function notifyTicketCreated(ticket: TicketRow) {
+  if (!SUPPORT_EMAIL_NOTIFICATIONS_ENABLED) return;
   const staff = await loadStaffDirectory();
   const permission = ticket.queue === 'ombudsman' ? 'support.ombudsman' : 'support.answer';
   const recipients = ticket.assigneeId
@@ -35,6 +37,7 @@ export async function notifyTicketCreated(ticket: TicketRow) {
 
 /** A aluna respondeu: avisa a responsável (no SellBridge ninguém era avisado). */
 export async function notifyRequesterReplied(ticket: TicketRow) {
+  if (!SUPPORT_EMAIL_NOTIFICATIONS_ENABLED) return;
   if (!ticket.assigneeId) return;
   const staff = await loadStaffDirectory();
   const assignee = staff.find((member) => member.id === ticket.assigneeId);
@@ -51,6 +54,7 @@ export async function notifyRequesterReplied(ticket: TicketRow) {
 
 /** A equipe respondeu: avisa a aluna (link mágico renovado no chamado público). */
 export async function notifyStaffReplied(ticket: TicketRow) {
+  if (!SUPPORT_EMAIL_NOTIFICATIONS_ENABLED) return;
   if (!ticket.emailReplies) return;
   const path =
     ticket.channel === 'public_form'
@@ -75,6 +79,6 @@ export async function sendPublicTicketLink(ticket: TicketRow) {
       ...publicTicketLinkEmail(ticket.subject, absoluteUrl(`/suporte/acesso/${token}`), PUBLIC_LINK_DAYS),
       idempotencyKey: `ticket:${ticket.id}:public-link:${token.slice(0, 8)}`,
     },
-    'support',
+    'support-access',
   );
 }
