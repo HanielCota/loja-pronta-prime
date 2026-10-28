@@ -59,7 +59,7 @@ mock.module('@/server/storage', () => ({
 }));
 
 const { requireProduct, requireProductAction } = await import('@/features/products/server/access');
-const { getZeCourse } = await import('@/features/ze-mauro/server/catalog');
+const { getZeCourse, getZeLesson } = await import('@/features/ze-mauro/server/catalog');
 const { setZeLessonCompletion } = await import('@/features/ze-mauro/server/actions');
 const { getStudentExperience } = await import('@/features/sll/server/experience');
 const { getSllPublishedTracks } = await import('@/features/sll/server/catalog');
@@ -335,4 +335,37 @@ test('Zé course materials reject cross-course downloads before reaching storage
   expect(
     (await material(request, { params: Promise.resolve({ blockId: priMaterialId }) })).status,
   ).toBe(200);
+});
+
+test('course navigation excludes lesson text while the authorized lesson loads its own content', async () => {
+  currentId = zeId!;
+  const textId = randomUUID();
+  await db
+    .insert(s.learningContentBlocks)
+    .values({
+      id: textId,
+      lessonId: zeLessonId,
+      kind: 'text',
+      position: 100,
+      data: { text: 'Selected lesson content' },
+    });
+  try {
+    const { course } = await getZeCourse();
+    expect(
+      course?.stages
+        .flatMap((stage) =>
+          stage.modules.flatMap((module) => module.lessons.flatMap((lesson) => lesson.blocks)),
+        )
+        .some((block) => block.kind === 'text'),
+    ).toBe(false);
+    const selected = await getZeLesson(zeLessonId);
+    expect(selected.lesson?.blocks.find((block) => block.id === textId)?.data).toEqual({
+      text: 'Selected lesson content',
+    });
+    expect((await getZeLesson(priLessonId)).lesson).toBeNull();
+    currentId = priId!;
+    await expect(getZeLesson(zeLessonId)).rejects.toThrow('redirect:/sll');
+  } finally {
+    await db.delete(s.learningContentBlocks).where(eq(s.learningContentBlocks.id, textId));
+  }
 });

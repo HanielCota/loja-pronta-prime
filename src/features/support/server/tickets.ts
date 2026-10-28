@@ -40,7 +40,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 export class TicketActionError extends Error {
   constructor(
     message: string,
-    readonly status: 400 | 403 | 404 | 409 = 409,
+    readonly status: 400 | 403 | 404 | 409 | 429 = 409,
   ) {
     super(message);
     this.name = 'TicketActionError';
@@ -99,7 +99,9 @@ export async function loadStaffDirectory(): Promise<StaffMember[]> {
 
 export function isActiveAssignee(staff: readonly StaffMember[], id: string | null): boolean {
   if (!id) return false;
-  return staff.some((member) => member.id === id && hasStaffPermission(member.role, 'support.answer'));
+  return staff.some(
+    (member) => member.id === id && hasStaffPermission(member.role, 'support.answer'),
+  );
 }
 
 function stateOf(row: TicketRow): TicketState {
@@ -126,7 +128,12 @@ export function dueAtFor(
 }
 
 async function lockTicket(tx: Transaction, id: string): Promise<TicketRow> {
-  const [row] = await tx.select().from(supportTickets).where(eq(supportTickets.id, id)).for('update').limit(1);
+  const [row] = await tx
+    .select()
+    .from(supportTickets)
+    .where(eq(supportTickets.id, id))
+    .for('update')
+    .limit(1);
   if (!row) throw new TicketActionError('Chamado não encontrado.', 404);
   return row;
 }
@@ -138,7 +145,7 @@ async function applyRule(
   options: { actorId: string | null; automatic?: boolean; extraPatch?: Partial<TicketRow> },
 ): Promise<TicketRow> {
   if (!result.ok) throw new TicketActionError(result.message, result.status);
-  const { settings, schedule } = await loadSupportSchedule();
+  const { settings, schedule } = await loadSupportSchedule(undefined, tx);
   return writeTicket(tx, row, result.patch, result.events, { ...options, settings, schedule });
 }
 
@@ -157,7 +164,8 @@ async function writeTicket(
 ): Promise<TicketRow> {
   const merged = { ...row, ...patch, ...options.extraPatch };
   const clockChanged =
-    merged.awaitingSince?.getTime() !== row.awaitingSince?.getTime() || merged.priority !== row.priority;
+    merged.awaitingSince?.getTime() !== row.awaitingSince?.getTime() ||
+    merged.priority !== row.priority;
   const dueAt = clockChanged
     ? dueAtFor(merged.awaitingSince, merged.priority, options.settings, options.schedule)
     : row.dueAt;
@@ -222,6 +230,7 @@ export type NewTicketInput = {
   defaultAssigneeId: string | null;
   attachments: readonly StoredAttachment[];
   submissionId: string | null;
+  maxOpenTickets?: number;
 };
 
 /** Quem recebe um chamado novo: a responsável do tema, a distribuição automática ou a fila. */
@@ -232,7 +241,9 @@ async function pickAssignee(
   staff: readonly StaffMember[],
 ): Promise<string | null> {
   const permission = input.planned.queue === 'ombudsman' ? 'support.ombudsman' : 'support.answer';
-  const eligible = staff.filter((member) => member.available && hasStaffPermission(member.role, permission));
+  const eligible = staff.filter(
+    (member) => member.available && hasStaffPermission(member.role, permission),
+  );
   const preferred = eligible.find((member) => member.id === input.defaultAssigneeId);
   if (preferred) return preferred.id;
   if (!settings.autoAssign || eligible.length === 0) return null;
@@ -257,9 +268,38 @@ async function pickAssignee(
 }
 
 export async function createTicket(input: NewTicketInput): Promise<TicketRow> {
-  const [{ settings, schedule }, staff] = await Promise.all([loadSupportSchedule(), loadStaffDirectory()]);
+  const [{ settings, schedule }, staff] = await Promise.all([
+    loadSupportSchedule(),
+    loadStaffDirectory(),
+  ]);
   const now = new Date();
   return db.transaction(async (tx) => {
+    if (
+      input.channel === 'platform' &&
+      input.requester.id &&
+      input.planned.queue !== 'ombudsman' &&
+      input.maxOpenTickets !== undefined
+    ) {
+      // Serialize the account limit with insertion, including requests from different processes.
+      await tx.execute(
+        sql`select pg_advisory_xact_lock(hashtext(${`support-create:${input.requester.id}`}))`,
+      );
+      const [open] = await tx
+        .select({ total: count() })
+        .from(supportTickets)
+        .where(
+          and(
+            eq(supportTickets.requesterId, input.requester.id),
+            ne(supportTickets.status, 'closed'),
+            eq(supportTickets.queue, 'general'),
+          ),
+        );
+      if ((open?.total ?? 0) >= input.maxOpenTickets)
+        throw new TicketActionError(
+          `Você já tem ${input.maxOpenTickets} chamados abertos. Responda um deles ou espere a resposta.`,
+          429,
+        );
+    }
     const assigneeId = await pickAssignee(tx, input, settings, staff);
     const [ticket] = await tx
       .insert(supportTickets)
@@ -321,7 +361,9 @@ export async function appendRequesterMessage(
       { fromStaff: false, internal: false },
       attachments,
     );
-    const updated = await applyRule(tx, row, afterRequesterMessage(stateOf(row), now), { actorId: author.id });
+    const updated = await applyRule(tx, row, afterRequesterMessage(stateOf(row), now), {
+      actorId: author.id,
+    });
     if (author.id) await markReadInTransaction(tx, ticketId, author.id, message.createdAt);
     return updated;
   });
@@ -402,7 +444,10 @@ export async function assignTicket(ticketId: string, actor: StaffActor, targetId
     const row = await lockTicket(tx, ticketId);
     assertQueueAccess(row, actor.role);
     const permission = row.queue === 'ombudsman' ? 'support.ombudsman' : 'support.answer';
-    if (targetId && !staff.some((member) => member.id === targetId && hasStaffPermission(member.role, permission)))
+    if (
+      targetId &&
+      !staff.some((member) => member.id === targetId && hasStaffPermission(member.role, permission))
+    )
       throw new TicketActionError('Escolha alguém da equipe de suporte.', 400);
     const activeAssigneeId = isActiveAssignee(staff, row.assigneeId) ? row.assigneeId : null;
     const decision = canAssign({
@@ -413,7 +458,7 @@ export async function assignTicket(ticketId: string, actor: StaffActor, targetId
     });
     if (!decision.ok) throw new TicketActionError(decision.message, 403);
     if (row.assigneeId === targetId) return row;
-    const { settings, schedule } = await loadSupportSchedule();
+    const { settings, schedule } = await loadSupportSchedule(undefined, tx);
     return writeTicket(
       tx,
       row,
@@ -424,12 +469,16 @@ export async function assignTicket(ticketId: string, actor: StaffActor, targetId
   });
 }
 
-export async function changePriority(ticketId: string, actor: StaffActor, priority: TicketPriority) {
+export async function changePriority(
+  ticketId: string,
+  actor: StaffActor,
+  priority: TicketPriority,
+) {
   return db.transaction(async (tx) => {
     const row = await lockTicket(tx, ticketId);
     assertQueueAccess(row, actor.role);
     if (row.priority === priority) return row;
-    const { settings, schedule } = await loadSupportSchedule();
+    const { settings, schedule } = await loadSupportSchedule(undefined, tx);
     return writeTicket(
       tx,
       row,
@@ -450,7 +499,7 @@ export async function changeTopic(
     const row = await lockTicket(tx, ticketId);
     assertQueueAccess(row, actor.role);
     if (row.topicId === topicId && row.situationId === situationId) return row;
-    const { settings, schedule } = await loadSupportSchedule();
+    const { settings, schedule } = await loadSupportSchedule(undefined, tx);
     const events: TicketEventDraft[] =
       row.topicId === topicId ? [] : [{ type: 'topic_changed', from: row.topicId, to: topicId }];
     return writeTicket(tx, row, {}, events, {
@@ -468,7 +517,7 @@ export async function changeQueue(ticketId: string, actor: StaffActor, queue: Ti
   return db.transaction(async (tx) => {
     const row = await lockTicket(tx, ticketId);
     if (row.queue === queue) return row;
-    const { settings, schedule } = await loadSupportSchedule();
+    const { settings, schedule } = await loadSupportSchedule(undefined, tx);
     return writeTicket(tx, row, {}, [{ type: 'queue_changed', from: row.queue, to: queue }], {
       actorId: actor.id,
       extraPatch: { queue },
@@ -487,11 +536,19 @@ export async function closeByRequester(ticketId: string, requesterId: string | n
 }
 
 /** "Ainda não resolveu": responde na hora e devolve o chamado pra fila do suporte. */
-export async function reopenNotResolved(ticketId: string, author: { id: string | null; name: string }) {
+export async function reopenNotResolved(
+  ticketId: string,
+  author: { id: string | null; name: string },
+) {
   return appendRequesterMessage(ticketId, author, 'Ainda não resolveu.', []);
 }
 
-export async function rateTicket(ticketId: string, requesterId: string | null, rating: number, comment: string) {
+export async function rateTicket(
+  ticketId: string,
+  requesterId: string | null,
+  rating: number,
+  comment: string,
+) {
   const now = new Date();
   return db.transaction(async (tx) => {
     const row = await lockTicket(tx, ticketId);
@@ -529,7 +586,10 @@ export async function closeIdleTicket(ticketId: string, cutoff: Date) {
         ),
       );
     if (!last?.at || last.at.getTime() >= cutoff.getTime()) return null;
-    return applyRule(tx, row, closesAutomatically(stateOf(row), now), { actorId: null, automatic: true });
+    return applyRule(tx, row, closesAutomatically(stateOf(row), now), {
+      actorId: null,
+      automatic: true,
+    });
   });
 }
 
@@ -540,8 +600,9 @@ export async function undoRequesterClose(ticketId: string, requesterId: string |
     if (row.status !== 'closed' || row.closedReason !== 'requester' || row.rating !== null)
       throw new TicketActionError('Este chamado não pode mais ser reaberto assim.');
     const closedFor = Date.now() - (row.closedAt?.getTime() ?? 0);
-    if (closedFor > 30_000) throw new TicketActionError('O tempo pra desfazer acabou. Responda pra reabrir.');
-    const { settings, schedule } = await loadSupportSchedule();
+    if (closedFor > 30_000)
+      throw new TicketActionError('O tempo pra desfazer acabou. Responda pra reabrir.');
+    const { settings, schedule } = await loadSupportSchedule(undefined, tx);
     return writeTicket(
       tx,
       row,
@@ -567,7 +628,9 @@ export async function markTicketRead(ticketId: string, userId: string, messageId
   const [message] = await db
     .select({ createdAt: supportTicketMessages.createdAt })
     .from(supportTicketMessages)
-    .where(and(eq(supportTicketMessages.id, messageId), eq(supportTicketMessages.ticketId, ticketId)))
+    .where(
+      and(eq(supportTicketMessages.id, messageId), eq(supportTicketMessages.ticketId, ticketId)),
+    )
     .limit(1);
   if (!message) return;
   await db.transaction((tx) => markReadInTransaction(tx, ticketId, userId, message.createdAt));
@@ -600,7 +663,10 @@ export async function ticketFromPublicToken(token: string): Promise<TicketRow | 
   if (!found || found.expiresAt.getTime() < Date.now()) return null;
   if (found.ticket.emailConfirmedAt) return found.ticket;
   const now = new Date();
-  await db.update(supportAccessTokens).set({ usedAt: now }).where(eq(supportAccessTokens.tokenHash, hashToken(token)));
+  await db
+    .update(supportAccessTokens)
+    .set({ usedAt: now })
+    .where(eq(supportAccessTokens.tokenHash, hashToken(token)));
   const [confirmed] = await db
     .update(supportTickets)
     .set({ emailConfirmedAt: now })

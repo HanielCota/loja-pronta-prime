@@ -28,7 +28,9 @@ async function openGuidedTicket(page: Page) {
   // A resposta automática aparece antes de enviar.
   await expect(page.getByRole('heading', { name: 'Tente estes passos antes' })).toBeVisible();
   await page.getByRole('button', { name: 'Ainda preciso de ajuda' }).click();
-  await page.getByRole('textbox').fill('Etapa 2, aula 5: a tela fica preta e o vídeo não começa no Chrome.');
+  await page
+    .getByRole('textbox')
+    .fill('Etapa 2, aula 5: a tela fica preta e o vídeo não começa no Chrome.');
   await page.getByRole('button', { name: 'Enviar chamado' }).click();
   await expect(page).toHaveURL(/\/suporte\/\d+\?enviado=1$/);
   return Number(new URL(page.url()).pathname.split('/').at(-1));
@@ -40,7 +42,11 @@ test('a aluna abre um chamado guiado, a equipe responde e o atendimento entra no
 }) => {
   const studentAddress = await createAccount('suporte-aluna', 'Maria Clara', 'user');
   const agentAddress = await createAccount('suporte-atendente', 'Ana Atendente', 'support_agent');
-  const supervisorAddress = await createAccount('suporte-supervisor', 'Sara Supervisora', 'support_supervisor');
+  const supervisorAddress = await createAccount(
+    'suporte-supervisor',
+    'Sara Supervisora',
+    'support_supervisor',
+  );
 
   await signIn(page, studentAddress, PASSWORD, '/suporte');
   await expect(page.getByRole('heading', { name: 'Suporte', level: 1 })).toBeVisible();
@@ -83,7 +89,9 @@ test('a aluna abre um chamado guiado, a equipe responde e o atendimento entra no
     await expect(page.getByText('Oi, Maria! Atualize a página e me diga se voltou.')).toBeVisible();
     await page.getByRole('button', { name: 'Ainda não', exact: true }).click();
     await expect(page.getByText('Ainda não resolveu.', { exact: true })).toBeVisible();
-    const [waiting] = (await database().query('select status from support_tickets where number = $1', [number])).rows;
+    const [waiting] = (
+      await database().query('select status from support_tickets where number = $1', [number])
+    ).rows;
     expect(waiting.status).toBe('open');
 
     await agent.reload();
@@ -105,6 +113,25 @@ test('a aluna abre um chamado guiado, a equipe responde e o atendimento entra no
     await expect(supervisor.getByRole('heading', { name: 'Desempenho do suporte' })).toBeVisible();
     await expect(supervisor.getByText('Resolvidos').first()).toBeVisible();
     await expectNoA11yViolations(supervisor);
+    for (const width of [1440, 390]) {
+      await supervisor.setViewportSize({ width, height: 1000 });
+      for (const theme of ['light', 'dark']) {
+        await supervisor.evaluate((value) => localStorage.setItem('theme', value), theme);
+        await supervisor.reload();
+        await expect(
+          supervisor.getByRole('heading', { name: 'Desempenho do suporte' }),
+        ).toBeVisible();
+        await expect(supervisor.locator('html')).toHaveClass(new RegExp(theme));
+        expect(
+          await supervisor.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+        ).toBe(true);
+        await expectNoA11yViolations(supervisor);
+        await supervisor.screenshot({
+          path: `.data/support-performance/report-${width}-${theme}.png`,
+          fullPage: true,
+        });
+      }
+    }
     const events = (
       await database().query(
         `select type from support_ticket_events e join support_tickets t on t.id = e.ticket_id where t.number = $1 order by e.id`,
@@ -118,7 +145,9 @@ test('a aluna abre um chamado guiado, a equipe responde e o atendimento entra no
   }
 });
 
-test('quem não consegue entrar pede ajuda sem login, e o WhatsApp de sempre continua igual', async ({ page }) => {
+test('quem não consegue entrar pede ajuda sem login, e o WhatsApp de sempre continua igual', async ({
+  page,
+}) => {
   await page.goto('/entrar');
   await page.getByRole('link', { name: 'Não consegue entrar? Fale com o suporte' }).click();
   await expect(page).toHaveURL(/\/suporte\/acesso$/);
@@ -127,13 +156,16 @@ test('quem não consegue entrar pede ajuda sem login, e o WhatsApp de sempre con
   await page.getByLabel('E-mail da compra').fill(studentEmail('suporte-sem-conta'));
   await page.getByRole('combobox', { name: 'O que está acontecendo?' }).click();
   await page.getByRole('option', { name: 'Não consigo entrar', exact: true }).click();
-  await page.getByLabel('Conte o que aparece quando você tenta entrar').fill('Aparece senha incorreta mesmo depois de trocar.');
+  await page
+    .getByLabel('Conte o que aparece quando você tenta entrar')
+    .fill('Aparece senha incorreta mesmo depois de trocar.');
   await page.getByRole('button', { name: 'Pedir ajuda' }).click();
   await expect(page.getByText(/Recebemos\. Se este for o e-mail da compra/)).toBeVisible();
   const [ticket] = (
-    await database().query(`select channel, email_confirmed_at from support_tickets where requester_email = $1`, [
-      studentEmail('suporte-sem-conta'),
-    ])
+    await database().query(
+      `select channel, email_confirmed_at from support_tickets where requester_email = $1`,
+      [studentEmail('suporte-sem-conta')],
+    )
   ).rows;
   expect(ticket.channel).toBe('public_form');
   // Até abrir o link do e-mail, o e-mail não está confirmado.
@@ -141,14 +173,19 @@ test('quem não consegue entrar pede ajuda sem login, e o WhatsApp de sempre con
 });
 
 test('public support form submits without JavaScript', async ({ browser, baseURL }) => {
-  const context = await browser.newContext({ javaScriptEnabled: false, ...(baseURL ? { baseURL } : {}) });
+  const context = await browser.newContext({
+    javaScriptEnabled: false,
+    ...(baseURL ? { baseURL } : {}),
+  });
   try {
     const page = await context.newPage();
     await page.goto('/suporte/acesso');
     await page.getByLabel('Seu nome').fill('Ana');
     await page.getByLabel('E-mail da compra').fill(studentEmail('support-no-js'));
     await page.getByLabel('O que está acontecendo?').selectOption({ label: 'Não consigo entrar' });
-    await page.getByLabel('Conte o que aparece quando você tenta entrar').fill('Não consigo entrar depois de trocar de aparelho.');
+    await page
+      .getByLabel('Conte o que aparece quando você tenta entrar')
+      .fill('Não consigo entrar depois de trocar de aparelho.');
     await page.getByRole('button', { name: 'Pedir ajuda' }).click();
     await expect(page).toHaveURL(/\/suporte\/acesso\/recebido$/);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();

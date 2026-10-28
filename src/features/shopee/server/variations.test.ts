@@ -14,7 +14,14 @@ const expected = {
 };
 const actual = {
   tier_variation: expected.tier_variation,
-  model: [{ tier_index: [0], model_sku: 'blue', price_info: [{ original_price: 20 }] }],
+  model: [
+    {
+      tier_index: [0],
+      model_sku: 'blue',
+      price_info: [{ original_price: 20 }],
+      stock_info_v2: { summary_info: { total_available_stock: 2 } },
+    },
+  ],
 };
 const transport = (handler: (url: URL, init: RequestInit) => Response | Promise<Response>) =>
   ((input: string | URL | Request, init?: RequestInit) =>
@@ -92,3 +99,31 @@ test('combinações existentes incompatíveis são preservadas sem escrita', asy
   ).rejects.toThrow('conferência');
   expect(writes).toBe(0);
 });
+
+for (const stock of [undefined, 0, 3]) {
+  test(`refuses activation when expected stock is 2 and remote stock is ${stock}`, async () => {
+    let writes = 0;
+    await expect(
+      publishProductVariations(
+        config,
+        access,
+        42,
+        expected,
+        transport((_url, init) => {
+          if (init.method === 'POST') writes++;
+          return envelope({
+            ...actual,
+            model: actual.model.map((model) => ({
+              ...model,
+              stock_info_v2:
+                stock === undefined
+                  ? undefined
+                  : { summary_info: { total_available_stock: stock } },
+            })),
+          });
+        }),
+      ),
+    ).rejects.toThrow('conferência');
+    expect(writes).toBe(0);
+  });
+}

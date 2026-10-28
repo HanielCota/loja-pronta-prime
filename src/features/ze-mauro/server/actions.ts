@@ -2,7 +2,7 @@
 
 import { runAsStudent } from '@/features/support/server/impersonation';
 import { and, eq } from 'drizzle-orm';
-import { revalidatePath } from 'next/cache';
+import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { requireProductAction } from '@/features/products/server/access';
 import { isProgressId } from '@/features/sll/progress-rules';
@@ -54,8 +54,8 @@ export async function setZeLessonCompletion(form: FormData): Promise<void> {
           set: { currentLessonId: lessonId, lastAccessedAt: now, updatedAt: now },
         });
     });
-    revalidatePath('/ze-mauro');
-    revalidatePath(`/ze-mauro/aula/${lessonId}`);
+    // Completion is private; keep the shared published catalog cached for other students.
+    refresh();
     redirect(`/ze-mauro/aula/${lessonId}?resultado=saved`);
   });
 }

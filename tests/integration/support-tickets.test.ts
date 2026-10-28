@@ -38,7 +38,7 @@ mock.module('@/server/email/send', () => ({
   sendEmailInBackground: () => {},
 }));
 
-const { appendStaffMessage, createTicket, markTicketRead } =
+const { appendRequesterMessage, appendStaffMessage, createTicket, markTicketRead } =
   await import('@/features/support/server/tickets');
 const { closeIdleTickets, applyRetention } = await import('@/features/support/server/maintenance');
 const { getStaffTicket } = await import('@/features/support-desk/server/queries');
@@ -337,15 +337,24 @@ test('ação da equipe fica registrada e sobrevive à conta apagada, sem nome', 
   await db.delete(staffAuditLog).where(eq(staffAuditLog.targetId, agentId));
 });
 
-
 test('requester context hides ombudsman tickets from agents but keeps them for supervisors', async () => {
   const current = await openTicket();
   const complaint = await openTicket();
-  await db.update(supportTickets).set({ queue: 'ombudsman', subject: 'Private complaint' }).where(eq(supportTickets.id, complaint.id));
+  await db
+    .update(supportTickets)
+    .set({ queue: 'ombudsman', subject: 'Private complaint' })
+    .where(eq(supportTickets.id, complaint.id));
   const agentView = await getStaffTicket(current.number, agent);
-  expect(agentView?.requester?.otherTickets.some((ticket) => ticket.number === complaint.number)).toBe(false);
-  const supervisorView = await getStaffTicket(current.number, { ...agent, role: 'support_supervisor' });
-  expect(supervisorView?.requester?.otherTickets.some((ticket) => ticket.number === complaint.number)).toBe(true);
+  expect(
+    agentView?.requester?.otherTickets.some((ticket) => ticket.number === complaint.number),
+  ).toBe(false);
+  const supervisorView = await getStaffTicket(current.number, {
+    ...agent,
+    role: 'support_supervisor',
+  });
+  expect(
+    supervisorView?.requester?.otherTickets.some((ticket) => ticket.number === complaint.number),
+  ).toBe(true);
 });
 
 test('support requester context respects hidden presence', async () => {
@@ -366,18 +375,33 @@ test('support requester context respects hidden presence', async () => {
 
 test('retention retries failed bucket deletions and marks only successful deletions as purged', async () => {
   const current = await openTicket();
-  const [message] = await db.select({ id: supportTicketMessages.id }).from(supportTicketMessages).where(eq(supportTicketMessages.ticketId, current.id));
+  const [message] = await db
+    .select({ id: supportTicketMessages.id })
+    .from(supportTicketMessages)
+    .where(eq(supportTicketMessages.ticketId, current.id));
   const key = `support/${current.id}/retention.png`;
-  const [attachment] = await db.insert(supportTicketAttachments).values({
-    ticketId: current.id,
-    messageId: message!.id,
-    storageKey: key,
-    fileName: 'retention.png',
-    mimeType: 'image/png',
-    sizeBytes: 1,
-  }).returning({ id: supportTicketAttachments.id });
-  await db.update(supportTickets).set({ status: 'closed', closedAt: new Date(Date.now() - 200 * DAY_MS) }).where(eq(supportTickets.id, current.id));
-  const readAttachment = async () => (await db.select().from(supportTicketAttachments).where(eq(supportTicketAttachments.id, attachment!.id)))[0]!;
+  const [attachment] = await db
+    .insert(supportTicketAttachments)
+    .values({
+      ticketId: current.id,
+      messageId: message!.id,
+      storageKey: key,
+      fileName: 'retention.png',
+      mimeType: 'image/png',
+      sizeBytes: 1,
+    })
+    .returning({ id: supportTicketAttachments.id });
+  await db
+    .update(supportTickets)
+    .set({ status: 'closed', closedAt: new Date(Date.now() - 200 * DAY_MS) })
+    .where(eq(supportTickets.id, current.id));
+  const readAttachment = async () =>
+    (
+      await db
+        .select()
+        .from(supportTicketAttachments)
+        .where(eq(supportTicketAttachments.id, attachment!.id))
+    )[0]!;
   bucket.failRemove = true;
   try {
     await applyRetention();
@@ -388,4 +412,53 @@ test('retention retries failed bucket deletions and marks only successful deleti
   await applyRetention();
   expect((await readAttachment()).purgedAt).toBeInstanceOf(Date);
   expect(bucket.removals).toContain(key);
+});
+
+test('ten concurrent replies use the transaction connection without exhausting the pool', async () => {
+  const ticket = await openTicket();
+  const results = await Promise.allSettled(
+    Array.from({ length: 10 }, (_, index) =>
+      appendRequesterMessage(
+        ticket.id,
+        { id: studentId, name: 'Concurrent requester' },
+        `Reply ${index}`,
+        [],
+      ),
+    ),
+  );
+  expect(results.filter((result) => result.status === 'rejected')).toEqual([]);
+  const messages = await db
+    .select()
+    .from(supportTicketMessages)
+    .where(eq(supportTicketMessages.ticketId, ticket.id));
+  expect(messages).toHaveLength(11);
+}, 15000);
+
+test('concurrent submissions enforce the three-ticket account limit and retain idempotency', async () => {
+  const id = randomUUID();
+  await db
+    .insert(user)
+    .values({ id, email: `${id}@example.invalid`, name: 'Concurrent requester' });
+  const input = {
+    requester: { id, email: `${id}@example.invalid`, name: 'Concurrent requester' },
+    channel: 'platform' as const,
+    draft: { topicId: 'access', situationId: 'cant-login', description: 'Concurrent submission' },
+    context: { product: null, lessonId: null, storePhase: null, errorDigest: null, pagePath: null },
+    assistantAnswerId: null,
+    files: [],
+    submissionId: randomUUID(),
+  };
+  try {
+    const inputs = Array.from({ length: 4 }, () => ({ ...input, submissionId: randomUUID() }));
+    const outcomes = await Promise.all(inputs.map(openTicketFlow));
+    expect(outcomes.filter((outcome) => outcome.ok)).toHaveLength(3);
+    expect(outcomes.filter((outcome) => !outcome.ok && outcome.status === 429)).toHaveLength(1);
+    const rows = await db.select().from(supportTickets).where(eq(supportTickets.requesterId, id));
+    expect(rows).toHaveLength(3);
+    const successful = inputs[outcomes.findIndex((outcome) => outcome.ok)]!;
+    expect((await openTicketFlow(successful)).ok).toBe(true);
+  } finally {
+    await db.delete(supportTickets).where(eq(supportTickets.requesterId, id));
+    await db.delete(user).where(eq(user.id, id));
+  }
 });
