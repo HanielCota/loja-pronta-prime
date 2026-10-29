@@ -1,4 +1,4 @@
-import { and, eq, gt, isNull, lte } from 'drizzle-orm';
+import { and, eq, gt, isNull, lte, or } from 'drizzle-orm';
 import type { db } from '@/server/db';
 import {
   hotmartProductMappings,
@@ -16,7 +16,11 @@ type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export async function reconcileProductAccess(tx: Transaction, userId: string, product: ProductId) {
   const manual = await tx.query.manualProductGrants.findFirst({
     columns: { userId: true },
-    where: and(eq(manualProductGrants.userId, userId), eq(manualProductGrants.product, product)),
+    where: and(
+      eq(manualProductGrants.userId, userId),
+      eq(manualProductGrants.product, product),
+      or(isNull(manualProductGrants.expiresAt), gt(manualProductGrants.expiresAt, new Date())),
+    ),
   });
   const [purchase] = await tx
     .select({ transaction: hotmartPurchases.transaction })

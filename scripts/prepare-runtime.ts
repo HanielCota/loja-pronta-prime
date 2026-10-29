@@ -101,3 +101,16 @@ if (!salesImport.success)
 console.log(
   'Server, assets, fonts, migrations, worker and maintenance commands prepared in build/runtime.',
 );
+
+// Ship the evidence-based access review command, but never execute it during build.
+const manualAccessReview = await Bun.build({
+  entrypoints: ['scripts/reconcile-manual-access.ts'],
+  outdir: runtimeDirectory,
+  naming: 'reconcile-manual-access.mjs',
+  target: 'node',
+  format: 'esm',
+  external: ['pg-native'],
+  minify: true,
+});
+if (!manualAccessReview.success)
+  throw new AggregateError(manualAccessReview.logs, 'Failed to prepare manual access review.');

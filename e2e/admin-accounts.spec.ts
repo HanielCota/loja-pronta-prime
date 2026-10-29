@@ -109,6 +109,9 @@ test('editar, liberar produto, desconectar e bloquear uma conta tem efeito real'
     await expect(page.getByRole('heading', { name: 'Maria Conta', exact: true })).toBeVisible();
     await expect(page.getByLabel('Email da aluna')).toHaveValue(email);
     await page.getByLabel('Motivo da alteração').fill('Teste da liberação manual');
+    await page
+      .getByLabel('Data da compra ou do vencimento')
+      .fill(new Date().toISOString().slice(0, 10));
     await page.getByRole('button', { name: 'Salvar alteração', exact: true }).click();
     await expect(page.getByRole('region', { name: 'Resumo', exact: true })).toContainText('SLL');
     await page.getByRole('button', { name: 'Desconectar de todos os aparelhos' }).click();
@@ -247,6 +250,7 @@ test('criar conta pelo painel: senha temporária, produto e email repetido', asy
   await page.getByLabel('Nome completo').fill('Conta Repetida');
   await page.getByRole('textbox', { name: 'Email' }).fill(admin.email);
   await page.getByRole('checkbox', { name: 'SLL' }).check();
+  await page.locator('[name="termDate-sll"]').fill(new Date().toISOString().slice(0, 10));
   await page.getByRole('button', { name: 'Criar conta' }).click();
   await expect(page.getByText('Já existe uma conta com esse email.')).toBeVisible();
   await expect(page.getByLabel('Nome completo')).toHaveValue('Conta Repetida');

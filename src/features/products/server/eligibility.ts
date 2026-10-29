@@ -5,7 +5,8 @@ import { studentProducts } from '@/server/db/schema';
 export function effectiveProductAccess() {
   return sql`(
     exists (select 1 from manual_product_grants m
-      where m.user_id = ${studentProducts.userId} and m.product = ${studentProducts.product})
+      where m.user_id = ${studentProducts.userId} and m.product = ${studentProducts.product}
+        and (m.expires_at is null or m.expires_at > now()))
     or exists (select 1 from hotmart_purchases p
       join hotmart_product_mappings m on m.product_ucode = p.product_ucode
       where p.user_id = ${studentProducts.userId} and m.access = ${studentProducts.product}

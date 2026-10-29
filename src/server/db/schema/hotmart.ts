@@ -106,6 +106,8 @@ export const manualProductGrants = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
     product: text('product', { enum: ['sll', 'loja-pronta'] }).notNull(),
+    // Null is reserved for legacy grants awaiting an evidence-based review.
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
   },
   (table) => [primaryKey({ columns: [table.userId, table.product] })],
 );

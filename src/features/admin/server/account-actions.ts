@@ -29,7 +29,14 @@ export type NewAccountState = {
   /** Cresce a cada resposta: o formulário recomeça com o que foi digitado. */
   attempt: number;
   errors?: NewAccountErrors;
-  values?: { name: string; email: string; role: string; access: string; products: string[] };
+  values?: {
+    name: string;
+    email: string;
+    role: string;
+    access: string;
+    products: string[];
+    terms?: Record<string, string>;
+  };
 };
 
 /**
@@ -49,6 +56,14 @@ export async function createAccount(
     role: String(data.get('role') ?? 'student'),
     access: String(data.get('access') ?? 'email'),
     products: data.getAll('products').map(String),
+    terms: Object.fromEntries(
+      ['sll', 'loja-pronta'].flatMap((product) =>
+        ['termMode', 'termDate'].map((field) => [
+          `${field}-${product}`,
+          String(data.get(`${field}-${product}`) ?? ''),
+        ]),
+      ),
+    ),
   };
   const fail = (errors: NewAccountErrors): NewAccountState => ({
     attempt: previous.attempt + 1,
@@ -95,7 +110,10 @@ export async function createAccount(
       for (const product of account.products) {
         await tx.insert(studentProducts).values({ userId, product }).onConflictDoNothing();
         // Manual: um reembolso da Hotmart depois não tira o que a admin liberou.
-        await tx.insert(manualProductGrants).values({ userId, product }).onConflictDoNothing();
+        await tx
+          .insert(manualProductGrants)
+          .values({ userId, product, expiresAt: account.expirations[product]! })
+          .onConflictDoNothing();
         await tx.insert(productAccessEvents).values({
           id: randomUUID(),
           targetUserId: userId,
@@ -103,6 +121,7 @@ export async function createAccount(
           product,
           action: 'granted',
           reason: 'Conta criada no painel',
+          expiresAt: account.expirations[product]!,
         });
       }
     });
