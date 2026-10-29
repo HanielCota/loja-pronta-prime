@@ -31,7 +31,7 @@ export async function reconcileManualAccess(pool: Pool, apply = false) {
         RETURNING g.user_id,g.product,g.expires_at
       ) INSERT INTO product_access_events(id,target_user_id,product,action,reason,expires_at)
         SELECT gen_random_uuid()::text,user_id,product,'granted',
-          'Legacy manual term reconciled from verified purchase records; original expiry preserved',expires_at
+          'Prazo da liberação antiga conferido pelos registros de compra; vencimento original preservado',expires_at
         FROM changed RETURNING id`);
       updated = result.rowCount ?? 0;
     }

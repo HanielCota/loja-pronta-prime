@@ -52,7 +52,7 @@ migrations transactionally. A subsequent standard `bun run db:migrate` completed
 The local evidence preview found no undated grants. This does not establish production state.
 
 All 804 unit tests passed with `bun test --isolate src`; the regular combined run intermittently
-failed the unrelated bundled-font rendering assertion, which also passed on its own. The 173
+failed the unrelated bundled-font rendering assertion, which also passed on its own. The 164
 integration tests passed (nine pre-existing stress cases skipped). Browser checks covered account
 creation, term changes, administrator restrictions, both themes, mobile/desktop, accessibility and
 submission without JavaScript.
