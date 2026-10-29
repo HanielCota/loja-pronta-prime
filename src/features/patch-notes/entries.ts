@@ -10,6 +10,17 @@ type PatchNoteDay = {
 /** Curated daily notes, newest first. Dates follow America/Sao_Paulo. */
 export const patchNotes: readonly PatchNoteDay[] = [
   {
+    date: '2026-10-29',
+    changes: [
+      {
+        kind: 'Correção',
+        title: 'Vencimento dos acessos liberados no painel',
+        description:
+          'Após a publicação e a atualização do banco, liberar um produto ou criar uma conta com acesso passa a exigir um prazo por produto. A compra original pode ser usada para calcular um ano, sem reiniciar a validade. Acessos antigos sem data aparecem para revisão; a conferência pelos registros de compra precisa ser executada separadamente. Importar lojas antigas deixa de criar acesso sem vencimento.',
+      },
+    ],
+  },
+  {
     date: '2026-10-28',
     changes: [
       {

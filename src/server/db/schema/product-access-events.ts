@@ -15,6 +15,7 @@ export const productAccessEvents = pgTable(
     product: text('product', { enum: ['sll', 'loja-pronta'] }).notNull(),
     action: text('action', { enum: ['granted', 'revoked'] }).notNull(),
     reason: text('reason').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => [

@@ -526,6 +526,13 @@
       "when": 1793132711049,
       "tag": "0074_support-visit-single-end",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1793289939772,
+      "tag": "0075_manual-access-expiry",
+      "breakpoints": true
     }
   ]
 }

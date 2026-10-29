@@ -1,5 +1,6 @@
 'use client';
 
+import { AccessTermFields } from './access-term-fields';
 import { useActionState, useEffect, useRef } from 'react';
 import { KeyRoundIcon, MailIcon, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -86,16 +87,29 @@ export function NewAccountForm() {
       <fieldset className="flex flex-col gap-3">
         <legend className="mb-1 text-body font-semibold text-foreground">Produtos liberados</legend>
         {PRODUCT_IDS.map((id) => (
-          <label className={optionClass} key={id}>
-            <input
-              defaultChecked={values ? values.products.includes(id) : false}
-              name="products"
-              type="checkbox"
-              value={id}
-            />
-            {PRODUCTS[id].name}
-          </label>
+          <div className="group/product flex flex-col gap-3" key={id}>
+            <label className={optionClass}>
+              <input
+                defaultChecked={values ? values.products.includes(id) : false}
+                name="products"
+                type="checkbox"
+                value={id}
+              />
+              {PRODUCTS[id].name}
+            </label>
+            <fieldset
+              className="hidden group-has-[[name=products]:checked]/product:block"
+              aria-label={`Prazo de ${PRODUCTS[id].name}`}
+            >
+              <AccessTermFields
+                suffix={`-${id}`}
+                mode={values?.terms?.[`termMode-${id}`]}
+                date={values?.terms?.[`termDate-${id}`]}
+              />
+            </fieldset>
+          </div>
         ))}
+        <FieldError>{errors.terms}</FieldError>
         <p className="text-sm text-muted-foreground">
           Sem nenhum, a conta entra mas ainda não vê as áreas. Dá pra liberar depois.
         </p>

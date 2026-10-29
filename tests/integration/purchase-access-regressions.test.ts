@@ -276,6 +276,8 @@ test('offer reconciliation respects area exclusions and manual grants survive re
   ).toEqual(['loja-pronta']);
   expect((await getStudentExperience(id)).allowed).not.toContain('ze');
   accessForm.set('action', 'granted');
+  accessForm.set('termMode', 'until');
+  accessForm.set('termDate', new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10));
   await changeStudentProductAccess({ saved: false, message: '' }, accessForm);
   await processHotmartEvent(event(id, code, transaction, 'PURCHASE_REFUNDED'));
   expect(

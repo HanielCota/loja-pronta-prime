@@ -1,5 +1,7 @@
 'use server';
 
+import { parseManualAccessTerm } from '@/features/products/manual-access-term';
+
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { effectiveProductAccess } from '@/features/products/server/eligibility';
 import { desc } from 'drizzle-orm';
@@ -135,40 +137,25 @@ function savedBlockData(
 
 export type ProductAccessState = { message: string; saved: boolean; currentAccess?: string[] };
 
-type ProductAccessChange = 'changed' | 'purchase' | 'unchanged';
+type ProductAccessChange = 'changed' | 'unchanged';
 
 async function grantProductAccess(
   tx: DbTransaction,
   userId: string,
   product: 'sll' | 'loja-pronta',
+  expiresAt: Date,
 ): Promise<ProductAccessChange> {
-  // Uma linha de acesso pode sobrar de uma compra vencida: só conta "já tinha pela compra"
-  // quando a compra ainda vale, senão a mensagem mentiria para a admin.
-  const [effective] = await tx
-    .select({ userId: studentProducts.userId })
-    .from(studentProducts)
-    .where(
-      and(
-        eq(studentProducts.userId, userId),
-        eq(studentProducts.product, product),
-        effectiveProductAccess(),
-      ),
-    );
-  const [inserted] = await tx
-    .insert(studentProducts)
-    .values({ userId, product })
-    .onConflictDoNothing()
-    .returning({ userId: studentProducts.userId });
-  // A liberação manual fica guardada mesmo quando a compra já dava acesso: assim um
-  // reembolso depois não tira o que a admin quis garantir.
+  await tx.insert(studentProducts).values({ userId, product }).onConflictDoNothing();
   const [granted] = await tx
     .insert(manualProductGrants)
-    .values({ userId, product })
-    .onConflictDoNothing()
+    .values({ userId, product, expiresAt })
+    .onConflictDoUpdate({
+      target: [manualProductGrants.userId, manualProductGrants.product],
+      set: { expiresAt },
+      setWhere: sql`${manualProductGrants.expiresAt} is distinct from ${expiresAt}`,
+    })
     .returning({ userId: manualProductGrants.userId });
-  if (!inserted && !granted) return 'unchanged';
-  if (effective) return 'purchase';
-  return 'changed';
+  return granted ? 'changed' : 'unchanged';
 }
 
 async function revokeProductAccess(
@@ -237,6 +224,13 @@ export async function changeStudentProductAccess(
     return { message: 'Informe um email válido e um motivo de 3 a 500 caracteres.', saved: false };
   }
 
+  const term =
+    actionValue === 'granted'
+      ? parseManualAccessTerm(formData, '', new Date(), { allowExpired: true })
+      : null;
+  if (term && !term.ok) return { message: term.message, saved: false };
+  const expiresAt = term?.ok ? term.expiresAt : null;
+
   const target = await db.query.user.findFirst({
     columns: { id: true },
     where: eq(user.email, email),
@@ -245,31 +239,29 @@ export async function changeStudentProductAccess(
 
   const product = productValue as 'sll' | 'loja-pronta';
   const action = actionValue as 'granted' | 'revoked';
-  // 'purchase': já tinha acesso pela compra e agora a liberação manual também ficou guardada.
-  const outcome = await db.transaction(
-    async (tx): Promise<'changed' | 'purchase' | 'unchanged'> => {
-      await tx.execute(
-        sql`select pg_advisory_xact_lock_shared(hashtext('hotmart-product-mappings'))`,
-      );
-      // Mesma trava do aviso da Hotmart, para os dois não recalcularem o acesso ao mesmo tempo.
-      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${target.id}))`);
-      const result =
-        action === 'granted'
-          ? await grantProductAccess(tx, target.id, product)
-          : await revokeProductAccess(tx, target.id, product);
-      if (result === 'unchanged') return 'unchanged';
+  const outcome = await db.transaction(async (tx): Promise<ProductAccessChange> => {
+    await tx.execute(
+      sql`select pg_advisory_xact_lock_shared(hashtext('hotmart-product-mappings'))`,
+    );
+    // Mesma trava do aviso da Hotmart, para os dois não recalcularem o acesso ao mesmo tempo.
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${target.id}))`);
+    const result =
+      action === 'granted'
+        ? await grantProductAccess(tx, target.id, product, expiresAt!)
+        : await revokeProductAccess(tx, target.id, product);
+    if (result === 'unchanged') return 'unchanged';
 
-      await tx.insert(productAccessEvents).values({
-        id: randomUUID(),
-        targetUserId: target.id,
-        actorUserId: session.user.id,
-        product,
-        action,
-        reason,
-      });
-      return result;
-    },
-  );
+    await tx.insert(productAccessEvents).values({
+      id: randomUUID(),
+      targetUserId: target.id,
+      actorUserId: session.user.id,
+      product,
+      action,
+      reason,
+      expiresAt,
+    });
+    return result;
+  });
 
   // Mesma regra da tela de contas: linha de compra vencida não é acesso atual.
   const access = await db
@@ -278,18 +270,20 @@ export async function changeStudentProductAccess(
     .where(and(eq(studentProducts.userId, target.id), effectiveProductAccess()));
   revalidateAdminOverview();
   revalidatePath('/admin/acessos');
+  revalidatePath(`/admin/contas/${target.id}`);
+  revalidatePath('/perfil');
   revalidatePath('/');
   return {
     message:
-      outcome === 'purchase'
-        ? 'Essa conta já tinha acesso pela compra. A liberação manual foi registrada e continua valendo se a compra for reembolsada.'
-        : outcome === 'changed'
-          ? action === 'granted'
-            ? 'Acesso liberado e alteração registrada.'
-            : 'Acesso removido e alteração registrada.'
-          : action === 'granted'
-            ? 'Essa conta já tinha esse acesso. Nenhuma alteração foi feita.'
-            : 'Essa conta já não tinha esse acesso. Nenhuma alteração foi feita.',
+      outcome === 'changed'
+        ? action === 'granted'
+          ? expiresAt! <= new Date()
+            ? 'Prazo vencido registrado. Esta liberação não dá acesso. Outras compras válidas continuam sendo respeitadas.'
+            : 'Prazo do acesso salvo e alteração registrada. Outras compras válidas continuam sendo respeitadas.'
+          : 'Acesso removido e alteração registrada.'
+        : action === 'granted'
+          ? 'Essa conta já tinha esse acesso. Nenhuma alteração foi feita.'
+          : 'Essa conta já não tinha esse acesso. Nenhuma alteração foi feita.',
     saved: outcome !== 'unchanged',
     currentAccess: access.map((item) => item.product),
   };
@@ -306,6 +300,7 @@ export async function getRecentProductAccessEvents() {
       product: productAccessEvents.product,
       action: productAccessEvents.action,
       reason: productAccessEvents.reason,
+      expiresAt: productAccessEvents.expiresAt,
       createdAt: productAccessEvents.createdAt,
     })
     .from(productAccessEvents)

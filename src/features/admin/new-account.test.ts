@@ -14,6 +14,10 @@ const valid = {
   email: ' Maria@Email.com ',
   role: 'student',
   access: 'email',
+  'termMode-sll': 'purchase',
+  'termDate-sll': new Date().toISOString().slice(0, 10),
+  'termMode-loja-pronta': 'purchase',
+  'termDate-loja-pronta': new Date().toISOString().slice(0, 10),
 };
 
 describe('parseNewAccount', () => {
@@ -27,6 +31,7 @@ describe('parseNewAccount', () => {
         products: ['sll', 'loja-pronta'],
         access: 'email',
         password: null,
+        expirations: { sll: expect.any(Date), 'loja-pronta': expect.any(Date) },
       },
     });
   });
@@ -67,4 +72,12 @@ describe('parseNewAccount', () => {
       errors: { form: 'Confira as escolhas e tente de novo.' },
     });
   });
+});
+
+test('selected products require an evidenced term independently', () => {
+  expect(parseNewAccount(form({ ...valid, products: ['sll'], 'termDate-sll': '' }))).toEqual({
+    ok: false,
+    errors: { terms: 'Escolha o tipo de prazo e informe uma data válida.' },
+  });
+  expect(parseNewAccount(form({ ...valid, products: [] })).ok).toBe(true);
 });

@@ -3,6 +3,22 @@
 Dates use the America/Sao_Paulo time zone. Operational verification and rollout limits are
 recorded separately from code integration.
 
+## 2026-10-29
+
+### Dated administrative access
+
+- Require a purchase anniversary or an explicit final Brasília calendar date for every new
+  administrative grant, including each product selected during account creation.
+- Audit the stored deadline, allow corrections to existing manual terms, and enforce expiry
+  in membership reads, Hotmart reconciliation, expert selection and profile validity.
+- Add migration `0075_manual-access-expiry` and an admin-only paginated review of old undated
+  grants. Preserve unknown legacy terms until verified; do not infer purchase dates.
+- Ship `reconcile-manual-access.mjs`: preview by default, explicit application updates only
+  undated grants backed by dated, active, non-revoked purchases and records an audit event.
+  Expired evidence restores the original expired deadline; reruns never renew dated access.
+- Stop the legacy store importer from creating undated entitlements from store references.
+  Production migration, reconciliation and rollout must be performed separately.
+
 ## 2026-10-28
 
 ### Privacy contact on WhatsApp

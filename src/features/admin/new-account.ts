@@ -1,3 +1,4 @@
+import { parseManualAccessTerm } from '@/features/products/manual-access-term';
 import { z } from 'zod';
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '@/config/auth';
 import { PRODUCT_IDS, type ProductId } from '@/config/products';
@@ -11,11 +12,14 @@ export type NewAccount = {
   admin: boolean;
   products: ProductId[];
   access: NewAccountAccess;
+  expirations: Partial<Record<ProductId, Date>>;
   /** Só com `access: 'password'`: a senha temporária, que ela troca no primeiro acesso. */
   password: string | null;
 };
 
-export type NewAccountErrors = Partial<Record<'name' | 'email' | 'password' | 'form', string>>;
+export type NewAccountErrors = Partial<
+  Record<'name' | 'email' | 'password' | 'form' | 'terms', string>
+>;
 
 const schema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -66,6 +70,12 @@ export function parseNewAccount(
   if (!parsed.success || Object.keys(errors).length) return { ok: false, errors };
 
   const products = PRODUCT_IDS.filter((id) => data.getAll('products').includes(id));
+  const expirations: Partial<Record<ProductId, Date>> = {};
+  for (const product of products) {
+    const term = parseManualAccessTerm(data, `-${product}`);
+    if (!term.ok) return { ok: false, errors: { terms: term.message } };
+    expirations[product] = term.expiresAt;
+  }
   return {
     ok: true,
     account: {
@@ -73,6 +83,7 @@ export function parseNewAccount(
       email: parsed.data.email,
       admin: parsed.data.role === 'admin',
       products,
+      expirations,
       access: parsed.data.access,
       password: parsed.data.access === 'password' ? password : null,
     },

@@ -66,7 +66,13 @@ if (products.length) {
     .values(products.map((product) => ({ userId: user.id, product })));
   await db
     .insert(manualProductGrants)
-    .values(products.map((product) => ({ userId: user.id, product })));
+    .values(
+      products.map((product) => ({
+        userId: user.id,
+        product,
+        expiresAt: new Date(Date.now() + 365 * 86400000),
+      })),
+    );
 }
 
 if (products.includes('loja-pronta')) {
