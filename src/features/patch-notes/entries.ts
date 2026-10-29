@@ -10,6 +10,29 @@ type PatchNoteDay = {
 /** Curated daily notes, newest first. Dates follow America/Sao_Paulo. */
 export const patchNotes: readonly PatchNoteDay[] = [
   {
+    date: '2026-10-29',
+    changes: [
+      {
+        kind: 'Correção',
+        title: 'Compra preservada após troca de email',
+        description:
+          'Após a publicação desta atualização, novos avisos da mesma compra mantêm o acesso na conta original, mesmo se o email mudar ou passar a ser usado por outra conta.',
+      },
+      {
+        kind: 'Correção',
+        title: 'Conferência de anúncios ativos',
+        description:
+          'Após a publicação desta atualização, a conferência de uma publicação com resultado incerto só confirma anúncios ativos na Shopee. Anúncios desativados ou bloqueados não iniciam o período de observação. A publicação real continua dependendo da liberação da integração.',
+      },
+      {
+        kind: 'Correção',
+        title: 'Envio da marca após trocar a conexão',
+        description:
+          'Após a publicação desta atualização, um envio pendente de uma loja ou aplicativo anterior deixa de impedir o envio da marca na conexão atual. Pendências da mesma conexão continuam pedindo conferência. O envio real depende da liberação da integração.',
+      },
+    ],
+  },
+  {
     date: '2026-10-28',
     changes: [
       {

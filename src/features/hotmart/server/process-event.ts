@@ -149,12 +149,12 @@ async function applyPurchaseEvent(
 ): Promise<string> {
   let previous = initialPrevious;
   const active = effect === 'grant';
-  // Com email trocado, a compra segue na conta que ela já usa, sem procurar pelo novo.
+  // Purchase ownership survives email changes in either the platform or Hotmart.
   let linkedUserId =
     mismatch === 'email'
       ? (previous?.userId ?? buyerId)
-      : (buyerId ??
-        previous?.userId ??
+      : (previous?.userId ??
+        buyerId ??
         (
           await tx.query.user.findFirst({
             columns: { id: true },
@@ -282,8 +282,7 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
     columns: { transaction: true },
     where: eq(historicalSllPurchases.transaction, transaction),
   });
-  const keepsKnownAccount =
-    knownMismatch === 'product' || (knownMismatch === 'email' && Boolean(known?.userId));
+  const keepsKnownAccount = knownMismatch === 'product' || Boolean(known?.userId);
 
   let buyerId: string | null = null;
   if (

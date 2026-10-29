@@ -89,6 +89,8 @@ export async function queueStoreChange(
         .where(
           and(
             eq(storeAutomationJobs.userId, userId),
+            eq(storeAutomationJobs.shopId, String(access.shopId)),
+            eq(storeAutomationJobs.applicationId, shopeeApplicationId(config)),
             eq(storeAutomationJobs.kind, 'brand'),
             inArray(storeAutomationJobs.status, ['pending', 'running', 'unknown']),
           ),
