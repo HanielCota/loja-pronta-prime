@@ -3,6 +3,20 @@
 Dates use the America/Sao_Paulo time zone. Operational verification and rollout limits are
 recorded separately from code integration.
 
+## 2026-10-29
+
+### Purchase ownership and Shopee reconciliation
+
+- Preserve an existing Hotmart purchase owner across platform email changes and reuse of the old
+  email address. Later purchase events no longer create or grant access to another account.
+- Require a remote `NORMAL` status when reconciling simple listings as well as variations, before
+  confirming publication, advancing store setup or starting the observation period.
+- Scope unresolved brand-publication guards to the current shop and application in both direct
+  queueing and automatic scanning. Preserve uncertain results for previous destinations without
+  retrying their writes; the current destination still prevents duplicate unresolved sends.
+- Cover email reuse, refunds, live/unlisted/banned reconciliation and destination changes with
+  isolated database regression tests. Production rollout and real Shopee writes remain unverified.
+
 ## 2026-10-28
 
 ### Privacy contact on WhatsApp

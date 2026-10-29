@@ -172,6 +172,8 @@ export async function queueAutomaticBrands(
             .where(
               and(
                 eq(storeAutomationJobs.userId, storeBrand.userId),
+                eq(storeAutomationJobs.applicationId, shopeeConnections.applicationId),
+                sql`${storeAutomationJobs.shopId} = ${shopeeConnections.shopId}::text`,
                 eq(storeAutomationJobs.kind, 'brand'),
                 inArray(storeAutomationJobs.status, ['pending', 'running', 'unknown']),
               ),
