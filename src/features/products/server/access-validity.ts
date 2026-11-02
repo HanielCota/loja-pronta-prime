@@ -1,4 +1,4 @@
-import { and, eq, gt, isNull, lte, max, notExists, sql } from 'drizzle-orm';
+import { and, eq, gt, isNull, lte, max, notExists, or, sql } from 'drizzle-orm';
 import type { ProductId } from '@/config/products';
 import { db } from '@/server/db';
 import {
@@ -10,11 +10,7 @@ import {
 } from '@/server/db/schema';
 import type { AccessValidity } from '../access-validity';
 
-/**
- * Até quando vale cada área dela, pelas mesmas regras de `effectiveProductAccess`: liberação
- * manual não acaba; compra da Hotmart (ou histórica do SLL) vale até a data final mais longa.
- * Só leitura: mostrar a data nunca muda o acesso.
- */
+/** Show the longest valid purchase/manual term; unresolved legacy grants retain their old status. */
 export async function getAccessValidity(userId: string): Promise<{
   byProduct: Partial<Record<ProductId, AccessValidity>>;
   /** A hora da leitura, pra contar os dias que faltam sem chamar o relógio na renderização. */
@@ -23,9 +19,14 @@ export async function getAccessValidity(userId: string): Promise<{
   const now = sql`now()`;
   const [manual, purchases, historical] = await Promise.all([
     db
-      .select({ product: manualProductGrants.product })
+      .select({ product: manualProductGrants.product, expiresAt: manualProductGrants.expiresAt })
       .from(manualProductGrants)
-      .where(eq(manualProductGrants.userId, userId)),
+      .where(
+        and(
+          eq(manualProductGrants.userId, userId),
+          or(isNull(manualProductGrants.expiresAt), gt(manualProductGrants.expiresAt, now)),
+        ),
+      ),
     db
       .select({
         product: hotmartProductMappings.access,
@@ -81,7 +82,10 @@ export async function getAccessValidity(userId: string): Promise<{
 
   for (const { product, expiresAt } of purchases) extend(product, expiresAt);
   extend('sll', historical[0]?.expiresAt);
-  // Por último: a liberação manual vale mais que qualquer data de compra.
-  for (const { product } of manual) result[product] = { kind: 'no-end' };
+  // Only unresolved legacy grants can still have no end date.
+  for (const { product, expiresAt } of manual) {
+    if (expiresAt) extend(product, expiresAt);
+    else result[product] = { kind: 'no-end' };
+  }
   return { byProduct: result, checkedAt: new Date() };
 }

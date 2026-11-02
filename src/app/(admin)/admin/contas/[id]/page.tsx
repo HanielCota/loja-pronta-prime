@@ -1,3 +1,6 @@
+import { getAccessValidity } from '@/features/products/server/access-validity';
+import { accessValidityLabel, formatAccessDate } from '@/features/products/access-validity';
+import { getAccountManualGrants } from '@/features/admin/server/manual-access-review';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -53,6 +56,10 @@ export default async function AdminAccountPage({
   const { criada } = await searchParams;
   const createdNotice = criada ? CREATED_NOTICES[criada] : undefined;
   const session = await requireAdmin(`/admin/contas/${id}`);
+  const [validity, manualGrants] = await Promise.all([
+    getAccessValidity(id),
+    getAccountManualGrants(id),
+  ]);
   const [data, { now, presence }] = await Promise.all([getAccount(id), getLastPresence(id)]);
   if (!data) notFound();
   const lastSeen = presence
@@ -109,6 +116,14 @@ export default async function AdminAccountPage({
               </p>
             </div>
             {/* Recomeça quando o email muda: o campo já preenchido não acompanharia sozinho. */}
+            {manualGrants.map((grant) => (
+              <p className="text-body text-muted-foreground" key={grant.product}>
+                {productLabel(grant.product)} · Liberação manual:{' '}
+                {grant.expiresAt
+                  ? `até ${formatAccessDate(grant.expiresAt)}`
+                  : 'sem vencimento — confira a compra e defina o prazo abaixo'}
+              </p>
+            ))}
             <ProductAccessManager email={account.email} key={account.email} />
           </section>
         </div>
@@ -133,7 +148,7 @@ export default async function AdminAccountPage({
                   ? products
                       .map(
                         (item) =>
-                          `${productLabel(item.product)} (desde ${dateFormat.format(item.grantedAt)})`,
+                          `${productLabel(item.product)} · ${validity.byProduct[item.product] ? accessValidityLabel(validity.byProduct[item.product]!, validity.checkedAt) : 'Prazo indisponível'}`,
                       )
                       .join(', ')
                   : 'Nenhum'}

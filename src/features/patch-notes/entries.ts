@@ -30,6 +30,12 @@ export const patchNotes: readonly PatchNoteDay[] = [
         description:
           'Após a publicação desta atualização, um envio pendente de uma loja ou aplicativo anterior deixa de impedir o envio da marca na conexão atual. Pendências da mesma conexão continuam pedindo conferência. O envio real depende da liberação da integração.',
       },
+      {
+        kind: 'Correção',
+        title: 'Vencimento dos acessos liberados no painel',
+        description:
+          'Após a publicação e a atualização do banco, liberar um produto ou criar uma conta com acesso passa a exigir um prazo por produto. A compra original pode ser usada para calcular um ano, sem reiniciar a validade. Acessos antigos sem data aparecem para revisão; a conferência pelos registros de compra precisa ser executada separadamente. Importar lojas antigas deixa de criar acesso sem vencimento.',
+      },
     ],
   },
   {

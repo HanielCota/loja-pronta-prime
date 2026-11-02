@@ -256,7 +256,7 @@ export async function importLegacyStores(
     }
     existing = await existingAccounts(client, emails);
     await writeRecords(client, snapshot, existing);
-    let granted = 0;
+    const granted = 0;
     let skipped = 0;
     for (const account of existing.values()) {
       if (account.banned || account.revoked || (account.role && account.role !== 'user')) {
@@ -278,24 +278,9 @@ export async function importLegacyStores(
         skipped++;
         continue;
       }
-      const { rowCount } = await client.query(
-        `INSERT INTO student_products(user_id,product)
-        VALUES($1,'loja-pronta') ON CONFLICT DO NOTHING RETURNING user_id`,
-        [account.id],
-      );
-      if (rowCount) {
-        await client.query(
-          `INSERT INTO manual_product_grants(user_id,product)
-          VALUES($1,'loja-pronta') ON CONFLICT DO NOTHING`,
-          [account.id],
-        );
-        await client.query(
-          `INSERT INTO product_access_events(id,target_user_id,product,action,reason)
-          VALUES($1,$2,'loja-pronta','granted',$3)`,
-          [randomUUID(), account.id, `Legacy Loja Pronta membership import ${id}`],
-        );
-        granted++;
-      }
+      // Store references do not establish a paid access term. Membership must come from a
+      // dated Hotmart purchase or an explicit dated administrative grant, never this import.
+      skipped++;
     }
     await verifyLegacyRecords(client, snapshot);
     await client.query(

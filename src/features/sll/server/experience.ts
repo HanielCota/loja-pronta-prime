@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { and, asc, eq, gt, inArray, isNull, lte } from 'drizzle-orm';
+import { and, asc, eq, gt, inArray, isNull, lte, or } from 'drizzle-orm';
 import { db } from '@/server/db';
 import {
   hotmartProductMappings,
@@ -45,7 +45,13 @@ export const getStudentExperience = cache(async (userId: string) => {
     db
       .select({ product: manualProductGrants.product })
       .from(manualProductGrants)
-      .where(and(eq(manualProductGrants.userId, userId), eq(manualProductGrants.product, 'sll'))),
+      .where(
+        and(
+          eq(manualProductGrants.userId, userId),
+          eq(manualProductGrants.product, 'sll'),
+          or(isNull(manualProductGrants.expiresAt), gt(manualProductGrants.expiresAt, new Date())),
+        ),
+      ),
     db
       .select({ transaction: historicalSllPurchases.transaction })
       .from(historicalSllPurchases)

@@ -134,7 +134,11 @@ test('imports real records atomically, preserves accounts, respects ownership an
   await pool.query('DELETE FROM legacy_customers WHERE id=$1', [customers[0]!.id]);
 
   const result = await importLegacyStores(pool, input, true);
-  expect(result).toEqual({ alreadyImported: false, newAccounts: 1, granted: 2, skipped: 3 });
+  expect(result).toEqual({ alreadyImported: false, newAccounts: 1, granted: 0, skipped: 5 });
+  expect(
+    (await pool.query('SELECT * FROM manual_product_grants WHERE user_id=ANY($1::text[])', [ids]))
+      .rowCount,
+  ).toBe(0);
   const { rows: accounts } = await pool.query(
     `SELECT u.id,u.email,u.name,u.role,u.banned,u.must_change_password,a.password
     FROM "user" u JOIN account a ON a.user_id=u.id WHERE u.email=ANY($1::text[])`,

@@ -1,5 +1,6 @@
 'use client';
 
+import { AccessTermFields } from './access-term-fields';
 import { Save } from 'lucide-react';
 
 import { useActionState, useEffect } from 'react';
@@ -49,6 +50,10 @@ export function ProductAccessManager({ email }: { email?: string } = {}) {
           <option value="revoked">Remover acesso</option>
         </Select>
       </div>
+      <AccessTermFields />
+      <p className="text-sm text-muted-foreground">
+        Para remover o acesso, não é preciso preencher a data.
+      </p>
       <div className="flex flex-col gap-2">
         <Label htmlFor="access-reason">Motivo da alteração</Label>
         <Textarea
