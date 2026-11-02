@@ -18,6 +18,7 @@ const userId = randomUUID(),
   otherId = randomUUID();
 const priCode = randomUUID(),
   zeCode = randomUUID();
+const accountIds = [userId, otherId];
 beforeAll(async () => {
   for (const id of [userId, otherId])
     await db.insert(user).values({
@@ -39,7 +40,7 @@ afterAll(async () => {
   await db
     .delete(hotmartProductMappings)
     .where(inArray(hotmartProductMappings.productUcode, [priCode, zeCode]));
-  for (const id of [userId, otherId]) await db.delete(user).where(eq(user.id, id));
+  for (const id of accountIds) await db.delete(user).where(eq(user.id, id));
   await db.$client.end();
 });
 const purchase = (
@@ -109,3 +110,71 @@ test('a repetição da compra preserva a origem já registrada', async () => {
   ).toBe('ze');
   expect((await getStudentExperience(otherId)).expert).toBe('ze');
 });
+
+test.each([false, true])(
+  'purchase events preserve ownership after a platform email change (old email reused: %s)',
+  async (reused) => {
+    const originalId = randomUUID();
+    accountIds.push(originalId);
+    const originalEmail = `${originalId}@example.invalid`;
+    await db.insert(user).values({
+      id: originalId,
+      name: 'Original buyer',
+      email: originalEmail,
+      mustChangePassword: false,
+    });
+    const transaction = randomUUID();
+    const approved = purchase(priCode, transaction, originalId);
+    await processHotmartEvent(approved);
+    await db
+      .update(user)
+      .set({ email: `${originalId}-updated@example.invalid` })
+      .where(eq(user.id, originalId));
+    const replacementId = randomUUID();
+    if (reused) {
+      accountIds.push(replacementId);
+      await db.insert(user).values({
+        id: replacementId,
+        name: 'Different buyer',
+        email: originalEmail,
+        mustChangePassword: false,
+      });
+    }
+    await processHotmartEvent({
+      ...approved,
+      id: randomUUID(),
+      event: 'PURCHASE_COMPLETE',
+      creation_date: approved.creation_date + 1000,
+    });
+    const [saved] = await db
+      .select()
+      .from(hotmartPurchases)
+      .where(eq(hotmartPurchases.transaction, transaction));
+    expect(saved?.userId).toBe(originalId);
+    const accountAtOldEmail = await db.query.user.findFirst({
+      columns: { id: true },
+      where: eq(user.email, originalEmail),
+    });
+    expect(accountAtOldEmail?.id).toBe(reused ? replacementId : undefined);
+    expect(
+      await db.select().from(studentProducts).where(eq(studentProducts.userId, replacementId)),
+    ).toHaveLength(0);
+    await processHotmartEvent({
+      ...approved,
+      id: randomUUID(),
+      event: 'PURCHASE_REFUNDED',
+      creation_date: approved.creation_date + 2000,
+    });
+    expect(
+      await db.select().from(studentProducts).where(eq(studentProducts.userId, originalId)),
+    ).toHaveLength(0);
+    expect(
+      (
+        await db
+          .select()
+          .from(hotmartPurchases)
+          .where(eq(hotmartPurchases.transaction, transaction))
+      )[0]?.userId,
+    ).toBe(originalId);
+  },
+);

@@ -432,7 +432,12 @@ test('timeout de publicação não reenvia; conciliação recupera o último an�
           })
         : envelope({
             item_list: [
-              { item_id: 9999, item_sku: target.sku, item_name: target.payload.item_name },
+              {
+                item_id: 9999,
+                item_sku: target.sku,
+                item_name: target.payload.item_name,
+                item_status: 'NORMAL',
+              },
             ],
           }),
     ),
@@ -1174,3 +1179,74 @@ test('uma resposta perdida nas variações conserva o ID do pai e não cria outr
   expect((await reconcilePublicationItem(id, item!.id, resolved)).status).toBe('matched');
   expect(parents).toBe(1);
 });
+
+test.each(['UNLIST', 'BANNED', 'NORMAL'])(
+  'simple listing reconciliation requires a live item before advancing the batch (%s)',
+  async (status) => {
+    const id = await account();
+    const batchId = await createPublicationBatch(id, await catalog(id), 'varied');
+    const items = await db
+      .select()
+      .from(assistantPublicationItems)
+      .where(eq(assistantPublicationItems.batchId, batchId));
+    const target = items[0]!;
+    for (const [index, item] of items.entries()) {
+      await db
+        .update(assistantPublicationItems)
+        .set(
+          item.id === target.id
+            ? { status: 'unknown' }
+            : { status: 'published', itemId: 70000 + index, publishedAt: new Date() },
+        )
+        .where(eq(assistantPublicationItems.id, item.id));
+    }
+    await db.update(assistantJobs).set({ status: 'completed' }).where(eq(assistantJobs.userId, id));
+    await db
+      .update(assistantJobs)
+      .set({ status: 'unknown' })
+      .where(eq(assistantJobs.deduplicationKey, `publish:${target.id}`));
+    const fetcher = transport((url, init) => {
+      expect(init.method).not.toBe('POST');
+      if (url.pathname.endsWith('get_item_list'))
+        return envelope({
+          item: url.searchParams.get('item_status') === status ? [{ item_id: 9999 }] : [],
+          has_next_page: false,
+        });
+      if (url.pathname.endsWith('get_item_base_info'))
+        return envelope({
+          item_list: [
+            {
+              item_id: 9999,
+              item_sku: target.sku,
+              item_name: target.payload.item_name,
+              item_status: status,
+            },
+          ],
+        });
+      throw new Error('Unexpected reconciliation endpoint');
+    });
+    const live = status === 'NORMAL';
+    expect((await reconcilePublicationItem(id, target.id, fetcher)).status).toBe(
+      live ? 'matched' : 'ambiguous',
+    );
+    const [savedItem] = await db
+      .select()
+      .from(assistantPublicationItems)
+      .where(eq(assistantPublicationItems.id, target.id));
+    const [batch] = await db
+      .select()
+      .from(assistantPublicationBatches)
+      .where(eq(assistantPublicationBatches.id, batchId));
+    const [store] = await db.select().from(stores).where(eq(stores.userId, id));
+    const evaluationJobs = await db
+      .select()
+      .from(assistantJobs)
+      .where(and(eq(assistantJobs.userId, id), eq(assistantJobs.kind, 'evaluate')));
+    expect(savedItem?.status).toBe(live ? 'published' : 'unknown');
+    expect(store?.phase).toBe(live ? 6 : 5);
+    expect(batch?.status).toBe(live ? 'observing' : 'publishing');
+    expect(Boolean(batch?.publishedAt)).toBe(live);
+    expect(evaluationJobs).toHaveLength(live ? 1 : 0);
+    await db.update(assistantJobs).set({ status: 'completed' }).where(eq(assistantJobs.userId, id));
+  },
+);

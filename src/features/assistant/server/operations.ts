@@ -827,21 +827,22 @@ export async function reconcilePublicationItem(
     const models = await readProductModels(config, access, matches[0]!.item_id, fetcher);
     if (!modelsMatchPublication(models, item.payload.variations))
       return { status: 'ambiguous' as const };
-    const base = await readShopeeResource(
-      config,
-      access,
-      '/api/v2/product/get_item_base_info',
-      z.object({ item_list: z.array(z.object({ item_id: z.number(), item_status: z.string() })) }),
-      { item_id_list: String(matches[0]!.item_id) },
-      fetcher,
-    );
-    if (
-      !base.item_list.some(
-        (row) => row.item_id === matches[0]!.item_id && row.item_status === 'NORMAL',
-      )
-    )
-      return { status: 'ambiguous' as const };
   }
+  // Finding a SKU in UNLIST or BANNED does not confirm a live listing, even without models.
+  const base = await readShopeeResource(
+    config,
+    access,
+    '/api/v2/product/get_item_base_info',
+    z.object({ item_list: z.array(z.object({ item_id: z.number(), item_status: z.string() })) }),
+    { item_id_list: String(matches[0]!.item_id) },
+    fetcher,
+  );
+  if (
+    !base.item_list.some(
+      (row) => row.item_id === matches[0]!.item_id && row.item_status === 'NORMAL',
+    )
+  )
+    return { status: 'ambiguous' as const };
   await confirmPublishedItem(item, matches[0]!.item_id);
   await db
     .update(assistantJobs)

@@ -783,3 +783,140 @@ test('a rejected read-back after an acknowledged profile write remains uncertain
   ).toBe(true);
   expect(writes).toBe(1);
 });
+
+test.each(['same-destination', 'different-shop', 'different-application'])(
+  'confirmed brand queue scopes unresolved writes to the current destination (%s)',
+  async (destination) => {
+    const id = await account();
+    const [connection] = await db
+      .select()
+      .from(shopeeConnections)
+      .where(eq(shopeeConnections.userId, id));
+    const brand = {
+      name: 'Current store',
+      description: 'Current approved description',
+      logoImage: `logos/${id}/current.png`,
+    };
+    const fingerprint = brandFingerprint(brand);
+    await db.insert(storeBrand).values({
+      userId: id,
+      ...brand,
+      completedAt: new Date(),
+      publicationFingerprint: fingerprint,
+    });
+    const payload = {
+      shop_name: brand.name,
+      description: brand.description,
+      shop_logo: 'https://images.example.com/current.jpg',
+    };
+    const [oldJob] = await db
+      .insert(storeAutomationJobs)
+      .values({
+        userId: id,
+        shopId: String(connection!.shopId + (destination === 'different-shop' ? 1000 : 0)),
+        applicationId: destination === 'different-application' ? 'live:456' : 'live:123',
+        kind: 'brand',
+        status: 'unknown',
+        sourceFingerprint: 'previous-brand',
+        payload: { ...payload, shop_name: 'Previous store' },
+      })
+      .returning();
+    if (destination === 'same-destination') {
+      await expect(queueStoreChange(id, 'brand', payload, fingerprint)).rejects.toThrow(
+        'Confira o envio anterior.',
+      );
+    } else {
+      const jobId = await queueStoreChange(id, 'brand', payload, fingerprint);
+      expect(await queueStoreChange(id, 'brand', payload, fingerprint)).toBe(jobId);
+      const [queued] = await db
+        .select()
+        .from(storeAutomationJobs)
+        .where(eq(storeAutomationJobs.id, jobId));
+      expect(queued).toMatchObject({
+        shopId: String(connection!.shopId),
+        applicationId: 'live:123',
+        status: 'pending',
+      });
+      await db
+        .update(storeAutomationJobs)
+        .set({ status: 'completed' })
+        .where(eq(storeAutomationJobs.id, jobId));
+    }
+    const [preserved] = await db
+      .select()
+      .from(storeAutomationJobs)
+      .where(eq(storeAutomationJobs.id, oldJob!.id));
+    expect(preserved?.status).toBe('unknown');
+    expect(preserved?.payload).toEqual(oldJob!.payload);
+  },
+);
+
+test('automatic brand scanning ignores old destinations but preserves their uncertain results', async () => {
+  const id = await account();
+  const [connection] = await db
+    .select()
+    .from(shopeeConnections)
+    .where(eq(shopeeConnections.userId, id));
+  const brand = {
+    name: 'Reconnected store',
+    description: 'Approved for the current destination',
+    logoImage: `logos/${id}/reconnected.png`,
+  };
+  const fingerprint = brandFingerprint(brand);
+  await db.insert(storeBrand).values({
+    userId: id,
+    ...brand,
+    completedAt: new Date(),
+    publicationFingerprint: fingerprint,
+  });
+  const oldJobs = await db
+    .insert(storeAutomationJobs)
+    .values(
+      [
+        { shopId: String(connection!.shopId + 1000), applicationId: 'live:123' },
+        { shopId: String(connection!.shopId), applicationId: 'live:456' },
+      ].map((destination) => ({
+        ...destination,
+        userId: id,
+        kind: 'brand' as const,
+        status: 'unknown' as const,
+        sourceFingerprint: fingerprint,
+        payload: { shop_name: brand.name, description: brand.description, shop_logo: 'old-logo' },
+      })),
+    )
+    .returning();
+  const png = await sharp({ create: { width: 50, height: 50, channels: 4, background: '#ffffff' } })
+    .png()
+    .toBuffer();
+  let uploads = 0;
+  const fetcher = transport((url) => {
+    if (!url.pathname.endsWith('upload_image')) throw new Error('Unexpected write or read');
+    uploads++;
+    return envelope({
+      image_info: {
+        image_id: 'reconnected-image',
+        image_url_list: [{ image_url: 'https://images.example.com/reconnected.jpg' }],
+      },
+    });
+  });
+  expect(await queueAutomaticBrands(fetcher, async () => png)).toBe(1);
+  expect(await queueAutomaticBrands(fetcher, async () => png)).toBe(0);
+  expect(uploads).toBe(1);
+  const jobs = await db
+    .select()
+    .from(storeAutomationJobs)
+    .where(eq(storeAutomationJobs.userId, id));
+  expect(jobs).toHaveLength(3);
+  expect(jobs.find((job) => job.status === 'pending')).toMatchObject({
+    shopId: String(connection!.shopId),
+    applicationId: 'live:123',
+    sourceFingerprint: fingerprint,
+  });
+  expect(jobs.filter((job) => oldJobs.some((old) => old.id === job.id))).toEqual(
+    expect.arrayContaining(oldJobs),
+  );
+  await db
+    .update(storeAutomationJobs)
+    .set({ status: 'completed' })
+    .where(and(eq(storeAutomationJobs.userId, id), eq(storeAutomationJobs.status, 'pending')));
+});
