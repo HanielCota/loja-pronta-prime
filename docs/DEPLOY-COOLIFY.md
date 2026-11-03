@@ -2,7 +2,7 @@
 
 ## O que este projeto precisa
 
-- Next.js 16.3.8 (App Router), React 19.3.0 e Bun 1.4.2 como gerenciador de pacotes e bundler.
+- Next.js 16.4.1 (App Router), React 19.3.0 e Bun 1.4.2 como gerenciador de pacotes e bundler.
 - Node.js 24 LTS para build e servidor de produção. O mínimo declarado pelo Next e pelo Sharp é 20.9.0,
   mas o projeto seleciona a linha 24 no `package.json` para a hospedagem.
 - PostgreSQL 17, com as migrações de `drizzle/` aplicadas pelo migrador do Drizzle ORM.

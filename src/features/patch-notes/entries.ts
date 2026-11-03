@@ -18,6 +18,12 @@ export const patchNotes: readonly PatchNoteDay[] = [
         description:
           'Após a publicação desta atualização, as dúvidas sobre aulas passam para Mylena e as dúvidas sobre o Envio Velox passam para Dani. Os contatos de Rackel e Nabila deixam de ser usados. O painel permite atualizar um único WhatsApp por responsável; sem número configurado, o assunto mostra “Em breve”.',
       },
+      {
+        kind: 'Correção',
+        title: 'Atualização de segurança da plataforma',
+        description:
+          'Após a publicação desta atualização, a plataforma passa a usar uma versão com correções de segurança no processamento de imagens e no envio de formulários.',
+      },
     ],
   },
   {
