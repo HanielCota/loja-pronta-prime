@@ -4,7 +4,7 @@ import { useActionState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { LiveRegion } from '@/components/ui/live-region';
-import { SUPPORT_TOPICS, type SupportPhones } from '../contacts';
+import { SUPPORT_CONTACTS, type SupportPhones } from '../contacts';
 import { saveSupportContacts, type SupportSettingsResult } from '../server/actions';
 
 export function SupportSettingsForm({ phones }: { phones: SupportPhones }) {
@@ -17,7 +17,7 @@ export function SupportSettingsForm({ phones }: { phones: SupportPhones }) {
       <p id="support-phone-help" className="text-body text-muted-foreground">
         Informe o WhatsApp com DDD. Pode incluir +55. Deixe vazio para mostrar “Em breve” às alunas.
       </p>
-      {SUPPORT_TOPICS.map((topic) => (
+      {SUPPORT_CONTACTS.map((topic) => (
         <fieldset key={topic.id} className="flex min-w-0 flex-col gap-3">
           <legend className="mb-3 text-body font-semibold">
             {topic.title} · {topic.name}

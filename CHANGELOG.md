@@ -3,6 +3,16 @@
 Dates use the America/Sao_Paulo time zone. Operational verification and rollout limits are
 recorded separately from code integration.
 
+## 2026-11-03
+
+### Support contact reassignment
+
+- Route lesson questions to Mylena's existing technical contact and Envio Velox questions to
+  Dani's existing ombudsman contact, preserving the four student-facing subjects and legacy URLs.
+- Configure one WhatsApp number per current contact. Ignore retired lessons/shipping phone rows
+  on reads and submissions; missing current numbers retain the coming-soon state.
+- No schema migration or production contact change is required. Production rollout is unverified.
+
 ## 2026-10-29
 
 ### Dated administrative access

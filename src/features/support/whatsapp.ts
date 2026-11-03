@@ -6,7 +6,9 @@ import type { SupportTicketTopic } from './catalog';
  * Os assuntos do WhatsApp (`contacts.ts`) e os temas do chamado são coisas diferentes: este mapa
  * liga um ao outro sem renomear nada. Pagamento e "Outra coisa" não têm WhatsApp.
  */
-export const WHATSAPP_TOPIC_BY_TICKET_TOPIC: Readonly<Record<SupportTicketTopic, SupportTopicId | null>> = {
+export const WHATSAPP_TOPIC_BY_TICKET_TOPIC: Readonly<
+  Record<SupportTicketTopic, SupportTopicId | null>
+> = {
   access: 'technical',
   store: 'technical',
   lessons: 'lessons',
@@ -29,7 +31,7 @@ export function whatsappContacts(phones: SupportPhones): WhatsappContact[] {
     topic: topic.id,
     title: topic.title,
     name: topic.name,
-    phone: phones[topic.id],
+    phone: phones[topic.contactId],
   }));
 }
 

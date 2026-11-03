@@ -5,12 +5,12 @@ import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/features/admin/server/access';
 import { db } from '@/server/db';
 import { supportContacts } from '@/server/db/schema';
-import { parseSupportPhones, type SupportTopicId } from '../contacts';
+import { parseSupportPhones, type SupportContactId } from '../contacts';
 
 export type SupportSettingsResult = {
   saved: boolean;
   message: string;
-  field?: SupportTopicId;
+  field?: SupportContactId;
 };
 
 export async function saveSupportContacts(
