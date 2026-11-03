@@ -13,6 +13,11 @@ recorded separately from code integration.
   on reads and submissions; missing current numbers retain the coming-soon state.
 - No schema migration or production contact change is required. Production rollout is unverified.
 
+### Next.js security update
+
+- Upgrade Next.js to 16.4.1 to address GHSA-673q-mjm6-r5xr, GHSA-2464-fhr4-w9xw, and
+  GHSA-p3m5-59mp-jv5r. The fixes take effect when the new application build is deployed.
+
 ## 2026-10-29
 
 ### Dated administrative access
