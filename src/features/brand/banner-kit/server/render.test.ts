@@ -63,16 +63,27 @@ const renderScript = `
 test('bundled fonts render distinct regular and bold letters without any system fonts', async () => {
   const directory = await isolatedRuntime();
   try {
-    const result = await run(
+    // Rendering SVG text before font registration can populate a native font cache.
+    // Verify the missing-font baseline in a separate process from the first banner requests.
+    const baseline = await run(
       directory,
-      renderScript +
-        `
-        // Prove this environment reproduces the original missing-glyph defect first.
+      `
+        import sharp from 'sharp';
         const unregistered = (text) => sharp(Buffer.from(
           '<svg width="200" height="50"><text y="30" font-family="DejaVu Sans">' +
           text + '</text></svg>'
         )).raw().toBuffer();
-        const before = (await unregistered('IIII')).equals(await unregistered('WWWW'));
+        console.log((await unregistered('IIII')).equals(await unregistered('WWWW')));
+      `,
+    );
+    expect(baseline.stderr).toBe('');
+    expect(baseline.exitCode).toBe(0);
+    expect(baseline.stdout.trim()).toBe('true');
+
+    const result = await run(
+      directory,
+      renderScript +
+        `
         const results = [];
         for (const variant of ['welcome', 'selection']) {
           // Concurrent first requests must wait for both fonts to finish registering.
@@ -87,18 +98,15 @@ test('bundled fonts render distinct regular and bold letters without any system 
             height: (await sharp(wide).metadata()).height,
           });
         }
-        console.log(JSON.stringify({ before, results }));
+        console.log(JSON.stringify(results));
       `,
     );
     expect(result.stderr).toBe('');
     expect(result.exitCode).toBe(0);
-    expect(JSON.parse(result.stdout)).toEqual({
-      before: true,
-      results: [
-        { boldDistinct: true, regularDistinct: true, width: 750, height: 300 },
-        { boldDistinct: true, regularDistinct: true, width: 750, height: 500 },
-      ],
-    });
+    expect(JSON.parse(result.stdout)).toEqual([
+      { boldDistinct: true, regularDistinct: true, width: 750, height: 300 },
+      { boldDistinct: true, regularDistinct: true, width: 750, height: 500 },
+    ]);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
