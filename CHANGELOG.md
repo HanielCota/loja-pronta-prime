@@ -5,6 +5,12 @@ recorded separately from code integration.
 
 ## 2026-11-03
 
+### Support responsibilities
+
+- Assign lessons, ombudsman, refunds, and Reclame Aqui to Dani. Assign access, errors, and
+  Envio Velox to Mylena. Add subject links for refunds and Reclame Aqui that open Dani's WhatsApp.
+- Preserve existing support URLs and use the configured numbers without a database migration.
+
 ### Support contact reassignment
 
 - Route lesson questions to Mylena's existing technical contact and Envio Velox questions to

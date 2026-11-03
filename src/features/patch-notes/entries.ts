@@ -16,13 +16,19 @@ export const patchNotes: readonly PatchNoteDay[] = [
         kind: 'Melhoria',
         title: 'Novas responsáveis pelo suporte',
         description:
-          'Após a publicação desta atualização, as dúvidas sobre aulas passam para Mylena e as dúvidas sobre o Envio Velox passam para Dani. Os contatos de Rackel e Nabila deixam de ser usados. O painel permite atualizar um único WhatsApp por responsável; sem número configurado, o assunto mostra “Em breve”.',
+          'Os contatos de Rackel e Nabila deixam de ser usados. O painel permite atualizar um único WhatsApp por responsável. Sem número configurado, o assunto mostra “Em breve”.',
       },
       {
         kind: 'Correção',
         title: 'Atualização de segurança da plataforma',
         description:
           'Após a publicação desta atualização, a plataforma passa a usar uma versão com correções de segurança no processamento de imagens e no envio de formulários.',
+      },
+      {
+        kind: 'Correção',
+        title: 'Divisão atualizada do suporte',
+        description:
+          'Após a publicação desta atualização, Dani atende dúvidas sobre aulas, ouvidoria, reembolso e Reclame Aqui. Mylena atende dúvidas sobre acesso, erros e Envio Velox. Reembolso e Reclame Aqui ganham atalhos para o WhatsApp da Dani no perfil.',
       },
     ],
   },
