@@ -4,6 +4,7 @@ import {
   trackedWhatsappPath,
   WHATSAPP_TOPIC_BY_TICKET_TOPIC,
   whatsappContactFor,
+  whatsappContacts,
   whatsappHref,
 } from './whatsapp';
 
@@ -24,8 +25,8 @@ describe('WhatsApp junto dos chamados', () => {
   test('liga tema ao assunto sem renomear os ids antigos', () => {
     expect(whatsappContactFor(phones, 'access')?.topic).toBe('technical');
     expect(whatsappContactFor(phones, 'store')?.name).toBe('Mylena');
-    expect(whatsappContactFor(phones, 'lessons')?.name).toBe('Mylena');
-    expect(whatsappContactFor(phones, 'shipping')?.name).toBe('Dani');
+    expect(whatsappContactFor(phones, 'lessons')?.name).toBe('Dani');
+    expect(whatsappContactFor(phones, 'shipping')?.name).toBe('Mylena');
     expect(whatsappContactFor(phones, 'payment')).toBeNull();
   });
 
@@ -38,10 +39,16 @@ describe('WhatsApp junto dos chamados', () => {
   test('uses the new owners instead of retired numbers for existing topic links', () => {
     const lessons = whatsappHref(whatsappContactFor(phones, 'lessons')!);
     const shipping = whatsappHref(whatsappContactFor(phones, 'shipping')!);
-    expect(lessons).toContain('wa.me/5531999990001');
-    expect(decodeURIComponent(lessons!)).toContain('Oi, Mylena!');
-    expect(shipping).toContain('wa.me/5531999990004');
-    expect(decodeURIComponent(shipping!)).toContain('Oi, Dani!');
+    expect(lessons).toContain('wa.me/5531999990004');
+    expect(decodeURIComponent(lessons!)).toContain('Oi, Dani!');
+    expect(shipping).toContain('wa.me/5531999990001');
+    expect(decodeURIComponent(shipping!)).toContain('Oi, Mylena!');
+  });
+
+  test.each(['refund', 'reclame-aqui'])('routes %s to Dani’s WhatsApp', (topic) => {
+    const contact = whatsappContacts(phones).find((item) => item.topic === topic)!;
+    expect(contact.name).toBe('Dani');
+    expect(whatsappHref(contact)).toContain('wa.me/5531999990004');
   });
 
   test('a mensagem é a mesma do Perfil, sem dados da aluna', () => {

@@ -531,10 +531,10 @@ The banner kit uses `AreaPage`, `panelCard`, `Button`, `FloatingLabelInput` and 
 
 ### Support contacts (October 23, 2026)
 
-The existing profile support card lists four subjects and their contacts: technical access
-(Mylena), lessons (Mylena), Envio Velox shipping (Dani), and ombudsman (Dani), updated at the
-owner's request on November 3, 2026. Account menus
-and store help actions link to this card. Unconfigured contacts show “Em breve” without an action.
+The existing profile support card lists six subjects. As of November 3, 2026, Mylena handles
+technical access, errors, and Envio Velox questions. Dani handles lesson questions, ombudsman
+requests, refunds, and Reclame Aqui questions. Account menus and store help actions link to this
+card. Unconfigured contacts show “Em breve” without an action.
 Administrators configure the numbers at `/admin/suporte`, using `AdminPage`, `panelCard`,
 `FloatingLabelInput`, and `Button`. This preserves the current colors, typography, and layout.
 There are two phone fields, one per current contact, with their assigned subjects in the existing
