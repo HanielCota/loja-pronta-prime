@@ -218,11 +218,11 @@ export function HelpGroup({ phones }: { phones: SupportPhones }) {
   return (
     <SettingsGroup id="perfil-ajuda" title="Precisa de ajuda?">
       {SUPPORT_TOPICS.map((topic) =>
-        phones[topic.id] ? (
+        phones[topic.contactId] ? (
           <LinkRow
             key={topic.id}
             href={whatsappLink(
-              phones[topic.id],
+              phones[topic.contactId],
               `Oi, ${topic.name}! Sou aluna do Escala Shop e preciso de ajuda com: ${topic.title}.`,
             )}
             external

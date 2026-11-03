@@ -7,7 +7,12 @@ import {
   whatsappHref,
 } from './whatsapp';
 
-const phones = { technical: '31999990001', lessons: '', shipping: '31999990003', ombudsman: '' };
+const phones = {
+  technical: '31999990001',
+  ombudsman: '31999990004',
+  lessons: '31999990002',
+  shipping: '31999990003',
+};
 
 describe('WhatsApp junto dos chamados', () => {
   test('todo tema do chamado está no mapa', () => {
@@ -19,12 +24,24 @@ describe('WhatsApp junto dos chamados', () => {
   test('liga tema ao assunto sem renomear os ids antigos', () => {
     expect(whatsappContactFor(phones, 'access')?.topic).toBe('technical');
     expect(whatsappContactFor(phones, 'store')?.name).toBe('Mylena');
-    expect(whatsappContactFor(phones, 'lessons')?.name).toBe('Rackel');
+    expect(whatsappContactFor(phones, 'lessons')?.name).toBe('Mylena');
+    expect(whatsappContactFor(phones, 'shipping')?.name).toBe('Dani');
     expect(whatsappContactFor(phones, 'payment')).toBeNull();
   });
 
   test('sem número não tem link ("Em breve")', () => {
-    expect(whatsappHref(whatsappContactFor(phones, 'lessons')!)).toBeNull();
+    const unavailable = { ...phones, technical: '', ombudsman: '' };
+    expect(whatsappHref(whatsappContactFor(unavailable, 'lessons')!)).toBeNull();
+    expect(whatsappHref(whatsappContactFor(unavailable, 'shipping')!)).toBeNull();
+  });
+
+  test('uses the new owners instead of retired numbers for existing topic links', () => {
+    const lessons = whatsappHref(whatsappContactFor(phones, 'lessons')!);
+    const shipping = whatsappHref(whatsappContactFor(phones, 'shipping')!);
+    expect(lessons).toContain('wa.me/5531999990001');
+    expect(decodeURIComponent(lessons!)).toContain('Oi, Mylena!');
+    expect(shipping).toContain('wa.me/5531999990004');
+    expect(decodeURIComponent(shipping!)).toContain('Oi, Dani!');
   });
 
   test('a mensagem é a mesma do Perfil, sem dados da aluna', () => {
@@ -37,6 +54,8 @@ describe('WhatsApp junto dos chamados', () => {
 
   test('o link novo conta o clique e diz de onde veio', () => {
     expect(trackedWhatsappPath('lessons', 'platform')).toBe('/suporte/whatsapp/lessons');
-    expect(trackedWhatsappPath('technical', 'login')).toBe('/suporte/whatsapp/technical?origem=login');
+    expect(trackedWhatsappPath('technical', 'login')).toBe(
+      '/suporte/whatsapp/technical?origem=login',
+    );
   });
 });

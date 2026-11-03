@@ -532,10 +532,14 @@ The banner kit uses `AreaPage`, `panelCard`, `Button`, `FloatingLabelInput` and 
 ### Support contacts (October 23, 2026)
 
 The existing profile support card lists four subjects and their contacts: technical access
-(Mylena), lessons (Rackel), Envio Velox shipping (Nabila), and ombudsman (Dani). Account menus
+(Mylena), lessons (Mylena), Envio Velox shipping (Dani), and ombudsman (Dani), updated at the
+owner's request on November 3, 2026. Account menus
 and store help actions link to this card. Unconfigured contacts show “Em breve” without an action.
 Administrators configure the numbers at `/admin/suporte`, using `AdminPage`, `panelCard`,
 `FloatingLabelInput`, and `Button`. This preserves the current colors, typography, and layout.
+There are two phone fields, one per current contact, with their assigned subjects in the existing
+fieldset legends. Each subject uses its owner's phone; retired lessons/shipping numbers are ignored
+even when still stored. No missing owner phone falls back to a retired contact.
 
 ### Refinamento visual (24 de outubro de 2026)
 

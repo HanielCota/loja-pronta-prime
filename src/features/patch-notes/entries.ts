@@ -10,6 +10,17 @@ type PatchNoteDay = {
 /** Curated daily notes, newest first. Dates follow America/Sao_Paulo. */
 export const patchNotes: readonly PatchNoteDay[] = [
   {
+    date: '2026-11-03',
+    changes: [
+      {
+        kind: 'Melhoria',
+        title: 'Novas responsáveis pelo suporte',
+        description:
+          'Após a publicação desta atualização, as dúvidas sobre aulas passam para Mylena e as dúvidas sobre o Envio Velox passam para Dani. Os contatos de Rackel e Nabila deixam de ser usados. O painel permite atualizar um único WhatsApp por responsável; sem número configurado, o assunto mostra “Em breve”.',
+      },
+    ],
+  },
+  {
     date: '2026-10-29',
     changes: [
       {

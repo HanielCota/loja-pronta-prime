@@ -1,20 +1,26 @@
 import { cleanWhatsapp, isValidDdd } from '@/features/loja-pronta/whatsapp';
 
+export const SUPPORT_CONTACTS = [
+  { id: 'technical', title: 'Acesso, erros e dúvidas sobre as aulas', name: 'Mylena' },
+  { id: 'ombudsman', title: 'Envio Velox e ouvidoria', name: 'Dani' },
+] as const;
+
 export const SUPPORT_TOPICS = [
-  { id: 'technical', title: 'Erros, bugs e acesso', name: 'Mylena' },
-  { id: 'lessons', title: 'Dúvidas sobre as aulas', name: 'Rackel' },
-  { id: 'shipping', title: 'Dúvidas sobre o Envio Velox', name: 'Nabila' },
-  { id: 'ombudsman', title: 'Ouvidoria', name: 'Dani' },
+  { id: 'technical', title: 'Erros, bugs e acesso', name: 'Mylena', contactId: 'technical' },
+  { id: 'lessons', title: 'Dúvidas sobre as aulas', name: 'Mylena', contactId: 'technical' },
+  { id: 'shipping', title: 'Dúvidas sobre o Envio Velox', name: 'Dani', contactId: 'ombudsman' },
+  { id: 'ombudsman', title: 'Ouvidoria', name: 'Dani', contactId: 'ombudsman' },
 ] as const;
 
 export type SupportTopicId = (typeof SUPPORT_TOPICS)[number]['id'];
-export type SupportPhones = Record<SupportTopicId, string>;
+export type SupportContactId = (typeof SUPPORT_CONTACTS)[number]['id'];
+export type SupportPhones = Record<SupportContactId, string>;
 
 export function parseSupportPhones(
   form: FormData,
-): { ok: true; phones: SupportPhones } | { ok: false; field: SupportTopicId; message: string } {
+): { ok: true; phones: SupportPhones } | { ok: false; field: SupportContactId; message: string } {
   const phones = {} as SupportPhones;
-  for (const topic of SUPPORT_TOPICS) {
+  for (const topic of SUPPORT_CONTACTS) {
     const raw = form.get(topic.id);
     if (typeof raw !== 'string' || raw.length > 40) {
       return { ok: false, field: topic.id, message: `Confira o WhatsApp de ${topic.name}.` };
