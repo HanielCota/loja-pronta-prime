@@ -533,6 +533,13 @@
       "when": 1793289939772,
       "tag": "0075_manual-access-expiry",
       "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1794054195288,
+      "tag": "0076_assisted-store-deliveries",
+      "breakpoints": true
     }
   ]
 }

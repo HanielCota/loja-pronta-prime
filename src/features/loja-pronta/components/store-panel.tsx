@@ -21,12 +21,14 @@ import { canReviseDonePhases } from '../editing';
 import { CONVERSATION_PATH, REVIEW_STEP, stepPath } from '../steps';
 import type { ConversationStatus } from '../store-phase';
 import { StoreWelcome } from './store-welcome';
+import { ASSISTED_DELIVERY_PATH } from '../delivery-paths';
 
 type StorePanelProps = {
   user: { name: string; email: string; preferredName?: string | null | undefined };
   /** Tem os dois produtos: o topo leva de volta pra escolha. */
   hasChoice: boolean;
   phase: number;
+  deliveryStatus?: 'available' | 'requested' | 'started' | 'completed' | undefined;
   conversation: ConversationStatus;
   /**
    * A marca, quando já tem: o nome vira o título e o logo aparece no destaque. `logoSrc`: a
@@ -49,6 +51,7 @@ export function StorePanel({
   conversation,
   brand,
   previousStores,
+  deliveryStatus,
 }: StorePanelProps) {
   // Quem ainda não respondeu vê o plano primeiro; respostas salvas continuam abrindo a retomada.
   if (phase === 1 && conversation === 'nao-comecou') {
@@ -56,6 +59,16 @@ export function StorePanel({
   }
   // Com os dois produtos, ela chega aqui pela escolha de área, que já disse "Oi": sem repetir.
   const name = hasChoice ? '' : greetingName(user);
+  const stages = storeStages(phase);
+  if (deliveryStatus) {
+    stages[2] = {
+      title: 'Prepare sua loja para a Shopee',
+      detail:
+        'Confirme os produtos e acompanhe a publicação da sua marca e dos primeiros anúncios.',
+      status: deliveryStatus === 'completed' ? 'done' : 'current',
+      fill: deliveryStatus === 'completed' ? 1 : deliveryStatus === 'available' ? 0.4 : 0.7,
+    };
+  }
   return (
     <AreaPage
       hasChoice={hasChoice}
@@ -67,14 +80,19 @@ export function StorePanel({
       intro={brand.name ? 'Sua loja na Shopee' : undefined}
     >
       {previousStores}
-      <NextStep phase={phase} conversation={conversation} brand={brand} />
+      <NextStep
+        phase={phase}
+        conversation={conversation}
+        brand={brand}
+        deliveryStatus={deliveryStatus}
+      />
       {brand.confirmed && brand.logoSrc ? (
         <Button asChild variant="soft">
           <Link href="/loja-pronta/marca/banners">Meus banners</Link>
         </Button>
       ) : null}
       <Path
-        stages={storeStages(phase)}
+        stages={stages}
         reviewHrefs={
           // Só o que existe pra rever: a conversa enviada e a marca confirmada, até a publicação.
           canReviseDonePhases(phase)
@@ -175,12 +193,27 @@ function NextStep({
   phase,
   conversation,
   brand,
+  deliveryStatus,
 }: {
   phase: number;
   conversation: ConversationStatus;
   brand: StorePanelProps['brand'];
+  deliveryStatus: StorePanelProps['deliveryStatus'];
 }) {
-  const hero = heroFor(phase, conversation, brand);
+  const hero: Hero =
+    deliveryStatus && brand.logoSrc
+      ? {
+          eyebrow: stageEyebrow(3),
+          title: deliveryStatus === 'completed' ? 'Sua loja está pronta' : 'Entrega da sua loja',
+          text:
+            deliveryStatus === 'completed'
+              ? 'Sua marca e os cinco primeiros anúncios estão na Shopee.'
+              : deliveryStatus === 'available'
+                ? 'Confira os primeiros produtos e solicite a publicação na Shopee.'
+                : 'Acompanhe a aplicação da sua marca e a publicação dos seus anúncios.',
+          action: { href: ASSISTED_DELIVERY_PATH, label: 'Ver a entrega' },
+        }
+      : heroFor(phase, conversation, brand);
   const showLogo = phase >= 3 && brand.logoSrc && brand.name;
 
   return (

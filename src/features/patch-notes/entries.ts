@@ -10,6 +10,17 @@ type PatchNoteDay = {
 /** Curated daily notes, newest first. Dates follow America/Sao_Paulo. */
 export const patchNotes: readonly PatchNoteDay[] = [
   {
+    date: '2026-11-07',
+    changes: [
+      {
+        kind: 'Novo',
+        title: 'Entrega assistida da Loja Pronta',
+        description:
+          'A cliente personaliza e aprova a marca. A fila do suporte reúne o logo e a planilha dos cinco primeiros produtos e permite acompanhar a confirmação dos anúncios. Novas solicitações dependem da configuração do modelo da Shopee e da validação em uma loja piloto.',
+      },
+    ],
+  },
+  {
     date: '2026-11-03',
     changes: [
       {

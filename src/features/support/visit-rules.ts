@@ -62,6 +62,11 @@ export const BLOCKED_DURING_VISIT: Readonly<Record<string, BlockedAction>> = {
   startRecoveredPublication: SHOPEE_PUBLISH,
   confirmRecoveredPublicationAction: SHOPEE_PUBLISH,
   submitPublicationBatch: SHOPEE_STORE,
+  submitAssistedDelivery: SHOPEE_PUBLISH,
+  cancelOwnAssistedDelivery: {
+    what: 'cancelar a entrega da loja',
+    why: 'A aluna decide sobre a entrega.',
+  },
   confirmPublicationCorrection: SHOPEE_STORE,
   sendStoreBrand: SHOPEE_STORE,
   confirmSavedBrand: SHOPEE_STORE,

@@ -39,6 +39,8 @@ describe('cargos da equipe', () => {
     expect(isStaffRole(null)).toBe(false);
     expect(isStaffRole('suporte')).toBe(false);
     expect(hasStaffPermission(undefined, 'support.answer')).toBe(false);
+    expect(hasStaffPermission('user', 'stores.deliver')).toBe(false);
+    expect(hasStaffPermission('support_agent', 'stores.deliver')).toBe(true);
   });
 
   test('vale o cargo mais alto quando a conta tem vários', () => {
@@ -50,8 +52,12 @@ describe('cargos da equipe', () => {
   test('o atalho do menu segue o cargo mais alto', () => {
     expect(staffPanelLinkOf('user')).toBeNull();
     expect(staffPanelLinkOf(null)).toBeNull();
-    expect(staffPanelLinkOf('user,support_agent')).toBeNull();
-    expect(staffPanelLinkOf('support_supervisor')).toBeNull();
+    expect(staffPanelLinkOf('user,support_agent')).toEqual({
+      href: '/admin/entregas',
+      label: 'Entregas de lojas',
+      roleLabel: 'Atendente',
+    });
+    expect(staffPanelLinkOf('support_supervisor')?.href).toBe('/admin/entregas');
     expect(staffPanelLinkOf('support_agent,admin')).toEqual({
       href: '/admin',
       label: 'Painel administrativo',

@@ -10,7 +10,8 @@ import { VISIT_OVER_PATH } from '../visit-window';
  * a página nem existe pra quem não é da equipe).
  */
 export async function requireStaff(path: string, permission: StaffPermission) {
-  if (permission !== 'support.impersonate') redirect('/admin/suporte/configuracoes#whatsapp');
+  if (permission !== 'support.impersonate' && permission !== 'stores.deliver')
+    redirect('/admin/suporte/configuracoes#whatsapp');
   const state = await getSessionState();
   if (state.status === 'banned') redirect('/entrar?motivo=conta-desativada');
   if (state.status === 'none') redirect(authHref('/entrar', path));
@@ -30,7 +31,7 @@ export class StaffAccessError extends Error {
 
 /** Para Server Actions e rotas: em vez de redirecionar, devolve `null` (quem chama responde). */
 export async function readStaffSession(permission: StaffPermission) {
-  if (permission !== 'support.impersonate') return null;
+  if (permission !== 'support.impersonate' && permission !== 'stores.deliver') return null;
   const state = await getSessionState();
   if (state.status !== 'active') return null;
   const { session } = state;

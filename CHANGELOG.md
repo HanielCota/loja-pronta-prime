@@ -3,6 +3,17 @@
 Dates use the America/Sao_Paulo time zone. Operational verification and rollout limits are
 recorded separately from code integration.
 
+## 2026-11-07
+
+### Assisted Loja Pronta delivery
+
+- Keep brand customization and approval with the customer. Let support claim the delivery,
+  download the approved logo and bulk-add workbook, and record active Shopee listing IDs.
+- Refresh the selected supplier catalog independently of a Shopee connection. Resume partial
+  deliveries with a workbook containing only the unconfirmed products.
+- Add migration `0076_assisted-store-deliveries`. Intake is disabled by default pending an
+  official workbook and a live-store pilot.
+
 ## 2026-11-03
 
 ### Support responsibilities

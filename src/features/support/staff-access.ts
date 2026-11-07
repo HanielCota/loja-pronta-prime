@@ -1,3 +1,5 @@
+import { DELIVERY_QUEUE_PATH } from '@/features/loja-pronta/delivery-paths';
+
 /**
  * Cargos da equipe de suporte e o que cada um pode fazer. O Better Auth guarda as funções da
  * conta separadas por vírgula (`user.role`), então uma pessoa pode ser, por exemplo, atendente e
@@ -16,18 +18,20 @@ export const STAFF_PERMISSIONS = [
   'support.metrics',
   'support.settings',
   'support.impersonate',
+  'stores.deliver',
   'team.manage',
 ] as const;
 export type StaffPermission = (typeof STAFF_PERMISSIONS)[number];
 
 const PERMISSIONS_BY_ROLE: Readonly<Record<StaffRole, ReadonlySet<StaffPermission>>> = {
-  support_agent: new Set(['support.answer', 'support.triage']),
+  support_agent: new Set(['support.answer', 'support.triage', 'stores.deliver']),
   support_supervisor: new Set([
     'support.answer',
     'support.triage',
     'support.assign_others',
     'support.ombudsman',
     'support.metrics',
+    'stores.deliver',
   ]),
   admin: new Set(STAFF_PERMISSIONS),
 };
@@ -87,13 +91,12 @@ export function staffRoleLabel(role: string | null | undefined): string | null {
 /** O atalho pro painel no menu da conta: aonde leva e o cargo que aparece embaixo. */
 export type StaffPanelLink = { href: string; label: string; roleLabel: string };
 
-/** Only administrators retain a panel shortcut after the ticket inbox is retired. */
 export function staffPanelLinkOf(role: string | null | undefined): StaffPanelLink | null {
   const staffRole = staffRoleOf(role);
   if (!staffRole) return null;
   const roleLabel = STAFF_ROLE_LABELS[staffRole];
   if (staffRole === 'admin') return { href: '/admin', label: 'Painel administrativo', roleLabel };
-  return null;
+  return { href: DELIVERY_QUEUE_PATH, label: 'Entregas de lojas', roleLabel };
 }
 
 /**

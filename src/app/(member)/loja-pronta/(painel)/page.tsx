@@ -12,6 +12,10 @@ import { listLegacyStoresForUser } from '@/features/legacy-stores/server/queries
 import { LegacyStoreHistory } from '@/features/legacy-stores/components/store-history';
 import { AreaPage, panelCard } from '@/features/member/components/area-shell';
 import { CONVERSATION_PATH } from '@/features/loja-pronta/steps';
+import {
+  newAssistedDeliveriesEnabled,
+  ownAssistedDelivery,
+} from '@/features/loja-pronta/server/assisted-delivery';
 
 export const metadata: Metadata = {
   title: PRODUCTS['loja-pronta'].title,
@@ -54,11 +58,22 @@ export default async function Page() {
       </AreaPage>
     );
   }
+  const delivery = phase >= 4 ? await ownAssistedDelivery(session.user.id) : null;
+  const deliveryStatus = delivery?.completedAt
+    ? 'completed'
+    : delivery?.startedAt
+      ? 'started'
+      : delivery
+        ? 'requested'
+        : phase === 4 && newAssistedDeliveriesEnabled()
+          ? 'available'
+          : undefined;
   return (
     <StorePanel
       user={session.user}
       hasChoice={products.length > 1}
       phase={phase}
+      deliveryStatus={deliveryStatus}
       conversation={conversation}
       previousStores={
         <LegacyStoreHistory
