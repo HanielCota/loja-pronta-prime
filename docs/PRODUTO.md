@@ -71,6 +71,13 @@ Arquivos originais ausentes aparecem como “Em breve”. Não há material inve
 
 ### Loja Pronta
 
+Assisted delivery can run after the student customizes and confirms her brand and confirms her
+seller account. She reviews five initial offers and grants Shopee subaccount access. The support
+queue uses the approved brand and fills the official bulk-add workbook with current supplier
+data. It records confirmed active listing IDs and shows completion in the student's dashboard.
+Activation depends on the official template, subaccount permissions and a controlled pilot.
+See [assisted delivery operations](SHOPEE-ASSISTED-DELIVERY.md).
+
 A própria aluna monta sua marca e prepara a conta. A interface tem uma decisão por tela, texto simples e respostas salvas para continuar depois. A jornada usa 7 fases no banco, agrupadas em 3 etapas na interface:
 
 | Fase | O que a aluna faz                                            | Situação atual                                                                   |
