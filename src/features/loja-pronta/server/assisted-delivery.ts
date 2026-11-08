@@ -16,6 +16,7 @@ import { effectiveProductAccess } from '@/features/products/server/eligibility';
 import {
   deliveryApprovalFingerprint,
   INITIAL_DELIVERY_SIZE,
+  parseAssistedDeliveryPilot,
   prepareDeliveryOffer,
   type DeliverySelection,
 } from '../assisted-delivery';
@@ -47,13 +48,19 @@ export function deliveryConfiguration() {
   return { subaccount, templateKey, layout, supplierId };
 }
 
-export function newAssistedDeliveriesEnabled() {
-  return (
-    process.env.SHOPEE_ASSISTED_DELIVERY_ENABLED === 'true' &&
-    process.env.SHOPEE_PUBLICATION_ENABLED !== 'true' &&
-    process.env.SHOPEE_BRAND_PUBLICATION_ENABLED !== 'true' &&
-    Boolean(deliveryConfiguration())
+export function newAssistedDeliveryPilot() {
+  if (
+    process.env.SHOPEE_ASSISTED_DELIVERY_ENABLED !== 'true' ||
+    process.env.SHOPEE_PUBLICATION_ENABLED === 'true' ||
+    process.env.SHOPEE_BRAND_PUBLICATION_ENABLED === 'true'
+  )
+    return null;
+  const config = deliveryConfiguration();
+  const pilot = parseAssistedDeliveryPilot(
+    process.env.SHOPEE_ASSISTED_PILOT_USER_ID,
+    process.env.SHOPEE_ASSISTED_PILOT_SHOP_URL,
   );
+  return config && pilot ? { ...config, ...pilot } : null;
 }
 
 function approvedBrand(brand: typeof storeBrand.$inferSelect | undefined) {
@@ -123,8 +130,8 @@ async function lockDeliveryUser(tx: Transaction, userId: string) {
 }
 
 export async function requestAssistedDelivery(userId: string, shopId: string, expected: string) {
-  const config = deliveryConfiguration();
-  if (!newAssistedDeliveriesEnabled() || !config) return false;
+  const config = newAssistedDeliveryPilot();
+  if (config?.userId !== userId || config.shopId !== shopId) return false;
   const template = await storage().get(config.templateKey);
   if (!template) return false;
   return db.transaction(async (tx) => {

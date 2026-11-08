@@ -12,9 +12,8 @@ import {
 import { ASSISTED_DELIVERY_PATH } from '@/features/loja-pronta/delivery-paths';
 import {
   assistedDeliveryReview,
-  deliveryConfiguration,
   deliveryReadiness,
-  newAssistedDeliveriesEnabled,
+  newAssistedDeliveryPilot,
   ownAssistedDelivery,
 } from '@/features/loja-pronta/server/assisted-delivery';
 import {
@@ -40,8 +39,8 @@ export default async function AssistedDeliveryPage({
     getStorePhase(session.user.id),
   ]);
   if (!delivery && phase !== 4) redirect('/loja-pronta');
-  const config = deliveryConfiguration();
-  const enabled = phase === 4 && newAssistedDeliveriesEnabled();
+  const config = newAssistedDeliveryPilot();
+  const enabled = phase === 4 && config?.userId === session.user.id;
   const readiness = delivery && !delivery.startedAt ? await deliveryReadiness(delivery) : null;
   const needsReview = enabled && (!delivery || readiness === 'brand' || readiness === 'offers');
   const review = needsReview ? await assistedDeliveryReview(session.user.id) : null;
@@ -154,12 +153,12 @@ export default async function AssistedDeliveryPage({
               label="Link público da sua loja"
               type="url"
               maxLength={200}
-              required
+              readOnly
               aria-describedby="delivery-shop-help"
-              defaultValue={delivery ? shopeeDeliveryShopUrl(delivery.shopId) : undefined}
+              defaultValue={shopeeDeliveryShopUrl(config.shopId)}
             />
             <p id="delivery-shop-help" className="text-sm text-muted-foreground">
-              Use o link que termina em /shop/ seguido do número da loja.
+              Este é o link da loja escolhida para o teste.
             </p>
             <Button>
               {delivery ? 'Atualizar minha aprovação' : 'Aprovar e solicitar entrega'}

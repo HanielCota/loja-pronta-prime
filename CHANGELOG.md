@@ -3,6 +3,14 @@
 Dates use the America/Sao_Paulo time zone. Operational verification and rollout limits are
 recorded separately from code integration.
 
+## 2026-11-08
+
+### Assisted delivery pilot access
+
+- Require a designated Escala Shop account and Brazilian Shopee shop for new assisted requests.
+  Validate the account and shop on submission and prefill the configured public shop URL.
+  Live rollout and Seller Centre acceptance are pending.
+
 ## 2026-11-07
 
 ### Assisted Loja Pronta delivery

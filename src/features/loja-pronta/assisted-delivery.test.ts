@@ -2,6 +2,7 @@ import { expect, test } from 'bun:test';
 import JSZip from 'jszip';
 import {
   deliveryApprovalFingerprint,
+  parseAssistedDeliveryPilot,
   prepareDeliveryOffer,
   shopeeDeliveryShopId,
 } from './assisted-delivery';
@@ -68,6 +69,17 @@ test('accepts canonical Shopee stores only', () => {
   expect(shopeeDeliveryShopId('https://shopee.com.br.bad.example/shop/123')).toBeNull();
   expect(shopeeDeliveryShopId('https://shopee.com.br:1234/shop/123')).toBeNull();
   expect(shopeeDeliveryShopId('https://shopee.com.br/shop/9999999999999999')).toBeNull();
+});
+
+test('requires a designated member and real Brazilian Shopee shop URL for the pilot', () => {
+  const shopUrl = 'https://shopee.com.br/shop/123';
+  expect(parseAssistedDeliveryPilot(' member ', shopUrl)).toEqual({
+    userId: 'member',
+    shopId: '123',
+  });
+  expect(parseAssistedDeliveryPilot(' ', shopUrl)).toBeNull();
+  expect(parseAssistedDeliveryPilot('member')).toBeNull();
+  expect(parseAssistedDeliveryPilot('member', 'https://shopee.com.br/product/123/456')).toBeNull();
 });
 
 test('requires fresh compatible offers and pins approved data while using current stock', () => {

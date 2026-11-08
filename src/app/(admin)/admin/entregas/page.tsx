@@ -5,7 +5,7 @@ import { AdminPage } from '@/features/admin/components/admin-shell';
 import { DELIVERY_QUEUE_PATH } from '@/features/loja-pronta/delivery-paths';
 import {
   listAssistedDeliveries,
-  newAssistedDeliveriesEnabled,
+  newAssistedDeliveryPilot,
 } from '@/features/loja-pronta/server/assisted-delivery';
 import { panelCard } from '@/features/member/components/area-shell';
 import { requireStaff } from '@/features/support/server/staff-guard';
@@ -21,7 +21,7 @@ export default async function DeliveryQueuePage() {
       title="Entregas de lojas"
       intro="Confira o acesso, aplique a marca aprovada e publique os anúncios na Shopee."
     >
-      {!newAssistedDeliveriesEnabled() ? (
+      {!newAssistedDeliveryPilot() ? (
         <p className={`${panelCard} text-body text-muted-foreground`}>
           Novas solicitações em breve. A abertura depende da configuração do modelo de importação e
           da subconta da Shopee.

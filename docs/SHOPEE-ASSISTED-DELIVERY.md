@@ -10,6 +10,9 @@ shows completion only once all five distinct listings and the brand have been co
 
 ## Pilot setup
 
+Choose one participating member and one authorized live Brazilian shop. Deploy the pilot build
+with migration `0076_assisted-store-deliveries` applied and keep intake closed during setup.
+
 1. Download the current Brazilian **Adicionar em Massa** template from the Shopee Seller Centre.
    Upload the clean workbook to private application storage under `shopee-templates/`.
    Set `SHOPEE_ASSISTED_TEMPLATE_KEY` to the full key.
@@ -53,10 +56,21 @@ shows completion only once all five distinct listings and the brand have been co
    currency in reais, weight in kilograms and dimensions in centimeters. Attribute values
    use names when supplied, with IDs as the fallback. Verify these representations, photo
    URLs, all category-specific fields and the import result in the actual Seller Centre.
-5. Set `SHOPEE_ASSISTED_DELIVERY_ENABLED=true` for the controlled rollout. The two automatic
-   publication flags must be off to accept new requests. Disable the assisted flag to pause
-   intake while preserving the existing queue. Completed and pending assisted requests
-   protect the account from creating a second initial batch through the automatic path.
+5. Set `SHOPEE_ASSISTED_PILOT_USER_ID` to the member's internal Escala Shop user ID and
+   `SHOPEE_ASSISTED_PILOT_SHOP_URL` to the shop's public `https://shopee.com.br/shop/<id>` URL.
+   The server accepts new requests only from that member and for that shop. Keep
+   `SHOPEE_PUBLICATION_ENABLED` and `SHOPEE_BRAND_PUBLICATION_ENABLED` off and set
+   `SHOPEE_ASSISTED_DELIVERY_ENABLED=true` once the other settings are ready. Disable the assisted
+   flag to pause intake while preserving the existing queue. Completed and pending assisted
+   requests protect the account from creating a second initial batch through the automatic path.
+
+## Pilot acceptance
+
+Sign in as the designated member to approve the five offers. Sign in separately as the operator
+and confirm the seller account ID and permission to edit the profile and publish in bulk. Apply
+the approved brand and upload the generated workbook using the Shopee subaccount. Verify each
+SKU, price, stock and active listing ID in the Seller Centre, then record the five distinct IDs
+and confirm the brand in `/admin/entregas`. Verify that the member sees **Sua loja está pronta**.
 
 The first version accepts products without variations. The supplier needs to keep the catalog
 current. Approval pins the product data and price, and exports use the latest in-stock quantity.

@@ -10,7 +10,7 @@ import { getBrand } from '@/features/brand/server/brand';
 import { getStorePhase } from '@/features/loja-pronta/server/store';
 import { ASSISTED_DELIVERY_PATH } from '@/features/loja-pronta/delivery-paths';
 import {
-  newAssistedDeliveriesEnabled,
+  newAssistedDeliveryPilot,
   ownAssistedDelivery,
 } from '@/features/loja-pronta/server/assisted-delivery';
 import { CenteredMemberPage, panelCard } from '@/features/member/components/area-shell';
@@ -67,7 +67,8 @@ export default async function ShopeeConnectPage({
   if (phase < CONNECT_PHASE) redirect('/loja-pronta');
   if (
     phase === CONNECT_PHASE &&
-    (newAssistedDeliveriesEnabled() || (await ownAssistedDelivery(session.user.id)))
+    (newAssistedDeliveryPilot()?.userId === session.user.id ||
+      (await ownAssistedDelivery(session.user.id)))
   )
     redirect(ASSISTED_DELIVERY_PATH);
   const config = getShopeeConfiguration();

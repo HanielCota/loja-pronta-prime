@@ -13,7 +13,7 @@ import { LegacyStoreHistory } from '@/features/legacy-stores/components/store-hi
 import { AreaPage, panelCard } from '@/features/member/components/area-shell';
 import { CONVERSATION_PATH } from '@/features/loja-pronta/steps';
 import {
-  newAssistedDeliveriesEnabled,
+  newAssistedDeliveryPilot,
   ownAssistedDelivery,
 } from '@/features/loja-pronta/server/assisted-delivery';
 
@@ -65,7 +65,7 @@ export default async function Page() {
       ? 'started'
       : delivery
         ? 'requested'
-        : phase === 4 && newAssistedDeliveriesEnabled()
+        : phase === 4 && newAssistedDeliveryPilot()?.userId === session.user.id
           ? 'available'
           : undefined;
   return (

@@ -22,6 +22,12 @@ export function shopeeDeliveryShopUrl(shopId: string) {
   return `https://shopee.com.br/shop/${shopId}`;
 }
 
+export function parseAssistedDeliveryPilot(accountId?: string, shopUrl?: string) {
+  const userId = accountId?.trim();
+  const shopId = shopeeDeliveryShopId(shopUrl?.trim() ?? '');
+  return userId && shopId ? { userId, shopId } : null;
+}
+
 export function prepareDeliveryOffer(input: unknown, now: Date) {
   const prepared = prepareSupplierProduct(input, now);
   if (prepared.status !== 'prepared') return null;
