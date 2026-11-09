@@ -1,4 +1,5 @@
 import { and, asc, eq, gt, gte, isNull, or, sql } from 'drizzle-orm';
+import { createHash, randomUUID } from 'node:crypto';
 import { db } from '@/server/db';
 import {
   assistedDeliveries,
@@ -29,6 +30,20 @@ import {
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Reader = Pick<typeof db, 'select'>;
 type Delivery = typeof assistedDeliveries.$inferSelect;
+
+export function deliveryReconciliationFingerprint(delivery: Delivery) {
+  return createHash('sha256')
+    .update(
+      JSON.stringify([
+        delivery.id,
+        delivery.operatorId,
+        delivery.selection.map(({ fingerprint }) => fingerprint),
+        delivery.itemIds,
+        delivery.offerReviewId,
+      ]),
+    )
+    .digest('hex');
+}
 
 export function deliveryConfiguration() {
   const subaccount = process.env.SHOPEE_ASSISTED_SUBACCOUNT?.trim();
@@ -88,10 +103,19 @@ export async function ownAssistedDelivery(userId: string) {
   return delivery ?? null;
 }
 
-async function deliverySuggestions(executor: Reader = db) {
+function remainingSelection(delivery: Delivery) {
+  return delivery.selection.filter((_, index) => !delivery.itemIds[index]);
+}
+
+async function deliverySuggestions(executor: Reader = db, delivery?: Delivery) {
   const config = deliveryConfiguration();
   if (!config) return [];
   const now = new Date();
+  const count = delivery ? remainingSelection(delivery).length : INITIAL_DELIVERY_SIZE;
+  if (!count) return [];
+  const published = new Set(
+    delivery?.selection.filter((_, index) => delivery.itemIds[index]).map(({ sku }) => sku),
+  );
   const offers = [];
   let cursor: string | undefined;
   do {
@@ -109,17 +133,25 @@ async function deliverySuggestions(executor: Reader = db) {
       .limit(100);
     for (const row of rows) {
       const offer = prepareDeliveryOffer(row.product, now);
-      if (offer && fitsDeliveryWorkbook(offer, config.layout)) offers.push(offer);
-      if (offers.length === INITIAL_DELIVERY_SIZE) return offers;
+      if (offer && !published.has(offer.sku) && fitsDeliveryWorkbook(offer, config.layout))
+        offers.push(offer);
+      if (offers.length === count) return offers;
     }
     cursor = rows.length === 100 ? rows.at(-1)?.sku : undefined;
   } while (cursor);
   return offers;
 }
 
-export async function assistedDeliveryReview(userId: string) {
-  const [brand, offers] = await Promise.all([currentBrand(userId), deliverySuggestions()]);
-  return { brand, offers };
+export async function assistedDeliveryReview(userId: string, delivery?: Delivery) {
+  const [brand, offers] = await Promise.all([
+    delivery ? delivery.brand : currentBrand(userId),
+    deliverySuggestions(db, delivery),
+  ]);
+  return {
+    brand,
+    offers,
+    count: delivery ? remainingSelection(delivery).length : INITIAL_DELIVERY_SIZE,
+  };
 }
 
 async function lockDeliveryUser(tx: Transaction, userId: string) {
@@ -130,8 +162,11 @@ async function lockDeliveryUser(tx: Transaction, userId: string) {
 }
 
 export async function requestAssistedDelivery(userId: string, shopId: string, expected: string) {
-  const config = newAssistedDeliveryPilot();
-  if (config?.userId !== userId || config.shopId !== shopId) return false;
+  const pilot = newAssistedDeliveryPilot();
+  const initial = pilot?.userId === userId && pilot.shopId === shopId;
+  const pending = await ownAssistedDelivery(userId);
+  const config = initial ? pilot : deliveryConfiguration();
+  if (!config || (!initial && !(pending?.offerReviewId && pending.shopId === shopId))) return false;
   const template = await storage().get(config.templateKey);
   if (!template) return false;
   return db.transaction(async (tx) => {
@@ -141,6 +176,41 @@ export async function requestAssistedDelivery(userId: string, shopId: string, ex
       .from(assistedDeliveries)
       .where(eq(assistedDeliveries.userId, userId))
       .for('update');
+    if (existing?.offerReviewId) {
+      if (
+        existing.shopId !== shopId ||
+        existing.completedAt ||
+        existing.operatorId ||
+        !(await eligibleDelivery(existing.id, tx))
+      )
+        return false;
+      const offers = await deliverySuggestions(tx, existing);
+      if (
+        !offers.length ||
+        offers.length !== remainingSelection(existing).length ||
+        deliveryApprovalFingerprint(existing.brand.fingerprint, offers, existing.offerReviewId) !==
+          expected
+      )
+        return false;
+      await fillDeliveryWorkbook(template, config.layout, offers);
+      const selection = offers.map(({ supplierId, sku, fingerprint }) => ({
+        supplierId,
+        sku,
+        fingerprint,
+      }));
+      let next = 0;
+      await tx
+        .update(assistedDeliveries)
+        .set({
+          selection: existing.selection.map((item, index) =>
+            existing.itemIds[index] ? item : selection[next++]!,
+          ),
+          offerReviewId: null,
+        })
+        .where(eq(assistedDeliveries.id, existing.id));
+      return true;
+    }
+    if (!initial) return false;
     if (existing?.startedAt) return false;
     const [phase] = await tx.select().from(stores).where(eq(stores.userId, userId)).for('share');
     if (phase?.phase !== 4) return false;
@@ -233,7 +303,8 @@ export async function eligibleDelivery(id: string, executor: Reader = db) {
 async function approvedOffers(delivery: Delivery, executor: Reader = db) {
   const config = deliveryConfiguration();
   if (!config) return null;
-  const remaining = delivery.selection.filter((_, index) => !delivery.itemIds[index]);
+  if (delivery.offerReviewId) return null;
+  const remaining = remainingSelection(delivery);
   if (!remaining.length) return null;
   const rows = await executor
     .select()
@@ -259,6 +330,8 @@ async function approvedOffers(delivery: Delivery, executor: Reader = db) {
 }
 
 export async function deliveryReadiness(delivery: Delivery, executor: Reader = db) {
+  if (delivery.offerReviewId) return 'review';
+  if (!remainingSelection(delivery).length) return 'ready';
   if (!deliveryConfiguration()) return 'template';
   if (
     !delivery.startedAt &&
@@ -278,9 +351,11 @@ export async function deliveryWorkbook(delivery: Delivery) {
 
 export async function claimAssistedDelivery(id: string, operatorId: string) {
   const delivery = await eligibleDelivery(id);
-  if (!delivery || delivery.completedAt || delivery.operatorId) return false;
+  if (!delivery || delivery.completedAt || delivery.operatorId || delivery.offerReviewId)
+    return false;
+  const needsWorkbook = remainingSelection(delivery).length > 0;
   const [workbook, logo] = await Promise.all([
-    deliveryWorkbook(delivery),
+    needsWorkbook ? deliveryWorkbook(delivery) : true,
     storage().get(delivery.brand.logoImage),
   ]);
   if (!workbook || !logo) return false;
@@ -291,6 +366,7 @@ export async function claimAssistedDelivery(id: string, operatorId: string) {
       !current ||
       current.operatorId ||
       current.completedAt ||
+      current.offerReviewId ||
       current.shopId !== delivery.shopId ||
       deliveryApprovalFingerprint(current.brand.fingerprint, current.selection) !==
         deliveryApprovalFingerprint(delivery.brand.fingerprint, delivery.selection) ||
@@ -300,17 +376,58 @@ export async function claimAssistedDelivery(id: string, operatorId: string) {
     const [saved] = await tx
       .update(assistedDeliveries)
       .set({ operatorId, startedAt: current.startedAt ?? new Date() })
-      .where(and(eq(assistedDeliveries.id, id), isNull(assistedDeliveries.operatorId)))
+      .where(
+        and(
+          eq(assistedDeliveries.id, id),
+          isNull(assistedDeliveries.operatorId),
+          isNull(assistedDeliveries.offerReviewId),
+        ),
+      )
       .returning({ id: assistedDeliveries.id });
     return Boolean(saved);
+  });
+}
+
+/** Release a claimed delivery after the administrator reconciles any upload in the Seller Centre. */
+export async function releaseAssistedDelivery(id: string, expected: string, review: boolean) {
+  return db.transaction(async (tx) => {
+    const [delivery] = await tx
+      .select()
+      .from(assistedDeliveries)
+      .where(eq(assistedDeliveries.id, id))
+      .for('update');
+    if (
+      !delivery?.startedAt ||
+      delivery.completedAt ||
+      delivery.offerReviewId ||
+      deliveryReconciliationFingerprint(delivery) !== expected ||
+      !(await eligibleDelivery(id, tx))
+    )
+      return false;
+    if (
+      review &&
+      (!remainingSelection(delivery).length || (await deliveryReadiness(delivery, tx)) !== 'offers')
+    )
+      return false;
+    if (!review && !delivery.operatorId) return false;
+    await tx
+      .update(assistedDeliveries)
+      .set({
+        operatorId: null,
+        offerReviewId: review ? randomUUID() : null,
+      })
+      .where(eq(assistedDeliveries.id, id));
+    return true;
   });
 }
 
 export async function confirmAssistedItems(
   id: string,
   operatorId: string,
+  expected: string,
   entered: (string | null)[],
   brandApplied: boolean,
+  administrator = false,
 ) {
   return db.transaction(async (tx) => {
     const [locked] = await tx
@@ -318,7 +435,14 @@ export async function confirmAssistedItems(
       .from(assistedDeliveries)
       .where(eq(assistedDeliveries.id, id))
       .for('update');
-    if (!locked?.startedAt || locked.operatorId !== operatorId || locked.completedAt) return false;
+    if (
+      !locked?.startedAt ||
+      (!administrator && locked.operatorId !== operatorId) ||
+      deliveryReconciliationFingerprint(locked) !== expected ||
+      locked.completedAt ||
+      locked.offerReviewId
+    )
+      return false;
     if (!(await eligibleDelivery(id, tx))) return false;
     const itemIds = locked.itemIds.map((previous, index) => previous ?? entered[index] ?? null);
     const confirmed = itemIds.filter((item) => item !== null);

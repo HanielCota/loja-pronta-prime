@@ -74,7 +74,11 @@ and confirm the brand in `/admin/entregas`. Verify that the member sees **Sua lo
 
 The first version accepts products without variations. The supplier needs to keep the catalog
 current. Approval pins the product data and price, and exports use the latest in-stock quantity.
-When the supplier data changes before an operator claims the request, the customer can review
-the updated offers. After a partial upload, confirm the active listing IDs before generating the
-remaining rows. If the remaining offers are stale or out of stock, the download is held until the
-approved offers are available again. Review the store's existing SKUs in Shopee before retrying.
+When supplier data changes before an operator claims the request, the customer can review the
+updated offers. After a partial upload, record the active listing IDs before generating the
+remaining rows. If a claimed delivery has stale offers, an administrator can request new approval
+for the remaining items. The administrator must verify that the Seller Centre has no upload in
+progress and that every active listing from this delivery has been recorded. The original brand,
+confirmed SKUs and listing IDs are retained. Another operator can claim the delivery after the
+customer approves the replacements. When the offers are still current, an administrator can
+release an assigned delivery to another operator after the same verification.

@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm';
-import { pgTable, text, timestamp, boolean, index } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, boolean, index, uuid } from 'drizzle-orm/pg-core';
 
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
@@ -18,6 +18,7 @@ export const user = pgTable('user', {
   banExpires: timestamp('ban_expires'),
   mustChangePassword: boolean('must_change_password').default(true),
   preferredName: text('preferred_name'),
+  credentialVersion: uuid('credential_version').defaultRandom(),
 });
 
 export const session = pgTable(

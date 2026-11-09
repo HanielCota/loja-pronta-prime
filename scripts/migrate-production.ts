@@ -8,6 +8,7 @@ import { importSllTools } from '../src/features/sll/tools/server/import-tools';
 import { publishToolMaterials } from '../src/features/sll/tools/server/publish-materials';
 import { ensureInitialAssistantPlaybooks } from '../src/features/assistant/server/initial-playbooks';
 import { db } from '../src/server/db';
+import { revokeRetiredPasswords } from '../src/server/auth/revoke-retired-passwords';
 
 async function applyMigrations(): Promise<void> {
   const url = process.env.DATABASE_URL;
@@ -18,6 +19,8 @@ async function applyMigrations(): Promise<void> {
     // Mantém a tabela drizzle.__drizzle_migrations usada pelo CLI e só aplica SQL pendente.
     await migrate(drizzle(pool), { migrationsFolder: './drizzle' });
     console.log('Migrações aplicadas com sucesso.');
+    const { revoked } = await revokeRetiredPasswords(db, true);
+    console.info(`Retired credentials revoked: ${revoked}.`);
     // O banco online não recebe os importadores locais; leva o conteúdo conferido na própria imagem.
     const imported = await importInitialSllContent(pool);
     const ze = await importZeCourse(pool);

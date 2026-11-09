@@ -5,6 +5,8 @@ import { parseWithZod } from '@conform-to/zod/v4';
 import { and, eq, ne } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { auth } from '@/server/auth/auth';
+import { randomUUID } from 'node:crypto';
+import { isRetiredStudentPassword } from '@/server/auth/student-password';
 import { consumeAttempt } from '@/server/auth/rate-limit';
 import { reportAuthError } from '@/server/auth/report-error';
 import { db } from '@/server/db';
@@ -37,6 +39,8 @@ export async function createFirstPassword(
     }
 
     const { password, next } = submission.value;
+    if (isRetiredStudentPassword(password))
+      return { submission: reject(submission, 'retired_password') };
     // Equipe convidada entra pelo painel do cargo; aluna, no início (ver `staffLandingPath`).
     const landingFor = async (person: {
       id: string;
@@ -123,7 +127,7 @@ export async function createFirstPassword(
         await tx.update(account).set({ password: newHash, updatedAt: now }).where(credential);
         await tx
           .update(user)
-          .set({ mustChangePassword: false, updatedAt: now })
+          .set({ mustChangePassword: false, updatedAt: now, credentialVersion: randomUUID() })
           .where(eq(user.id, userId));
         // Senha, marca e revogação precisam terminar juntas: a senha temporária veio por email.
         await tx

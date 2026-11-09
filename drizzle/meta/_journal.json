@@ -540,6 +540,13 @@
       "when": 1794054195288,
       "tag": "0076_assisted-store-deliveries",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1794227797167,
+      "tag": "0077_credential-security-and-delivery-review",
+      "breakpoints": true
     }
   ]
 }

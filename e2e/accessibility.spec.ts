@@ -69,7 +69,7 @@ test('a sugestão de email é anunciada por uma região que já existia antes de
 
 test('o foco do teclado é um contorno sólido de 2px nos botões e nos campos', async ({ page }) => {
   await page.goto('/entrar');
-  await page.getByRole('link', { name: 'Esqueceu ou não recebeu a senha?' }).focus();
+  await page.getByRole('link', { name: 'Esqueceu a senha ou quer criar a primeira?' }).focus();
   await page.keyboard.press('Tab');
   const button = page.getByRole('button', { name: 'Entrar' });
   await expect(button).toBeFocused();

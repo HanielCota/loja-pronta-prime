@@ -53,8 +53,18 @@ export function prepareDeliveryOffer(input: unknown, now: Date) {
 export type DeliveryOffer = NonNullable<ReturnType<typeof prepareDeliveryOffer>>;
 export type DeliverySelection = Pick<DeliveryOffer, 'supplierId' | 'sku' | 'fingerprint'>;
 
-export function deliveryApprovalFingerprint(brand: string, offers: readonly DeliverySelection[]) {
+export function deliveryApprovalFingerprint(
+  brand: string,
+  offers: readonly DeliverySelection[],
+  reviewId?: string,
+) {
   return createHash('sha256')
-    .update(JSON.stringify([brand, ...offers.map((offer) => offer.fingerprint)]))
+    .update(
+      JSON.stringify([
+        brand,
+        ...offers.map((offer) => offer.fingerprint),
+        ...(reviewId ? [reviewId] : []),
+      ]),
+    )
     .digest('hex');
 }

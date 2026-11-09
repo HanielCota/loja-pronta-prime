@@ -6,12 +6,12 @@ import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { brandStepPath } from '@/features/brand/steps';
 import {
   deliveryApprovalFingerprint,
-  INITIAL_DELIVERY_SIZE,
   shopeeDeliveryShopUrl,
 } from '@/features/loja-pronta/assisted-delivery';
 import { ASSISTED_DELIVERY_PATH } from '@/features/loja-pronta/delivery-paths';
 import {
   assistedDeliveryReview,
+  deliveryConfiguration,
   deliveryReadiness,
   newAssistedDeliveryPilot,
   ownAssistedDelivery,
@@ -41,9 +41,15 @@ export default async function AssistedDeliveryPage({
   if (!delivery && phase !== 4) redirect('/loja-pronta');
   const config = newAssistedDeliveryPilot();
   const enabled = phase === 4 && config?.userId === session.user.id;
+  const requestedReview = delivery?.offerReviewId ? delivery : undefined;
+  const reviewConfig = requestedReview ? deliveryConfiguration() : enabled ? config : null;
+  const shopId = requestedReview?.shopId ?? config?.shopId;
   const readiness = delivery && !delivery.startedAt ? await deliveryReadiness(delivery) : null;
   const needsReview = enabled && (!delivery || readiness === 'brand' || readiness === 'offers');
-  const review = needsReview ? await assistedDeliveryReview(session.user.id) : null;
+  const review =
+    requestedReview || needsReview
+      ? await assistedDeliveryReview(session.user.id, requestedReview)
+      : null;
   const result = getParam((await searchParams).resultado);
 
   return (
@@ -66,18 +72,22 @@ export default async function AssistedDeliveryPage({
           <h2 id="delivery-status" className="text-title font-semibold">
             {delivery.completedAt
               ? 'Sua loja está pronta'
-              : delivery.startedAt
-                ? 'Publicação em andamento'
-                : 'Entrega solicitada'}
+              : requestedReview
+                ? 'Aguardando sua aprovação'
+                : delivery.startedAt
+                  ? 'Publicação em andamento'
+                  : 'Entrega solicitada'}
           </h2>
           <p className="text-body text-muted-foreground">
             {delivery.completedAt
               ? 'Sua marca foi aplicada e os cinco primeiros anúncios foram confirmados na Shopee.'
-              : delivery.startedAt
-                ? `${delivery.itemIds.filter(Boolean).length} de 5 anúncios confirmados na Shopee.`
-                : readiness === 'brand' || readiness === 'offers'
-                  ? 'A marca ou os produtos mudaram. Confira os dados atuais antes de atualizar sua aprovação.'
-                  : 'O próximo passo é conferir o acesso à sua loja na Shopee.'}
+              : requestedReview
+                ? 'Os anúncios confirmados foram preservados. Confira os produtos que ainda precisam ser publicados.'
+                : delivery.startedAt
+                  ? `${delivery.itemIds.filter(Boolean).length} de 5 anúncios confirmados na Shopee.`
+                  : readiness === 'brand' || readiness === 'offers'
+                    ? 'A marca ou os produtos mudaram. Confira os dados atuais antes de atualizar sua aprovação.'
+                    : 'O próximo passo é conferir o acesso à sua loja na Shopee.'}
           </p>
           {delivery.completedAt ? (
             <Button asChild variant="soft">
@@ -106,19 +116,22 @@ export default async function AssistedDeliveryPage({
           </Button>
         </section>
       ) : null}
-      {review?.brand && review.offers.length !== INITIAL_DELIVERY_SIZE ? (
+      {review?.brand && review.offers.length !== review.count ? (
         <section className={panelCard}>
           <h2 className="text-title font-semibold">Produtos em preparação</h2>
           <p className="text-body text-muted-foreground">
-            Sua marca está salva. A solicitação abre quando houver cinco produtos com preço, estoque
-            e fotos prontos.
+            {requestedReview
+              ? 'A revisão abre quando houver produtos suficientes com preço, estoque e fotos prontos.'
+              : 'Sua marca está salva. A solicitação abre quando houver cinco produtos com preço, estoque e fotos prontos.'}
           </p>
         </section>
       ) : null}
-      {config && review?.brand && review.offers.length === INITIAL_DELIVERY_SIZE ? (
+      {reviewConfig && shopId && review?.brand && review.offers.length === review.count ? (
         <section className={panelCard} aria-labelledby="delivery-review">
           <h2 id="delivery-review" className="text-title font-semibold">
-            Confira seus cinco primeiros produtos
+            {requestedReview
+              ? 'Confira os produtos restantes'
+              : 'Confira seus cinco primeiros produtos'}
           </h2>
           <p className="text-body text-muted-foreground">
             A publicação usa o nome, o logo e a descrição que você confirmou para{' '}
@@ -141,11 +154,16 @@ export default async function AssistedDeliveryPage({
             <input
               type="hidden"
               name="approval"
-              value={deliveryApprovalFingerprint(review.brand.fingerprint, review.offers)}
+              value={deliveryApprovalFingerprint(
+                review.brand.fingerprint,
+                review.offers,
+                requestedReview?.offerReviewId ?? undefined,
+              )}
             />
             <p className="text-body text-muted-foreground">
-              Na Central do Vendedor, libere uma subconta para <strong>{config.subaccount}</strong>,
-              com acesso ao perfil e aos produtos. Mantenha sua senha com você.
+              Na Central do Vendedor, libere uma subconta para{' '}
+              <strong>{reviewConfig.subaccount}</strong>, com acesso ao perfil e aos produtos.
+              Mantenha sua senha com você.
             </p>
             <FloatingLabelInput
               id="delivery-shop-url"
@@ -155,7 +173,7 @@ export default async function AssistedDeliveryPage({
               maxLength={200}
               readOnly
               aria-describedby="delivery-shop-help"
-              defaultValue={shopeeDeliveryShopUrl(config.shopId)}
+              defaultValue={shopeeDeliveryShopUrl(shopId)}
             />
             <p id="delivery-shop-help" className="text-sm text-muted-foreground">
               Este é o link da loja escolhida para o teste.

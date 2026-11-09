@@ -5,7 +5,7 @@ export function hasAdminRole(role: string | null | undefined): boolean {
 
 /**
  * Aluna é quem tem só a função `user` ou nenhuma. Outras funções (admin ou personalizadas) ficam
- * de fora de ações como voltar para a senha inicial, que todas conhecem.
+ * de fora de ações administrativas reservadas à recuperação de contas de aluna.
  */
 export function isStudentRole(role: string | null | undefined): boolean {
   return (role ?? 'user') === 'user';

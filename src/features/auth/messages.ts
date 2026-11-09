@@ -32,7 +32,7 @@ type AuthMessage = {
 export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, AuthMessage> = {
   invalid_credentials: {
     title: 'Email ou senha incorretos',
-    hint: 'Confira o email usado na compra. A senha do site antigo não vale aqui. Se a senha que você recebeu não entrar, toque em "Redefinir minha senha" para criar uma nova.',
+    hint: 'Confira o email usado na compra. Se for seu primeiro acesso ou se a senha não funcionar, toque em “Redefinir minha senha” para criar uma senha pelo email.',
   },
   email_not_confirmed: {
     title: 'Confirme seu email primeiro',
@@ -75,6 +75,10 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, AuthMessage> = {
   wrong_current_password: {
     title: 'A senha atual não confere',
     hint: 'Digite a senha que você usa pra entrar. Se não lembrar, saia da conta e use "Esqueceu a senha?" no login.',
+  },
+  retired_password: {
+    title: 'Escolha uma senha diferente',
+    hint: 'Esta senha foi desativada por segurança.',
   },
   unchanged_password: {
     title: 'A senha nova é igual à atual',

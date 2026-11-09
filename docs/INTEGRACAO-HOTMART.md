@@ -1,6 +1,6 @@
 # Current student access policy
 
-New Hotmart accounts use `loja1234` without a mandatory password change at first access. Existing accounts retain their password on subsequent purchases. This policy supersedes the historical email invitation proposal below. See [student password maintenance](STUDENT-PASSWORD.md) for updating existing accounts.
+New Hotmart accounts start without a password. Students use password recovery with their purchase email to create their first password. Subsequent purchases retain existing credentials. This policy supersedes the historical first-access notes below. See [student password maintenance](STUDENT-PASSWORD.md) for the shared password retirement.
 
 # Integração com a Hotmart
 
@@ -20,7 +20,7 @@ A área de membros **não tem cadastro público**. Toda conta de aluna nasce de 
 A entrada automática de novas compradoras depende dessa integração e do envio do link para
 criar a senha. Contas já criadas ou liberadas manualmente podem entrar normalmente.
 
-A tela de login assume que a conta já existe e orienta a aluna a usar o email da compra. Quem ainda não tem senha pode pedir um link em “Esqueceu ou não recebeu a senha?”. O recebimento de compras já cria a conta com uma senha aleatória que não é enviada; o convite automático de primeiro acesso continua pendente (ver [4.1](#41-primeiro-acesso-por-link-sem-senha-temporária)). A recuperação depende do serviço de email configurado. Contas de desenvolvimento usam `bun run dev:aluna`; a opção `--primeiro-acesso` exige trocar a senha temporária antes de abrir os produtos.
+The login page directs students to use their purchase email. First-time students request a password creation link there. Recovery requires the configured email service. Development accounts use `bun run dev:aluna`, with `--primeiro-acesso` for accounts testing the individual temporary password flow.
 
 ---
 

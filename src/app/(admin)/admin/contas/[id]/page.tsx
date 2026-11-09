@@ -23,7 +23,6 @@ import { hasStaffPermission } from '@/features/support/staff-access';
 import { visitRefusalReason } from '@/features/support/visit-target';
 import { getAccount } from '@/features/admin/server/accounts';
 import { RESET_LINK_TTL_HOURS } from '@/config/auth';
-import { DEFAULT_STUDENT_PASSWORD } from '@/server/auth/student-password';
 import { getLastPresence } from '@/features/admin/server/online';
 import { deviceDetails } from '@/features/presence/device';
 import { formatLastSeen, isOnline } from '@/features/presence/presence';
@@ -208,12 +207,12 @@ export default async function AdminAccountPage({
                 </h2>
                 <p className="mt-2 text-body text-muted-foreground">
                   {isStudentRole(account.role)
-                    ? `Se ela não consegue entrar, volte para a senha inicial (${DEFAULT_STUDENT_PASSWORD}). `
+                    ? 'Se ela não consegue entrar, desative a senha atual e oriente a recuperação por email. '
                     : null}
                   Bloquear desconecta a conta e impede que ela entre de novo até ser desbloqueada.
                 </p>
               </div>
-              {/* Mesma regra do servidor: só aluna volta para a senha inicial. */}
+              {/* Esta opção de recuperação vale apenas para contas de aluna. */}
               {isStudentRole(account.role) ? <AccountPasswordResetForm id={account.id} /> : null}
               <AccountSessionsForm id={account.id} />
               <AccountBlockForm blocked={account.banned ?? false} id={account.id} />

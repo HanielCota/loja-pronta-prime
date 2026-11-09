@@ -20,6 +20,7 @@ import {
   user,
 } from '@/server/db/schema';
 import { auth } from '@/server/auth/auth';
+import { revokeAccountAccess } from '@/server/auth/credential-lifecycle';
 import { reportAuthError } from '@/server/auth/report-error';
 import { SUPPORT_TICKET_TOPICS } from '@/features/support/catalog';
 import { env } from '@/config/env';
@@ -331,6 +332,21 @@ async function loadTeamTarget(id: string, owners: readonly string[]) {
   return target;
 }
 
+async function updateTeamRole(id: string, next: StaffRole | null, owners: readonly string[]) {
+  return db.transaction(async (tx) => {
+    const [target] = await tx.select({ email: user.email, emailVerified: user.emailVerified, role: user.role })
+      .from(user).where(eq(user.id, id)).for('update');
+    if (!target || isPlatformOwner(target, owners))
+      back(TEAM_PATH, 'equipe', 'Esta conta não pode ter o cargo alterado por aqui.', false);
+    const previous = staffRoleOf(target.role);
+    if (next !== previous) {
+      await tx.update(user).set({ role: withStaffRole(target.role, next) }).where(eq(user.id, id));
+      await revokeAccountAccess(tx, id, next !== null, previous === 'admin');
+    }
+    return previous;
+  });
+}
+
 const staffRoleSchema = z.enum(STAFF_ROLES);
 const inviteSchema = z.object({
   name: z.string().trim().min(2).max(80),
@@ -340,7 +356,7 @@ const inviteSchema = z.object({
 
 /**
  * Convida pra equipe: cria a conta (o cadastro público é fechado) e manda o link de criar senha,
- * que vale 1 hora. Quem já tem conta só ganha o cargo (e continua aluna, se for).
+ * que vale 1 hora. Quem já tem conta precisa confirmar o novo acesso pelo email.
  */
 export async function inviteStaff(form: FormData): Promise<void> {
   const { staffSession: owner, owners } = await requirePlatformOwner();
@@ -355,10 +371,12 @@ export async function inviteStaff(form: FormData): Promise<void> {
   if (existing && isPlatformOwner(existing, owners))
     back(TEAM_PATH, 'convite', 'Esta pessoa é dona da plataforma: o cargo dela não muda por aqui.', false);
   if (existing) {
-    await db.update(user).set({ role: withStaffRole(existing.role, role) }).where(eq(user.id, existing.id));
+    const previous = await updateTeamRole(existing.id, role, owners);
     await recordStaffAction({ actorId: owner.user.id, action: 'team.invited', targetId: existing.id, detail: { role, existingAccount: true } });
     revalidatePath(TEAM_PATH);
-    back(TEAM_PATH, 'equipe', `${name} já tinha conta e agora faz parte da equipe.`, true);
+    back(TEAM_PATH, 'equipe', previous === role
+      ? `${name} já tem este cargo.`
+      : `${name} agora faz parte da equipe. Oriente a pessoa a criar uma nova senha pelo email.`, true);
   }
   let invitedId: string | null = null;
   try {
@@ -391,17 +409,18 @@ export async function changeStaffRole(form: FormData): Promise<void> {
   if (id === admin.user.id) back(TEAM_PATH, 'equipe', 'Você não pode mudar o seu próprio cargo.', false);
   const next: StaffRole | null = value === 'remover' ? null : staffRoleSchema.safeParse(value).success ? (value as StaffRole) : null;
   if (value !== 'remover' && !next) back(TEAM_PATH, 'equipe', 'Escolha um cargo.', false);
-  const target = await loadTeamTarget(id, owners);
-  await db.update(user).set({ role: withStaffRole(target.role, next) }).where(eq(user.id, id));
+  const previous = await updateTeamRole(id, next, owners);
   await recordStaffAction({
     actorId: admin.user.id,
     action: next ? 'team.role_changed' : 'team.removed',
     targetId: id,
-    detail: { from: staffRoleOf(target.role), to: next },
+    detail: { from: previous, to: next },
   });
   revalidatePath(TEAM_PATH);
   revalidatePath('/admin/chamados', 'layout');
-  back(TEAM_PATH, 'equipe', next ? 'Cargo salvo.' : 'Pessoa tirada da equipe. Os chamados dela voltaram pra fila.', true);
+  back(TEAM_PATH, 'equipe', next && next !== previous
+    ? 'Cargo salvo. Oriente a pessoa a criar uma nova senha pelo email.'
+    : next ? 'Cargo salvo.' : 'Pessoa tirada da equipe. Os chamados dela voltaram pra fila.', true);
 }
 
 /** Bloqueia ou desbloqueia alguém da equipe (bloquear encerra as sessões). */

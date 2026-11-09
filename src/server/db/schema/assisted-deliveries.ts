@@ -22,6 +22,7 @@ export const assistedDeliveries = pgTable(
       .default(sql`'[null,null,null,null,null]'::jsonb`),
     requestedAt: timestamp('requested_at', { withTimezone: true }).notNull().defaultNow(),
     operatorId: text('operator_id').references(() => user.id, { onDelete: 'set null' }),
+    offerReviewId: uuid('offer_review_id'),
     startedAt: timestamp('started_at', { withTimezone: true }),
     completedAt: timestamp('completed_at', { withTimezone: true }),
   },

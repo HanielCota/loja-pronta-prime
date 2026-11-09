@@ -4,15 +4,18 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { AdminPage } from '@/features/admin/components/admin-shell';
+import { hasAdminRole } from '@/features/admin/access';
 import { shopeeDeliveryShopUrl } from '@/features/loja-pronta/assisted-delivery';
 import { DELIVERY_QUEUE_PATH } from '@/features/loja-pronta/delivery-paths';
 import {
   deliveryReadiness,
+  deliveryReconciliationFingerprint,
   eligibleDelivery,
 } from '@/features/loja-pronta/server/assisted-delivery';
 import {
   saveAssistedDeliveryItems,
   startAssistedDelivery,
+  recoverAssistedDelivery,
 } from '@/features/loja-pronta/server/assisted-delivery-actions';
 import { panelCard } from '@/features/member/components/area-shell';
 import { requireStaff } from '@/features/support/server/staff-guard';
@@ -35,6 +38,12 @@ export default async function DeliveryDetailPage({
   const ready = delivery.completedAt ? null : await deliveryReadiness(delivery);
   const owner = delivery.operatorId === user.id;
   const confirmed = delivery.itemIds.filter(Boolean).length;
+  const reconciliation = deliveryReconciliationFingerprint(delivery);
+  const canRecover =
+    hasAdminRole(user.role) &&
+    delivery.startedAt &&
+    !delivery.completedAt &&
+    !delivery.offerReviewId;
   const result = getParam((await searchParams).resultado);
   const download = `${DELIVERY_QUEUE_PATH}/${id}/arquivo`;
 
@@ -50,6 +59,16 @@ export default async function DeliveryDetailPage({
             ? 'Não foi possível assumir a entrega. Confira o modelo da Shopee e se a entrega ainda está disponível.'
             : 'Confira os números dos anúncios. Cada produto precisa ter um número diferente.'}
         </p>
+      ) : null}
+      {result === 'recovery-unavailable' ? (
+        <p role="alert" className="text-body text-destructive">
+          A entrega mudou. Confira os anúncios na Shopee antes de tentar de novo.
+        </p>
+      ) : null}
+      {result === 'recovered' ? (
+        <output className="block text-body">
+          Entrega atualizada.
+        </output>
       ) : null}
       <section className={panelCard} aria-labelledby="delivery-brand">
         <h2 id="delivery-brand" className="text-title font-semibold">
@@ -81,6 +100,11 @@ export default async function DeliveryDetailPage({
                 : 'Um ou mais produtos ficaram desatualizados. Confira a situação na Shopee antes de continuar.'}
           </p>
         ) : null}
+        {ready === 'review' ? (
+          <p className="text-body text-muted-foreground">
+            Aguardando a aprovação da cliente para os produtos restantes.
+          </p>
+        ) : null}
         {!delivery.operatorId && ready === 'ready' ? (
           <form action={startAssistedDelivery} className="flex flex-col gap-4">
             <input type="hidden" name="id" value={id} />
@@ -96,9 +120,9 @@ export default async function DeliveryDetailPage({
             Outro atendente está cuidando desta entrega.
           </p>
         ) : null}
-        {owner && !delivery.completedAt ? (
+        {(owner || canRecover) && !delivery.completedAt ? (
           <>
-            {ready === 'ready' ? (
+            {owner && ready === 'ready' && confirmed < 5 ? (
               <>
                 <p className="text-body text-muted-foreground">
                   Use a planilha em Adicionar em Massa. Em caso de envio parcial, confira os códigos
@@ -113,6 +137,7 @@ export default async function DeliveryDetailPage({
             ) : null}
             <form action={saveAssistedDeliveryItems} className="flex flex-col gap-4">
               <input type="hidden" name="id" value={id} />
+              <input type="hidden" name="reconciliation" value={reconciliation} />
               {delivery.selection.map(({ sku }, index) => (
                 <div key={sku}>
                   <p className="mb-2 text-body font-semibold wrap-anywhere">
@@ -141,6 +166,26 @@ export default async function DeliveryDetailPage({
               <Button variant="soft">Salvar conferência</Button>
             </form>
           </>
+        ) : null}
+        {canRecover && (delivery.operatorId || ready === 'offers') ? (
+          <form action={recoverAssistedDelivery} className="flex flex-col gap-4">
+            <input type="hidden" name="id" value={id} />
+            <input type="hidden" name="reconciliation" value={reconciliation} />
+            <label className="flex min-h-11 items-center gap-3 text-body">
+              <input type="checkbox" name="reconciled" value="yes" required />
+              Conferi os anúncios na Shopee. Todos os anúncios ativos desta entrega já estão
+              registrados e não há envio em andamento.
+            </label>
+            {ready === 'offers' ? (
+              <Button name="mode" value="review" variant="soft">
+                Pedir nova aprovação dos produtos restantes
+              </Button>
+            ) : (
+              <Button name="mode" value="release" variant="soft">
+                Liberar para outro atendente
+              </Button>
+            )}
+          </form>
         ) : null}
       </section>
     </AdminPage>

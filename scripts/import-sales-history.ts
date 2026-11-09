@@ -1,11 +1,9 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { hashPassword } from 'better-auth/crypto';
 import { Pool } from 'pg';
 import { z } from 'zod';
 import { purchaseExpiresAt } from '../src/features/products/access-term';
-import { DEFAULT_STUDENT_PASSWORD } from '../src/server/auth/student-password';
 
 const purchaseSchema = z
   .object({
@@ -126,35 +124,13 @@ export async function importSalesHistory(pool: Pool, input: SalesHistoryInput, a
       'INSERT INTO sales_history_imports(source_sha256,prepared_sha256) VALUES($1,$2)',
       [input.sourceSha256, input.preparedSha256],
     );
-    // Separate salts preserve the authentication library's credential format for every new account.
-    for (let offset = 0; offset < accounts.length; offset += 4) {
-      const group = await Promise.all(
-        accounts.slice(offset, offset + 4).map(async (a) => ({
-          ...a,
-          id: randomUUID(),
-          password: await hashPassword(DEFAULT_STUDENT_PASSWORD),
-        })),
-      );
-      for (const a of group) {
-        // Do not replace a concurrent existing account or reset any existing credential.
-        const inserted = await client.query<{ id: string }>(
-          `INSERT INTO "user"
+    for (const a of accounts) {
+      await client.query(
+        `INSERT INTO "user"
           (id,email,name,role,email_verified,must_change_password,updated_at)
-          VALUES($1,$2,$3,'user',true,false,now()) ON CONFLICT(email) DO NOTHING RETURNING id`,
-          [a.id, a.email, a.name],
-        );
-        if (inserted.rows.length)
-          await client.query(
-            `INSERT INTO account
-          (id,account_id,provider_id,user_id,password,updated_at)
-          VALUES($1,$2,'credential',$2,$3,now())`,
-            [randomUUID(), a.id, a.password],
-          );
-      }
-      if (offset % 1000 === 0)
-        console.info(
-          `Prepared ${Math.min(offset + 4, accounts.length)} of ${accounts.length} new accounts.`,
-        );
+          VALUES($1,$2,$3,'user',true,false,now()) ON CONFLICT(email) DO NOTHING`,
+        [randomUUID(), a.email, a.name],
+      );
     }
     // An account can be created only for a purchase that is still valid at the actual import time.
     await client.query(

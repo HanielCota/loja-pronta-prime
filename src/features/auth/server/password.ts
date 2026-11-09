@@ -1,5 +1,7 @@
 import { and, eq, gt, ne } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 import { auth } from '@/server/auth/auth';
+import { isRetiredStudentPassword } from '@/server/auth/student-password';
 import { db } from '@/server/db';
 import { account, session, user } from '@/server/db/schema';
 import type { AuthErrorCode } from '../error-codes';
@@ -11,6 +13,7 @@ export async function changeOwnPassword(
   currentPassword: string,
   newPassword: string,
 ): Promise<AuthErrorCode | null> {
+  if (isRetiredStudentPassword(newPassword)) return 'retired_password';
   const context = await auth.$context;
   const [credential] = await db
     .select({ id: account.id, password: account.password })
@@ -55,6 +58,7 @@ export async function changeOwnPassword(
       )
       .returning({ id: account.id });
     if (!changed) return 'wrong_current_password';
+    await tx.update(user).set({ credentialVersion: randomUUID() }).where(eq(user.id, userId));
     await tx.delete(session).where(and(eq(session.userId, userId), ne(session.token, keepToken)));
     return null;
   });

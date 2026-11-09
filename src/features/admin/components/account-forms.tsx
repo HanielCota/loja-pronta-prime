@@ -188,7 +188,7 @@ export function AccountPasswordResetForm({ id }: { id: string }) {
       <input name="id" type="hidden" value={id} />
       <Button disabled={pending} loading={pending} type="submit" variant="soft">
         <KeyRound aria-hidden="true" data-icon="inline-start" />
-        Voltar para a senha inicial
+        Desativar senha para recuperação por email
       </Button>
       <Result state={state} />
     </form>

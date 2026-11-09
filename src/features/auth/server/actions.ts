@@ -8,6 +8,7 @@ import { after } from 'next/server';
 import { auth } from '@/server/auth/auth';
 import { consumeAttempt, consumeAttempts } from '@/server/auth/rate-limit';
 import { reportAuthError } from '@/server/auth/report-error';
+import { isRetiredStudentPassword } from '@/server/auth/student-password';
 import { getClientIp } from '@/server/request/client-ip';
 import { ENHANCED_SUBMIT_FIELD } from '@/lib/forms';
 import { staffLandingPath } from '@/features/support/server/staff-landing';
@@ -139,6 +140,7 @@ export async function resetPassword(_state: ResetResult, formData: FormData): Pr
     }
 
     const { password, token } = submission.value;
+    if (isRetiredStudentPassword(password)) return { submission: reject(submission, 'retired_password') };
 
     // Por IP, não por token: quem tenta adivinhar tokens troca de token a cada tentativa.
     const ip = await getClientIp();

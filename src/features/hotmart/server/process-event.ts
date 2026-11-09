@@ -2,7 +2,6 @@ import { revalidateAdminOverview } from '@/features/admin/server/overview-cache'
 import { and, eq, inArray, ne, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { auth } from '@/server/auth/auth';
-import { DEFAULT_STUDENT_PASSWORD } from '@/server/auth/student-password';
 import { purchaseExpiresAt } from '@/features/products/access-term';
 import { historicalSllPurchases } from '@/server/db/schema';
 import { hotmartEvents, hotmartProductMappings, hotmartPurchases, user } from '@/server/db/schema';
@@ -34,7 +33,6 @@ async function findOrCreateBuyer(email: string, name: string) {
       body: {
         email,
         name,
-        password: DEFAULT_STUDENT_PASSWORD,
         role: 'user',
         data: { emailVerified: true, mustChangePassword: false },
       },
