@@ -36,6 +36,18 @@ export const patchNotes: readonly PatchNoteDay[] = [
         description:
           'A atualização inclui uma correção na biblioteca que confere os dados recebidos pela plataforma.',
       },
+      {
+        kind: 'Melhoria',
+        title: 'Novo modelo para criar logos',
+        description:
+          'A geração de logos vai usar um novo modelo após a atualização. Se a criação por IA não estiver configurada, ela aparecerá como em breve e nenhuma tentativa será usada. Você ainda poderá enviar seu próprio logo.',
+      },
+      {
+        kind: 'Correção',
+        title: 'Texto completo nos banners',
+        description:
+          'Após a atualização, nomes e frases largos passarão para a próxima linha para caber na imagem do banner.',
+      },
     ],
   },
   {

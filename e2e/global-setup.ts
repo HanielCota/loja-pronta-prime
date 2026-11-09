@@ -270,6 +270,10 @@ async function createStudents() {
         user.id,
         product,
       ]);
+      await database().query(
+        'insert into manual_product_grants (user_id, product) values ($1, $2)',
+        [user.id, product],
+      );
     }
     if (student.storePhase) {
       await database().query('insert into stores (user_id, phase) values ($1, $2)', [

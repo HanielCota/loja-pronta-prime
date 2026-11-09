@@ -18,6 +18,14 @@ recorded separately from code integration.
 - Apply migration `0077_credential-security-and-delivery-review` during a coordinated rollout.
   Production rollout and Seller Centre acceptance are pending.
 
+### Logo generation and banner exports
+
+- Use GPT Image 2.6 Flare for square PNG logos. Confirm access in the production OpenAI project
+  before rollout.
+- Mark generation as coming soon without an OpenAI key and preserve the student's quota.
+- Wrap banner text by rendered glyph width and keep it inside both PNG layouts.
+- Run the isolated logo failure and request contract tests in CI.
+
 ## 2026-11-08
 
 ### Assisted delivery pilot access

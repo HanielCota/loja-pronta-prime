@@ -37,7 +37,7 @@ export async function LogoStep({
         oldName={oldName}
         editing={editing}
         titleId={TITLE_ID}
-        speechAvailable={Boolean(env.OPENAI_API_KEY)}
+        aiAvailable={Boolean(env.OPENAI_API_KEY)}
       />
     </>
   );

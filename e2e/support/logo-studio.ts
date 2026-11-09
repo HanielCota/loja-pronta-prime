@@ -2,7 +2,7 @@ import { expect, type Page } from '@playwright/test';
 
 /**
  * O estúdio do logo nos testes. As escolhas são na tela, sem IA; criar o logo chama a OpenAI de
- * verdade (uns US$ 0,01 por logo, até uns 2 minutos): os testes criam só os necessários.
+ * verdade (até uns 2 minutos): os testes criam só os necessários.
  */
 
 /** Quanto a IA pode demorar pra desenhar. */
@@ -27,7 +27,9 @@ export async function pickAll(page: Page, labels: string[]) {
     await choose(page, label);
     await goOn(page);
   }
-  await expect(page.getByRole('heading', { name: 'Confira e crie o seu logo' })).toBeFocused();
+  await expect(
+    page.getByRole('heading', { name: /^(Confira e crie o seu logo|Confira suas escolhas)$/ }),
+  ).toBeFocused();
 }
 
 /** Toca em criar e espera o logo número `number` chegar (a imagem carregada de verdade). */

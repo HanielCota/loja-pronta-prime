@@ -2,11 +2,13 @@
 
 import { runAsStudent } from '@/features/support/server/impersonation';
 import { redirect } from 'next/navigation';
+import { env } from '@/config/env';
 import { AiUnavailableError } from '@/server/ai/errors';
 import { requireBrandAction } from '../../server/brand';
 import { saveBrand } from '../../server/brand-store';
 import { brandStepPath } from '../../steps';
 import {
+  GENERATION_COMING_SOON,
   MAX_GENERATIONS,
   MAX_UPLOAD_BYTES,
   MAX_UPLOADS,
@@ -69,6 +71,9 @@ async function draw(
   brief: LogoBrief,
   tweak?: LogoTweak,
 ): Promise<StudioResult> {
+  if (!env.OPENAI_API_KEY) {
+    return { studio: view(studio), error: GENERATION_COMING_SOON };
+  }
   if (!(await reserveGeneration(userId, MAX_GENERATIONS))) {
     return {
       studio: view(studio),
