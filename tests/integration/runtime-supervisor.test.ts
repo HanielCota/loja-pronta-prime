@@ -31,14 +31,18 @@ test('a falha do migrador impede iniciar web e worker', async () => {
 test('a queda do worker encerra a web para a hospedagem reiniciar o conjunto', async () => {
   const folder = await fixture(
     '',
-    "require('fs').writeFileSync('web-started', 'yes');process.on('SIGTERM',()=>{require('fs').writeFileSync('web-stopped', 'yes');process.exit(0)});setInterval(()=>{},1000)",
+    "require('fs').writeFileSync('web-started', String(process.pid));process.on('SIGTERM',()=>{require('fs').writeFileSync('web-stopped', 'yes');process.exit(0)});setInterval(()=>{},1000)",
     'setTimeout(()=>process.exit(7),500)',
   );
   try {
     const child = Bun.spawn(['node', script], { cwd: folder, stdout: 'pipe', stderr: 'pipe' });
     expect(await child.exited).toBe(7);
-    expect(await readFile(path.join(folder, 'web-started'), 'utf8')).toBe('yes');
-    expect(await readFile(path.join(folder, 'web-stopped'), 'utf8')).toBe('yes');
+    const pid = Number(await readFile(path.join(folder, 'web-started'), 'utf8'));
+    expect(pid).toBeGreaterThan(0);
+    expect(() => process.kill(pid, 0)).toThrow();
+    // Windows forcefully terminates a child on SIGTERM, without calling its signal handler.
+    if (process.platform !== 'win32')
+      expect(await readFile(path.join(folder, 'web-stopped'), 'utf8')).toBe('yes');
   } finally {
     await rm(folder, { recursive: true, force: true });
   }

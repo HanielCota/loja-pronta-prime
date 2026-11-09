@@ -3,6 +3,7 @@ import { and, asc, desc, eq, gt, gte, inArray, lt, lte, ne, sql } from 'drizzle-
 import { db } from '@/server/db';
 import {
   assistantJobs,
+  assistedDeliveries,
   assistantPublicationBatches,
   assistantPublicationItems,
   shopeeCollectionRuns,
@@ -119,6 +120,11 @@ export async function createPublicationBatch(
     await tx.execute(
       sql`select pg_advisory_xact_lock(hashtext(${`assistant-publication:${userId}`}))`,
     );
+    const [assisted] = await tx
+      .select({ id: assistedDeliveries.id })
+      .from(assistedDeliveries)
+      .where(eq(assistedDeliveries.userId, userId));
+    if (assisted) throw new OperationBlocked('assisted-delivery');
     const [store] = await tx.select().from(stores).where(eq(stores.userId, userId));
     if (!store || store.phase < 5) throw new OperationBlocked('stage');
     const [initial] = await tx

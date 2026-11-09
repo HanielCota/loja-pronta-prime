@@ -1,78 +1,24 @@
-import { randomUUID } from 'node:crypto';
-import { hashPassword } from 'better-auth/crypto';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import { DEFAULT_STUDENT_PASSWORD } from '../src/server/auth/student-password';
+import * as schema from '../src/server/db/schema';
+import { revokeRetiredPasswords } from '../src/server/auth/revoke-retired-passwords';
 
-const flags = new Set(process.argv.slice(2));
-if ([...flags].some((flag) => !['--apply', '--all-students'].includes(flag))) {
-  throw new Error('Usage: bun scripts/set-student-password.ts [--apply] [--all-students]');
-}
+const flags = process.argv.slice(2);
+if (flags.some((flag) => flag !== '--apply'))
+  throw new Error('Usage: bun scripts/set-student-password.ts [--apply]');
 if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required.');
-
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 1,
-  connectionTimeoutMillis: 5_000,
+  connectionTimeoutMillis: 5000,
 });
-const client = await pool.connect();
-
-// A function of its own so the preview can return early without touching any credential.
-async function updateEligibleStudents() {
-  await client.query('BEGIN');
-  // Lock accounts before inspecting roles or changing credentials, including concurrent resets.
-  const { rows } = await client.query<{ id: string }>(
-    `SELECT id FROM "user"
-     WHERE COALESCE(role, 'user') = 'user'
-       AND ($1::boolean OR must_change_password IS DISTINCT FROM false)
-     ORDER BY id FOR UPDATE`,
-    [flags.has('--all-students')],
-  );
-  console.info(`Eligible student accounts: ${rows.length}. Administrative roles are excluded.`);
-  if (!flags.has('--apply')) {
-    console.info(
-      'Preview only. Pass --apply to replace passwords and revoke sessions and reset links.',
-    );
-    await client.query('ROLLBACK');
-    return;
-  }
-  for (const { id } of rows) {
-    // A separate salt per student preserves the authentication library's password format.
-    const password = await hashPassword(DEFAULT_STUDENT_PASSWORD);
-    const updated = await client.query(
-      `UPDATE account SET password = $1, updated_at = now()
-       WHERE user_id = $2 AND provider_id = 'credential' RETURNING id`,
-      [password, id],
-    );
-    if (!updated.rowCount) {
-      await client.query(
-        `INSERT INTO account (id, account_id, provider_id, user_id, password, updated_at)
-         VALUES ($1, $2, 'credential', $2, $3, now())`,
-        [randomUUID(), id, password],
-      );
-    }
-    await client.query(
-      `UPDATE "user" SET must_change_password = false, email_verified = true, updated_at = now()
-       WHERE id = $1`,
-      [id],
-    );
-    await client.query('DELETE FROM session WHERE user_id = $1', [id]);
-    await client.query(
-      "DELETE FROM verification WHERE value = $1 AND identifier LIKE 'reset-password:%'",
-      [id],
-    );
-  }
-  await client.query('COMMIT');
-  console.info(
-    `Updated ${rows.length} student accounts. No password change is required at first access.`,
-  );
-}
-
 try {
-  await updateEligibleStudents();
-} catch (error) {
-  await client.query('ROLLBACK');
-  throw error;
+  const apply = flags.includes('--apply');
+  const result = await revokeRetiredPasswords(drizzle(pool, { schema }), apply);
+  console.info(
+    apply
+      ? `Retired credentials revoked: ${result.revoked}.`
+      : `Accounts with the retired password: ${result.matched}. Pass --apply to revoke access.`,
+  );
 } finally {
-  client.release();
   await pool.end();
 }

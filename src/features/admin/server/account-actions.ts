@@ -9,8 +9,9 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/server/auth/auth';
 import { reportAuthError } from '@/server/auth/report-error';
 import { db } from '@/server/db';
-import { resetStudentToInitialPassword } from '@/server/auth/reset-student-password';
-import { DEFAULT_STUDENT_PASSWORD } from '@/server/auth/student-password';
+import { resetStudentForEmailRecovery } from '@/server/auth/reset-student-password';
+import { revokeAccountAccess } from '@/server/auth/credential-lifecycle';
+import { isRetiredStudentPassword } from '@/server/auth/student-password';
 import {
   manualProductGrants,
   productAccessEvents,
@@ -72,6 +73,8 @@ export async function createAccount(
   });
   if (!parsed.ok) return fail(parsed.errors);
   const account = parsed.account;
+  if (account.password && isRetiredStudentPassword(account.password))
+    return fail({ password: 'Escolha uma senha temporária diferente.' });
 
   const existing = await db.query.user.findFirst({
     columns: { id: true },
@@ -174,34 +177,46 @@ export async function saveAccount(
     };
   }
 
-  const target = await db.query.user.findFirst({
-    columns: { id: true, role: true },
-    where: eq(user.id, id),
-  });
-  if (!target) return { message: 'Essa conta não existe mais.', saved: false };
-  // Sem isso, a admin poderia se trancar fora do painel sem querer.
-  if (target.id === admin.user.id && !edit.admin && hasAdminRole(target.role)) {
-    return { message: 'Você não pode tirar a sua própria função de admin.', saved: false };
-  }
+  const result = await db.transaction(async (tx) => {
+    const [target] = await tx
+      .select({ role: user.role, email: user.email })
+      .from(user)
+      .where(eq(user.id, id))
+      .for('update');
+    if (!target) return { message: 'Essa conta não existe mais.', saved: false };
+    const wasAdmin = hasAdminRole(target.role);
+    if (id === admin.user.id && !edit.admin && wasAdmin)
+      return { message: 'Você não pode tirar a sua própria função de admin.', saved: false };
 
-  const taken = await db.query.user.findFirst({
-    columns: { id: true },
-    where: and(eq(user.email, edit.email), ne(user.id, id)),
-  });
-  if (taken) return { message: 'Esse email já é de outra conta.', saved: false };
+    const promoted = edit.admin && !wasAdmin;
+    if (promoted && target.email !== edit.email)
+      return { message: 'Salve o email antes de mudar a função para admin.', saved: false };
+    const taken = await tx.query.user.findFirst({
+      columns: { id: true },
+      where: and(eq(user.email, edit.email), ne(user.id, id)),
+    });
+    if (taken) return { message: 'Esse email já é de outra conta.', saved: false };
 
-  await db
-    .update(user)
-    .set({
-      name: edit.name,
-      preferredName: edit.preferredName,
-      email: edit.email,
-      role: withAdminRole(target.role, edit.admin),
-      mustChangePassword: edit.mustChangePassword,
-    })
-    .where(eq(user.id, id));
-  refresh(id);
-  return { message: 'Alterações salvas.', saved: true };
+    await tx
+      .update(user)
+      .set({
+        name: edit.name,
+        preferredName: edit.preferredName,
+        email: edit.email,
+        role: withAdminRole(target.role, edit.admin),
+        mustChangePassword: edit.mustChangePassword,
+      })
+      .where(eq(user.id, id));
+    if (edit.admin !== wasAdmin) await revokeAccountAccess(tx, id, promoted, wasAdmin);
+    return {
+      message: promoted
+        ? 'Função de admin salva. Para entrar, a pessoa precisa criar uma senha pelo link de recuperação no email dela.'
+        : 'Alterações salvas.',
+      saved: true,
+    };
+  });
+  if (result.saved) refresh(id);
+  return result;
 }
 
 /** Bloqueia (encerrando as sessões abertas) ou desbloqueia a conta. */
@@ -262,7 +277,7 @@ export async function endAccountSessions(
   };
 }
 
-/** Volta a senha da aluna para a senha inicial, para quem não consegue entrar. */
+/** Encerra o acesso anterior para que a aluna crie uma senha por email. */
 export async function resetStudentPassword(
   _previous: AccountActionState,
   data: FormData,
@@ -271,14 +286,15 @@ export async function resetStudentPassword(
   await requireAdmin(id ? `/admin/contas/${id}` : '/admin/contas');
   if (!id) return { message: 'Conta não encontrada.', saved: false };
 
-  const result = await resetStudentToInitialPassword(id);
+  const result = await resetStudentForEmailRecovery(id);
   if (result === 'missing') return { message: 'Essa conta não existe mais.', saved: false };
   if (result === 'not_student') {
-    return { message: 'Só contas de aluna podem voltar para a senha inicial.', saved: false };
+    return { message: 'Só contas de aluna podem usar esta opção.', saved: false };
   }
   refresh(id);
   return {
-    message: `Pronto. Ela já pode entrar com o email dela e a senha ${DEFAULT_STUDENT_PASSWORD}.`,
+    message:
+      'Senha anterior desativada. Oriente a aluna a usar “Redefinir minha senha” na tela de entrada.',
     saved: true,
   };
 }

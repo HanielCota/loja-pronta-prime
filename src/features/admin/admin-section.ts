@@ -16,6 +16,7 @@ export type AdminSection =
   | 'bling'
   | 'experts'
   | 'assistant'
+  | 'store-deliveries'
   | 'tickets'
   | 'support-performance'
   | 'support-team'
@@ -31,6 +32,7 @@ const SECTION_BY_SEGMENT: Readonly<Record<string, AdminSection>> = {
   bling: 'bling',
   experts: 'experts',
   assistente: 'assistant',
+  entregas: 'store-deliveries',
   chamados: 'tickets',
   suporte: 'support-settings',
   textos: 'texts',

@@ -12,6 +12,7 @@ const AUTH_ERROR_CODES = [
   'first_password_already_set',
   'wrong_current_password',
   'unchanged_password',
+  'retired_password',
   'unknown',
 ] as const;
 

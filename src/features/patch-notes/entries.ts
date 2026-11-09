@@ -10,6 +10,57 @@ type PatchNoteDay = {
 /** Curated daily notes, newest first. Dates follow America/Sao_Paulo. */
 export const patchNotes: readonly PatchNoteDay[] = [
   {
+    date: '2026-11-09',
+    changes: [
+      {
+        kind: 'Correção',
+        title: 'Senha individual no primeiro acesso',
+        description:
+          'Após a publicação da atualização, quem comprou pela Hotmart poderá criar a primeira senha pelo email da compra. Quem ainda usa a senha compartilhada precisará criar uma senha própria. As senhas pessoais serão preservadas.',
+      },
+      {
+        kind: 'Correção',
+        title: 'Novo acesso ao mudar para admin',
+        description:
+          'Após a atualização, mudar uma conta para admin encerra as sessões anteriores. A pessoa cria uma nova senha pelo email antes de acessar o painel.',
+      },
+      {
+        kind: 'Correção',
+        title: 'Retomada da entrega assistida',
+        description:
+          'Quando o piloto estiver disponível, a administração poderá trocar o atendente ou pedir uma nova aprovação para os produtos restantes. Os anúncios já confirmados ficam salvos.',
+      },
+      {
+        kind: 'Correção',
+        title: 'Validação de dados mais segura',
+        description:
+          'A atualização inclui uma correção na biblioteca que confere os dados recebidos pela plataforma.',
+      },
+    ],
+  },
+  {
+    date: '2026-11-08',
+    changes: [
+      {
+        kind: 'Melhoria',
+        title: 'Teste da entrega assistida em uma loja',
+        description:
+          'A entrega assistida poderá ser testada com uma única aluna e uma única loja da Shopee. A solicitação só abre depois da configuração do piloto.',
+      },
+    ],
+  },
+  {
+    date: '2026-11-07',
+    changes: [
+      {
+        kind: 'Novo',
+        title: 'Entrega assistida da Loja Pronta',
+        description:
+          'A cliente personaliza e aprova a marca. A fila do suporte reúne o logo e a planilha dos cinco primeiros produtos e permite acompanhar a confirmação dos anúncios. Novas solicitações dependem da configuração do modelo da Shopee e da validação em uma loja piloto.',
+      },
+    ],
+  },
+  {
     date: '2026-11-03',
     changes: [
       {

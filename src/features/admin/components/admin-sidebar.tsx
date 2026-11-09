@@ -182,6 +182,13 @@ const groups: readonly NavGroup[] = [
     storageKey: 'admin-menu-operations',
     links: [
       {
+        href: '/admin/entregas',
+        label: 'Entregas de lojas',
+        section: 'store-deliveries',
+        Icon: Wrench,
+        requires: 'stores.deliver',
+      },
+      {
         href: '/admin/assistente',
         label: 'Planos e operação',
         section: 'assistant',

@@ -349,6 +349,7 @@ test('feed antigo não recupera preço anterior e catálogo completo remove esto
   const id = await account();
   const supplierId = `feed-${randomUUID()}`;
   const previousFeeds = process.env.SUPPLIER_FEEDS;
+  const previousAssistedSupplier = process.env.SHOPEE_ASSISTED_SUPPLIER_ID;
   process.env.SUPPLIER_FEEDS = JSON.stringify([
     {
       id: supplierId,
@@ -389,13 +390,27 @@ test('feed antigo não recupera preço anterior e catálogo completo remove esto
   });
   let products = [product];
   try {
+    let downloads = 0;
+    const download = async () => {
+      downloads += 1;
+      return {
+        bytes: Buffer.from(
+          JSON.stringify({ generatedAt: new Date().toISOString(), complete: true, products }),
+        ),
+        contentType: 'application/json',
+      };
+    };
+    process.env.SHOPEE_ASSISTED_SUPPLIER_ID = supplierId;
+    await syncSupplierFeeds({ download });
+    await syncSupplierFeeds({ download });
+    expect(downloads).toBe(1);
+    const [assisted] = await db
+      .select()
+      .from(supplierCatalog)
+      .where(and(eq(supplierCatalog.supplierId, supplierId), eq(supplierCatalog.sku, 'one')));
+    expect(assisted?.product.priceCents).toBe(2000);
+
     await db.insert(supplierFeedSubscriptions).values({ userId: id, supplierId });
-    const download = async () => ({
-      bytes: Buffer.from(
-        JSON.stringify({ generatedAt: new Date().toISOString(), complete: true, products }),
-      ),
-      contentType: 'application/json',
-    });
     await syncSupplierFeeds({ download, prepare: async () => prepared });
     const [mapped] = await db
       .select()
@@ -434,6 +449,8 @@ test('feed antigo não recupera preço anterior e catálogo completo remove esto
     await db.delete(supplierCatalog).where(eq(supplierCatalog.supplierId, supplierId));
     if (previousFeeds === undefined) delete process.env.SUPPLIER_FEEDS;
     else process.env.SUPPLIER_FEEDS = previousFeeds;
+    if (previousAssistedSupplier === undefined) delete process.env.SHOPEE_ASSISTED_SUPPLIER_ID;
+    else process.env.SHOPEE_ASSISTED_SUPPLIER_ID = previousAssistedSupplier;
   }
 });
 

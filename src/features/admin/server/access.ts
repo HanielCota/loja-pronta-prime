@@ -14,7 +14,7 @@ export async function requireAdmin(path = '/admin') {
 
   const { session } = state;
   if (needsFirstPassword(session.user)) redirect(authHref('/primeiro-acesso', path));
-  if (!hasAdminRole(session.user.role)) notFound();
+  if (session.session.impersonatedBy || !hasAdminRole(session.user.role)) notFound();
 
   return session;
 }
@@ -28,6 +28,11 @@ export async function readAdminSession() {
   const state = await getSessionState();
   if (state.status !== 'active') return null;
   const { session } = state;
-  if (needsFirstPassword(session.user) || !hasAdminRole(session.user.role)) return null;
+  if (
+    session.session.impersonatedBy ||
+    needsFirstPassword(session.user) ||
+    !hasAdminRole(session.user.role)
+  )
+    return null;
   return session;
 }

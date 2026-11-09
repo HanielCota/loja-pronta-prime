@@ -71,6 +71,13 @@ Arquivos originais ausentes aparecem como “Em breve”. Não há material inve
 
 ### Loja Pronta
 
+Assisted delivery can run after the student customizes and confirms her brand and confirms her
+seller account. She reviews five initial offers and grants Shopee subaccount access. The support
+queue uses the approved brand and fills the official bulk-add workbook with current supplier
+data. It records confirmed active listing IDs and shows completion in the student's dashboard.
+Activation depends on the official template, subaccount permissions and a controlled pilot.
+See [assisted delivery operations](SHOPEE-ASSISTED-DELIVERY.md).
+
 A própria aluna monta sua marca e prepara a conta. A interface tem uma decisão por tela, texto simples e respostas salvas para continuar depois. A jornada usa 7 fases no banco, agrupadas em 3 etapas na interface:
 
 | Fase | O que a aluna faz                                            | Situação atual                                                                   |
@@ -119,7 +126,7 @@ Os limites de nome (30) e descrição (500) estão em `src/config/brand.ts`. A c
   email ou senha incorretos oferecem “Redefinir minha senha”, que abre a recuperação existente.
 - A recuperação de senha permite criar a primeira senha ou trocar uma senha existente, por link enviado ao email pela Resend. Confirmação de email usa o mesmo provedor. O envio depende do domínio verificado e de `RESEND_API_KEY` e `EMAIL_FROM` configurados no servidor.
 - Contas marcadas com senha temporária precisam criar outra antes de acessar as áreas.
-- Hotmart purchase notifications verify the token, create the account and grant the mapped product. New students use `loja1234` without an email link or a mandatory password change. Existing accounts keep their current password. See [student password maintenance](STUDENT-PASSWORD.md) for the one-time update of existing accounts.
+- Hotmart purchase notifications verify the token, create an account without a password, and grant the mapped product. New students request a link using the purchase email to create their own password. Subsequent purchases keep existing credentials. See [student password maintenance](STUDENT-PASSWORD.md) for the retirement of the shared password.
 - Reembolso e contestação recalculam o acesso daquele produto, preservando outra compra ativa ou concessão manual. A política para cancelamento de assinatura continua pendente.
 
 Detalhes atuais e fluxo de convite planejado: `docs/INTEGRACAO-HOTMART.md`. Contas de desenvolvimento são criadas com `bun run dev:aluna`; não representam compras reais.

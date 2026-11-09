@@ -141,7 +141,7 @@ test('imports real records atomically, preserves accounts, respects ownership an
   ).toBe(0);
   const { rows: accounts } = await pool.query(
     `SELECT u.id,u.email,u.name,u.role,u.banned,u.must_change_password,a.password
-    FROM "user" u JOIN account a ON a.user_id=u.id WHERE u.email=ANY($1::text[])`,
+    FROM "user" u LEFT JOIN account a ON a.user_id=u.id WHERE u.email=ANY($1::text[])`,
     [customers.map((c) => c.email)],
   );
   expect(accounts).toHaveLength(5);
@@ -153,8 +153,7 @@ test('imports real records atomically, preserves accounts, respects ownership an
   expect(accounts.find((a) => a.id === ids[1]).banned).toBe(true);
   expect(accounts.find((a) => a.id === ids[3]).role).toBe('admin');
   const created = accounts.find((a) => a.email === customers[4]!.email);
-  const { verifyPassword } = await import('better-auth/crypto');
-  expect(await verifyPassword({ hash: created.password, password: 'loja1234' })).toBe(true);
+  expect(created.password).toBeNull();
   expect(created.must_change_password).toBe(false);
   expect(
     (await pool.query('SELECT name FROM store_brand WHERE user_id=$1', [ids[0]])).rows[0].name,

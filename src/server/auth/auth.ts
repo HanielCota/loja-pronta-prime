@@ -1,6 +1,9 @@
 import { betterAuth } from 'better-auth';
+import { randomUUID } from 'node:crypto';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { nextCookies } from 'better-auth/next-js';
+import { APIError, createAuthMiddleware } from 'better-auth/api';
+import { verifyPassword } from 'better-auth/crypto';
 import { eq } from 'drizzle-orm';
 import { admin } from 'better-auth/plugins';
 import {
@@ -23,6 +26,7 @@ import { recordVisitStep } from '@/features/support/server/visit-log';
 import { VISIT_SESSION_SECONDS } from '@/features/support/visit-window';
 import { sendPasswordResetEmail, sendVerificationEmail } from './emails';
 import { reportAuthError } from './report-error';
+import { isRetiredStudentPassword } from './student-password';
 
 const ONE_MINUTE = 60;
 
@@ -49,6 +53,12 @@ export const auth = betterAuth({
     // Não existe cadastro público: as contas são criadas pela integração com a Hotmart.
     disableSignUp: true,
     requireEmailVerification: true,
+    password: {
+      verify: async (input) => {
+        const matches = await verifyPassword(input);
+        return matches && !isRetiredStudentPassword(input.password);
+      },
+    },
     minPasswordLength: PASSWORD_MIN_LENGTH,
     maxPasswordLength: PASSWORD_MAX_LENGTH,
     resetPasswordTokenExpiresIn: RESET_LINK_TTL_HOURS * ONE_HOUR,
@@ -59,7 +69,7 @@ export const auth = betterAuth({
     onPasswordReset: async ({ user }) => {
       await db
         .update(schema.user)
-        .set({ mustChangePassword: false, emailVerified: true })
+        .set({ mustChangePassword: false, emailVerified: true, credentialVersion: randomUUID() })
         .where(eq(schema.user.id, user.id));
     },
     sendResetPassword: async ({ user, url }) => {
@@ -85,8 +95,7 @@ export const auth = betterAuth({
   user: {
     additionalFields: {
       /**
-       * Toda conta nasce com senha temporária (enviada por email pela integração com a Hotmart),
-       * então começa marcada: no primeiro login a aluna cria a própria senha (/primeiro-acesso).
+       * Contas com senha temporária individual criam a própria senha no primeiro login.
        * `input: false`: ninguém altera isso por requisição; só o servidor.
        */
       mustChangePassword: { type: 'boolean', required: false, defaultValue: true, input: false },
@@ -95,6 +104,7 @@ export const auth = betterAuth({
        * este inteiro ("Ana Paula"), e o nome completo continua igual. Só o servidor grava.
        */
       preferredName: { type: 'string', required: false, input: false },
+      credentialVersion: { type: 'string', required: false, input: false, returned: false },
     },
   },
 
@@ -145,6 +155,25 @@ export const auth = betterAuth({
     // Sessão e conta numa consulta só (com join): toda página, aviso de presença e pedaço de
     // vídeo lê a sessão, e sem isso cada leitura custava duas idas ao banco.
     database: { joins: true },
+  },
+
+  hooks: {
+    after: createAuthMiddleware(async (ctx) => {
+      const signedIn = ctx.path === '/sign-in/email' ? ctx.context.newSession : null;
+      if (!signedIn) return;
+      const current = await db.query.user.findFirst({
+        columns: { credentialVersion: true },
+        where: eq(schema.user.id, signedIn.user.id),
+      });
+      const version = 'credentialVersion' in signedIn.user ? signedIn.user.credentialVersion : null;
+      // Uma promoção pode acontecer depois da leitura da senha, antes da criação da sessão.
+      if (current && current.credentialVersion === (version ?? null)) return;
+      await db.delete(schema.session).where(eq(schema.session.id, signedIn.session.id));
+      throw APIError.from('UNAUTHORIZED', {
+        code: 'INVALID_EMAIL_OR_PASSWORD',
+        message: 'Email ou senha inválidos.',
+      });
+    }),
   },
 
   databaseHooks: {

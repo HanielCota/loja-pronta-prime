@@ -1,14 +1,12 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { hashPassword } from 'better-auth/crypto';
 import { Pool, type PoolClient } from 'pg';
 import {
   normalizeLegacyEmail,
   validateLegacySnapshot,
   type LegacySnapshot,
 } from '../src/features/legacy-stores/model';
-import { DEFAULT_STUDENT_PASSWORD } from '../src/server/auth/student-password';
 
 const SOURCE_PROJECT = 'voslzzgajgatdcrueikw';
 const files = {
@@ -196,26 +194,6 @@ export async function importLegacyStores(
       skipped: protectedAccounts.length,
     };
 
-  // Hash before the write transaction. Each new account gets a separate random salt.
-  const prepared = new Map<string, string>();
-  let cursor = 0;
-  let preparedCount = 0;
-  await Promise.all(
-    Array.from({ length: 4 }, async () => {
-      while (cursor < missing.length) {
-        const row = missing[cursor++];
-        if (row) {
-          prepared.set(
-            normalizeLegacyEmail(row.email),
-            await hashPassword(DEFAULT_STUDENT_PASSWORD),
-          );
-          preparedCount++;
-          if (preparedCount % 1000 === 0)
-            console.info(`Prepared ${preparedCount}/${missing.length} new credentials.`);
-        }
-      }
-    }),
-  );
   client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -228,7 +206,7 @@ export async function importLegacyStores(
     );
     if (prior.length)
       throw new Error(
-        'Another import completed while credentials were prepared; run the preview again.',
+        'Another import completed; run the preview again.',
       );
     existing = await existingAccounts(client, emails);
     let created = 0;
@@ -236,22 +214,14 @@ export async function importLegacyStores(
     for (const row of snapshot.customers) {
       const email = normalizeLegacyEmail(row.email);
       if (existing.has(email)) continue;
-      const password = prepared.get(email);
-      if (!password) throw new Error('Destination accounts changed during import preparation.');
       const { rows } = await client.query<{ id: string }>(
         `INSERT INTO "user"(id,name,email,email_verified,must_change_password,role)
          VALUES($1,$2,$3,true,false,'user') ON CONFLICT(email) DO NOTHING RETURNING id`,
         [randomUUID(), row.nome?.trim() || email.split('@')[0], email],
       );
       if (rows[0]) {
-        const userId = rows[0].id;
-        await client.query(
-          `INSERT INTO account(id,account_id,provider_id,user_id,password,updated_at)
-          VALUES($1,$2,'credential',$2,$3,now())`,
-          [randomUUID(), userId, password],
-        );
         created++;
-        createdIds.add(userId);
+        createdIds.add(rows[0].id);
       }
     }
     existing = await existingAccounts(client, emails);

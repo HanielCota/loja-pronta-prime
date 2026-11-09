@@ -3,6 +3,40 @@
 Dates use the America/Sao_Paulo time zone. Operational verification and rollout limits are
 recorded separately from code integration.
 
+## 2026-11-09
+
+### Credential security and assisted delivery recovery
+
+- Retire the shared student credential across Hotmart, historical imports and administrative
+  password recovery. New buyers create their first password through email recovery. The production
+  migrator selectively revokes existing matching credentials, sessions and reset links.
+- Revoke credentials, sessions and old reset links when promoting an account to administrator.
+  Require a new password via email. Reject sign-ins overlapping the credential change.
+- Let administrators reassign an assisted delivery or obtain renewed approval for unconfirmed
+  products after reconciling Shopee. Preserve the approved brand and confirmed listing IDs.
+- Upgrade Zod to 4.6.6 for GHSA-mrhx-c7xc-m3w5 and verify the runtime supervisor test on Windows.
+- Apply migration `0077_credential-security-and-delivery-review` during a coordinated rollout.
+  Production rollout and Seller Centre acceptance are pending.
+
+## 2026-11-08
+
+### Assisted delivery pilot access
+
+- Require a designated Escala Shop account and Brazilian Shopee shop for new assisted requests.
+  Validate the account and shop on submission and prefill the configured public shop URL.
+  Live rollout and Seller Centre acceptance are pending.
+
+## 2026-11-07
+
+### Assisted Loja Pronta delivery
+
+- Keep brand customization and approval with the customer. Let support claim the delivery,
+  download the approved logo and bulk-add workbook, and record active Shopee listing IDs.
+- Refresh the selected supplier catalog independently of a Shopee connection. Resume partial
+  deliveries with a workbook containing only the unconfirmed products.
+- Add migration `0076_assisted-store-deliveries`. Intake is disabled by default pending an
+  official workbook and a live-store pilot.
+
 ## 2026-11-03
 
 ### Support responsibilities

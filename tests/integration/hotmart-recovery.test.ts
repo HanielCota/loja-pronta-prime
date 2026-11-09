@@ -98,8 +98,27 @@ test('configuring a product recovers its retained approval and creates a working
       where: eq(s.hotmartPurchases.transaction, event.data.purchase.transaction),
     }),
   ).toMatchObject({ purchasedAt: new Date(event.data.purchase.order_date!), active: true });
+  await expect(
+    auth.api.signInEmail({
+      body: { email: event.data.buyer.email, password: 'loja1234' },
+    }),
+  ).rejects.toThrow();
+  expect(
+    await db.query.account.findFirst({ where: eq(s.account.userId, account!.id) }),
+  ).toBeUndefined();
+  await auth.api.requestPasswordReset({
+    body: { email: event.data.buyer.email, redirectTo: '/redefinir-senha' },
+  });
+  const reset = await db.query.verification.findFirst({
+    where: eq(s.verification.value, account!.id),
+  });
+  expect(reset?.identifier).toStartWith('reset-password:');
+  const personal = 'Recovered-personal-password!';
+  await auth.api.resetPassword({
+    body: { token: reset!.identifier.slice('reset-password:'.length), newPassword: personal },
+  });
   const login = await auth.api.signInEmail({
-    body: { email: event.data.buyer.email, password: 'loja1234' },
+    body: { email: event.data.buyer.email, password: personal },
   });
   expect(login.user.id).toBe(account!.id);
 });

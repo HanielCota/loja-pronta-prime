@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test, type Page, type APIRequestContext } from '@playwright/test';
 import { auth } from '@/server/auth/auth';
+import { RETIRED_STUDENT_PASSWORD } from '@/server/auth/student-password';
 import { db } from '@/server/db';
 import { encryptHottok } from '@/features/hotmart/server/secret';
 import { expectNoA11yViolations, signIn } from './support/auth';
@@ -72,6 +73,90 @@ async function select(page: Page, name: string, label: string, value: string, no
     await page.getByRole('option', { name: label, exact: true }).click();
   }
 }
+
+test('Hotmart first access and admin promotion both require a fresh email recovery', async ({
+  page,
+  browser,
+  request,
+  baseURL,
+}) => {
+  const { email, code, adminEmail } = await seed(request);
+  await db.$client.query(
+    "insert into hotmart_product_mappings (product_ucode, access) values ($1, 'sll')",
+    [code],
+  );
+  const now = Date.now();
+  const purchase = await request.post('/api/hotmart/webhook', {
+    headers: { 'x-hotmart-hottok': token },
+    data: {
+      id: randomUUID(),
+      event: 'PURCHASE_APPROVED',
+      version: '2.0.0',
+      creation_date: now,
+      data: {
+        buyer: { email, name: 'Recovery buyer' },
+        product: { ucode: code },
+        purchase: { transaction: randomUUID(), order_date: now - 1000 },
+      },
+    },
+  });
+  expect(purchase.status()).toBe(200);
+  const {
+    rows: [student],
+  } = await db.$client.query<{ id: string }>('select id from "user" where email=$1', [email]);
+  const studentContext = await browser.newContext({ baseURL: baseURL! });
+  const studentPage = await studentContext.newPage();
+  const recoveryLink = async () => {
+    await studentPage.goto('/recuperar-senha');
+    await studentPage.getByLabel('Email da compra').fill(email);
+    await studentPage.getByRole('button', { name: /enviar/i }).click();
+    let identifier: string | undefined;
+    await expect
+      .poll(async () => {
+        const { rows } = await db.$client.query<{ identifier: string }>(
+          "select identifier from verification where value=$1 and identifier like 'reset-password:%' order by created_at desc limit 1",
+          [student!.id],
+        );
+        identifier = rows[0]?.identifier;
+        return identifier;
+      })
+      .toBeDefined();
+    return identifier!.slice('reset-password:'.length);
+  };
+  const createPassword = async (newPassword: string) => {
+    const resetToken = await recoveryLink();
+    await studentPage.goto(`/api/auth/reset-password/${resetToken}?callbackURL=%2Fredefinir-senha`);
+    await studentPage.getByLabel('Senha nova').fill(newPassword);
+    await studentPage.getByRole('button', { name: 'Salvar senha' }).click();
+    await expect(studentPage.getByRole('heading', { name: 'Senha criada!' })).toBeVisible();
+  };
+  await signIn(studentPage, email, RETIRED_STUDENT_PASSWORD, '/sll');
+  await expect(studentPage.locator('[data-error-code="invalid_credentials"]')).toBeVisible();
+  await createPassword(password);
+  await signIn(studentPage, email, password, '/sll');
+  await expect(studentPage).toHaveURL(/\/sll(?:\/|$)/);
+  expect((await studentPage.goto('/admin/contas'))?.status()).toBe(404);
+  const oldToken = await recoveryLink();
+
+  await signIn(page, adminEmail, password, `/admin/contas/${student!.id}`);
+  await page.getByRole('combobox', { name: 'Função', exact: true }).click();
+  await page.getByRole('option', { name: 'Admin (acessa este painel)', exact: true }).click();
+  await page.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
+  await expect(page.getByText(/Função de admin salva/)).toBeVisible();
+  await studentPage.goto('/admin/contas');
+  await expect(studentPage).toHaveURL(/\/entrar\?/);
+  await expect(
+    auth.api.resetPassword({ body: { newPassword: password, token: oldToken } }),
+  ).rejects.toThrow();
+  await signIn(studentPage, email, password, '/admin/contas');
+  await expect(studentPage.locator('[data-error-code="invalid_credentials"]')).toBeVisible();
+
+  const newPassword = 'New-admin-personal-password!';
+  await createPassword(newPassword);
+  await signIn(studentPage, email, newPassword, '/admin/contas');
+  await expect(studentPage).toHaveURL(/\/admin\/contas$/);
+  await studentContext.close();
+});
 
 for (const mobile of [false, true])
   for (const dark of [false, true]) {

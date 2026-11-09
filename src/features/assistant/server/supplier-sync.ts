@@ -18,6 +18,8 @@ import { readShopeeAccess } from '@/features/shopee/server/connection';
 import { shopeeApplicationId } from '@/features/shopee/authorization';
 import { assertAssistantAccess } from './metrics';
 
+const nextAssistedCatalogSync = new Map<string, number>();
+
 /** O feed só prepara ofertas. Publicar continua exigindo confirmação da aluna. */
 export async function syncSupplierFeeds(
   dependencies: {
@@ -28,6 +30,9 @@ export async function syncSupplierFeeds(
   const download = dependencies.download ?? downloadPublicFile;
   const prepare = dependencies.prepare ?? prepareShopeeProduct;
   for (const source of configuredSupplierSources()) {
+    const refreshAssistedCatalog =
+      source.id === process.env.SHOPEE_ASSISTED_SUPPLIER_ID &&
+      Date.now() >= (nextAssistedCatalogSync.get(source.id) ?? 0);
     const due = await db
       .select()
       .from(supplierFeedSubscriptions)
@@ -44,7 +49,7 @@ export async function syncSupplierFeeds(
         ),
       )
       .limit(20);
-    if (!due.length) continue;
+    if (!due.length && !refreshAssistedCatalog) continue;
     const client = await db.$client.connect();
     const key = `supplier-feed:${source.id}`;
     try {
@@ -53,6 +58,8 @@ export async function syncSupplierFeeds(
         [key],
       );
       if (!lock.rows[0]?.locked) continue;
+      if (source.id === process.env.SHOPEE_ASSISTED_SUPPLIER_ID)
+        nextAssistedCatalogSync.set(source.id, Date.now() + source.intervalSeconds * 1000);
       const token = source.tokenEnv ? process.env[source.tokenEnv] : undefined;
       if (source.tokenEnv && !token) throw new Error('Credencial do fornecedor ausente.');
       const downloaded = await download(
@@ -214,6 +221,8 @@ export async function syncSupplierFeeds(
           );
       }
     } catch {
+      if (refreshAssistedCatalog)
+        console.error('[supplier] Assisted delivery catalog unavailable.');
       for (const subscription of due)
         await db
           .update(supplierFeedSubscriptions)

@@ -64,13 +64,12 @@ beforeEach(() => {
   inserted.length = 0;
 });
 
-test('new Hotmart students keep the default password without email or mandatory change', async () => {
+test('new Hotmart students start without a password and can create one by email', async () => {
   await processHotmartEvent(event);
   expect(createUser).toHaveBeenCalledWith({
     body: {
       email: event.data.buyer.email,
       name: 'New Student',
-      password: 'loja1234',
       role: 'user',
       data: { emailVerified: true, mustChangePassword: false },
     },
