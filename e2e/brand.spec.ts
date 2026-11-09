@@ -5,9 +5,46 @@ import { PASSWORD, studentEmail } from './support/students';
 
 const step = (name: string) => new RegExp(`/loja-pronta/marca/${name}(\\?.*)?$`);
 
+test('sem chave da OpenAI, o estúdio mantém o envio de logo próprio disponível', async ({
+  page,
+}) => {
+  test.skip(Boolean(process.env.OPENAI_API_KEY), 'Requires an unconfigured OpenAI key');
+  test.slow();
+  await page.addInitScript(() => localStorage.setItem('theme', 'light'));
+  await signIn(page, studentEmail('marcafalha'), PASSWORD, '/loja-pronta/marca/logo');
+  await expect(page).toHaveURL(step('logo'));
+  await pickAll(page, ['Só o nome', 'Rosa e dourado', 'Simples', 'Branco', 'Chapado']);
+
+  for (const viewport of [
+    { width: 1440, height: 1000 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    for (const theme of ['claro', 'escuro']) {
+      const toggle = page.getByRole('button', { name: `Ativar tema ${theme}` });
+      if (await toggle.count()) await toggle.click();
+      await expect(
+        page.getByText('Criação de logo por IA: em breve.', { exact: false }),
+      ).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Criar meu logo' })).toHaveCount(0);
+      await expectNoA11yViolations(page);
+    }
+  }
+
+  await page.getByRole('button', { name: 'Mudar tipo', exact: true }).click();
+  const [chooser] = await Promise.all([
+    page.waitForEvent('filechooser'),
+    page.getByRole('button', { name: 'Enviar a imagem do meu logo' }).click(),
+  ]);
+  await chooser.setFiles('public/brand/mascote.png');
+  await expectLogo(page, 1);
+  await expect(page.getByRole('button', { name: 'Usar o logo 1' })).toBeEnabled();
+});
+
 test('falha na criação volta ao resumo e conserva as escolhas para conferir antes de repetir', async ({
   page,
 }) => {
+  test.skip(!process.env.OPENAI_API_KEY, 'Requires a configured OpenAI key');
   test.slow();
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await signIn(page, studentEmail('marcafalha'), PASSWORD, '/loja-pronta/marca/logo');
@@ -174,6 +211,7 @@ test('falha ao salvar escolhas mantém a pergunta e permite tentar novamente sem
 test('marca completa: nome, estúdio do logo, texto, revisão com mudança e logo pra baixar', async ({
   page,
 }) => {
+  test.skip(!process.env.OPENAI_API_KEY, 'Requires a configured OpenAI key');
   test.setTimeout(600_000);
   await signIn(page, studentEmail('marca'), PASSWORD);
   await expect(page).toHaveURL(/\/loja-pronta$/);

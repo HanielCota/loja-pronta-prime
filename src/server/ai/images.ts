@@ -5,12 +5,8 @@ import { AiUnavailableError, describe, rejectedByApi } from './errors';
 /** Um gerador de imagem: recebe a descrição e devolve um PNG quadrado. */
 export type ImageGenerator = (prompt: string) => Promise<Uint8Array>;
 
-/**
- * O modelo de imagem mais barato da OpenAI que ainda escreve bem o nome da loja. Qualidade
- * "medium" em 1024×1024: o logo da Shopee aparece no máximo com uns 200px, então mais não ajuda
- * e custa várias vezes mais.
- */
-const OPENAI_IMAGE_MODEL = 'gpt-image-1-mini';
+// Keep the square PNG contract used by the studio, downloads, and banner kit.
+const OPENAI_IMAGE_MODEL = 'gpt-image-2.6-flare';
 const SIZE = '1024x1024';
 const QUALITY = 'medium';
 /** Gerar imagem demora: até 2 minutos antes de desistir. */
@@ -35,9 +31,10 @@ function openAi(): OpenAI {
 
 /** A OpenAI (Images API), em PNG. */
 export const openAiImage: ImageGenerator = async (prompt) => {
+  const api = openAi();
   let response: OpenAI.ImagesResponse;
   try {
-    response = await openAi().images.generate({
+    response = await api.images.generate({
       model: OPENAI_IMAGE_MODEL,
       prompt,
       size: SIZE,

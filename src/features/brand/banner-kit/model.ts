@@ -26,24 +26,6 @@ export function escapeSvg(value: string): string {
   );
 }
 
-/** Conservative wrapping keeps user text inside the exported image. */
-export function bannerLines(value: string, limit: number): string[] {
-  const lines: string[] = [];
-  let line = '';
-  for (const word of value.split(/\s+/)) {
-    for (let offset = 0; offset < word.length; offset += limit) {
-      const part = word.slice(offset, offset + limit);
-      if (line && line.length + part.length + 1 > limit) {
-        lines.push(line);
-        line = '';
-      }
-      line += (line ? ' ' : '') + part;
-    }
-  }
-  if (line) lines.push(line);
-  return lines;
-}
-
 export function kitIsApproved(
   kit: { approvedAt: Date | null; brandFingerprint: string },
   currentFingerprint: string,

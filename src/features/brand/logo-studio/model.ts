@@ -15,6 +15,7 @@ import {
 
 /** Logos que ela pode gerar (cada um custa): o bastante pra escolher, sem gasto sem fim. */
 export const MAX_GENERATIONS = 4;
+export const GENERATION_COMING_SOON = 'Criação de logo por IA: em breve.';
 /** Logos que ela pode mandar (não custam IA, mas ocupam espaço): segura abuso. */
 export const MAX_UPLOADS = 10;
 /** O logo que ela manda: até 5 MB (a tela já reduz pra 1024px antes de mandar). */

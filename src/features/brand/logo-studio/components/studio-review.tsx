@@ -3,7 +3,7 @@
 import { ArrowRightIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import type { LogoPicks } from '../model';
+import { GENERATION_COMING_SOON, type LogoPicks } from '../model';
 import { missingStudioSteps, pickLabel, STUDIO_STEPS, type StudioStep } from '../picks';
 
 /**
@@ -14,6 +14,7 @@ export function StudioReview({
   picks,
   titleId,
   generationsLeft,
+  generationAvailable,
   hasLogos,
   error,
   errorId,
@@ -28,6 +29,7 @@ export function StudioReview({
   picks: LogoPicks;
   titleId: string;
   generationsLeft: number;
+  generationAvailable: boolean;
   hasLogos: boolean;
   error: string | undefined;
   errorId: string;
@@ -57,11 +59,12 @@ export function StudioReview({
           tabIndex={-1}
           className="text-title font-bold text-balance outline-none sm:text-title-lg"
         >
-          Confira e crie o seu logo
+          {generationAvailable ? 'Confira e crie o seu logo' : 'Confira suas escolhas'}
         </h1>
         <p className="text-body text-pretty text-muted-foreground">
-          O rascunho é só pra você imaginar. A IA desenha a versão final, caprichada, com essas
-          escolhas.
+          {generationAvailable
+            ? 'O rascunho é só pra você imaginar. A IA desenha a versão final, caprichada, com essas escolhas.'
+            : `${GENERATION_COMING_SOON} Você pode enviar sua imagem na primeira escolha.`}
         </p>
       </div>
 
@@ -113,7 +116,7 @@ export function StudioReview({
           >
             Voltar
           </Button>
-          {generationsLeft ? (
+          {generationAvailable && generationsLeft ? (
             <Button
               type="button"
               className="w-auto flex-1"
@@ -124,13 +127,13 @@ export function StudioReview({
               {hasLogos ? 'Criar outro logo' : 'Criar meu logo'}
               <ArrowRightIcon aria-hidden="true" />
             </Button>
-          ) : (
+          ) : generationAvailable ? (
             <p className="min-w-0 flex-1 text-body text-pretty text-muted-foreground">
               Você já criou todos os logos que dava. Escolha um deles pra seguir.
             </p>
-          )}
+          ) : null}
         </div>
-        {generationsLeft ? (
+        {generationAvailable && generationsLeft ? (
           <p className="text-center text-body text-pretty text-muted-foreground">
             Você ainda pode criar {generationsLeft} {generationsLeft === 1 ? 'logo' : 'logos'}. O
             tempo de criação pode variar.

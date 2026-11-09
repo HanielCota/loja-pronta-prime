@@ -4,6 +4,7 @@ import { CheckIcon, SlidersHorizontalIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BrandKitPreview } from '@/features/brand/components/brand-kit-preview';
 import { cn } from '@/lib/utils';
+import { GENERATION_COMING_SOON } from '../model';
 import { LOGO_TWEAK_IDS, LOGO_TWEAKS, type LogoTweak } from '../tweaks';
 import type { StudioViewLogo } from '../view';
 import { logoSrc } from './logo-src';
@@ -17,6 +18,7 @@ export function StudioResult({
   selected,
   storeName,
   generationsLeft,
+  generationAvailable,
   titleId,
   busy,
   choosing,
@@ -31,6 +33,7 @@ export function StudioResult({
   selected: StudioViewLogo;
   storeName: string;
   generationsLeft: number;
+  generationAvailable: boolean;
   titleId: string;
   busy: boolean;
   /** O logo está sendo salvo como o da loja. */
@@ -43,7 +46,7 @@ export function StudioResult({
   onChangePicks: () => void;
 }) {
   const src = logoSrc(selected.imageId);
-  const canTweak = selected.tweakable && generationsLeft > 0;
+  const canTweak = generationAvailable && selected.tweakable && generationsLeft > 0;
   const tweaks = LOGO_TWEAK_IDS.filter(
     (tweak) => !(selected.nameOnly && tweak === 'outro-desenho'),
   );
@@ -122,7 +125,7 @@ export function StudioResult({
             );
           })}
           {/* Os lugares que ainda dá pra criar (só desenho). */}
-          {Array.from({ length: generationsLeft }, (_, index) => (
+          {Array.from({ length: generationAvailable ? generationsLeft : 0 }, (_, index) => (
             <span
               key={index}
               aria-hidden="true"
@@ -133,9 +136,11 @@ export function StudioResult({
           ))}
         </div>
         <p className="text-body text-pretty text-muted-foreground">
-          {generationsLeft
-            ? `Você ainda pode criar ${generationsLeft} ${generationsLeft === 1 ? 'logo' : 'logos'}.`
-            : 'Você já criou todos os logos que dava.'}
+          {generationAvailable
+            ? generationsLeft
+              ? `Você ainda pode criar ${generationsLeft} ${generationsLeft === 1 ? 'logo' : 'logos'}.`
+              : 'Você já criou todos os logos que dava.'
+            : GENERATION_COMING_SOON}
         </p>
       </fieldset>
 

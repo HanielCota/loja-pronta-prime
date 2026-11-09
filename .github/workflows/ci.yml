@@ -30,6 +30,7 @@ jobs:
       - run: bun run typecheck
       - run: bun run lint
       - run: bun test src
+      - run: bun test tests/isolated/logo-failures.test.ts
 
   integration:
     name: PostgreSQL integration tests

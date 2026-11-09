@@ -112,7 +112,7 @@ openssl rand -base64 32
 
 | Opcional              | Quando preencher                                                                                                                   |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `OPENAI_API_KEY`      | Para criar logos por IA e transcrever voz; projeto OpenAI com acesso a `gpt-image-1-mini` e `gpt-transcribe`, com saldo disponível |
+| `OPENAI_API_KEY`      | OpenAI project key with access to `gpt-image-2.6-flare` for logos and `gpt-transcribe` for voice. Confirm model access and billing before rollout. |
 | `S3_ENDPOINT`         | Endpoint exato de um provedor compatível com S3; omita para AWS S3                                                                 |
 | `S3_REGION`           | Região real do bucket; padrão do código: `us-east-1`                                                                               |
 | `S3_FORCE_PATH_STYLE` | `true` se o provedor exigir acesso por caminho; padrão do código: `false`                                                          |

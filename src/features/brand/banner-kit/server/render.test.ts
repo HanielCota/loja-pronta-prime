@@ -6,6 +6,7 @@ import path from 'node:path';
 async function isolatedRuntime() {
   const directory = await mkdtemp(path.join(tmpdir(), 'banner-fonts-'));
   await mkdir(path.join(directory, 'empty-fonts'));
+  await mkdir(path.join(directory, 'cache'));
   await Promise.all([
     cp('assets/fonts', path.join(directory, 'assets/fonts'), { recursive: true }),
     symlink(path.resolve('node_modules'), path.join(directory, 'node_modules'), 'dir'),
@@ -86,7 +87,7 @@ test('bundled fonts render distinct regular and bold letters without any system 
         `
         const results = [];
         for (const variant of ['welcome', 'selection']) {
-          // Concurrent first requests must wait for both fonts to finish registering.
+          // Both bundled fonts must also work during concurrent first requests.
           const [narrow, wide] = await Promise.all([render('IIII', variant), render('WWWW', variant)]);
           const left = variant === 'welcome' ? 270 : 48;
           const baseline = variant === 'welcome' ? 90 : 300;
@@ -106,6 +107,54 @@ test('bundled fonts render distinct regular and bold letters without any system 
     expect(JSON.parse(result.stdout)).toEqual([
       { boldDistinct: true, regularDistinct: true, width: 750, height: 300 },
       { boldDistinct: true, regularDistinct: true, width: 750, height: 500 },
+    ]);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('wide names and long banner copy keep the full text inside the PNG', async () => {
+  const directory = await isolatedRuntime();
+  try {
+    const result = await run(
+      directory,
+      renderScript +
+        `
+        const name = 'MAMÃES MARAVILHOSAS MODA MÃE';
+        const draft = { title: 'W'.repeat(48), subtitle: 'W'.repeat(80), palette: 'ocean' };
+        const results = [];
+        for (const [variant, height] of [['welcome', 300], ['selection', 500]]) {
+          const image = await renderBanner(draft, name, logo, variant);
+          const changed = await renderBanner(
+            { ...draft, subtitle: draft.subtitle.slice(0, -1) + 'I' },
+            name.slice(0, -1) + 'S',
+            logo,
+            variant,
+          );
+          const { data, info } = await sharp(image).removeAlpha().raw().toBuffer({
+            resolveWithObject: true,
+          });
+          const background = data.subarray(12 * info.channels, 13 * info.channels);
+          const isBackground = (x, y) => {
+            const index = (y * info.width + x) * info.channels;
+            return background.equals(data.subarray(index, index + info.channels));
+          };
+          const marginClear = data.every((_, index) => {
+            const pixel = Math.floor(index / info.channels);
+            const x = pixel % info.width;
+            const y = Math.floor(pixel / info.width);
+            return (x < 726 && (y < height - 24 || x < 12)) || isBackground(x, y);
+          });
+          results.push({ marginClear, lastLetterVisible: !image.equals(changed) });
+        }
+        console.log(JSON.stringify(results));
+      `,
+    );
+    expect(result.stderr).toBe('');
+    expect(result.exitCode).toBe(0);
+    expect(JSON.parse(result.stdout)).toEqual([
+      { marginClear: true, lastLetterVisible: true },
+      { marginClear: true, lastLetterVisible: true },
     ]);
   } finally {
     await rm(directory, { recursive: true, force: true });

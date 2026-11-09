@@ -64,7 +64,7 @@ export function LogoStudio({
   oldName,
   editing,
   titleId,
-  speechAvailable,
+  aiAvailable,
 }: {
   initial: StudioView;
   suggestions: StudioSuggestions;
@@ -74,8 +74,7 @@ export function LogoStudio({
   editing: boolean;
   /** O id do título (o foco vai pra ele ao chegar e a cada tela nova). */
   titleId: string;
-  /** Sem transcrição configurada, a tela explica que falar ainda não está disponível. */
-  speechAvailable: boolean;
+  aiAvailable: boolean;
 }) {
   const initialPicks = withSuggestedLettering(initial.picks, suggestions.lettering);
   const initialStudio = { ...initial, picks: initialPicks };
@@ -292,9 +291,11 @@ export function LogoStudio({
         <StudioBoard
           tag="Rascunho"
           caption={
-            screen.kind === 'creating'
-              ? 'A IA está desenhando a versão final…'
-              : 'Muda a cada escolha. A IA desenha a versão final.'
+            aiAvailable
+              ? screen.kind === 'creating'
+                ? 'A IA está desenhando a versão final…'
+                : 'Muda a cada escolha. A IA desenha a versão final.'
+              : 'Muda a cada escolha.'
           }
           sticky={screen.kind === 'step'}
           working={screen.kind === 'creating'}
@@ -313,9 +314,9 @@ export function LogoStudio({
         {oldName && (screen.kind === 'step' || screen.kind === 'review') ? (
           <p className="rounded-2xl bg-primary-soft px-4 py-3 text-body text-pretty text-foreground">
             Você mudou o nome pra <strong>{storeName}</strong>. O seu logo ainda mostra {oldName}:{' '}
-            {studio.generationsLeft
+            {aiAvailable && studio.generationsLeft
               ? 'crie outro com o nome novo, ou volte pra seguir com ele.'
-              : 'você já criou todos os logos que dava, então pode seguir com ele.'}
+              : 'você pode seguir com ele.'}
           </p>
         ) : null}
         {screen.kind === 'step' ? (
@@ -353,7 +354,7 @@ export function LogoStudio({
             }
             onNext={() => goOn(screen.step)}
             rail={rail(screen.step)}
-            speechAvailable={speechAvailable}
+            speechAvailable={aiAvailable}
           />
         ) : null}
         {screen.kind === 'review' ? (
@@ -362,6 +363,7 @@ export function LogoStudio({
             picks={picks}
             titleId={titleId}
             generationsLeft={studio.generationsLeft}
+            generationAvailable={aiAvailable}
             hasLogos={logos.length > 0}
             error={error}
             errorId={errorId}
@@ -385,6 +387,7 @@ export function LogoStudio({
             selected={selected}
             storeName={storeName}
             generationsLeft={studio.generationsLeft}
+            generationAvailable={aiAvailable}
             titleId={titleId}
             busy={Boolean(busy)}
             choosing={busy === 'choosing'}
