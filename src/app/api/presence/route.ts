@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getActiveSession } from '@/features/auth/server/session';
 import { recordPresence } from '@/features/presence/server/record';
-import { visitForRoute } from '@/features/support/server/impersonation';
+import { visitForRoute } from '@/features/staff/server/impersonation';
 import { readLimitedBody, RequestBodyTooLargeError } from '@/lib/request-body';
 import { hasTrustedOrigin } from '@/server/request/origin';
 

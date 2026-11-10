@@ -1,6 +1,6 @@
 'use server';
 
-import { runAsStudent } from '@/features/support/server/impersonation';
+import { runAsStudent } from '@/features/staff/server/impersonation';
 import { requireProductAction } from '@/features/products/server/access';
 import { suggestPrice, simulateDiscount, advertisingLimits } from '../calculations';
 import { readCalculatorInput, type CalculatorKind } from '../form-input';

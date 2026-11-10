@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { AdminFrame } from '@/features/admin/components/admin-shell';
 import { hasAdminRole } from '@/features/admin/access';
-import { readStaffFrameSession } from '@/features/support/server/staff-guard';
-import { hasStaffPermission, STAFF_PERMISSIONS } from '@/features/support/staff-access';
+import { readStaffFrameSession } from '@/features/staff/server/staff-guard';
+import { hasStaffPermission, STAFF_PERMISSIONS } from '@/features/staff/staff-access';
 
 /**
  * A moldura do painel mora aqui, e não em cada página: ao trocar de seção, o menu fica parado e só

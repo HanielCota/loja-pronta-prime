@@ -1,7 +1,7 @@
 import { headers } from 'next/headers';
 import { cache } from 'react';
 import { auth } from '@/server/auth/auth';
-import { isVisitOver } from '@/features/support/visit-window';
+import { isVisitOver } from '@/features/staff/visit-window';
 
 // A regra mora num arquivo sem dependências de servidor, pra ser testada sozinha.
 export { needsFirstPassword } from '../first-password';

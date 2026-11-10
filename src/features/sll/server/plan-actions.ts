@@ -1,6 +1,6 @@
 'use server';
 
-import { runAsStudent } from '@/features/support/server/impersonation';
+import { runAsStudent } from '@/features/staff/server/impersonation';
 import { refresh } from 'next/cache';
 import { unstable_rethrow } from 'next/navigation';
 import { requireProductAction } from '@/features/products/server/access';

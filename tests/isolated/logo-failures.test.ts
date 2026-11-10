@@ -26,7 +26,7 @@ let reservations = 0;
 const env: { OPENAI_API_KEY: string | undefined } = { OPENAI_API_KEY: undefined };
 
 mock.module('@/config/env', () => ({ env }));
-mock.module('@/features/support/server/impersonation', () => ({
+mock.module('@/features/staff/server/impersonation', () => ({
   runAsStudent: (_actionName: string, run: () => Promise<unknown>) => run(),
 }));
 mock.module('@/features/brand/server/brand', () => ({

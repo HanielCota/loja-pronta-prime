@@ -14,7 +14,7 @@ import { useFormStatus } from 'react-dom';
 import { Avatar } from '@/components/ui/avatar';
 import { Spinner } from '@/components/ui/spinner';
 import { signOut } from '@/features/auth/server/sign-out';
-import type { StaffPanelLink } from '@/features/support/staff-access';
+import type { StaffPanelLink } from '@/features/staff/staff-access';
 import { cn } from '@/lib/utils';
 
 const itemClass =

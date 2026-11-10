@@ -17,7 +17,7 @@ import { storeChooserCard } from '@/features/loja-pronta/store-card';
 import { greetingName } from '@/features/products/names';
 import { PRODUCTS } from '@/features/products/catalog';
 import { requireStudent } from '@/features/products/server/access';
-import { StaffVisitBanner } from '@/features/support/server/staff-visit-banner';
+import { StaffVisitBanner } from '@/features/staff/server/staff-visit-banner';
 import { listLegacyStoresForUser } from '@/features/legacy-stores/server/queries';
 import { getStudentExperience } from '@/features/sll/server/experience';
 

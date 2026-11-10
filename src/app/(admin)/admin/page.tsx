@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { hasAdminRole } from '@/features/admin/access';
 import { requireAdmin } from '@/features/admin/server/access';
-import { readStaffFrameSession } from '@/features/support/server/staff-guard';
+import { readStaffFrameSession } from '@/features/staff/server/staff-guard';
 import { LearningContentTree } from '@/features/admin/components/learning-content-tree';
 import { AdminPage } from '@/features/admin/components/admin-shell';
 import { AdminLiveOverview } from '@/features/admin/components/admin-live-overview';

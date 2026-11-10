@@ -3,6 +3,24 @@
 Dates use the America/Sao_Paulo time zone. Operational verification and rollout limits are
 recorded separately from code integration.
 
+## 2026-11-10
+
+### Performance and cleanup
+
+- Cache versioned private images (profile photo, SLL banners, course covers, lesson images) in the
+  browser with `private, max-age=31536000, immutable` when the `?v=` storage version matches.
+- Add indexes for `store_automation_jobs (user_id, kind, created_at)`,
+  `assistant_publication_items (batch_id)` and `assistant_category_experiments (user_id,
+created_at)` in migration `0078_performance-indexes`.
+- Read store observations once per request and skip the write-only `traffic_report` column.
+- Skip presence upserts for the same page within 55 seconds; prune sessions and verifications
+  expired for over a week from the assistant worker.
+- Remove the retired ticket system code (~7,200 lines): pages, actions, queries, notifications,
+  desk and admin components and their tests. Redirects, the 410 API routes, WhatsApp help,
+  retention and the historical tables stay. Staff roles and student visits move to
+  `src/features/staff/`. `src/server/email/send.ts` is removed; account emails keep using
+  `src/server/auth/emails.ts`.
+
 ## 2026-11-09
 
 ### Credential security and assisted delivery recovery

@@ -1,6 +1,6 @@
 'use server';
 
-import { runAsStudent } from '@/features/support/server/impersonation';
+import { runAsStudent } from '@/features/staff/server/impersonation';
 import { parseWithZod } from '@conform-to/zod/v4';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -11,7 +11,7 @@ import { reportAuthError } from '@/server/auth/report-error';
 import { isRetiredStudentPassword } from '@/server/auth/student-password';
 import { getClientIp } from '@/server/request/client-ip';
 import { ENHANCED_SUBMIT_FIELD } from '@/lib/forms';
-import { staffLandingPath } from '@/features/support/server/staff-landing';
+import { staffLandingPath } from '@/features/staff/server/staff-landing';
 import { sanitizeRedirect } from '../redirect';
 import { EMAIL_CONFIRMED_REASON } from '../login-reason';
 import { loginSchema, recoverSchema, resetPasswordSchema } from '../schemas';
@@ -140,7 +140,8 @@ export async function resetPassword(_state: ResetResult, formData: FormData): Pr
     }
 
     const { password, token } = submission.value;
-    if (isRetiredStudentPassword(password)) return { submission: reject(submission, 'retired_password') };
+    if (isRetiredStudentPassword(password))
+      return { submission: reject(submission, 'retired_password') };
 
     // Por IP, não por token: quem tenta adivinhar tokens troca de token a cada tentativa.
     const ip = await getClientIp();

@@ -1,6 +1,6 @@
 'use server';
 
-import { runAsStudent } from '@/features/support/server/impersonation';
+import { runAsStudent } from '@/features/staff/server/impersonation';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { refresh } from 'next/cache';
 import { redirect, unstable_rethrow } from 'next/navigation';

@@ -8,7 +8,7 @@ import {
   newAssistedDeliveryPilot,
 } from '@/features/loja-pronta/server/assisted-delivery';
 import { panelCard } from '@/features/member/components/area-shell';
-import { requireStaff } from '@/features/support/server/staff-guard';
+import { requireStaff } from '@/features/staff/server/staff-guard';
 
 export const metadata: Metadata = { title: 'Entregas de lojas' };
 

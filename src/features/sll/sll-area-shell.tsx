@@ -4,7 +4,7 @@ import { ArrowLeft, Store } from 'lucide-react';
 import { BrandLink } from '@/components/brand/site-navbar';
 import { Button } from '@/components/ui/button';
 import { AccountMenu } from '@/features/member/components/account-menu';
-import { staffPanelLinkOf } from '@/features/support/staff-access';
+import { staffPanelLinkOf } from '@/features/staff/staff-access';
 import { MemberNavbar, type NavbarAccount } from '@/features/member/components/member-navbar';
 import { PRODUCTS } from '@/features/products/catalog';
 import { ThemeToggleButton } from '@/features/theme/theme-toggle-button';

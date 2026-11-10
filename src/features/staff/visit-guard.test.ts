@@ -22,8 +22,7 @@ const STAFF_ACTION_FILES = [
   'features/bling/server/actions.ts',
   'features/hotmart/server/actions.ts',
   'features/leads/server/actions.ts',
-  'features/support-admin/server/',
-  'features/support-desk/server/',
+  'features/staff/server/visit-actions.ts',
 ];
 
 /** Rotas da área da aluna que escrevem: todas passam por `visitForRoute`. */

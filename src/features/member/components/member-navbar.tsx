@@ -1,7 +1,7 @@
 import { SiteNavbar } from '@/components/brand/site-navbar';
 import { ThemeToggleButton } from '@/features/theme/theme-toggle-button';
 import type { ProductId } from '@/config/products';
-import { staffPanelLinkOf } from '@/features/support/staff-access';
+import { staffPanelLinkOf } from '@/features/staff/staff-access';
 import { AccountMenu } from './account-menu';
 import { AreaNav } from './area-nav';
 

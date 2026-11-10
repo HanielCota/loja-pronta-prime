@@ -497,7 +497,7 @@ o tema escuro e o alto contraste.
   "Ainda preciso de ajuda" (depois da resposta automática) e "Abrir outro mesmo assim" (aviso de
   chamado parecido). Quem veio pedir ajuda não pode ter o botão mais apagado da tela.
 - Ação da equipe que muda a vida de alguém num clique ("Encerrar sem responder", "Bloquear") pede
-  confirmação antes, pelo `ConfirmAction` (`support-desk/components/confirm-action.tsx`): um
+  confirmação antes, pelo `ConfirmAction` (`staff/components/confirm-action.tsx`): um
   `<details>` cujo título é o botão e que abre a explicação e o botão que faz de verdade, com
   "Cancelar". É `<details>` de propósito, pra continuar funcionando sem JavaScript; a janela do
   painel (`useAdminConfirmation`) segue valendo pras confirmações de conteúdo, que são só do admin.

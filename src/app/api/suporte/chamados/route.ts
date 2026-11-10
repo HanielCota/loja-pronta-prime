@@ -1,4 +1,4 @@
-import { visitForRoute } from '@/features/support/server/impersonation';
+import { visitForRoute } from '@/features/staff/server/impersonation';
 
 export async function POST() {
   await visitForRoute('openTicket');

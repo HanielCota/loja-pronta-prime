@@ -1,6 +1,6 @@
 'use server';
 
-import { runAsStudent } from '@/features/support/server/impersonation';
+import { runAsStudent } from '@/features/staff/server/impersonation';
 import { parseWithZod } from '@conform-to/zod/v4';
 import { and, eq, ne } from 'drizzle-orm';
 import { refresh } from 'next/cache';

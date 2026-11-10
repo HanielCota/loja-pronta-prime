@@ -21,7 +21,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { StaffPermission } from '@/features/support/staff-access';
+import type { StaffPermission } from '@/features/staff/staff-access';
 import { OnlineCountBadge } from './online-count-badge';
 import { RememberedGroup } from './remembered-group';
 import { adminSectionFor, type AdminSection } from '../admin-section';

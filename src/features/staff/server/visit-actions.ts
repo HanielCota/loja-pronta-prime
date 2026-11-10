@@ -3,24 +3,24 @@
 import { and, eq } from 'drizzle-orm';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { db } from '@/server/db';
+import { db } from '@/server/db/index';
 import {
   supportImpersonationLog,
   supportTicketEvents,
   supportTickets,
   user,
-} from '@/server/db/schema';
+} from '@/server/db/schema/index';
 import { auth } from '@/server/auth/auth';
-import { readStaffSession } from '@/features/support/server/staff-guard';
-import { endVisit, type VisitEnd } from '@/features/support/server/impersonation';
-import { closeOpenVisits, withStaffVisitLock } from '@/features/support/server/visit-lock';
+import { readStaffSession } from '@/features/staff/server/staff-guard';
+import { endVisit, type VisitEnd } from '@/features/staff/server/impersonation';
+import { closeOpenVisits, withStaffVisitLock } from '@/features/staff/server/visit-lock';
 import {
   startVisitSchema,
   ticketNumberOf,
   visitDestination,
   visitRefusalReason,
-} from '@/features/support/visit-target';
-import { STAFF_HOME } from '@/features/support/visit-window';
+} from '@/features/staff/visit-target';
+import { STAFF_HOME } from '@/features/staff/visit-window';
 
 export type VisitStartResult = { ok: true; redirectTo: string } | { ok: false; message: string };
 

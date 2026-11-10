@@ -4,7 +4,7 @@ import { cache } from 'react';
 import { after } from 'next/server';
 import { PRODUCT_IDS, type ProductId } from '@/config/products';
 import { authHref } from '@/features/auth/links';
-import { VISIT_OVER_PATH } from '@/features/support/visit-window';
+import { VISIT_OVER_PATH } from '@/features/staff/visit-window';
 import {
   getActiveSession,
   getSessionState,

@@ -69,8 +69,8 @@ const { account, session, supportImpersonationLog, user, userPresence } =
   await import('@/server/db/schema');
 const { getActiveSession, getSessionState, getVisit } =
   await import('@/features/auth/server/session');
-const { runAsStudent } = await import('@/features/support/server/impersonation');
-const { leaveVisit, startVisit } = await import('@/features/support-desk/server/visit-actions');
+const { runAsStudent } = await import('@/features/staff/server/impersonation');
+const { leaveVisit, startVisit } = await import('@/features/staff/server/visit-actions');
 const { updateName } = await import('@/features/auth/server/profile');
 const { markMyTicketRead } = await import('@/features/support/server/actions');
 const { POST: presence } = await import('@/app/api/presence/route');
@@ -373,5 +373,9 @@ test('HTTP sign-out cannot bypass the audited visit exit', async () => {
   const { signOut } = await import('@/features/auth/server/sign-out');
   expect(await redirectOf(signOut)).toBe('/admin/chamados');
   expect(await getVisit()).toBeNull();
-  expect((await logOf(studentId)).some((entry) => entry.sessionId === visit?.sessionId && entry.kind === 'ended')).toBe(true);
+  expect(
+    (await logOf(studentId)).some(
+      (entry) => entry.sessionId === visit?.sessionId && entry.kind === 'ended',
+    ),
+  ).toBe(true);
 });

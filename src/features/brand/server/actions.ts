@@ -1,6 +1,6 @@
 'use server';
 
-import { runAsStudent } from '@/features/support/server/impersonation';
+import { runAsStudent } from '@/features/staff/server/impersonation';
 import { and, eq, lte } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { SHOPEE_STORE } from '@/config/onboarding';
