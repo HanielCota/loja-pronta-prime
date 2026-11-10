@@ -36,7 +36,9 @@ export async function recordPresence({
       target: userPresence.userId,
       set: values,
       // Mesma página e gravação recente: nada muda pra quem olha a lista, então não regrava.
-      setWhere: sql`${userPresence.path} <> excluded.path or ${userPresence.lastSeenAt} < ${new Date(Date.now() - PRESENCE_REFRESH_MS)}`,
+      // O limite é calculado pelo próprio banco: uma data do app dentro do SQL cru iria com o fuso
+      // do servidor, e a coluna (sem fuso, em UTC) leria a hora errada.
+      setWhere: sql`${userPresence.path} <> excluded.path or ${userPresence.lastSeenAt} < now() - make_interval(secs => ${PRESENCE_REFRESH_MS / 1000})`,
     });
   return true;
 }
