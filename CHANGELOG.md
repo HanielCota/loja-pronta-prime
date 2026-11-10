@@ -11,6 +11,13 @@ recorded separately from code integration.
   `private, max-age=31536000, immutable` when the `?v=` storage version matches; a stale or missing
   version keeps the previous short or no-store answer. The profile photo is cached for one day
   only, since it can stay on a shared device after sign-out.
+- Add indexes for `store_automation_jobs (user_id, kind, created_at)`,
+  `assistant_publication_items (batch_id)` and `assistant_category_experiments (user_id,
+created_at)` in migration `0078_performance-indexes`.
+- Read store observations once per request and skip the write-only `traffic_report` column.
+- Skip presence upserts for the same page within 55 seconds, comparing against the database clock,
+  and widen the online window from 90 to 120 seconds so two lost heartbeats are still tolerated.
+- Prune sessions and verifications expired for over a week from the assistant worker, hourly.
 
 ## 2026-11-09
 

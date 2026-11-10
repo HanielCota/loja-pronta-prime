@@ -18,6 +18,12 @@ export const patchNotes: readonly PatchNoteDay[] = [
         description:
           'Após a atualização, a foto de perfil, os banners e as capas do SLL e as imagens das aulas ficarão guardadas no navegador. Ao voltar para uma página, elas aparecerão na hora. Quando uma imagem for trocada, a nova aparecerá normalmente.',
       },
+      {
+        kind: 'Melhoria',
+        title: 'Banco de dados mais leve',
+        description:
+          'Após a atualização, as telas de anúncios, plano e comparação de categorias do SLL vão buscar menos dados. O perfil, a conta no admin e a loja anterior vão carregar as informações ao mesmo tempo. Sessões vencidas há mais de uma semana serão apagadas sozinhas. Na lista de online, a aluna aparece até 2 minutos depois do último aviso, em vez de 90 segundos.',
+      },
     ],
   },
   {

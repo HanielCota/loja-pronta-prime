@@ -30,10 +30,10 @@ export const metadata: Metadata = {
 export default async function ProfilePage() {
   const { session, products } = await requireStudent('/perfil');
   const { user } = session;
-  const phones = await getSupportPhones();
   const name = greetingName(user);
   const profileName = user.preferredName?.trim() || user.name;
-  const [validity, devices] = await Promise.all([
+  const [phones, validity, devices] = await Promise.all([
+    getSupportPhones(),
     getAccessValidity(user.id),
     getAccountDevices(user.id, session.session.id),
   ]);

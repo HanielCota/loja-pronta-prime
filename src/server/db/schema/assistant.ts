@@ -189,6 +189,8 @@ export const assistantCategoryExperiments = pgTable(
       'assistant_experiments_items_check',
       sql`${table.leftItemId} <> ${table.rightItemId} and ${table.minViews}>0`,
     ),
+    // As telas da aluna buscam os testes dela, do mais novo pro mais antigo.
+    index('assistant_experiments_user_created_idx').on(table.userId, table.createdAt),
   ],
 );
 
@@ -284,6 +286,8 @@ export const assistantPublicationItems = pgTable(
       table.applicationId,
       table.itemId,
     ),
+    // Publicação e acompanhamento leem os itens de um lote; a exclusão do lote também usa.
+    index('assistant_publication_items_batch_idx').on(table.batchId),
   ],
 );
 

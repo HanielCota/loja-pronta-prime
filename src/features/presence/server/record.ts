@@ -1,7 +1,8 @@
+import { sql } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { userPresence } from '@/server/db/schema';
 import { deviceClientSchema } from '../device';
-import { normalizePresencePath } from '../presence';
+import { normalizePresencePath, PRESENCE_REFRESH_MS } from '../presence';
 
 /**
  * Guarda a página que a conta tem aberta agora e o aparelho (o user agent do pedido e o que o
@@ -31,6 +32,13 @@ export async function recordPresence({
   await db
     .insert(userPresence)
     .values({ userId, ...values })
-    .onConflictDoUpdate({ target: userPresence.userId, set: values });
+    .onConflictDoUpdate({
+      target: userPresence.userId,
+      set: values,
+      // Mesma página e gravação recente: nada muda pra quem olha a lista, então não regrava.
+      // O limite é calculado pelo próprio banco: uma data do app dentro do SQL cru iria com o fuso
+      // do servidor, e a coluna (sem fuso, em UTC) leria a hora errada.
+      setWhere: sql`${userPresence.path} <> excluded.path or ${userPresence.lastSeenAt} < now() - make_interval(secs => ${PRESENCE_REFRESH_MS / 1000})`,
+    });
   return true;
 }

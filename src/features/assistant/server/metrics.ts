@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { effectiveProductAccess } from '@/features/products/server/eligibility';
-import { and, desc, eq, inArray } from 'drizzle-orm';
+import { cache } from 'react';
+import { and, desc, eq, getTableColumns, inArray } from 'drizzle-orm';
 import { db } from '@/server/db';
 import {
   shopeeCollectionRuns,
@@ -160,7 +161,16 @@ export async function collectStoreMetrics(
   }
 }
 
-export async function readStoreObservations(userId: string) {
+// O relatório de tráfego (jsonb grande) só é gravado; a leitura das coletas não precisa dele.
+const { trafficReport: _trafficReport, ...runColumns } = getTableColumns(shopeeCollectionRuns);
+
+/**
+ * Uma leitura por pedido: a tela do plano e a orientação da IA pedem as mesmas coletas, e sem o
+ * cache cada uma repetia as consultas.
+ */
+export const readStoreObservations = cache(loadStoreObservations);
+
+async function loadStoreObservations(userId: string) {
   const config = getShopeeConfiguration();
   const [connection] = await db
     .select()
@@ -174,7 +184,7 @@ export async function readStoreObservations(userId: string) {
   )
     return { status: 'unavailable' as const, runs: [], items: [], windows: [] };
   const all = await db
-    .select()
+    .select(runColumns)
     .from(shopeeCollectionRuns)
     .where(
       and(

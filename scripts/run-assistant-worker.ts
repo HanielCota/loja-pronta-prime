@@ -1,4 +1,5 @@
 import { runSupportMaintenance } from '../src/features/support/server/maintenance';
+import { pruneExpiredAuthRows } from '../src/features/auth/server/maintenance';
 import { setTimeout as delay } from 'node:timers/promises';
 import { db } from '../src/server/db';
 import { randomUUID } from 'node:crypto';
@@ -64,6 +65,7 @@ async function run() {
         });
     }, 15_000);
     let nextSupportRun = 0;
+    let nextAuthCleanup = 0;
     let failures = 0;
     for (;;) {
       if (stopping) break;
@@ -80,6 +82,13 @@ async function run() {
         nextSupportRun = Date.now() + 60_000;
         await runSupportMaintenance().catch(() =>
           console.error('[support] Retention unavailable.'),
+        );
+      }
+      // Sessões vencidas não servem pra nada; uma limpeza por hora basta.
+      if (Date.now() >= nextAuthCleanup) {
+        nextAuthCleanup = Date.now() + 60 * 60_000;
+        await pruneExpiredAuthRows().catch(() =>
+          console.error('[auth] Expired session cleanup unavailable.'),
         );
       }
       if (Date.now() >= nextBrandScan) {

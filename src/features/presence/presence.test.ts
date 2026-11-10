@@ -4,7 +4,9 @@ import {
   formatLastSeen,
   isOnline,
   normalizePresencePath,
+  HEARTBEAT_MS,
   ONLINE_WINDOW_MS,
+  PRESENCE_REFRESH_MS,
 } from './presence';
 
 describe('normalizePresencePath', () => {
@@ -95,4 +97,12 @@ describe('formatLastSeen e isOnline', () => {
     expect(isOnline(ago(ONLINE_WINDOW_MS), now)).toBe(true);
     expect(isOnline(ago(ONLINE_WINDOW_MS + 1), now)).toBe(false);
   });
+});
+
+test('pular gravações recentes não tira a aluna da lista de online', () => {
+  // Só um aviso em dois é pulado: o seguinte já passa do prazo de regravar.
+  expect(PRESENCE_REFRESH_MS).toBeGreaterThan(HEARTBEAT_MS);
+  expect(PRESENCE_REFRESH_MS).toBeLessThan(2 * HEARTBEAT_MS);
+  // Pior caso: gravou, pulou o próximo, perdeu os dois seguintes e o quarto chega na janela.
+  expect(4 * HEARTBEAT_MS).toBeLessThanOrEqual(ONLINE_WINDOW_MS);
 });

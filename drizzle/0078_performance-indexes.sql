@@ -1,0 +1,3 @@
+CREATE INDEX "assistant_experiments_user_created_idx" ON "assistant_category_experiments" USING btree ("user_id","created_at");--> statement-breakpoint
+CREATE INDEX "assistant_publication_items_batch_idx" ON "assistant_publication_items" USING btree ("batch_id");--> statement-breakpoint
+CREATE INDEX "store_automation_jobs_user_kind_idx" ON "store_automation_jobs" USING btree ("user_id","kind","created_at");
