@@ -26,4 +26,8 @@ export function proxy(request: NextRequest) {
   return response;
 }
 
-export const config = { matcher: '/:path*' };
+// Arquivos estáticos do build e ícones nunca chegam por outro endereço: a página que os pede já
+// passou por aqui. Pular o proxy neles tira um passo de cada arquivo carregado.
+export const config = {
+  matcher: '/((?!_next/static|_next/image|favicon.ico|icon.png|apple-icon.png).*)',
+};
