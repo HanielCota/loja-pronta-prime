@@ -45,5 +45,9 @@ export const storeAutomationJobs = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     completedAt: timestamp('completed_at', { withTimezone: true }),
   },
-  (table) => [index('store_automation_jobs_due_idx').on(table.status, table.createdAt)],
+  (table) => [
+    index('store_automation_jobs_due_idx').on(table.status, table.createdAt),
+    // Telas e o robô da marca procuram os pedidos de uma aluna por tipo, do mais novo pro mais antigo.
+    index('store_automation_jobs_user_kind_idx').on(table.userId, table.kind, table.createdAt),
+  ],
 );
