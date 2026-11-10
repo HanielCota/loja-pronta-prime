@@ -66,7 +66,8 @@ const bundles = [
   },
 ];
 
-await Promise.all(
+// allSettled: espera todos terminarem e mostra cada pacote que falhou, não só o primeiro.
+const results = await Promise.allSettled(
   bundles.map(async (bundle) => {
     const result = await Bun.build({
       entrypoints: [bundle.entry],
@@ -80,6 +81,16 @@ await Promise.all(
     if (!result.success) throw new AggregateError(result.logs, bundle.failure);
   }),
 );
+const failures = results.flatMap((result) =>
+  result.status === 'rejected' ? [result.reason as unknown] : [],
+);
+if (failures.length)
+  throw new AggregateError(
+    failures,
+    failures
+      .map((failure) => (failure instanceof Error ? failure.message : String(failure)))
+      .join(' '),
+  );
 
 console.log(
   'Server, assets, fonts, migrations, worker and maintenance commands prepared in build/runtime.',

@@ -481,6 +481,10 @@ type ExpandableRowProps = {
   children: ReactNode;
 };
 
+/** Sem JavaScript, as linhas não abrem: os formulários ficam abertos e os botões da linha somem. */
+const NO_SCRIPT_CSS =
+  '[data-profile-panel]{grid-template-rows:1fr!important}[aria-controls^="perfil-"] [data-row-action]{display:none}';
+
 /**
  * Linha que abre o formulário embaixo dela. A linha inteira é o botão (alvo grande, fácil no
  * celular). Fechado, o formulário continua montado (guarda o que ela digitou e a resposta do
@@ -489,10 +493,6 @@ type ExpandableRowProps = {
  * Sem JavaScript, nada abriria: por isso o `inert` só entra depois de a página hidratar, e o
  * <noscript> deixa os formulários abertos (eles funcionam sem JavaScript).
  */
-/** Sem JavaScript, as linhas não abrem: os formulários ficam abertos e os botões da linha somem. */
-const NO_SCRIPT_CSS =
-  '[data-profile-panel]{grid-template-rows:1fr!important}[aria-controls^="perfil-"] [data-row-action]{display:none}';
-
 function ExpandableRow({
   section,
   rowRef,
