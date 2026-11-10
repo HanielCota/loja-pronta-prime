@@ -3,6 +3,7 @@ import JSZip from 'jszip';
 import {
   deliveryApprovalFingerprint,
   parseAssistedDeliveryPilot,
+  parseMemberAccess,
   prepareDeliveryOffer,
   shopeeDeliveryShopId,
 } from './assisted-delivery';
@@ -134,4 +135,17 @@ test('refuses a different template or a product cell with existing data', async 
   await expect(fillDeliveryWorkbook(await template('<v>1</v>'), layout, [offer])).rejects.toThrow(
     'contains a value',
   );
+});
+
+test('member access keeps the Shopee member ID and rejects incomplete values', () => {
+  expect(parseMemberAccess(' minhaloja:entrega ', 'Senha@123')).toEqual({
+    login: 'minhaloja:entrega',
+    password: 'Senha@123',
+  });
+  expect(parseMemberAccess('minhaloja', 'Senha@123')).toBeNull();
+  expect(parseMemberAccess('minha loja:entrega', 'Senha@123')).toBeNull();
+  expect(parseMemberAccess('minhaloja:entrega:extra', 'Senha@123')).toBeNull();
+  expect(parseMemberAccess('minhaloja:entrega', 'curta')).toBeNull();
+  expect(parseMemberAccess('minhaloja:entrega', 'Senha@123\nmais')).toBeNull();
+  expect(parseMemberAccess(null, 'Senha@123')).toBeNull();
 });

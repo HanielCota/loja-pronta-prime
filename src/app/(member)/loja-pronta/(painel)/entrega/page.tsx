@@ -21,6 +21,7 @@ import {
   submitAssistedDelivery,
 } from '@/features/loja-pronta/server/assisted-delivery-actions';
 import { getStorePhase } from '@/features/loja-pronta/server/store';
+import { MemberAccessSteps } from '@/features/loja-pronta/components/member-access-steps';
 import { AreaPage, panelCard } from '@/features/member/components/area-shell';
 import { requireProduct } from '@/features/products/server/access';
 import { getParam, type SearchParams } from '@/lib/search-params';
@@ -158,11 +159,7 @@ export default async function AssistedDeliveryPage({
                 requestedReview?.offerReviewId ?? undefined,
               )}
             />
-            <p className="text-body text-muted-foreground">
-              Na Central do Vendedor, libere uma subconta para{' '}
-              <strong>{reviewConfig.subaccount}</strong>, com acesso ao perfil e aos produtos.
-              Mantenha sua senha com você.
-            </p>
+            {requestedReview ? null : <MemberAccessSteps invalid={result === 'access'} />}
             <FloatingLabelInput
               id="delivery-shop-url"
               name="shopUrl"

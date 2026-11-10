@@ -8,7 +8,11 @@ import { requireStaff } from '@/features/staff/server/staff-guard';
 import { requireAdmin } from '@/features/admin/server/access';
 import { hasAdminRole } from '@/features/admin/access';
 import { runAsStudent } from '@/features/staff/server/impersonation';
-import { INITIAL_DELIVERY_SIZE, shopeeDeliveryShopId } from '../assisted-delivery';
+import {
+  INITIAL_DELIVERY_SIZE,
+  parseMemberAccess,
+  shopeeDeliveryShopId,
+} from '../assisted-delivery';
 import { ASSISTED_DELIVERY_PATH, DELIVERY_QUEUE_PATH } from '../delivery-paths';
 import {
   cancelAssistedDelivery,
@@ -25,7 +29,16 @@ export async function submitAssistedDelivery(form: FormData) {
     const approval = String(form.get('approval') ?? '');
     if (!shopId || !/^[a-f0-9]{64}$/.test(approval))
       redirect(`${ASSISTED_DELIVERY_PATH}?resultado=invalid`);
-    const saved = await requestAssistedDelivery(userId, shopId, approval).catch(() => false);
+    // A revisão de produtos restantes não pede o acesso de novo; o primeiro pedido pede.
+    const needsAccess = form.has('memberLogin');
+    const access = parseMemberAccess(form.get('memberLogin'), form.get('memberPassword'));
+    if (needsAccess && !access) redirect(`${ASSISTED_DELIVERY_PATH}?resultado=access`);
+    const saved = await requestAssistedDelivery(
+      userId,
+      shopId,
+      approval,
+      access ?? undefined,
+    ).catch(() => false);
     revalidatePath(DELIVERY_QUEUE_PATH);
     redirect(`${ASSISTED_DELIVERY_PATH}?resultado=${saved ? 'sent' : 'unavailable'}`);
   });

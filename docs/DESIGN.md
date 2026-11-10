@@ -582,6 +582,14 @@ photos and variation photos use the existing rounded image treatment; variation 
 are disclosed with native details. The interface distinguishes an internal draft import from
 marketplace publication and keeps the current visual system unchanged.
 
+### Assisted delivery access (November 10, 2026)
+
+On `/loja-pronta/entrega`, the approval card keeps its frame and adds the Shopee access steps
+inside it: a short heading, a numbered list with the Shopee menu names in bold, two `soft`
+buttons that open the Seller Centre and the sub-account platform in a new tab, then a
+`FloatingLabelInput` for the member ID and a `PasswordInput`, before the existing approval button.
+The operator page adds one `panelCard` with the ID and a native “Mostrar senha” disclosure.
+
 ### Continuing a previous store (October 27, 2026)
 
 Previous store cards lead with **Retomar esta loja**. Starting another store remains available

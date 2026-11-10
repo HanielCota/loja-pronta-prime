@@ -20,12 +20,14 @@ import {
   parseAssistedDeliveryPilot,
   prepareDeliveryOffer,
   type DeliverySelection,
+  type MemberAccess,
 } from '../assisted-delivery';
 import {
   fillDeliveryWorkbook,
   fitsDeliveryWorkbook,
   parseDeliveryWorkbookLayout,
 } from '../delivery-workbook';
+import { decryptMemberPassword, encryptMemberPassword } from './member-secret';
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Reader = Pick<typeof db, 'select'>;
@@ -46,13 +48,10 @@ export function deliveryReconciliationFingerprint(delivery: Delivery) {
 }
 
 export function deliveryConfiguration() {
-  const subaccount = process.env.SHOPEE_ASSISTED_SUBACCOUNT?.trim();
   const templateKey = process.env.SHOPEE_ASSISTED_TEMPLATE_KEY;
   const supplierId = process.env.SHOPEE_ASSISTED_SUPPLIER_ID;
   const layout = parseDeliveryWorkbookLayout(process.env.SHOPEE_ASSISTED_TEMPLATE_LAYOUT);
   if (
-    !subaccount ||
-    subaccount.length > 150 ||
     !templateKey ||
     !/^shopee-templates\/[\w-]+\.xlsx$/.test(templateKey) ||
     !supplierId ||
@@ -60,7 +59,7 @@ export function deliveryConfiguration() {
     !layout
   )
     return null;
-  return { subaccount, templateKey, layout, supplierId };
+  return { templateKey, layout, supplierId };
 }
 
 export function newAssistedDeliveryPilot() {
@@ -161,7 +160,12 @@ async function lockDeliveryUser(tx: Transaction, userId: string) {
   );
 }
 
-export async function requestAssistedDelivery(userId: string, shopId: string, expected: string) {
+export async function requestAssistedDelivery(
+  userId: string,
+  shopId: string,
+  expected: string,
+  access?: MemberAccess,
+) {
   const pilot = newAssistedDeliveryPilot();
   const initial = pilot?.userId === userId && pilot.shopId === shopId;
   const pending = await ownAssistedDelivery(userId);
@@ -210,7 +214,7 @@ export async function requestAssistedDelivery(userId: string, shopId: string, ex
         .where(eq(assistedDeliveries.id, existing.id));
       return true;
     }
-    if (!initial) return false;
+    if (!initial || !access) return false;
     if (existing?.startedAt) return false;
     const [phase] = await tx.select().from(stores).where(eq(stores.userId, userId)).for('share');
     if (phase?.phase !== 4) return false;
@@ -241,12 +245,16 @@ export async function requestAssistedDelivery(userId: string, shopId: string, ex
       sku,
       fingerprint,
     }));
+    const member = {
+      memberLogin: access.login,
+      memberPassword: encryptMemberPassword(access.password, userId, shopId),
+    };
     const [saved] = await tx
       .insert(assistedDeliveries)
-      .values({ userId, shopId, brand, selection })
+      .values({ userId, shopId, brand, selection, ...member })
       .onConflictDoUpdate({
         target: assistedDeliveries.userId,
-        set: { shopId, brand, selection },
+        set: { shopId, brand, selection, ...member },
         setWhere: isNull(assistedDeliveries.startedAt),
       })
       .returning({ id: assistedDeliveries.id });
@@ -447,13 +455,30 @@ export async function confirmAssistedItems(
     const itemIds = locked.itemIds.map((previous, index) => previous ?? entered[index] ?? null);
     const confirmed = itemIds.filter((item) => item !== null);
     if (!confirmed.length || new Set(confirmed).size !== confirmed.length) return false;
+    const completed = brandApplied && confirmed.length === INITIAL_DELIVERY_SIZE;
     await tx
       .update(assistedDeliveries)
       .set({
         itemIds,
-        completedAt: brandApplied && confirmed.length === INITIAL_DELIVERY_SIZE ? new Date() : null,
+        completedAt: completed ? new Date() : null,
+        // Entrega concluída: a senha do membro não serve mais pra nada aqui.
+        ...(completed ? { memberPassword: null } : {}),
       })
       .where(eq(assistedDeliveries.id, id));
     return true;
   });
+}
+
+/** O acesso de membro pra quem publica a entrega. Senha ilegível vira "sem acesso", sem erro. */
+export function deliveryMemberAccess(delivery: Delivery) {
+  if (!delivery.memberLogin) return null;
+  let password: string | null = null;
+  if (delivery.memberPassword) {
+    try {
+      password = decryptMemberPassword(delivery.memberPassword, delivery.userId, delivery.shopId);
+    } catch {
+      password = null;
+    }
+  }
+  return { login: delivery.memberLogin, password };
 }
