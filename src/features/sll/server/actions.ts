@@ -1,6 +1,6 @@
 'use server';
 
-import { runAsStudent } from '@/features/support/server/impersonation';
+import { runAsStudent } from '@/features/staff/server/impersonation';
 import {
   setSllLessonCompletionForm as setLessonCompletion,
   recordSllLessonView as recordLessonView,

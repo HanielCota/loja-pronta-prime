@@ -22,8 +22,8 @@ import {
   authAccessControl,
   authRoles,
 } from '@/features/auth/auth-roles';
-import { recordVisitStep } from '@/features/support/server/visit-log';
-import { VISIT_SESSION_SECONDS } from '@/features/support/visit-window';
+import { recordVisitStep } from '@/features/staff/server/visit-log';
+import { VISIT_SESSION_SECONDS } from '@/features/staff/visit-window';
 import { sendPasswordResetEmail, sendVerificationEmail } from './emails';
 import { reportAuthError } from './report-error';
 import { isRetiredStudentPassword } from './student-password';

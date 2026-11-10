@@ -18,9 +18,9 @@ import { ProductAccessManager } from '@/features/admin/components/product-access
 import { hasAdminRole, isStudentRole } from '@/features/admin/access';
 import { productLabel } from '@/features/admin/account-labels';
 import { requireAdmin } from '@/features/admin/server/access';
-import { ImpersonateButton } from '@/features/support-desk/components/impersonate-button';
-import { hasStaffPermission } from '@/features/support/staff-access';
-import { visitRefusalReason } from '@/features/support/visit-target';
+import { ImpersonateButton } from '@/features/staff/components/impersonate-button';
+import { hasStaffPermission } from '@/features/staff/staff-access';
+import { visitRefusalReason } from '@/features/staff/visit-target';
 import { getAccount } from '@/features/admin/server/accounts';
 import { RESET_LINK_TTL_HOURS } from '@/config/auth';
 import { getLastPresence } from '@/features/admin/server/online';

@@ -2,7 +2,7 @@
 
 import { useState, useTransition, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
-import { leaveVisit, leaveVisitForm } from '@/features/support-desk/server/visit-actions';
+import { leaveVisit, leaveVisitForm } from '@/features/staff/server/visit-actions';
 import { STAFF_HOME } from '../visit-window';
 
 /**

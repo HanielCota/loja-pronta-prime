@@ -5,10 +5,10 @@ import { redirect } from 'next/navigation';
 import { BrandCard } from '@/components/brand/brand-card';
 import { CardHeading } from '@/components/brand/card-heading';
 import { getVisit } from '@/features/auth/server/session';
-import { LeaveVisitButton } from '@/features/support/components/leave-visit-button';
-import { blockedMessage } from '@/features/support/visit-rules';
-import { visitDestination } from '@/features/support/visit-target';
-import { VISIT_OVER_PATH } from '@/features/support/visit-window';
+import { LeaveVisitButton } from '@/features/staff/components/leave-visit-button';
+import { blockedMessage } from '@/features/staff/visit-rules';
+import { visitDestination } from '@/features/staff/visit-target';
+import { VISIT_OVER_PATH } from '@/features/staff/visit-window';
 
 export const metadata: Metadata = { title: 'Ação bloqueada no acesso à conta da aluna' };
 

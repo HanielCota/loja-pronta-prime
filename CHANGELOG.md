@@ -13,11 +13,16 @@ recorded separately from code integration.
   only, since it can stay on a shared device after sign-out.
 - Add indexes for `store_automation_jobs (user_id, kind, created_at)`,
   `assistant_publication_items (batch_id)` and `assistant_category_experiments (user_id,
-created_at)` in migration `0078_performance-indexes`.
+  created_at)` in migration `0078_performance-indexes`.
 - Read store observations once per request and skip the write-only `traffic_report` column.
 - Skip presence upserts for the same page within 55 seconds, comparing against the database clock,
   and widen the online window from 90 to 120 seconds so two lost heartbeats are still tolerated.
 - Prune sessions and verifications expired for over a week from the assistant worker, hourly.
+- Remove the retired ticket system code (about 7,600 lines): pages, actions, queries,
+  notifications, desk and admin components and their tests. Redirects, the 410 API routes,
+  WhatsApp help, retention and the historical tables stay. Staff roles and student visits move to
+  `src/features/staff/`. `src/server/email/send.ts` is removed; account emails keep using
+  `src/server/auth/emails.ts`.
 
 ## 2026-11-09
 

@@ -73,8 +73,8 @@ const { db } = await import('@/server/db');
 const { account, session, supportImpersonationLog, user, userPresence } =
   await import('@/server/db/schema');
 const { getSessionState, getVisit } = await import('@/features/auth/server/session');
-const { runAsStudent } = await import('@/features/support/server/impersonation');
-const { leaveVisit, startVisit } = await import('@/features/support-desk/server/visit-actions');
+const { runAsStudent } = await import('@/features/staff/server/impersonation');
+const { leaveVisit, startVisit } = await import('@/features/staff/server/visit-actions');
 const { POST: presence } = await import('@/app/api/presence/route');
 const { ADMIN_PLUGIN_PATHS } = await import('@/features/auth/auth-roles');
 

@@ -1,6 +1,6 @@
 'use server';
 
-import { runAsStudent } from '@/features/support/server/impersonation';
+import { runAsStudent } from '@/features/staff/server/impersonation';
 import { parseWithZod } from '@conform-to/zod/v4';
 import { and, eq, ne } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
@@ -12,7 +12,7 @@ import { reportAuthError } from '@/server/auth/report-error';
 import { db } from '@/server/db';
 import { account, session as sessions, user } from '@/server/db/schema';
 import { ENHANCED_SUBMIT_FIELD } from '@/lib/forms';
-import { staffLandingPath } from '@/features/support/server/staff-landing';
+import { staffLandingPath } from '@/features/staff/server/staff-landing';
 import { firstPasswordSchema } from '../schemas';
 import { resolvePostLoginPath } from './post-login';
 import { getActiveSession, needsFirstPassword } from './session';

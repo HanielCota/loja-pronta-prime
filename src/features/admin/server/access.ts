@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { authHref } from '@/features/auth/links';
 import { getSessionState, needsFirstPassword } from '@/features/auth/server/session';
-import { VISIT_OVER_PATH } from '@/features/support/visit-window';
+import { VISIT_OVER_PATH } from '@/features/staff/visit-window';
 import { hasAdminRole } from '../access';
 
 /** Confere a permissão no servidor; páginas e futuras ações administrativas devem usar esta guarda. */

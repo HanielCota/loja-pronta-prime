@@ -18,7 +18,7 @@ import {
   recoverAssistedDelivery,
 } from '@/features/loja-pronta/server/assisted-delivery-actions';
 import { panelCard } from '@/features/member/components/area-shell';
-import { requireStaff } from '@/features/support/server/staff-guard';
+import { requireStaff } from '@/features/staff/server/staff-guard';
 import { getParam, type SearchParams } from '@/lib/search-params';
 
 export const metadata: Metadata = { title: 'Entrega da loja' };
@@ -66,9 +66,7 @@ export default async function DeliveryDetailPage({
         </p>
       ) : null}
       {result === 'recovered' ? (
-        <output className="block text-body">
-          Entrega atualizada.
-        </output>
+        <output className="block text-body">Entrega atualizada.</output>
       ) : null}
       <section className={panelCard} aria-labelledby="delivery-brand">
         <h2 id="delivery-brand" className="text-title font-semibold">

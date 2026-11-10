@@ -3,8 +3,8 @@ import Link from 'next/link';
 import { BrandCard } from '@/components/brand/brand-card';
 import { CardHeading } from '@/components/brand/card-heading';
 import { getVisit } from '@/features/auth/server/session';
-import { LeaveVisitButton } from '@/features/support/components/leave-visit-button';
-import { VISIT_OVER_MESSAGE } from '@/features/support/visit-window';
+import { LeaveVisitButton } from '@/features/staff/components/leave-visit-button';
+import { VISIT_OVER_MESSAGE } from '@/features/staff/visit-window';
 
 export const metadata: Metadata = { title: 'Acesso à conta da aluna terminou' };
 

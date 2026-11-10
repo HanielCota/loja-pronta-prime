@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { readStaffSession } from '@/features/support/server/staff-guard';
+import { readStaffSession } from '@/features/staff/server/staff-guard';
 import {
   deliveryWorkbook,
   eligibleDelivery,

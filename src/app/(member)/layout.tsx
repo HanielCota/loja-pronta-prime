@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { getVisit } from '@/features/auth/server/session';
 import { PresenceHeartbeat } from '@/features/presence/components/presence-heartbeat';
-import { StaffVisitBanner } from '@/features/support/server/staff-visit-banner';
+import { StaffVisitBanner } from '@/features/staff/server/staff-visit-banner';
 
 /**
  * As áreas das alunas avisam onde ela está, pro "Online agora" do admin. Quando alguém da equipe

@@ -1,6 +1,6 @@
 'use server';
 
-import { runAsStudent } from './impersonation';
+import { runAsStudent } from '@/features/staff/server/impersonation';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/features/admin/server/access';
 import { db } from '@/server/db';

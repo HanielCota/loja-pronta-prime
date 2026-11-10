@@ -1,6 +1,6 @@
 'use server';
 
-import { runAsStudent } from '@/features/support/server/impersonation';
+import { runAsStudent } from '@/features/staff/server/impersonation';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { auth } from '@/server/auth/auth';

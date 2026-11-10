@@ -9,9 +9,9 @@ import { getActiveSession, needsFirstPassword } from '@/features/auth/server/ses
 import { getStudentProducts } from '@/features/products/server/access';
 import { canUseShopee, parseShopeeCallback } from '@/features/shopee/authorization';
 import { getShopeeConfiguration } from '@/features/shopee/server/client';
-import { visitForRoute } from '@/features/support/server/impersonation';
-import { VISIT_BLOCKED_PATH } from '@/features/support/visit-rules';
-import { VISIT_OVER_PATH } from '@/features/support/visit-window';
+import { visitForRoute } from '@/features/staff/server/impersonation';
+import { VISIT_BLOCKED_PATH } from '@/features/staff/visit-rules';
+import { VISIT_OVER_PATH } from '@/features/staff/visit-window';
 import {
   finishShopeeAuthorization,
   getShopeeAuthorizationOrigin,

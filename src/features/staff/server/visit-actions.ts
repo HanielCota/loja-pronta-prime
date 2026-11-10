@@ -11,16 +11,16 @@ import {
   user,
 } from '@/server/db/schema';
 import { auth } from '@/server/auth/auth';
-import { readStaffSession } from '@/features/support/server/staff-guard';
-import { endVisit, type VisitEnd } from '@/features/support/server/impersonation';
-import { closeOpenVisits, withStaffVisitLock } from '@/features/support/server/visit-lock';
+import { readStaffSession } from '@/features/staff/server/staff-guard';
+import { endVisit, type VisitEnd } from '@/features/staff/server/impersonation';
+import { closeOpenVisits, withStaffVisitLock } from '@/features/staff/server/visit-lock';
 import {
   startVisitSchema,
   ticketNumberOf,
   visitDestination,
   visitRefusalReason,
-} from '@/features/support/visit-target';
-import { STAFF_HOME } from '@/features/support/visit-window';
+} from '@/features/staff/visit-target';
+import { STAFF_HOME } from '@/features/staff/visit-window';
 
 export type VisitStartResult = { ok: true; redirectTo: string } | { ok: false; message: string };
 
@@ -94,7 +94,7 @@ export async function startVisit(form: FormData): Promise<VisitStartResult> {
       return visit.session.id;
     });
   } catch (error) {
-    console.error('[support-desk] não foi possível entrar na conta.', {
+    console.error('[staff] não foi possível entrar na conta.', {
       error: error instanceof Error ? error.message : 'desconhecido',
     });
     return { ok: false, message: 'Não foi possível entrar na conta agora. Tente de novo.' };
@@ -102,7 +102,7 @@ export async function startVisit(form: FormData): Promise<VisitStartResult> {
   if (ticketNumber !== null) {
     const visit = { staffId: session.user.id, studentId: aluna, sessionId };
     await linkTicket(ticketNumber, visit).catch((error: unknown) =>
-      console.error('[support-desk] não foi possível ligar o chamado à visita.', {
+      console.error('[staff] não foi possível ligar o chamado à visita.', {
         error: error instanceof Error ? error.message : 'desconhecido',
       }),
     );

@@ -1,7 +1,7 @@
 import { getActiveSession, needsFirstPassword } from '@/features/auth/server/session';
 import { getStudentProducts } from '@/features/products/server/access';
 import { parseProgressLocation } from '@/features/sll/progress-rules';
-import { visitForRoute } from '@/features/support/server/impersonation';
+import { visitForRoute } from '@/features/staff/server/impersonation';
 import { recordSllLessonView } from '@/features/sll/server/progress-actions';
 import { hasTrustedOrigin } from '@/server/request/origin';
 import { readLimitedBody, RequestBodyTooLargeError } from '@/lib/request-body';
