@@ -4,8 +4,7 @@ import * as React from 'react';
 import { UploadIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Label } from './label';
-
-const noSubscribe = () => () => {};
+import { useHydrated } from '@/hooks/use-hydrated';
 
 function formatSize(bytes: number) {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
@@ -42,11 +41,7 @@ export function FileField({
   className,
   ...props
 }: FileFieldProps) {
-  const hydrated = React.useSyncExternalStore(
-    noSubscribe,
-    () => true,
-    () => false,
-  );
+  const hydrated = useHydrated();
   const [ownFile, setOwnFile] = React.useState<File | null>(null);
   const file = chosenFile === undefined ? ownFile : chosenFile;
   const titleId = `${id}-titulo`;

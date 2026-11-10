@@ -17,14 +17,7 @@ import {
   UserRoundIcon,
 } from 'lucide-react';
 import Link from 'next/link';
-import {
-  useActionState,
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type ReactNode,
-} from 'react';
+import { useActionState, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError } from '@/components/ui/field';
@@ -56,6 +49,7 @@ import { AuthErrorAlert } from './auth-error-alert';
 import { FieldErrorMessage } from './field-error-message';
 import { PasswordField } from './password-field';
 import { PasswordStrengthMeter } from './password-strength-meter';
+import { useHydrated } from '@/hooks/use-hydrated';
 
 type Section = 'name' | 'password' | 'photo';
 
@@ -495,8 +489,6 @@ type ExpandableRowProps = {
  * Sem JavaScript, nada abriria: por isso o `inert` só entra depois de a página hidratar, e o
  * <noscript> deixa os formulários abertos (eles funcionam sem JavaScript).
  */
-const noSubscribe = () => () => {};
-
 /** Sem JavaScript, as linhas não abrem: os formulários ficam abertos e os botões da linha somem. */
 const NO_SCRIPT_CSS =
   '[data-profile-panel]{grid-template-rows:1fr!important}[aria-controls^="perfil-"] [data-row-action]{display:none}';
@@ -516,11 +508,7 @@ function ExpandableRow({
 }: ExpandableRowProps) {
   const panel = useRef<HTMLDivElement>(null);
   const panelId = `perfil-${section}-form`;
-  const hydrated = useSyncExternalStore(
-    noSubscribe,
-    () => true,
-    () => false,
-  );
+  const hydrated = useHydrated();
 
   // Sem o foco no campo, ele fica na linha: o Tab seguinte já entra no formulário.
   useEffect(() => {
@@ -660,11 +648,7 @@ function ProfilePhotoForm({
   /** A resposta do servidor que ela já deixou pra trás ao escolher outra foto. */
   const [dismissed, setDismissed] = useState(state);
   const error = localError ?? (state === dismissed ? undefined : state?.error);
-  const hydrated = useSyncExternalStore(
-    noSubscribe,
-    () => true,
-    () => false,
-  );
+  const hydrated = useHydrated();
   /** A escolhida, pra mostrar no círculo antes de salvar. */
   const [chosen, setChosen] = useState<{ url: string; name: string; size: number } | null>(null);
   useEffect(() => (chosen ? () => URL.revokeObjectURL(chosen.url) : undefined), [chosen]);

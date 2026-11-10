@@ -1,11 +1,12 @@
 'use client';
 
 import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme } from 'next-themes';
-import { useCallback, useEffect, useSyncExternalStore, type ReactNode } from 'react';
+import { useCallback, useEffect, type ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 import { prefersReducedMotion } from '@/lib/reduced-motion';
 import { parsePreference, THEME_COLORS, THEME_STORAGE_KEY, type Theme } from './theme';
 import { DisplaySync } from './use-display';
+import { useHydrated } from '@/hooks/use-hydrated';
 
 /**
  * O tema do site, pelo next-themes: claro por padrão (decisão do produto: o escuro e o automático
@@ -46,19 +47,13 @@ function BrowserBarColor() {
   return null;
 }
 
-const noSubscribe = () => () => {};
-
 /**
  * A escolha, o tema que está na tela e como trocar. Até a página hidratar, o claro (o que o
  * servidor desenhou): ler o guardado antes disso faria o HTML não bater.
  */
 export function useTheme() {
   const { theme, resolvedTheme, setTheme } = useNextTheme();
-  const hydrated = useSyncExternalStore(
-    noSubscribe,
-    () => true,
-    () => false,
-  );
+  const hydrated = useHydrated();
   const shown: Theme = hydrated && resolvedTheme === 'dark' ? 'dark' : 'light';
   // A tela inteira esmaece de um tema pro outro (uma "foto" antes e outra depois), em vez de
   // piscar. Sem o recurso no navegador ou com "Reduzir animações", troca na hora, como antes.
