@@ -1,6 +1,8 @@
+import { storageKeyVersion } from '@/lib/storage-version';
+
 /** O nome único do arquivo muda a URL ao publicar outra capa, sem expor a pasta do bucket. */
 export function courseCoverVersion(storageKey: string): string {
-  return storageKey.split('/').at(-1) ?? storageKey;
+  return storageKeyVersion(storageKey);
 }
 
 export function courseCoverSrc(trackId: string, storageKey: string): string {

@@ -10,6 +10,17 @@ type PatchNoteDay = {
 /** Curated daily notes, newest first. Dates follow America/Sao_Paulo. */
 export const patchNotes: readonly PatchNoteDay[] = [
   {
+    date: '2026-11-10',
+    changes: [
+      {
+        kind: 'Melhoria',
+        title: 'Imagens abrem mais rápido',
+        description:
+          'Após a atualização, a foto de perfil, os banners e as capas do SLL e as imagens das aulas ficarão guardadas no navegador. Ao voltar para uma página, elas aparecerão na hora. Quando uma imagem for trocada, a nova aparecerá normalmente.',
+      },
+    ],
+  },
+  {
     date: '2026-11-09',
     changes: [
       {
