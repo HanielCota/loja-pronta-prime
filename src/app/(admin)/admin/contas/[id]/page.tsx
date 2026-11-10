@@ -55,11 +55,13 @@ export default async function AdminAccountPage({
   const { criada } = await searchParams;
   const createdNotice = criada ? CREATED_NOTICES[criada] : undefined;
   const session = await requireAdmin(`/admin/contas/${id}`);
-  const [validity, manualGrants] = await Promise.all([
+  // As quatro leituras não dependem umas das outras: saem juntas.
+  const [validity, manualGrants, data, { now, presence }] = await Promise.all([
     getAccessValidity(id),
     getAccountManualGrants(id),
+    getAccount(id),
+    getLastPresence(id),
   ]);
-  const [data, { now, presence }] = await Promise.all([getAccount(id), getLastPresence(id)]);
   if (!data) notFound();
   const lastSeen = presence
     ? `${isOnline(presence.lastSeenAt, now) ? 'Online agora' : formatLastSeen(presence.lastSeenAt, now)} · ${[

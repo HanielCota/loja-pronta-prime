@@ -28,11 +28,12 @@ export default async function PreviousStorePage({
   const page = parsePageNumber(requestedPage);
   const basePath = `/loja-pronta/previous-stores/${encodeURIComponent(id)}`;
   const { session, products } = await requireProduct('loja-pronta', basePath);
-  const data = await getLegacyStoreForUser(session.user.id, id, page);
+  const [data, stores] = await Promise.all([
+    getLegacyStoreForUser(session.user.id, id, page),
+    recoveredStores(db.$client, session.user.id),
+  ]);
   if (!data || (page > 1 && (page - 1) * LEGACY_PRODUCTS_PAGE_SIZE >= data.total)) notFound();
-  const recovery = (await recoveredStores(db.$client, session.user.id)).find(
-    (row) => row.id === (data.linked?.id ?? id),
-  );
+  const recovery = stores.find((row) => row.id === (data.linked?.id ?? id));
   return (
     <AreaPage
       hasChoice={products.length > 1}
