@@ -29,10 +29,17 @@ export function PresenceHeartbeat() {
         )
         .catch(() => undefined);
     };
-    report();
+    // O primeiro aviso espera o navegador ficar livre: não disputa com o carregamento da página.
+    // O Safari antigo não tem requestIdleCallback: lá, um segundo de espera faz o mesmo papel.
+    const idle = typeof window.requestIdleCallback === 'function';
+    const first = idle
+      ? window.requestIdleCallback(report, { timeout: 3000 })
+      : globalThis.setTimeout(report, 1000);
     const timer = window.setInterval(report, HEARTBEAT_MS);
     document.addEventListener('visibilitychange', report);
     return () => {
+      if (idle) window.cancelIdleCallback(first as number);
+      else globalThis.clearTimeout(first);
       window.clearInterval(timer);
       document.removeEventListener('visibilitychange', report);
     };
