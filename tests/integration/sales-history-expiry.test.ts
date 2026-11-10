@@ -7,6 +7,7 @@ import * as s from '@/server/db/schema';
 import { importSalesHistory, type SalesHistoryInput } from '../../scripts/import-sales-history';
 import { purchaseExpiresAt } from '@/features/products/access-term';
 import { getStudentProducts, requireProductAction } from '@/features/products/server/access';
+import { rejectionMessage } from '../support/rejection';
 
 mock.module('next/cache', () => ({ revalidateTag: () => {}, revalidatePath: () => {} }));
 mock.module('next/navigation', () => ({
@@ -115,14 +116,14 @@ test('preview is read-only; application creates only valid SLL memberships and i
   expect(importedAccount).toMatchObject({ mustChangePassword: false, role: 'user' });
   currentUser = importedAccount!.id;
   expect((await getStudentProducts(currentUser)).products).toEqual(['sll']);
-  await expect(requireProductAction('sll')).resolves.toHaveProperty('userId', currentUser);
-  await expect(requireProductAction('loja-pronta')).rejects.toThrow('redirect:/');
+  expect(await requireProductAction('sll')).toHaveProperty('userId', currentUser);
+  expect(await rejectionMessage(requireProductAction('loja-pronta'))).toContain('redirect:/');
   expect(await importSalesHistory(pool, batch, true)).toEqual({ alreadyImported: true });
   await pool.query('UPDATE historical_sll_purchases SET expires_at=now() WHERE source_sha256=$1', [
     batch.sourceSha256,
   ]);
   expect((await getStudentProducts(currentUser)).products).toEqual([]);
-  await expect(requireProductAction('sll')).rejects.toThrow('redirect:/');
+  expect(await rejectionMessage(requireProductAction('sll'))).toContain('redirect:/');
   expect(
     (await pool.query('SELECT 1 FROM student_products WHERE user_id=$1', [currentUser])).rowCount,
   ).toBe(1);

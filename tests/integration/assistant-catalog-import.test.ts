@@ -9,6 +9,7 @@ import {
   supplierPublicationMappings,
 } from '@/server/db/schema';
 import { publicationPayloadSchema } from '@/features/assistant/model';
+import { rejectionMessage } from '../support/rejection';
 
 const adminId = randomUUID(),
   studentId = randomUUID(),
@@ -86,13 +87,17 @@ function form(row: ReturnType<typeof record>) {
 test('arquivo antigo ou conflitante não substitui preço, estoque ou preparação mais recentes', async () => {
   const now = Date.now();
   const current = record('ordered', new Date(now - 100), 25, 3);
-  await expect(importSupplierCatalog(form(current))).rejects.toThrow('resultado=saved');
-  await expect(
-    importSupplierCatalog(form(record('ordered', new Date(now - 200), 20, 10))),
-  ).rejects.toThrow('resultado=outdated');
-  await expect(
-    importSupplierCatalog(form(record('ordered', new Date(now - 100), 22, 8))),
-  ).rejects.toThrow('resultado=outdated');
+  expect(await rejectionMessage(importSupplierCatalog(form(current)))).toContain('resultado=saved');
+  expect(
+    await rejectionMessage(
+      importSupplierCatalog(form(record('ordered', new Date(now - 200), 20, 10))),
+    ),
+  ).toContain('resultado=outdated');
+  expect(
+    await rejectionMessage(
+      importSupplierCatalog(form(record('ordered', new Date(now - 100), 22, 8))),
+    ),
+  ).toContain('resultado=outdated');
   const [catalog] = await db
     .select()
     .from(supplierCatalog)
@@ -103,15 +108,19 @@ test('arquivo antigo ou conflitante não substitui preço, estoque ou preparaç�
     .where(eq(supplierPublicationMappings.sku, 'ordered'));
   expect(catalog?.product).toMatchObject({ priceCents: 2500, stock: 3 });
   expect(mapping?.payload.original_price).toBe(25);
-  await expect(
-    importSupplierCatalog(form(record('ordered', new Date(Date.now() + 86400000), 30, 5))),
-  ).rejects.toThrow('resultado=invalid');
-  // Corrigir categoria/atributos sem alterar a versão do fornecedor continua permitido.
-  await expect(
-    importSupplierCatalog(
-      form({ ...current, publication: { ...current.publication, category_id: 20 } }),
+  expect(
+    await rejectionMessage(
+      importSupplierCatalog(form(record('ordered', new Date(Date.now() + 86400000), 30, 5))),
     ),
-  ).rejects.toThrow('resultado=saved');
+  ).toContain('resultado=invalid');
+  // Corrigir categoria/atributos sem alterar a versão do fornecedor continua permitido.
+  expect(
+    await rejectionMessage(
+      importSupplierCatalog(
+        form({ ...current, publication: { ...current.publication, category_id: 20 } }),
+      ),
+    ),
+  ).toContain('resultado=saved');
   expect(
     (
       await db

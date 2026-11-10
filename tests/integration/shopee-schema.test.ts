@@ -1,6 +1,7 @@
 import { afterAll, expect, test } from 'bun:test';
 import { randomUUID } from 'node:crypto';
 import { Pool } from 'pg';
+import { rejection } from '../support/rejection';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 afterAll(() => pool.end());
@@ -21,9 +22,11 @@ test('a migração impede vincular a mesma loja a duas contas e remove tokens ao
       'insert into shopee_connections (user_id, shop_id, access_token_encrypted, refresh_token_encrypted, access_token_expires_at) values ($1, $2, $3, $4, now())';
     await connection.query(insert, [first, 987654321, 'encrypted-test', 'encrypted-test']);
     await connection.query('savepoint duplicate_shop');
-    await expect(
-      connection.query(insert, [second, 987654321, 'encrypted-test', 'encrypted-test']),
-    ).rejects.toMatchObject({ code: '23505' });
+    expect(
+      await rejection(
+        connection.query(insert, [second, 987654321, 'encrypted-test', 'encrypted-test']),
+      ),
+    ).toMatchObject({ code: '23505' });
     await connection.query('rollback to savepoint duplicate_shop');
     await connection.query('delete from "user" where id = $1', [first]);
     const { rows } = await connection.query(

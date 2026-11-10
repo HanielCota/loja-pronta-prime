@@ -21,6 +21,7 @@ import {
   readShopeeAccess,
   removeShopeeConnection,
 } from '@/features/shopee/server/connection';
+import { rejection } from '../support/rejection';
 
 const userId = randomUUID();
 const otherUser = randomUUID();
@@ -226,8 +227,8 @@ test('falha no refresh deixa bloqueio durável e não tenta o token antigo de no
     calls++;
     throw new Error('unknown outcome');
   });
-  await expect(readShopeeAccess(userId, config, api)).rejects.toThrow();
-  await expect(readShopeeAccess(userId, config, api)).rejects.toThrow();
+  await rejection(readShopeeAccess(userId, config, api));
+  await rejection(readShopeeAccess(userId, config, api));
   expect(calls).toBe(1);
   expect(
     (await db.select().from(shopeeConnections).where(eq(shopeeConnections.userId, userId)))[0]
@@ -241,7 +242,7 @@ test('sandbox não avança loja real e tokens não podem cruzar ambientes', asyn
   const input = { ...callback(await state(otherUser, sandbox), otherUser), shopId: 987123457 };
   expect(await finishShopeeAuthorization(input, sandbox, accepted)).toBe('sandbox');
   expect((await db.select().from(stores).where(eq(stores.userId, otherUser)))[0]?.phase).toBe(4);
-  await expect(readShopeeAccess(otherUser, config, accepted)).rejects.toThrow();
+  await rejection(readShopeeAccess(otherUser, config, accepted));
 });
 
 test('desconexão remove somente os tokens e intenções da própria aluna', async () => {

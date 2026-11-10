@@ -5,6 +5,7 @@ import { auth } from '@/server/auth/auth';
 import { db } from '@/server/db';
 import { account, session, user } from '@/server/db/schema';
 import { changeOwnPassword } from '@/features/auth/server/password';
+import { rejection } from '../support/rejection';
 
 const users: string[] = [];
 const currentPassword = 'senha atual da compradora';
@@ -61,9 +62,7 @@ test('se a revogação falhar, a senha e todas as sessões permanecem como antes
     'create trigger reject_test_session_delete before delete on session for each row execute function reject_test_session_delete()',
   );
   try {
-    await expect(
-      changeOwnPassword(item.id, item.keepToken, currentPassword, newPassword),
-    ).rejects.toThrow();
+    await rejection(changeOwnPassword(item.id, item.keepToken, currentPassword, newPassword));
     expect((await db.query.account.findFirst({ where: eq(account.id, item.id) }))?.password).toBe(
       item.hash,
     );

@@ -8,6 +8,7 @@ import { reconcileManualAccess } from '../../scripts/reconcile-manual-access';
 import { reconcileProductAccess } from '@/features/hotmart/server/product-access';
 import { getAccessValidity } from '@/features/products/server/access-validity';
 import { getStudentProducts, requireProductAction } from '@/features/products/server/access';
+import { rejectionMessage } from '../support/rejection';
 
 let adminId = '';
 let currentUser = '';
@@ -140,7 +141,7 @@ test('admin grants require a deadline, permit correction, audit it and do not re
   expect(expiredResult.message).toContain('Prazo vencido registrado');
   currentUser = target.id;
   expect((await getStudentProducts(target.id)).products).toEqual([]);
-  await expect(requireProductAction('sll')).rejects.toThrow('redirect:/');
+  expect(await rejectionMessage(requireProductAction('sll'))).toContain('redirect:/');
   expect((await getAccessValidity(target.id)).byProduct.sll).toBeUndefined();
   await db.transaction((tx) => reconcileProductAccess(tx, target.id, 'sll'));
   expect(

@@ -11,6 +11,7 @@ import {
 } from '../../src/features/legacy-stores/server/catalog-data';
 import { LEGACY_CATALOG_RUN } from '../../src/config/legacy-catalog';
 import { seedRecoveredCatalog } from '../support/recovered-catalog';
+import { rejection } from '../support/rejection';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const fixtureUsers: string[] = [];
@@ -40,9 +41,9 @@ test('imports only audited own products, preserves edits on retries, and isolate
   fixture = await seedRecoveredCatalog(pool, owner);
   expect(await recoveredStores(pool, other)).toHaveLength(0);
   expect(await recoveredProduct(pool, other, fixture.ids[0]!)).toBeNull();
-  await expect(
+  await rejection(
     importRecoveredProducts(pool, other, { storeId: fixture.storeId, productIds: fixture.ids }),
-  ).rejects.toThrow();
+  );
   expect(
     await importRecoveredProducts(pool, owner, {
       storeId: fixture.storeId,
@@ -90,23 +91,23 @@ test('imports only audited own products, preserves edits on retries, and isolate
   );
   expect(await importedProduct(pool, owner, fixture.ids[0]!)).toBeNull();
   expect(await recoveredProduct(pool, owner, fixture.ids[0]!)).toBeNull();
-  await expect(
+  await rejection(
     importRecoveredProducts(pool, owner, {
       storeId: fixture.storeId,
       productIds: [fixture.ids[0]],
     }),
-  ).rejects.toThrow();
+  );
   await pool.query(
     "UPDATE legacy_product_recoveries SET status='review' WHERE run_id=$1 AND product_id=$2",
     [LEGACY_CATALOG_RUN, fixture.ids[1]],
   );
   expect(await recoveredProduct(pool, owner, fixture.ids[1]!)).toBeNull();
-  await expect(
+  await rejection(
     importRecoveredProducts(pool, owner, {
       storeId: fixture.storeId,
       productIds: [fixture.ids[1]],
     }),
-  ).rejects.toThrow();
+  );
   const {
     rows: [counts],
   } = await pool.query(

@@ -9,6 +9,7 @@ import { revokeAccountAccess } from '@/server/auth/credential-lifecycle';
 import { RETIRED_STUDENT_PASSWORD } from '@/server/auth/student-password';
 import { db } from '@/server/db';
 import { account, session, user, verification } from '@/server/db/schema';
+import { rejection } from '../support/rejection';
 
 const users: string[] = [];
 afterAll(async () => {
@@ -74,9 +75,7 @@ test('student reset revokes the password, sessions and reset links and allows em
   expect(saved?.emailVerified).toBe(true);
   expect(await db.select().from(session).where(eq(session.userId, id))).toHaveLength(0);
   expect(await db.select().from(verification).where(eq(verification.value, id))).toHaveLength(0);
-  await expect(
-    auth.api.signInEmail({ body: { email, password: personalPassword } }),
-  ).rejects.toThrow();
+  await rejection(auth.api.signInEmail({ body: { email, password: personalPassword } }));
   await auth.api.requestPasswordReset({ body: { email } });
   const token = (await db.query.verification.findFirst({
     where: eq(verification.value, id),
@@ -115,21 +114,19 @@ test('rollout selectively revokes retired hashes, including previously promoted 
   const promoted = await fixture({ old: true, role: 'admin', password: RETIRED_STUDENT_PASSWORD });
   const personal = await fixture({ old: true });
   const visitId = randomUUID();
-  await db
-    .insert(session)
-    .values({
-      id: visitId,
-      token: visitId,
-      userId: personal,
-      impersonatedBy: promoted,
-      expiresAt: new Date(Date.now() + 86400000),
-    });
+  await db.insert(session).values({
+    id: visitId,
+    token: visitId,
+    userId: personal,
+    impersonatedBy: promoted,
+    expiresAt: new Date(Date.now() + 86400000),
+  });
   const original = await credential(personal);
-  await expect(
+  await rejection(
     auth.api.signInEmail({
       body: { email: `${student}@example.invalid`, password: RETIRED_STUDENT_PASSWORD },
     }),
-  ).rejects.toThrow();
+  );
   expect(await revokeRetiredPasswords(db, false)).toEqual({ matched: 2, revoked: 0 });
   expect((await credential(student))?.password).toBeTruthy();
   expect(await revokeRetiredPasswords(db, true)).toEqual({ matched: 2, revoked: 2 });
@@ -168,6 +165,6 @@ test('a sign-in already checking the old password cannot mint a session during p
     await tx.update(user).set({ role: 'admin' }).where(eq(user.id, id));
     await revokeAccountAccess(tx, id, true);
   });
-  await expect(attempt).rejects.toThrow();
+  await rejection(attempt);
   expect(await db.select().from(session).where(eq(session.userId, id))).toHaveLength(0);
 });
