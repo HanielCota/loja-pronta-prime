@@ -8,6 +8,7 @@ import { BlingError } from '@/features/bling/server/client';
 import { getBlingStatus, readBlingPreview } from '@/features/bling/server/connection';
 import { connectBling, disconnectBling, previewBling } from '@/features/bling/server/actions';
 import { consumeAttempt } from '@/server/auth/rate-limit';
+import { formatBRL } from '@/lib/format-money';
 
 export const metadata: Metadata = { title: 'Conexão com o Bling' };
 
@@ -115,9 +116,7 @@ export default async function BlingPage({
                   <strong className="text-body break-words">{product.nome}</strong>
                   <span className="text-body break-words text-muted-foreground">
                     {product.codigo ? `SKU: ${product.codigo}` : 'Sem SKU informado'}
-                    {product.preco !== undefined
-                      ? ` · ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.preco)}`
-                      : ''}
+                    {product.preco !== undefined ? ` · ${formatBRL(product.preco)}` : ''}
                   </span>
                 </li>
               ))}

@@ -13,9 +13,9 @@ import {
   RecoveredProductPhotos,
   RecoveredProductVariations,
 } from '@/features/legacy-stores/components/recovered-product';
+import { formatCentsBRL } from '@/lib/format-money';
 
 export const metadata: Metadata = { title: 'Importar produtos recuperados' };
-const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 export default async function ImportPreviousProductsPage({
   params,
   searchParams,
@@ -84,7 +84,7 @@ export default async function ImportPreviousProductsPage({
                       Já importado. Suas alterações estão preservadas.
                     </p>
                   ) : null}
-                  <p className="text-body">{currency.format(product.priceCents / 100)}</p>
+                  <p className="text-body">{formatCentsBRL(product.priceCents)}</p>
                   <RecoveredProductPhotos product={product} />
                   <details>
                     <summary className="text-body">Descrição recuperada</summary>

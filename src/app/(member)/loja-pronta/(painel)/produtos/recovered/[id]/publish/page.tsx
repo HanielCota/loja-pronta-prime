@@ -25,9 +25,9 @@ import {
   activeRecoveredAttributes,
 } from '@/features/legacy-stores/publication';
 import { RecoveredProductPhotos } from '@/features/legacy-stores/components/recovered-product';
+import { formatCentsBRL } from '@/lib/format-money';
 
 export const metadata: Metadata = { title: 'Publicar produto recuperado' };
-const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const money = (value: number) => (value / 100).toFixed(2).replace('.', ',');
 const checkboxLabel = 'flex min-h-11 cursor-pointer items-center gap-3 text-body';
 
@@ -232,8 +232,8 @@ export default async function PublishRecoveredProductPage({
                 ) : (
                   <>
                     <p className="text-body">
-                      Preço de venda: {currency.format(product.priceCents / 100)}. Para mudar, volte
-                      ao produto e salve sua revisão.
+                      Preço de venda: {formatCentsBRL(product.priceCents)}. Para mudar, volte ao
+                      produto e salve sua revisão.
                     </p>
                     <FloatingLabelInput
                       id="cost"
@@ -437,8 +437,8 @@ export default async function PublishRecoveredProductPage({
                   </p>
                 ) : null}
                 <p>
-                  Venda: {currency.format(variant.priceCents / 100)} · custo:{' '}
-                  {currency.format(variant.costCents / 100)}
+                  Venda: {formatCentsBRL(variant.priceCents)} · custo:{' '}
+                  {formatCentsBRL(variant.costCents)}
                 </p>
                 <p>Estoque: {variant.stock} unidades</p>
                 <p>

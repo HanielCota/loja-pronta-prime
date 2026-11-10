@@ -25,6 +25,7 @@ import { getBrand } from '@/features/brand/server/brand-store';
 import { getStorePhase } from '@/features/loja-pronta/server/store';
 import { redirect } from 'next/navigation';
 import { getParam, type SearchParams } from '@/lib/search-params';
+import { formatBRL, formatCentsBRL } from '@/lib/format-money';
 
 export const metadata: Metadata = { title: 'Produtos da minha loja' };
 const statusLabels = {
@@ -240,11 +241,8 @@ export default async function StoreProductsPage({
             >
               <h3 className="text-body font-semibold">{item.title}</h3>
               <p className="text-body text-muted-foreground">
-                Preço anterior:{' '}
-                {item.previousPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                . Preço atual:{' '}
-                {item.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}.
-                Quantidade para publicar: {item.stock}.
+                Preço anterior: {formatBRL(item.previousPrice)}. Preço atual:{' '}
+                {formatBRL(item.price)}. Quantidade para publicar: {item.stock}.
               </p>
               <input type="hidden" name="itemId" value={item.itemId} />
               <input type="hidden" name="fingerprint" value={item.fingerprint} />
@@ -307,18 +305,14 @@ export default async function StoreProductsPage({
                           {product.variants
                             .map(
                               (variant) =>
-                                `${Object.values(variant.options).join(' / ')}: ${(variant.priceCents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}, ${variant.stock} disponíveis`,
+                                `${Object.values(variant.options).join(' / ')}: ${formatCentsBRL(variant.priceCents)}, ${variant.stock} disponíveis`,
                             )
                             .join('; ')}
                         </span>
                       ) : null}
                       <span className="block text-muted-foreground">
-                        {(product.priceCents / 100).toLocaleString('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL',
-                        })}{' '}
-                        · {product.stock} disponíveis no fornecedor · {product.quantity} para
-                        publicar
+                        {formatCentsBRL(product.priceCents)} · {product.stock} disponíveis no
+                        fornecedor · {product.quantity} para publicar
                         {initial?.analysis?.preferredCategoryId === product.categoryId
                           ? ' · Categoria em destaque na observação'
                           : ''}

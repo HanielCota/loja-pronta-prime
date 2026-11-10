@@ -11,10 +11,10 @@ import {
   publicationLocked,
   recoveredPublicationMessages,
 } from '@/features/legacy-stores/publication';
+import { formatCentsBRL } from '@/lib/format-money';
 
 export const metadata: Metadata = { title: 'Produtos recuperados' };
 const path = '/loja-pronta/produtos/recovered';
-const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 export default async function RecoveredCatalogPage({
   searchParams,
 }: {
@@ -88,7 +88,7 @@ export default async function RecoveredCatalogPage({
                 />
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
                   <h3 className="text-body font-semibold wrap-anywhere">{row.product.title}</h3>
-                  <p className="text-body">{currency.format(row.product.priceCents / 100)}</p>
+                  <p className="text-body">{formatCentsBRL(row.product.priceCents)}</p>
                   <p className="text-sm text-muted-foreground">
                     {row.publication_status
                       ? recoveredPublicationMessages[row.publication_status]

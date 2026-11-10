@@ -12,8 +12,7 @@ import {
   type LegacyProduct,
   type LegacyStore,
 } from '../model';
-
-const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+import { formatBRL } from '@/lib/format-money';
 
 export function LegacyStoreDetail({
   store,
@@ -118,7 +117,7 @@ export function LegacyStoreDetail({
                   <h3 className="text-body font-semibold wrap-anywhere">
                     {record.titulo || 'Nome do produto não informado'}
                   </h3>
-                  <p className="text-body">{currency.format(record.preco_final)}</p>
+                  <p className="text-body">{formatBRL(record.preco_final)}</p>
                   <p className="text-sm text-muted-foreground">
                     Publicação registrada: {legacyPublicationLabel(record.situacao_publicacao)} ·
                     Shopee: {legacyListingLabel(record.situacao_anuncio_shopee)}
