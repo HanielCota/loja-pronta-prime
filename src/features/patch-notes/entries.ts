@@ -24,6 +24,12 @@ export const patchNotes: readonly PatchNoteDay[] = [
         description:
           'Após a atualização, as telas de anúncios, plano e comparação de categorias do SLL vão buscar menos dados. O perfil, a conta no admin e a loja anterior vão carregar as informações ao mesmo tempo. Sessões vencidas há mais de uma semana serão apagadas sozinhas. Na lista de online, a aluna aparece até 2 minutos depois do último aviso, em vez de 90 segundos.',
       },
+      {
+        kind: 'Melhoria',
+        title: 'Vídeo da aula começa a carregar antes',
+        description:
+          'Após a atualização, o vídeo principal das aulas do SLL e do curso do Zé Mauro começará a carregar junto com a página, sem esperar o resto. O aviso de presença também vai esperar a página terminar de abrir.',
+      },
     ],
   },
   {

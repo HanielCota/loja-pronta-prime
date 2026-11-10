@@ -209,7 +209,7 @@ export function SllLessonViewer({ data, progress, completedHref }: SllLessonView
         <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_18rem]">
           <div className="flex min-w-0 flex-col gap-5">
             {firstVideo ? (
-              <SllLessonVideo data={firstVideo.data} title={data.lesson.title} />
+              <SllLessonVideo data={firstVideo.data} main title={data.lesson.title} />
             ) : null}
 
             <section className={cn(panelCard, 'gap-4')} aria-labelledby="lesson-title">

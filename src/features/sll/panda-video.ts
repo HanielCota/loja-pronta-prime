@@ -1,4 +1,4 @@
-const PANDA_PLAYER_ORIGIN = 'https://player-vz-dbb97dad-52b.tv.pandavideo.com.br';
+export const PANDA_PLAYER_ORIGIN = 'https://player-vz-dbb97dad-52b.tv.pandavideo.com.br';
 const VIDEO_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /** O admin pode colar o link do player ou o ID, mas o banco guarda somente o ID. */

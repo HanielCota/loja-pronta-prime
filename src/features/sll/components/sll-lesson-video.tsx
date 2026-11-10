@@ -1,13 +1,27 @@
+import { preconnect } from 'react-dom';
 import { CirclePlay } from 'lucide-react';
-import { pandaVideoEmbedUrl } from '../panda-video';
+import { PANDA_PLAYER_ORIGIN, pandaVideoEmbedUrl } from '../panda-video';
 
 // O Panda precisa da própria origem para desenhar os ícones SVG. O src sempre usa o domínio
 // externo conferido em pandaVideoEmbedUrl, mantendo o player separado da origem da aplicação.
 /* oxlint-disable react/iframe-missing-sandbox */
 
-/** Mesmo player na aula e nas prévias, sem carregar o catálogo inteiro no navegador. */
-export function SllLessonVideo({ data, title }: { data: Record<string, unknown>; title: string }) {
+/**
+ * Mesmo player na aula e nas prévias, sem carregar o catálogo inteiro no navegador. `main` é o
+ * vídeo do topo da aula: é o que ela veio ver, então carrega na hora (e já abre a conexão com o
+ * Panda) em vez de esperar a página toda.
+ */
+export function SllLessonVideo({
+  data,
+  title,
+  main = false,
+}: {
+  data: Record<string, unknown>;
+  title: string;
+  main?: boolean;
+}) {
   const src = pandaVideoEmbedUrl(data);
+  if (src && main) preconnect(PANDA_PLAYER_ORIGIN);
   if (!src)
     return (
       <section
@@ -31,7 +45,7 @@ export function SllLessonVideo({ data, title }: { data: Record<string, unknown>;
         allow="encrypted-media; picture-in-picture; fullscreen"
         allowFullScreen
         className="h-full w-full border-0"
-        loading="lazy"
+        loading={main ? 'eager' : 'lazy'}
         referrerPolicy="strict-origin-when-cross-origin"
         sandbox="allow-scripts allow-same-origin allow-presentation"
         src={src}
