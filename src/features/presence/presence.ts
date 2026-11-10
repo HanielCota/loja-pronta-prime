@@ -4,6 +4,13 @@ export const HEARTBEAT_MS = 30_000;
 /** Sem aviso por esse tempo, ela sai da lista de online (três avisos perdidos, com folga). */
 export const ONLINE_WINDOW_MS = 90_000;
 
+/**
+ * Na mesma página, só regrava a presença depois desse tempo: um aviso sim, outro não. Cada
+ * gravação mexe no índice de "visto por último"; assim o banco trabalha metade e ela continua
+ * aparecendo online (a última gravação nunca passa da janela).
+ */
+export const PRESENCE_REFRESH_MS = 55_000;
+
 const MAX_PATH_LENGTH = 200;
 
 /**
