@@ -1,8 +1,8 @@
 import { and, eq, gt, isNotNull, sql } from 'drizzle-orm';
 import { Client } from 'pg';
 import { env } from '@/config/env';
-import { db } from '@/server/db/index';
-import { session } from '@/server/db/schema/index';
+import { db } from '@/server/db';
+import { session } from '@/server/db/schema';
 import { recordVisitStep } from './visit-log';
 
 /**

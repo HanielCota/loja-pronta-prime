@@ -1,5 +1,5 @@
-import { db } from '@/server/db/index';
-import { supportImpersonationLog } from '@/server/db/schema/index';
+import { db } from '@/server/db';
+import { supportImpersonationLog } from '@/server/db/schema';
 
 export type VisitLogEntry = {
   kind: 'started' | 'action' | 'refused' | 'ended';

@@ -1,6 +1,6 @@
 import { profilePhotoId, profilePhotoKey } from '@/features/auth/profile-photo';
 import { getActiveSession, needsFirstPassword } from '@/features/auth/server/session';
-import { VERSIONED_PRIVATE_IMAGE_CACHE } from '@/lib/storage-version';
+import { PROFILE_PHOTO_CACHE } from '@/lib/storage-version';
 import { storage } from '@/server/storage';
 
 /** Sem cache também no "não encontrado": a foto pode aparecer logo depois de salva. */
@@ -20,8 +20,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ fot
   return new Response(new Uint8Array(bytes), {
     headers: {
       'Content-Type': 'image/webp',
-      // Cada foto nova ganha outro endereço: a que está no menu de toda página não muda mais.
-      'Cache-Control': VERSIONED_PRIVATE_IMAGE_CACHE,
+      // Cada foto nova ganha outro endereço, então a do menu pode ficar guardada (ver o prazo).
+      'Cache-Control': PROFILE_PHOTO_CACHE,
       'X-Content-Type-Options': 'nosniff',
     },
   });

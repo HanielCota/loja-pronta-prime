@@ -3,13 +3,13 @@
 import { and, eq } from 'drizzle-orm';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { db } from '@/server/db/index';
+import { db } from '@/server/db';
 import {
   supportImpersonationLog,
   supportTicketEvents,
   supportTickets,
   user,
-} from '@/server/db/schema/index';
+} from '@/server/db/schema';
 import { auth } from '@/server/auth/auth';
 import { readStaffSession } from '@/features/staff/server/staff-guard';
 import { endVisit, type VisitEnd } from '@/features/staff/server/impersonation';
@@ -94,7 +94,7 @@ export async function startVisit(form: FormData): Promise<VisitStartResult> {
       return visit.session.id;
     });
   } catch (error) {
-    console.error('[support-desk] não foi possível entrar na conta.', {
+    console.error('[staff] não foi possível entrar na conta.', {
       error: error instanceof Error ? error.message : 'desconhecido',
     });
     return { ok: false, message: 'Não foi possível entrar na conta agora. Tente de novo.' };
@@ -102,7 +102,7 @@ export async function startVisit(form: FormData): Promise<VisitStartResult> {
   if (ticketNumber !== null) {
     const visit = { staffId: session.user.id, studentId: aluna, sessionId };
     await linkTicket(ticketNumber, visit).catch((error: unknown) =>
-      console.error('[support-desk] não foi possível ligar o chamado à visita.', {
+      console.error('[staff] não foi possível ligar o chamado à visita.', {
         error: error instanceof Error ? error.message : 'desconhecido',
       }),
     );
