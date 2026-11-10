@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LiveRegion } from '@/components/ui/live-region';
 import { panelCard } from '@/features/member/components/area-shell';
+import { versionedSrc } from '@/lib/storage-version';
 import { cn } from '@/lib/utils';
 
 type Banner = {
@@ -86,11 +87,7 @@ export function SllBannerCarousel({ banners }: { banners: Banner[] }) {
           height={720}
           // O banner é a primeira imagem grande do painel: o navegador busca antes das outras.
           fetchPriority="high"
-          src={
-            banner.imageVersion
-              ? `/api/sll/banner/${banner.id}?v=${encodeURIComponent(banner.imageVersion)}`
-              : `/api/sll/banner/${banner.id}`
-          }
+          src={versionedSrc(`/api/sll/banner/${banner.id}`, banner.imageVersion)}
         />
       </div>
       {banners.length > 1 ? (
