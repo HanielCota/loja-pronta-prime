@@ -23,6 +23,7 @@ import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Textarea } from '@/components/ui/textarea';
 import { FileField } from '@/components/ui/file-field';
 import { getParam, type SearchParams } from '@/lib/search-params';
+import { formatBRL } from '@/lib/format-money';
 
 export const metadata: Metadata = { title: 'Ajustar anúncios · SLL' };
 export default async function ListingsPage({
@@ -73,10 +74,10 @@ export default async function ListingsPage({
     cloneOffers.map((offer) => [
       offer.itemId,
       [
-        `${offer.payload.original_price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} · ${offer.payload.normal_stock} unidades no novo anúncio`,
+        `${formatBRL(offer.payload.original_price)} · ${offer.payload.normal_stock} unidades no novo anúncio`,
         ...(offer.payload.variations?.model.map(
           (model) =>
-            `${model.tier_index.map((value, index) => offer.payload.variations!.tier_variation[index]!.option_list[value]!.option).join(' / ')}: ${model.original_price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}, ${model.normal_stock} unidades`,
+            `${model.tier_index.map((value, index) => offer.payload.variations!.tier_variation[index]!.option_list[value]!.option).join(' / ')}: ${formatBRL(model.original_price)}, ${model.normal_stock} unidades`,
         ) ?? []),
       ].join('; '),
     ]),

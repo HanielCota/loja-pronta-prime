@@ -23,15 +23,6 @@ export const statusBadge =
 /** Título de seção dentro de um cartão ("Ferramentas", "Seu caminho no curso"). */
 export const sectionTitleClass = 'text-body font-semibold text-foreground';
 
-/**
- * Saudação das áreas, a mesma em todas: "Boas-vindas, Ana!" na primeira visita, seguida do que a
- * página mostra. Depois, só o que a página mostra: ela já foi cumprimentada na escolha de área.
- */
-export function greeting(name: string, firstVisit: boolean, rest: string): string {
-  if (!firstVisit) return rest;
-  return `Boas-vindas${name ? `, ${name}` : ''}! ${rest}`;
-}
-
 type AreaShellProps = {
   /** Quem está logada (a barra do topo). */
   account: NavbarAccount;
@@ -145,17 +136,22 @@ export function AreaPage({
 }: Omit<AreaShellProps, 'account'>) {
   // Nas áreas, quem tem os dois produtos já vê onde está pelas abas do topo.
   const navigation = backLink ? (
-    <Button asChild className="-ml-2 w-fit px-2 text-sm whitespace-normal" size="inline" variant="ghost">
+    <Button
+      asChild
+      className="-ml-2 w-fit px-2 text-sm whitespace-normal"
+      size="inline"
+      variant="ghost"
+    >
       <Link href={backLink.href}>
         <ArrowLeft aria-hidden="true" />
         {backLink.label}
       </Link>
     </Button>
   ) : hasChoice && area ? null : hasChoice ? (
-      <Breadcrumb trail={[START]} current={crumb ?? product ?? title} />
-    ) : product ? (
-      <p className="text-body font-medium text-muted-foreground">{product}</p>
-    ) : null;
+    <Breadcrumb trail={[START]} current={crumb ?? product ?? title} />
+  ) : product ? (
+    <p className="text-body font-medium text-muted-foreground">{product}</p>
+  ) : null;
   const pageHeading = header ?? (
     <>
       <h1 className="text-title font-semibold text-balance sm:text-title-lg">{title}</h1>

@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { hasControlCharacters } from '@/lib/text';
 
 export const BLING_PATH = '/admin/bling';
-export const BLING_CALLBACK_PATH = '/api/bling/callback';
 export const BLING_AUTHORIZE_URL = 'https://www.bling.com.br/Api/v3/oauth/authorize';
 export const BLING_API_URL = 'https://api.bling.com.br/Api/v3';
 

@@ -24,9 +24,9 @@ import { getStorePhase } from '@/features/loja-pronta/server/store';
 import { AreaPage, panelCard } from '@/features/member/components/area-shell';
 import { requireProduct } from '@/features/products/server/access';
 import { getParam, type SearchParams } from '@/lib/search-params';
+import { formatCentsBRL } from '@/lib/format-money';
 
 export const metadata: Metadata = { title: 'Entrega da minha loja' };
-const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
 export default async function AssistedDeliveryPage({
   searchParams,
@@ -144,9 +144,7 @@ export default async function AssistedDeliveryPage({
                 className="flex flex-wrap justify-between gap-x-4 gap-y-1 py-3 text-body"
               >
                 <span className="wrap-anywhere">{offer.title}</span>
-                <span className="text-muted-foreground">
-                  {money.format(offer.priceCents / 100)}
-                </span>
+                <span className="text-muted-foreground">{formatCentsBRL(offer.priceCents)}</span>
               </li>
             ))}
           </ul>

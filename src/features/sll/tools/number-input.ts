@@ -1,3 +1,5 @@
+import { formatCentsBRL } from '@/lib/format-money';
+
 /** Aceita o decimal brasileiro e o ponto do teclado numérico; nunca transforma vazio em zero. */
 export function parseDecimalInput(value: string): number | null {
   const normalized = value.trim();
@@ -8,7 +10,7 @@ export function parseDecimalInput(value: string): number | null {
 }
 
 export function formatMoney(cents: number) {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100);
+  return formatCentsBRL(cents);
 }
 
 /** Só formata: o ROAS já chega arredondado pra cima no centésimo (ver roasRoundedUp). */
