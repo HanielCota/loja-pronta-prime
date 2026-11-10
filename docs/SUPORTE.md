@@ -9,7 +9,7 @@ Support happens on WhatsApp, with one contact per topic. The in-platform ticket 
 | What                                         | Where                                                                                                                       |
 | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | WhatsApp contacts and topics (tested)        | `src/features/support/`: `contacts.ts`, `whatsapp.ts`, `catalog.ts`                                                         |
-| Settings (WhatsApp numbers, retention)       | `src/features/support/server/settings.ts`, `server/contacts.ts`, `server/actions.ts`, screen `/admin/suporte/configuracoes` |
+| Settings (WhatsApp numbers)                  | `src/features/support/server/settings.ts`, `server/contacts.ts`, `server/actions.ts`, screen `/admin/suporte/configuracoes` |
 | Retention of old tickets                     | `src/features/support/server/maintenance.ts`, called from `scripts/run-assistant-worker.ts`                                 |
 | Staff roles and visits ("Entrar como aluna") | `src/features/staff/`                                                                                                       |
 | Data                                         | `src/server/db/schema/support-tickets.ts` (historical), `drizzle/0066_support-tickets.sql`                                  |
@@ -19,7 +19,8 @@ Support happens on WhatsApp, with one contact per topic. The in-platform ticket 
 - Profile (`/perfil#suporte`) and `/suporte/acesso` (public, linked from the login page): WhatsApp
   help by topic.
 - `/suporte/whatsapp/<topic>`: counts the click (no content) and redirects to `wa.me`.
-- `/admin/suporte/configuracoes`: WhatsApp contacts and data retention.
+- `/admin/suporte/configuracoes`: WhatsApp contacts. Retention has no editor: the worker uses the
+  stored settings or the defaults in `server/settings.ts`.
 - Retired and redirecting: `/suporte`, `/suporte/novo`, `/suporte/<number>`,
   `/suporte/acesso/<token>`, `/admin/chamados`, `/admin/suporte`, `/admin/suporte/equipe`,
   `/admin/suporte/desempenho`. The ticket API routes answer 410.

@@ -4,7 +4,7 @@ import { adminAc, defaultStatements } from 'better-auth/plugins/admin/access';
 /**
  * Papéis que o plugin admin do Better Auth conhece. Só `admin` recebe os poderes dele (bloquear,
  * entrar como aluna, mudar papel); os cargos do suporte entram sem poder nenhum. O que cada cargo
- * pode no suporte mora em `features/support/staff-access.ts`.
+ * pode no suporte mora em `features/staff/staff-access.ts`.
  *
  * Os cargos da equipe ficam em `adminRoles` pra o próprio plugin recusar "entrar como" numa conta
  * da equipe: o `admin` não tem `impersonate-admins`.
