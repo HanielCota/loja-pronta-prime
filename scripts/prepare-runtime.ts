@@ -23,94 +23,64 @@ for (const font of BRAND_FONTS) {
   await cp(path.join('node_modules', font.file), destination);
 }
 
-// O migrador usa o mesmo histórico do Drizzle Kit, sem carregar o CLI e suas ferramentas na imagem.
-const result = await Bun.build({
-  entrypoints: ['scripts/migrate-production.ts'],
-  outdir: runtimeDirectory,
-  naming: 'migrate.cjs',
-  target: 'node',
-  format: 'cjs',
-  external: ['pg-native'],
-  minify: true,
-});
-if (!result.success) throw new AggregateError(result.logs, 'Falha ao preparar o migrador.');
+// Cada comando do runtime vira um arquivo só, sem as ferramentas de desenvolvimento na imagem.
+// Os pacotes não dependem uns dos outros: saem em paralelo.
+const bundles = [
+  // O migrador usa o mesmo histórico do Drizzle Kit, sem carregar o CLI e suas ferramentas.
+  {
+    entry: 'scripts/migrate-production.ts',
+    name: 'migrate.cjs',
+    failure: 'Falha ao preparar o migrador.',
+  },
+  {
+    entry: 'scripts/run-assistant-worker.ts',
+    name: 'assistant-worker.cjs',
+    failure: 'Falha ao preparar a rotina do assistente.',
+    external: ['sharp'],
+  },
+  {
+    entry: 'scripts/check-store-automation.ts',
+    name: 'automation-check.cjs',
+    failure: 'Falha ao preparar diagnóstico.',
+  },
+  // Comandos de manutenção que vão na imagem, mas nunca rodam durante o deploy.
+  {
+    entry: 'scripts/set-student-password.ts',
+    name: 'set-student-password.mjs',
+    failure: 'Failed to prepare student password maintenance.',
+  },
+  {
+    entry: 'scripts/import-legacy-stores.ts',
+    name: 'import-legacy-stores.mjs',
+    failure: 'Failed to prepare legacy store import.',
+  },
+  {
+    entry: 'scripts/import-sales-history.ts',
+    name: 'import-sales-history.mjs',
+    failure: 'Failed to prepare historical sales import.',
+  },
+  {
+    entry: 'scripts/reconcile-manual-access.ts',
+    name: 'reconcile-manual-access.mjs',
+    failure: 'Failed to prepare manual access review.',
+  },
+];
 
-const worker = await Bun.build({
-  entrypoints: ['scripts/run-assistant-worker.ts'],
-  outdir: runtimeDirectory,
-  naming: 'assistant-worker.cjs',
-  target: 'node',
-  format: 'cjs',
-  external: ['pg-native', 'sharp'],
-  minify: true,
-});
-if (!worker.success)
-  throw new AggregateError(worker.logs, 'Falha ao preparar a rotina do assistente.');
-const diagnostic = await Bun.build({
-  entrypoints: ['scripts/check-store-automation.ts'],
-  outdir: runtimeDirectory,
-  naming: 'automation-check.cjs',
-  target: 'node',
-  format: 'cjs',
-  external: ['pg-native'],
-  minify: true,
-});
-if (!diagnostic.success)
-  throw new AggregateError(diagnostic.logs, 'Falha ao preparar diagnóstico.');
-
-// Include the one-time maintenance command without running it during deployment.
-const passwordMaintenance = await Bun.build({
-  entrypoints: ['scripts/set-student-password.ts'],
-  outdir: runtimeDirectory,
-  naming: 'set-student-password.mjs',
-  target: 'node',
-  format: 'esm',
-  external: ['pg-native'],
-  minify: true,
-});
-if (!passwordMaintenance.success)
-  throw new AggregateError(
-    passwordMaintenance.logs,
-    'Failed to prepare student password maintenance.',
-  );
-
-const legacyImport = await Bun.build({
-  entrypoints: ['scripts/import-legacy-stores.ts'],
-  outdir: runtimeDirectory,
-  naming: 'import-legacy-stores.mjs',
-  target: 'node',
-  format: 'esm',
-  external: ['pg-native'],
-  minify: true,
-});
-if (!legacyImport.success)
-  throw new AggregateError(legacyImport.logs, 'Failed to prepare legacy store import.');
-
-const salesImport = await Bun.build({
-  entrypoints: ['scripts/import-sales-history.ts'],
-  outdir: runtimeDirectory,
-  naming: 'import-sales-history.mjs',
-  target: 'node',
-  format: 'esm',
-  external: ['pg-native'],
-  minify: true,
-});
-if (!salesImport.success)
-  throw new AggregateError(salesImport.logs, 'Failed to prepare historical sales import.');
+await Promise.all(
+  bundles.map(async (bundle) => {
+    const result = await Bun.build({
+      entrypoints: [bundle.entry],
+      outdir: runtimeDirectory,
+      naming: bundle.name,
+      target: 'node',
+      format: bundle.name.endsWith('.cjs') ? 'cjs' : 'esm',
+      external: ['pg-native', ...(bundle.external ?? [])],
+      minify: true,
+    });
+    if (!result.success) throw new AggregateError(result.logs, bundle.failure);
+  }),
+);
 
 console.log(
   'Server, assets, fonts, migrations, worker and maintenance commands prepared in build/runtime.',
 );
-
-// Ship the evidence-based access review command, but never execute it during build.
-const manualAccessReview = await Bun.build({
-  entrypoints: ['scripts/reconcile-manual-access.ts'],
-  outdir: runtimeDirectory,
-  naming: 'reconcile-manual-access.mjs',
-  target: 'node',
-  format: 'esm',
-  external: ['pg-native'],
-  minify: true,
-});
-if (!manualAccessReview.success)
-  throw new AggregateError(manualAccessReview.logs, 'Failed to prepare manual access review.');
