@@ -5,6 +5,19 @@ recorded separately from code integration.
 
 ## 2026-11-10
 
+### Assisted delivery member access
+
+- Replace the `SHOPEE_ASSISTED_SUBACCOUNT` instruction with Shopee's official sub-account flow
+  (main account, shop authorization, member with the Merchandiser role). The customer submits
+  the member login ID and password with the first approval; review-only resubmissions do not
+  ask again.
+- Store the password in `assisted_deliveries.member_password` with AES-256-GCM, a key derived
+  from `BETTER_AUTH_SECRET` (HKDF info `assisted-delivery-member-v1`) and the user and shop as
+  associated data. Migration `0079_assisted-delivery-member-access` adds the two columns.
+- `/admin/entregas/[id]` shows the access while the delivery is open and unclaimed or claimed by
+  the viewer; completion clears the password and keeps the login ID for the record.
+- `SHOPEE_ASSISTED_SUBACCOUNT` is no longer read and can be removed from the runtime.
+
 ### Performance and cleanup
 
 - Cache versioned private images (SLL banners, course covers, lesson images) in the browser with

@@ -22,6 +22,21 @@ export function shopeeDeliveryShopUrl(shopId: string) {
   return `https://shopee.com.br/shop/${shopId}`;
 }
 
+/**
+ * O acesso que a aluna cria na Plataforma de Subcontas da Shopee: o ID do membro sai no formato
+ * "contaprincipal:membro" e a senha segue a regra da Shopee (8 a 16 caracteres). Aceitamos uma
+ * folga no tamanho pra não barrar uma regra nova da Shopee, mas nada de espaço ou quebra de linha.
+ */
+export function parseMemberAccess(login: unknown, password: unknown) {
+  if (typeof login !== 'string' || typeof password !== 'string') return null;
+  const id = login.trim();
+  if (!/^[^\s:]{1,60}:[^\s:]{1,40}$/.test(id)) return null;
+  if (password.length < 8 || password.length > 64 || /[\r\n]/.test(password)) return null;
+  return { login: id, password };
+}
+
+export type MemberAccess = NonNullable<ReturnType<typeof parseMemberAccess>>;
+
 export function parseAssistedDeliveryPilot(accountId?: string, shopUrl?: string) {
   const userId = accountId?.trim();
   const shopId = shopeeDeliveryShopId(shopUrl?.trim() ?? '');

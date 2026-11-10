@@ -3,8 +3,9 @@
 The customer creates and confirms her own name, logo and description. Once her Shopee seller
 account is ready, she can approve the first five suggested offers and request assisted delivery.
 The support queue at `/admin/entregas` is restricted to support agents, supervisors and
-administrators. An operator confirms the seller account and subaccount permissions before
-claiming a request. The queue provides the approved logo and one workbook for bulk upload.
+administrators. With the first approval, the customer submits the login ID and password of a
+member created through Shopee's sub-account platform. An operator uses that access to confirm the
+seller account and its permissions before claiming a request. The queue provides the approved logo and one workbook for bulk upload.
 The operator records active listing IDs and confirms that the brand was applied. The dashboard
 shows completion only once all five distinct listings and the brand have been confirmed.
 
@@ -16,9 +17,15 @@ with migration `0076_assisted-store-deliveries` applied and keep intake closed d
 1. Download the current Brazilian **Adicionar em Massa** template from the Shopee Seller Centre.
    Upload the clean workbook to private application storage under `shopee-templates/`.
    Set `SHOPEE_ASSISTED_TEMPLATE_KEY` to the full key.
-2. Set `SHOPEE_ASSISTED_SUBACCOUNT` to the support account identifier that the customer uses
-   to share seller permissions. Validate the invitation process, profile editing and product
-   publishing with the pilot account.
+2. Validate the customer access steps on `/loja-pronta/entrega` with the pilot shop. They follow
+   Shopee's guide "Como cadastrar Subcontas" (June 2026): in the Seller Centre, Loja >
+   Configurações da Loja > Conta e Segurança > Gerenciamento de Subconta > Vincular > Usar conta
+   principal; then, on `https://subaccount.shopee.com/`, authorize the pending shop and create a
+   member with the Merchandiser role for that shop. Confirm that the Merchandiser role can edit
+   the shop profile and add products in bulk, and whether the first member login asks for a code
+   sent to the phone registered on the member. Adjust the on-screen steps if Shopee changed a
+   label. The password is encrypted with a key derived from `BETTER_AUTH_SECRET`, visible to the
+   unclaimed delivery or to its operator, and cleared on completion.
 3. Set `SHOPEE_ASSISTED_TEMPLATE_LAYOUT` to a JSON object mapping the exact pilot workbook.
    `worksheet` is the worksheet XML path inside the workbook. `firstRow` is the first product
    row. `anchor` specifies a known unchanged cell and its exact text. The example illustrates
@@ -68,7 +75,7 @@ with migration `0076_assisted-store-deliveries` applied and keep intake closed d
 
 Sign in as the designated member to approve the five offers. Sign in separately as the operator
 and confirm the seller account ID and permission to edit the profile and publish in bulk. Apply
-the approved brand and upload the generated workbook using the Shopee subaccount. Verify each
+the approved brand and upload the generated workbook using the member access. Verify each
 SKU, price, stock and active listing ID in the Seller Centre, then record the five distinct IDs
 and confirm the brand in `/admin/entregas`. Verify that the member sees **Sua loja está pronta**.
 

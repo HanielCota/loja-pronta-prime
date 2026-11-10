@@ -47,7 +47,6 @@ afterAll(async () => {
 });
 
 test('a claimed delivery can recover changed offers and keep confirmed listings', async () => {
-  process.env.SHOPEE_ASSISTED_SUBACCOUNT = 'recovery-test-subaccount';
   process.env.SHOPEE_ASSISTED_TEMPLATE_KEY = 'shopee-templates/recovery-test.xlsx';
   process.env.SHOPEE_ASSISTED_SUPPLIER_ID = supplierId;
   process.env.SHOPEE_ASSISTED_TEMPLATE_LAYOUT = JSON.stringify({

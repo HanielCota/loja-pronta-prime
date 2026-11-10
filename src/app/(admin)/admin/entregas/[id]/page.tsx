@@ -8,6 +8,7 @@ import { hasAdminRole } from '@/features/admin/access';
 import { shopeeDeliveryShopUrl } from '@/features/loja-pronta/assisted-delivery';
 import { DELIVERY_QUEUE_PATH } from '@/features/loja-pronta/delivery-paths';
 import {
+  deliveryMemberAccess,
   deliveryReadiness,
   deliveryReconciliationFingerprint,
   eligibleDelivery,
@@ -46,6 +47,11 @@ export default async function DeliveryDetailPage({
     !delivery.offerReviewId;
   const result = getParam((await searchParams).resultado);
   const download = `${DELIVERY_QUEUE_PATH}/${id}/arquivo`;
+  // Só quem pode publicar esta entrega vê o acesso: aberta e sem outro atendente cuidando.
+  const access =
+    !delivery.completedAt && (!delivery.operatorId || owner)
+      ? deliveryMemberAccess(delivery)
+      : null;
 
   return (
     <AdminPage
@@ -82,6 +88,31 @@ export default async function DeliveryDetailPage({
           </Button>
         ) : null}
       </section>
+      {access ? (
+        <section className={panelCard} aria-labelledby="delivery-access">
+          <h2 id="delivery-access" className="text-title font-semibold">
+            Acesso à loja na Shopee
+          </h2>
+          <p className="text-body text-muted-foreground">
+            Na Central do Vendedor, use Entrar com Conta Principal/Subconta.
+          </p>
+          <p className="text-body wrap-anywhere">
+            ID de login: <strong>{access.login}</strong>
+          </p>
+          {access.password ? (
+            <details className="text-body">
+              <summary className="min-h-11 cursor-pointer py-2 font-semibold text-link">
+                Mostrar senha
+              </summary>
+              <p className="font-mono wrap-anywhere">{access.password}</p>
+            </details>
+          ) : (
+            <p className="text-body text-muted-foreground">
+              A senha não pôde ser lida. Combine um novo acesso com a cliente pelo suporte.
+            </p>
+          )}
+        </section>
+      ) : null}
       <section className={panelCard} aria-labelledby="delivery-batch">
         <h2 id="delivery-batch" className="text-title font-semibold">
           {delivery.completedAt ? 'Entrega concluída' : 'Primeiro lote de produtos'}

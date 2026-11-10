@@ -30,6 +30,12 @@ export const patchNotes: readonly PatchNoteDay[] = [
         description:
           'Após a atualização, o vídeo principal das aulas do SLL e do curso do Zé Mauro começará a carregar junto com a página, sem esperar o resto. O aviso de presença também vai esperar a página terminar de abrir.',
       },
+      {
+        kind: 'Melhoria',
+        title: 'Passo a passo pra liberar a loja na entrega assistida',
+        description:
+          'Após a atualização, a tela de entrega vai mostrar o caminho oficial da Shopee pra cliente criar um membro na Plataforma de Subcontas, com links pra Central do Vendedor. Ela cola o ID e a senha desse membro na própria tela, sem passar a senha da loja. Em /admin/entregas, o atendente vê esse acesso enquanto cuida da entrega, e a senha é apagada quando a loja fica pronta. A entrega assistida continua em piloto, só para a conta configurada.',
+      },
     ],
   },
   {

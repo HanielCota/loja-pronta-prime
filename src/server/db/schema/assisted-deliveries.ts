@@ -20,6 +20,10 @@ export const assistedDeliveries = pgTable(
       .$type<(string | null)[]>()
       .notNull()
       .default(sql`'[null,null,null,null,null]'::jsonb`),
+    // Acesso de membro criado pela aluna na Plataforma de Subcontas da Shopee. A senha fica
+    // cifrada (member-secret.ts) e é apagada quando a entrega termina.
+    memberLogin: text('member_login'),
+    memberPassword: text('member_password'),
     requestedAt: timestamp('requested_at', { withTimezone: true }).notNull().defaultNow(),
     operatorId: text('operator_id').references(() => user.id, { onDelete: 'set null' }),
     offerReviewId: uuid('offer_review_id'),

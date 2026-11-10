@@ -72,7 +72,7 @@ Arquivos originais ausentes aparecem como “Em breve”. Não há material inve
 ### Loja Pronta
 
 Assisted delivery can run after the student customizes and confirms her brand and confirms her
-seller account. She reviews five initial offers and grants Shopee subaccount access. The support
+seller account. She reviews five initial offers and submits the login of a Shopee member account she creates. The support
 queue uses the approved brand and fills the official bulk-add workbook with current supplier
 data. It records confirmed active listing IDs and shows completion in the student's dashboard.
 Activation depends on the official template, subaccount permissions and a controlled pilot.
