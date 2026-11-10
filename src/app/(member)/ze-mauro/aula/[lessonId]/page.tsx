@@ -53,7 +53,7 @@ export default async function ZeLessonPage({
     >
       <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <section className={`${panelCard} min-w-0 gap-5`} aria-label="Conteúdo da aula">
-          <SllLessonVideo title={lesson.title} data={video ?? {}} />
+          <SllLessonVideo title={lesson.title} data={video ?? {}} main />
           {lesson.description ? (
             <p className="text-body text-pretty text-muted-foreground">{lesson.description}</p>
           ) : null}
