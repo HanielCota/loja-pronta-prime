@@ -579,7 +579,11 @@ function LessonBlocks({
                 className="max-h-[32rem] max-w-full self-start rounded-2xl border border-border object-contain forced-colors:border forced-colors:border-[CanvasText]"
                 height={720}
                 loading="lazy"
-                src={`/api/sll/material/${block.id}`}
+                src={
+                  block.data.version
+                    ? `/api/sll/material/${block.id}?v=${encodeURIComponent(block.data.version)}`
+                    : `/api/sll/material/${block.id}`
+                }
                 width={1280}
               />
               <figcaption className="inline-flex items-center gap-2 text-body text-muted-foreground">

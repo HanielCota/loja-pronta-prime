@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { revalidateSllContent } from '@/features/sll/server/content-cache';
 import { courseCoverVersion } from '@/features/sll/course-cover';
+import { VERSIONED_PRIVATE_IMAGE_CACHE } from '@/lib/storage-version';
 import sharp from 'sharp';
 import { z } from 'zod';
 import { hasAdminRole } from '@/features/admin/access';
@@ -110,7 +111,8 @@ export async function GET(request: Request, context: Context) {
       'Content-Type': 'image/webp',
       'Cache-Control':
         !preview && course.status === 'published' && query.has('v')
-          ? 'private, max-age=300'
+          ? // A versão foi conferida acima: outra capa publicada muda o endereço.
+            VERSIONED_PRIVATE_IMAGE_CACHE
           : 'private, no-store',
     },
   });

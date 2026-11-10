@@ -16,6 +16,7 @@ type Banner = {
   buttonLabel: string;
   destination: string;
   imageAlt: string | null;
+  imageVersion: string | null;
 };
 
 /**
@@ -83,7 +84,13 @@ export function SllBannerCarousel({ banners }: { banners: Banner[] }) {
           className="aspect-[2/1] w-full rounded-2xl object-cover md:aspect-[4/3]"
           width={1280}
           height={720}
-          src={`/api/sll/banner/${banner.id}`}
+          // O banner é a primeira imagem grande do painel: o navegador busca antes das outras.
+          fetchPriority="high"
+          src={
+            banner.imageVersion
+              ? `/api/sll/banner/${banner.id}?v=${encodeURIComponent(banner.imageVersion)}`
+              : `/api/sll/banner/${banner.id}`
+          }
         />
       </div>
       {banners.length > 1 ? (

@@ -38,6 +38,7 @@ type SllAreaProps = {
     buttonLabel: string;
     destination: string;
     imageAlt: string | null;
+    imageVersion: string | null;
   }>;
   copy: SllCopy;
 };

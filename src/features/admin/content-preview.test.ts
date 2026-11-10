@@ -30,3 +30,12 @@ describe('contentPreviewData', () => {
     expect(contentPreviewData('link', { url: 'https://aluna:senha@example.com' })).toEqual({});
   });
 });
+
+test('a imagem leva só a versão do arquivo, sem a chave do bucket', () => {
+  const preview = contentPreviewData('image', {
+    alt: 'Tela da Shopee',
+    storageKey: 'sll/learning-content/aula/abc.webp',
+  });
+  expect(preview).toEqual({ alt: 'Tela da Shopee', version: 'abc.webp' });
+  expect(JSON.stringify(preview)).not.toContain('sll/learning-content');
+});

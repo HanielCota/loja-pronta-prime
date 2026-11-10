@@ -7,12 +7,13 @@ import { getLessonLockMessage } from '@/features/sll/server/stage-lock';
 import { db } from '@/server/db';
 import { learningContentBlocks } from '@/server/db/schema';
 import { storage } from '@/server/storage';
+import { storageKeyVersion, VERSIONED_PRIVATE_IMAGE_CACHE } from '@/lib/storage-version';
 import { getStudentExperience } from '@/features/sll/server/experience';
 
 type RouteContext = { params: Promise<{ blockId: string }> };
 
 /** Só administrações e alunas do SLL podem ler materiais publicados da trilha. */
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
   const { blockId } = await context.params;
   if (!z.uuid().safeParse(blockId).success) {
     return new Response(null, { status: 404, headers: { 'Cache-Control': 'no-store' } });
@@ -97,12 +98,15 @@ export async function GET(_request: Request, context: RouteContext) {
   if (!stored) return new Response(null, { status: 404 });
 
   if (block.kind === 'image') {
+    // Com a versão certa no endereço, a imagem não muda: o navegador guarda e não pede de novo.
+    const version = new URL(request.url).searchParams.get('v');
+    const cacheable = published && version === storageKeyVersion(data.storageKey);
     return new Response(stored.body, {
       headers: {
         'Content-Type':
           data.contentType === 'image/webp' ? 'image/webp' : 'application/octet-stream',
         ...(stored.length === undefined ? {} : { 'Content-Length': String(stored.length) }),
-        'Cache-Control': 'private, no-store',
+        'Cache-Control': cacheable ? VERSIONED_PRIVATE_IMAGE_CACHE : 'private, no-store',
         'X-Content-Type-Options': 'nosniff',
         'Content-Disposition': 'inline',
       },

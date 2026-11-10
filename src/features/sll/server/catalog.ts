@@ -14,6 +14,7 @@ import {
   learningResources,
 } from '@/server/db/schema';
 import { getSllTrackProgress } from './progress';
+import { storageKeyVersion } from '@/lib/storage-version';
 import { isSafeContentDestination } from '@/lib/urls';
 import { isProgressId } from '../progress-rules';
 import { SLL_CONTENT_SECONDS, SLL_CONTENT_TAG } from './content-cache';
@@ -148,11 +149,18 @@ const readBanners = unstable_cache(
         buttonLabel: true,
         destination: true,
         imageAlt: true,
+        imageStorageKey: true,
       },
       where: and(eq(learningBanners.status, 'published'), isNull(learningBanners.archivedAt)),
       orderBy: [asc(learningBanners.position), asc(learningBanners.id)],
     });
-    return banners.filter((banner) => isSafeContentDestination(banner.destination));
+    // A chave do bucket fica no servidor: a tela recebe só a versão, que muda a URL da imagem.
+    return banners
+      .filter((banner) => isSafeContentDestination(banner.destination))
+      .map(({ imageStorageKey, ...banner }) => ({
+        ...banner,
+        imageVersion: imageStorageKey ? storageKeyVersion(imageStorageKey) : null,
+      }));
   },
   ['sll-published-banners', DATABASE_CACHE_SCOPE],
   cacheOptions,

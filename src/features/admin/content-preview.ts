@@ -1,3 +1,4 @@
+import { storageKeyVersion } from '@/lib/storage-version';
 import { toSafeWebUrl } from '@/lib/urls';
 
 export type ContentPreviewKind = 'text' | 'video' | 'link' | 'file' | 'image';
@@ -30,6 +31,9 @@ export function contentPreviewData(
     }
     preview[field] = value;
   }
+  // Só o nome final do arquivo, nunca a chave inteira: muda a URL quando a imagem é trocada.
+  if (kind === 'image' && typeof values.storageKey === 'string')
+    preview.version = storageKeyVersion(values.storageKey);
 
   return preview;
 }
