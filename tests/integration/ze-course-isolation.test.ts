@@ -4,6 +4,7 @@ import { eq, inArray } from 'drizzle-orm';
 import { db } from '@/server/db';
 import * as s from '@/server/db/schema';
 import { importZeCourse } from '@/features/ze-mauro/server/import-course';
+import { rejectionMessage } from '../support/rejection';
 
 const [zeId, priId, dualId, manualZeId] = Array.from({ length: 4 }, () => randomUUID());
 const adminId = randomUUID();
@@ -231,12 +232,12 @@ test('Zé course import is atomic, repeatable and preserves administrator edits'
 test('Zé course pages, actions and catalogs enforce both directions of isolation', async () => {
   currentId = zeId!;
   expect((await getStudentExperience(currentId)).allowed).toEqual(['ze']);
-  await expect(requireProduct('sll')).rejects.toThrow('redirect:/ze-mauro');
-  await expect(requireProductAction('sll')).rejects.toThrow('redirect:/');
+  expect(await rejectionMessage(requireProduct('sll'))).toContain('redirect:/ze-mauro');
+  expect(await rejectionMessage(requireProductAction('sll'))).toContain('redirect:/');
   expect((await getZeCourse()).course?.id).toBe(zeTrackId);
   currentId = priId!;
-  await expect(getZeCourse()).rejects.toThrow('redirect:/sll');
-  await expect(requireProductAction('sll', 'ze')).rejects.toThrow('redirect:/');
+  expect(await rejectionMessage(getZeCourse())).toContain('redirect:/sll');
+  expect(await rejectionMessage(requireProductAction('sll', 'ze'))).toContain('redirect:/');
   expect((await getSllPublishedTracks()).map((track) => track.id)).not.toContain(zeTrackId);
   expect(await getPublishedSllTrack(zeTrackId)).toBeUndefined();
   currentId = dualId!;
@@ -244,7 +245,7 @@ test('Zé course pages, actions and catalogs enforce both directions of isolatio
   await requireProduct('sll', '/ze-mauro', 'ze');
   currentId = manualZeId!;
   expect((await getStudentExperience(currentId)).allowed).toEqual(['ze']);
-  await expect(requireProduct('sll')).rejects.toThrow('redirect:/ze-mauro');
+  expect(await rejectionMessage(requireProduct('sll'))).toContain('redirect:/ze-mauro');
 });
 
 test('Zé course completion rejects foreign lessons and keeps progress private', async () => {
@@ -252,9 +253,11 @@ test('Zé course completion rejects foreign lessons and keeps progress private',
   const form = new FormData();
   form.set('lessonId', priLessonId);
   form.set('completed', 'true');
-  await expect(setZeLessonCompletion(form)).rejects.toThrow('redirect:/ze-mauro?resultado=invalid');
+  expect(await rejectionMessage(setZeLessonCompletion(form))).toContain(
+    'redirect:/ze-mauro?resultado=invalid',
+  );
   form.set('lessonId', zeLessonId);
-  await expect(setZeLessonCompletion(form)).rejects.toThrow(
+  expect(await rejectionMessage(setZeLessonCompletion(form))).toContain(
     `redirect:/ze-mauro/aula/${zeLessonId}?resultado=saved`,
   );
   expect((await getZeCourse()).completed.has(zeLessonId)).toBe(true);
@@ -263,7 +266,7 @@ test('Zé course completion rejects foreign lessons and keeps progress private',
   expect((await setSllLessonCompletion(zeTrackId, zeLessonId, true)).saved).toBe(false);
   currentId = zeId!;
   form.set('completed', 'false');
-  await expect(setZeLessonCompletion(form)).rejects.toThrow('resultado=saved');
+  expect(await rejectionMessage(setZeLessonCompletion(form))).toContain('resultado=saved');
   expect((await getZeCourse()).completed.has(zeLessonId)).toBe(false);
 });
 
@@ -275,18 +278,22 @@ test('administrator preview needs an active account but no student entitlement',
   expect(preview.hasPri).toBe(false);
   expect(preview.products).toEqual([]);
   expect(preview.completed.size).toBe(0);
-  await expect(requireProductAction('sll', 'ze')).rejects.toThrow('redirect:/');
+  expect(await rejectionMessage(requireProductAction('sll', 'ze'))).toContain('redirect:/');
   expect(
     await db.query.studentProducts.findMany({ where: eq(s.studentProducts.userId, adminId) }),
   ).toEqual([]);
   try {
     sessionStatus = 'none';
-    await expect(getZeCourse()).rejects.toThrow('redirect:/entrar?next=%2Fze-mauro');
+    expect(await rejectionMessage(getZeCourse())).toContain('redirect:/entrar?next=%2Fze-mauro');
     sessionStatus = 'banned';
-    await expect(getZeCourse()).rejects.toThrow('redirect:/entrar?motivo=conta-desativada');
+    expect(await rejectionMessage(getZeCourse())).toContain(
+      'redirect:/entrar?motivo=conta-desativada',
+    );
     sessionStatus = 'active';
     needsPassword = true;
-    await expect(getZeCourse()).rejects.toThrow('redirect:/primeiro-acesso?next=%2Fze-mauro');
+    expect(await rejectionMessage(getZeCourse())).toContain(
+      'redirect:/primeiro-acesso?next=%2Fze-mauro',
+    );
   } finally {
     sessionStatus = 'active';
     needsPassword = false;
@@ -304,7 +311,7 @@ test('administrator preview hides progress and rejects completion even with a Ze
   const form = new FormData();
   form.set('lessonId', zeLessonId);
   form.set('completed', 'false');
-  await expect(setZeLessonCompletion(form)).rejects.toThrow('redirect:/ze-mauro');
+  expect(await rejectionMessage(setZeLessonCompletion(form))).toContain('redirect:/ze-mauro');
   expect(
     (
       await db.query.learningLessonProgress.findFirst({
@@ -340,15 +347,13 @@ test('Zé course materials reject cross-course downloads before reaching storage
 test('course navigation excludes lesson text while the authorized lesson loads its own content', async () => {
   currentId = zeId!;
   const textId = randomUUID();
-  await db
-    .insert(s.learningContentBlocks)
-    .values({
-      id: textId,
-      lessonId: zeLessonId,
-      kind: 'text',
-      position: 100,
-      data: { text: 'Selected lesson content' },
-    });
+  await db.insert(s.learningContentBlocks).values({
+    id: textId,
+    lessonId: zeLessonId,
+    kind: 'text',
+    position: 100,
+    data: { text: 'Selected lesson content' },
+  });
   try {
     const { course } = await getZeCourse();
     expect(
@@ -364,7 +369,7 @@ test('course navigation excludes lesson text while the authorized lesson loads i
     });
     expect((await getZeLesson(priLessonId)).lesson).toBeNull();
     currentId = priId!;
-    await expect(getZeLesson(zeLessonId)).rejects.toThrow('redirect:/sll');
+    expect(await rejectionMessage(getZeLesson(zeLessonId))).toContain('redirect:/sll');
   } finally {
     await db.delete(s.learningContentBlocks).where(eq(s.learningContentBlocks.id, textId));
   }
