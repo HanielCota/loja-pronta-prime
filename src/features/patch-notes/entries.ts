@@ -36,6 +36,12 @@ export const patchNotes: readonly PatchNoteDay[] = [
         description:
           'Após a atualização, a tela de entrega vai mostrar o caminho oficial da Shopee pra cliente criar um membro na Plataforma de Subcontas, com links pra Central do Vendedor. Ela cola o ID e a senha desse membro na própria tela, sem passar a senha da loja. Em /admin/entregas, o atendente vê esse acesso enquanto cuida da entrega, e a senha é apagada quando a loja fica pronta. A entrega assistida continua em piloto, só para a conta configurada.',
       },
+      {
+        kind: 'Correção',
+        title: 'Aviso da fila de entregas atualizado',
+        description:
+          'Após a atualização, o aviso de "em breve" em Entregas de lojas deixa de citar a subconta da Shopee e passa a dizer o que falta configurar: o modelo de importação, o fornecedor e a conta do teste.',
+      },
     ],
   },
   {

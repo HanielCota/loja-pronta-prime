@@ -23,8 +23,8 @@ export default async function DeliveryQueuePage() {
     >
       {!newAssistedDeliveryPilot() ? (
         <p className={`${panelCard} text-body text-muted-foreground`}>
-          Novas solicitações em breve. A abertura depende da configuração do modelo de importação e
-          da subconta da Shopee.
+          Novas solicitações em breve. A abertura depende da configuração do modelo de importação,
+          do fornecedor e da conta escolhida para o teste.
         </p>
       ) : null}
       {!deliveries.length ? (
