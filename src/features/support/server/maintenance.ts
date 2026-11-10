@@ -1,35 +1,14 @@
-import { SUPPORT_EMAIL_NOTIFICATIONS_ENABLED } from '../email-policy';
-import {
-  and,
-  avg,
-  count,
-  eq,
-  gte,
-  inArray,
-  isNotNull,
-  isNull,
-  lt,
-  lte,
-  ne,
-  sql,
-} from 'drizzle-orm';
+import { and, eq, inArray, isNull, lt, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
 import {
   supportAccessTokens,
   supportTicketAttachments,
-  supportTicketEvents,
   supportTicketMessages,
   supportTickets,
 } from '@/server/db/schema';
 import { storage } from '@/server/storage';
-import { absoluteUrl, sendEmailInBackground } from '@/server/email/send';
-import { brasiliaDate, brasiliaHour } from '../support-hours';
-import { hasStaffPermission } from '../staff-access';
-import { ticketCode } from '../copy';
-import { autoCloseCutoff } from '../ticket-rules';
-import { dailySummaryEmail, deadlineMissedEmail } from '../email-messages';
+import { brasiliaDate } from '../support-hours';
 import { loadSupportSettings } from './settings';
-import { closeIdleTicket, lastPublicStaffReplyAt, loadStaffDirectory } from './tickets';
 
 /**
  * As tarefas do suporte no worker que já existe (sem cron nem BullMQ). Cada tarefa tem um ritmo e
@@ -48,135 +27,6 @@ async function claimWindow(key: string, ttlSeconds: number): Promise<boolean> {
     returning key
   `);
   return result.rows.length > 0;
-}
-
-/**
- * Respondidos sem retorno da aluna há N dias de calendário: encerra, em lotes. Conta a partir da
- * última resposta pública da equipe (não do `updated_at`): uma nota interna ou uma troca de
- * prioridade não adia o encerramento, e a data bate com a que a aluna vê.
- */
-export async function closeIdleTickets(now = new Date()): Promise<number> {
-  const settings = await loadSupportSettings();
-  const cutoff = autoCloseCutoff(now, settings.autoCloseDays);
-  const idle = await db
-    .select({ id: supportTickets.id })
-    .from(supportTickets)
-    .where(
-      and(
-        eq(supportTickets.status, 'answered'),
-        isNull(supportTickets.awaitingSince),
-        lt(lastPublicStaffReplyAt(), cutoff),
-      ),
-    )
-    .limit(BATCH);
-  let closed = 0;
-  for (const ticket of idle) {
-    if (await closeIdleTicket(ticket.id, cutoff).catch(() => null)) closed += 1;
-  }
-  return closed;
-}
-
-/** Prazo perdido: um evento e um e-mail pra responsável e pros supervisores, uma vez por atraso. */
-export async function flagMissedDeadlines(now = new Date()): Promise<number> {
-  const late = await db
-    .update(supportTickets)
-    .set({ lateNotifiedAt: now })
-    .where(
-      and(
-        eq(supportTickets.status, 'open'),
-        isNotNull(supportTickets.dueAt),
-        lt(supportTickets.dueAt, now),
-        isNull(supportTickets.lateNotifiedAt),
-      ),
-    )
-    .returning();
-  if (late.length === 0) return 0;
-  await db.insert(supportTicketEvents).values(
-    late.map((ticket) => ({
-      ticketId: ticket.id,
-      automatic: true,
-      type: 'deadline_missed' as const,
-    })),
-  );
-  if (!SUPPORT_EMAIL_NOTIFICATIONS_ENABLED) return late.length;
-  const staff = await loadStaffDirectory();
-  const supervisors = staff.filter(
-    (member) =>
-      hasStaffPermission(member.role, 'support.assign_others') && !member.role?.includes('admin'),
-  );
-  for (const ticket of late) {
-    const message = deadlineMissedEmail(
-      ticketCode(ticket.number),
-      ticket.subject,
-      absoluteUrl(`/admin/chamados/${ticket.number}`),
-    );
-    const assignee = staff.find((member) => member.id === ticket.assigneeId);
-    const recipients = [
-      ...(assignee ? [assignee] : []),
-      ...supervisors.filter((member) => member.id !== assignee?.id),
-    ];
-    for (const member of recipients)
-      sendEmailInBackground(
-        {
-          to: member.email,
-          ...message,
-          idempotencyKey: `ticket:${ticket.id}:late:${ticket.dueAt?.toISOString()}:${member.id}`,
-        },
-        'support',
-      );
-  }
-  return late.length;
-}
-
-/** Resumo das 8h (Brasília) pros supervisores: aguardando, atrasados, sem responsável, nota de ontem. */
-export async function sendDailySummary(now = new Date()): Promise<boolean> {
-  if (!SUPPORT_EMAIL_NOTIFICATIONS_ENABLED) return false;
-  if (brasiliaHour(now) !== 8) return false;
-  if (!(await claimWindow(`daily-summary:${brasiliaDate(now)}`, (2 * DAY_MS) / 1000))) return false;
-  const staff = await loadStaffDirectory();
-  const answerIds = staff
-    .filter((member) => hasStaffPermission(member.role, 'support.answer'))
-    .map((member) => member.id);
-  const yesterday = new Date(now.getTime() - DAY_MS);
-  const [[waiting], [late], [unassigned], [rating]] = await Promise.all([
-    db.select({ total: count() }).from(supportTickets).where(eq(supportTickets.status, 'open')),
-    db
-      .select({ total: count() })
-      .from(supportTickets)
-      .where(and(eq(supportTickets.status, 'open'), lt(supportTickets.dueAt, now))),
-    db
-      .select({ total: count() })
-      .from(supportTickets)
-      .where(
-        and(
-          ne(supportTickets.status, 'closed'),
-          answerIds.length
-            ? sql`(${supportTickets.assigneeId} is null or ${supportTickets.assigneeId} not in ${answerIds})`
-            : undefined,
-        ),
-      ),
-    db
-      .select({ average: avg(supportTickets.rating) })
-      .from(supportTickets)
-      .where(and(gte(supportTickets.ratedAt, yesterday), lte(supportTickets.ratedAt, now))),
-  ]);
-  const message = dailySummaryEmail({
-    waiting: waiting?.total ?? 0,
-    late: late?.total ?? 0,
-    unassigned: unassigned?.total ?? 0,
-    averageRating: rating?.average ? Number(rating.average) : null,
-    url: absoluteUrl('/admin/chamados'),
-  });
-  for (const member of staff.filter((item) => hasStaffPermission(item.role, 'support.metrics')))
-    sendEmailInBackground(
-      {
-        to: member.email,
-        ...message,
-        idempotencyKey: `support:daily:${brasiliaDate(now)}:${member.id}`,
-      },
-      'support',
-    );
-  return true;
 }
 
 /** Guarda de dados: apaga anexos e anonimiza chamados antigos; expira links mágicos. */
