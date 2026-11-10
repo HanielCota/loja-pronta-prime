@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { eq, inArray } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { hiddenUserPresence, user, userPresence } from '@/server/db/schema';
+import { rejectionMessage } from '../support/rejection';
 
 const ownerId = randomUUID();
 const studentId = randomUUID();
@@ -64,10 +65,10 @@ const form = (visibility: string, email = studentEmail) => {
 test('hiding persists across heartbeats and removes presence from every admin surface until restored', async () => {
   const originalCount = await getOnlineCount();
   expect((await getOnlineStudents()).rows.some((row) => row.userId === studentId)).toBe(true);
-  await expect(changePresenceVisibility(form('hidden'))).rejects.toThrow(
+  expect(await rejectionMessage(changePresenceVisibility(form('hidden')))).toContain(
     'redirect:/admin/online?visibility=saved',
   );
-  await expect(changePresenceVisibility(form('hidden'))).rejects.toThrow(
+  expect(await rejectionMessage(changePresenceVisibility(form('hidden')))).toContain(
     'redirect:/admin/online?visibility=saved',
   );
   expect((await getHiddenPresenceAccounts()).some((row) => row.id === studentId)).toBe(true);
@@ -83,15 +84,15 @@ test('hiding persists across heartbeats and removes presence from every admin su
     expect(await getOnlineCount()).toBe(originalCount - 1);
     expect((await getLastPresence(studentId)).presence).toBeNull();
   }
-  await expect(getHiddenPresenceAccounts()).rejects.toThrow('not-found');
-  await expect(changePresenceVisibility(form('visible'))).rejects.toThrow('not-found');
+  expect(await rejectionMessage(getHiddenPresenceAccounts())).toContain('not-found');
+  expect(await rejectionMessage(changePresenceVisibility(form('visible')))).toContain('not-found');
   expect(
     await db.select().from(hiddenUserPresence).where(eq(hiddenUserPresence.userId, studentId)),
   ).toHaveLength(1);
   viewer = { id: ownerId, email: 'beedfialho@gmail.com', role: 'user' };
-  await expect(changePresenceVisibility(form('visible'))).rejects.toThrow('not-found');
+  expect(await rejectionMessage(changePresenceVisibility(form('visible')))).toContain('not-found');
   viewer = { id: ownerId, email: 'beedfialho@gmail.com', role: 'admin' };
-  await expect(changePresenceVisibility(form('visible'))).rejects.toThrow(
+  expect(await rejectionMessage(changePresenceVisibility(form('visible')))).toContain(
     'redirect:/admin/online?visibility=saved',
   );
   expect((await getOnlineStudents()).rows.some((row) => row.userId === studentId)).toBe(true);
@@ -100,15 +101,17 @@ test('hiding persists across heartbeats and removes presence from every admin su
 });
 
 test('invalid input and unknown accounts cannot change visibility', async () => {
-  await expect(changePresenceVisibility(form('hidden', 'invalid'))).rejects.toThrow(
+  expect(await rejectionMessage(changePresenceVisibility(form('hidden', 'invalid')))).toContain(
     'redirect:/admin/online?visibility=invalid',
   );
-  await expect(changePresenceVisibility(form('unexpected'))).rejects.toThrow(
+  expect(await rejectionMessage(changePresenceVisibility(form('unexpected')))).toContain(
     'redirect:/admin/online?visibility=invalid',
   );
-  await expect(
-    changePresenceVisibility(form('hidden', `${randomUUID()}@example.invalid`)),
-  ).rejects.toThrow('redirect:/admin/online?visibility=missing');
+  expect(
+    await rejectionMessage(
+      changePresenceVisibility(form('hidden', `${randomUUID()}@example.invalid`)),
+    ),
+  ).toContain('redirect:/admin/online?visibility=missing');
   expect(
     await db.select().from(hiddenUserPresence).where(eq(hiddenUserPresence.userId, studentId)),
   ).toHaveLength(0);

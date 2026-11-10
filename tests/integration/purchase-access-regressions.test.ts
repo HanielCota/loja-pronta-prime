@@ -4,6 +4,7 @@ import { eq, inArray } from 'drizzle-orm';
 import { db } from '@/server/db';
 import * as s from '@/server/db/schema';
 import { publicationPayloadSchema, DAY_MS } from '@/features/assistant/model';
+import { rejectionMessage } from '../support/rejection';
 mock.module('next/cache', () => ({
   refresh: () => {},
   revalidatePath: () => {},
@@ -139,7 +140,7 @@ test('adding an access to an existing offer reconciles previous buyers without r
   form.set('code', code);
   form.set('expert', 'pri');
   form.set('access', 'loja-pronta');
-  await expect(saveExpertOffer(form)).rejects.toThrow('resultado=saved');
+  expect(await rejectionMessage(saveExpertOffer(form))).toContain('resultado=saved');
   const reconciled = await db
     .select()
     .from(s.studentProducts)
@@ -268,7 +269,7 @@ test('offer reconciliation respects area exclusions and manual grants survive re
   offerForm.set('code', code);
   offerForm.set('access', 'sll');
   offerForm.set('expert', 'ze');
-  await expect(saveExpertOffer(offerForm)).rejects.toThrow('resultado=saved');
+  expect(await rejectionMessage(saveExpertOffer(offerForm))).toContain('resultado=saved');
   expect(
     (await db.select().from(s.studentProducts).where(eq(s.studentProducts.userId, id))).map(
       (row) => row.product,

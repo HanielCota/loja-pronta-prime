@@ -6,6 +6,7 @@ import * as s from '@/server/db/schema';
 import { auth } from '@/server/auth/auth';
 import { parseHotmartEvent } from '@/features/hotmart/event';
 import { pendingRefundResult } from '@/features/hotmart/recovery';
+import { rejection, rejectionMessage } from '../support/rejection';
 
 let authorized = true;
 mock.module('@/features/admin/server/access', () => ({
@@ -82,7 +83,7 @@ test('configuring a product recovers its retained approval and creates a working
   form.set('access', 'sll');
   form.set('expert', 'pri');
   form.set('returnToHotmart', '1');
-  await expect(saveExpertOffer(form)).rejects.toThrow(
+  expect(await rejectionMessage(saveExpertOffer(form))).toContain(
     'redirect:/admin/hotmart?resultado=configured',
   );
   expect((await getHotmartPendingState(event.data.buyer.email, 1)).total).toBe(0);
@@ -98,11 +99,11 @@ test('configuring a product recovers its retained approval and creates a working
       where: eq(s.hotmartPurchases.transaction, event.data.purchase.transaction),
     }),
   ).toMatchObject({ purchasedAt: new Date(event.data.purchase.order_date!), active: true });
-  await expect(
+  await rejection(
     auth.api.signInEmail({
       body: { email: event.data.buyer.email, password: 'loja1234' },
     }),
-  ).rejects.toThrow();
+  );
   expect(
     await db.query.account.findFirst({ where: eq(s.account.userId, account!.id) }),
   ).toBeUndefined();
@@ -231,8 +232,8 @@ test('pending search includes older records, numeric IDs and literal wildcard ch
 test('recovery and pending buyer data require administrative access', async () => {
   authorized = false;
   try {
-    await expect(retryHotmartPendingEvents()).rejects.toThrow('unauthorized');
-    await expect(getHotmartPendingState('', 1)).rejects.toThrow('unauthorized');
+    expect(await rejectionMessage(retryHotmartPendingEvents())).toContain('unauthorized');
+    expect(await rejectionMessage(getHotmartPendingState('', 1))).toContain('unauthorized');
   } finally {
     authorized = true;
   }

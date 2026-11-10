@@ -49,6 +49,7 @@ import { collectStoreMetrics, readStoreObservations } from '@/features/assistant
 import { readCategoryExperiments } from '@/features/assistant/server/experiments';
 import { starterPlaybooks, publicationPayloadSchema, DAY_MS } from '@/features/assistant/model';
 import { buildProductVariations } from '@/features/assistant/supplier-offer';
+import { rejection, rejectionMessage } from '../support/rejection';
 
 const ids: string[] = [];
 const supplierId = `test-${randomUUID()}`;
@@ -236,16 +237,18 @@ test('leituras têm origem fixa, assinatura e erros externos sem tokens', async 
       return envelope({ shop_name: 'Loja' });
     }),
   );
-  await expect(
-    readShopeeResource(
-      config,
-      shop,
-      '/api/v2/shop/get_shop_info',
-      z.object({}),
-      {},
-      transport(() => Response.json({ error: 'bad', message: 'secret-never-echo' })),
+  expect(
+    await rejectionMessage(
+      readShopeeResource(
+        config,
+        shop,
+        '/api/v2/shop/get_shop_info',
+        z.object({}),
+        {},
+        transport(() => Response.json({ error: 'bad', message: 'secret-never-echo' })),
+      ),
     ),
-  ).rejects.toThrow('A Shopee não aceitou');
+  ).toContain('A Shopee não aceitou');
 });
 
 test('coleta pagina anúncios e guarda ausência sem zero; coleta parcial nunca vira atual', async () => {
@@ -283,7 +286,7 @@ test('coleta pagina anúncios e guarda ausência sem zero; coleta parcial nunca 
     impressions: null,
   });
   expect(rows.find((row) => row.itemId === 2)?.views).toBeNull();
-  await expect(
+  await rejection(
     collectStoreMetrics(
       id,
       config,
@@ -293,7 +296,7 @@ test('coleta pagina anúncios e guarda ausência sem zero; coleta parcial nunca 
           : envelope({ item_list: [] }),
       ),
     ),
-  ).rejects.toThrow();
+  );
   const data = await readStoreObservations(id);
   expect(data.status).toBe('stale');
   expect(data.items).toHaveLength(2);
@@ -304,8 +307,10 @@ test('coleta pagina anúncios e guarda ausência sem zero; coleta parcial nunca 
 test('seleção exige cinco, categoria compatível e catálogo atual; repetição retorna o mesmo lote', async () => {
   const id = await account();
   const keys = await catalog(id);
-  await expect(createPublicationBatch(id, keys.slice(1), 'varied')).rejects.toThrow('selection');
-  await expect(createPublicationBatch(id, keys, 'niche')).rejects.toThrow('categories');
+  expect(await rejectionMessage(createPublicationBatch(id, keys.slice(1), 'varied'))).toContain(
+    'selection',
+  );
+  expect(await rejectionMessage(createPublicationBatch(id, keys, 'niche'))).toContain('categories');
   const [a, b] = await Promise.all([
     createPublicationBatch(id, keys, 'varied'),
     createPublicationBatch(id, keys, 'varied'),
@@ -332,7 +337,9 @@ test('seleção exige cinco, categoria compatível e catálogo atual; repetiçã
     .update(supplierCatalog)
     .set({ product: { ...row!.product, updatedAt: new Date(Date.now() - DAY_MS).toISOString() } })
     .where(eq(supplierCatalog.sku, staleKeys[0]![1]));
-  await expect(createPublicationBatch(stale, staleKeys, 'varied')).rejects.toThrow('catalog-stale');
+  expect(await rejectionMessage(createPublicationBatch(stale, staleKeys, 'varied'))).toContain(
+    'catalog-stale',
+  );
 });
 
 test('cinco confirmações iniciam o relógio uma só vez; reprocessar não envia outro anúncio', async () => {
@@ -585,7 +592,7 @@ test('avaliação exige cinco dias de dados completos e comparação pertence à
   expect((await readCategoryExperiments(id))[0]?.result.status).toBe('compared');
   const other = await account('sll');
   expect(await readCategoryExperiments(other)).toEqual([]);
-  await expect(evaluatePublicationBatch(other, batchId)).rejects.toThrow('batch');
+  expect(await rejectionMessage(evaluatePublicationBatch(other, batchId))).toContain('batch');
   // A troca de categoria no meio invalida, mesmo se a categoria final voltar à original.
   const [middle] = await db
     .insert(shopeeCollectionRuns)
@@ -852,7 +859,9 @@ test('a seleção inicial exige a oferta exibida, mesmo se o fornecedor e o mape
     .update(supplierPublicationMappings)
     .set({ payload: { ...mapping!.payload, original_price: 25 } })
     .where(eq(supplierPublicationMappings.sku, sku));
-  await expect(createPublicationBatch(id, keys, 'varied')).rejects.toThrow('offer-changed');
+  expect(await rejectionMessage(createPublicationBatch(id, keys, 'varied'))).toContain(
+    'offer-changed',
+  );
   expect(
     await db
       .select()

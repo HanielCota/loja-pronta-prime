@@ -1,4 +1,5 @@
 import { expect, mock, test } from 'bun:test';
+import { rejectionMessage } from '../support/rejection';
 mock.module('@/server/storage', () => ({
   storage: () => {
     throw new Error('Unexpected real storage access');
@@ -61,7 +62,7 @@ test('cached bytes are evicted by size and render failures do not poison retries
       return Buffer.from('png');
     },
   });
-  await expect(read(input)).rejects.toThrow('Temporary');
+  expect(await rejectionMessage(read(input))).toContain('Temporary');
   await read(input);
   await read({ ...input, revision: '2' });
   await read({ ...input, revision: '3' });
@@ -86,7 +87,9 @@ test('render concurrency and pending queue stay bounded during bursts', async ()
     },
   });
   const tasks = [1, 2, 3].map((id) => read({ ...input, revision: String(id) }));
-  await expect(read({ ...input, revision: 'overflow' })).rejects.toThrow('queue is full');
+  expect(await rejectionMessage(read({ ...input, revision: 'overflow' }))).toContain(
+    'queue is full',
+  );
   await new Promise((resolve) => setTimeout(resolve, 0));
   expect(finish.length).toBe(2);
   finish.shift()!();

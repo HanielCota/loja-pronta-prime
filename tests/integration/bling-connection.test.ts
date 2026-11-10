@@ -11,6 +11,7 @@ import {
   removeBlingConnection,
 } from '@/features/bling/server/connection';
 import type { BlingConfiguration } from '@/features/bling/model';
+import { rejectionMessage } from '../support/rejection';
 
 const userId = randomUUID();
 const config: BlingConfiguration = {
@@ -157,13 +158,15 @@ test('resultado incerto de renovação exige nova autorização e desconexão re
     .update(blingConnections)
     .set({ expiresAt: new Date(0) })
     .where(eq(blingConnections.id, 'main'));
-  await expect(
-    readBlingPreview(
-      transport(() => {
-        throw new Error('unknown remote outcome');
-      }),
+  expect(
+    await rejectionMessage(
+      readBlingPreview(
+        transport(() => {
+          throw new Error('unknown remote outcome');
+        }),
+      ),
     ),
-  ).rejects.toThrow('novamente');
+  ).toContain('novamente');
   const [connection] = await db
     .select()
     .from(blingConnections)

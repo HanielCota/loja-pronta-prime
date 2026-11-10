@@ -36,6 +36,7 @@ import { readCloneOffer, newCloneTemplate } from '@/features/assistant/server/li
 import { startReadyCloneExperiments } from '@/features/assistant/server/clone-observation';
 import { ensureInitialAssistantPlaybooks } from '@/features/assistant/server/initial-playbooks';
 import { readCategoryExperiments } from '@/features/assistant/server/experiments';
+import { rejection, rejectionMessage } from '../support/rejection';
 
 const settings = {
   SHOPEE_PARTNER_ID: '123',
@@ -704,7 +705,7 @@ test('automatic brand publication is independent of product publication and conf
       .set({ description: 'Unapproved edit', publicationFingerprint: null })
       .where(eq(storeBrand.userId, id));
     expect(await queueAutomaticBrands(fetcher, async () => png)).toBe(0);
-    await expect(queueApprovedBrand(id, fetcher, async () => png)).rejects.toThrow();
+    await rejection(queueApprovedBrand(id, fetcher, async () => png));
   } finally {
     process.env.SHOPEE_PUBLICATION_ENABLED = 'true';
   }
@@ -839,7 +840,7 @@ test.each(['same-destination', 'different-shop', 'different-application'])(
       })
       .returning();
     if (destination === 'same-destination') {
-      await expect(queueStoreChange(id, 'brand', payload, fingerprint)).rejects.toThrow(
+      expect(await rejectionMessage(queueStoreChange(id, 'brand', payload, fingerprint))).toContain(
         'Confira o envio anterior.',
       );
     } else {

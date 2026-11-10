@@ -1,6 +1,7 @@
 import { afterAll, beforeEach, expect, mock, spyOn, test } from 'bun:test';
 import { randomUUID } from 'node:crypto';
 import { and, eq, inArray } from 'drizzle-orm';
+import { rejection } from '../support/rejection';
 
 /**
  * "Entrar como aluna" de ponta a ponta, com o banco de verdade e o plugin admin do Better Auth:
@@ -255,12 +256,12 @@ test('conta da equipe, a própria e aluna sem senha criada são recusadas', asyn
     message: 'A aluna ainda não criou a senha.',
   });
   // O próprio plugin também recusa a equipe como alvo, mesmo chamado direto.
-  expect(
+  await rejection(
     auth.api.impersonateUser({
       body: { userId: agentId },
       headers: await (await nextHeaders().headers)(),
     }),
-  ).rejects.toThrow();
+  );
   expect(await getVisit()).toBeNull();
 });
 

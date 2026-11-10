@@ -22,6 +22,7 @@ import {
   recoveredCategoryOptions,
 } from '../../src/features/legacy-stores/server/publication-options';
 import type { PublicationContext } from '../../src/features/legacy-stores/publication';
+import { rejection } from '../support/rejection';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const owner = randomUUID(),
@@ -233,9 +234,7 @@ test('recovered publication requires a current owned review and exact destinatio
   const { id, row, imported } = await reviewed(0);
   expect(await claimRecoveredPublication(pool)).toBeNull();
   expect(await recoveredPublication(pool, other, id)).toBeNull();
-  await expect(
-    confirmRecoveredPublication(pool, other, id, row.fingerprint!, 'live:1', 321),
-  ).rejects.toThrow();
+  await rejection(confirmRecoveredPublication(pool, other, id, row.fingerprint!, 'live:1', 321));
   expect(await confirmRecoveredPublication(pool, owner, id, row.fingerprint!, 'live:1', 322)).toBe(
     false,
   );
@@ -399,9 +398,9 @@ test('recovered publication blocks duplicate SKUs, altered source records and co
 test('recovered publication rejects non-Brazilian or restricted shops before reading listing metadata', async () => {
   for (const options of [{ region: 'SG' }, { shopStatus: 'FROZEN' }]) {
     const blocked = api(options);
-    await expect(
+    await rejection(
       recoveredPublicationOptions(config, { shopId: 321, accessToken: 'test' }, blocked.fetcher),
-    ).rejects.toThrow();
+    );
     expect(blocked.calls.map((call) => call.path)).toEqual(['/api/v2/shop/get_shop_info']);
   }
 });

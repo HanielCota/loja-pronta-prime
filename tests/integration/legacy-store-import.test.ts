@@ -5,6 +5,7 @@ import { importLegacyStores, type readLegacyImport } from '../../scripts/import-
 import { validateLegacySnapshot } from '../../src/features/legacy-stores/model';
 import { getLegacyStoreForUser } from '../../src/features/legacy-stores/server/queries';
 import { db } from '../../src/server/db';
+import { rejectionMessage } from '../support/rejection';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 2 });
 const ids = Array.from({ length: 5 }, () => randomUUID());
@@ -120,7 +121,9 @@ test('imports real records atomically, preserves accounts, respects ownership an
     ids[0],
     JSON.stringify({ ...customers[0], nome: 'Conflicting record' }),
   ]);
-  await expect(importLegacyStores(pool, input, true)).rejects.toThrow('Imported records differ');
+  expect(await rejectionMessage(importLegacyStores(pool, input, true))).toContain(
+    'Imported records differ',
+  );
   expect(
     (await pool.query('SELECT id FROM "user" WHERE email=$1', [customers[4]!.email])).rowCount,
   ).toBe(0);

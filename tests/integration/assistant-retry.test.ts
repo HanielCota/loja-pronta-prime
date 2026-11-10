@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { assistantJobs, user } from '@/server/db/schema';
+import { rejectionMessage } from '../support/rejection';
 
 mock.module('@/features/admin/server/access', () => ({
   requireAdmin: async () => ({ user: { id: randomUUID(), role: 'admin' } }),
@@ -46,7 +47,7 @@ test('repetir uma leitura bloqueada por interrupções devolve todas as tentativ
     .returning();
   const form = new FormData();
   form.set('jobId', job!.id);
-  await expect(retryAssistantJob(form)).rejects.toThrow(
+  expect(await rejectionMessage(retryAssistantJob(form))).toContain(
     'redirect:/admin/assistente?resultado=saved',
   );
   const [retried] = await db.select().from(assistantJobs).where(eq(assistantJobs.id, job!.id));
