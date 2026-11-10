@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { LiveRegion } from '@/components/ui/live-region';
 import { panelCard } from '@/features/member/components/area-shell';
 import { prefersReducedMotion } from '@/lib/reduced-motion';
+import { versionedSrc } from '@/lib/storage-version';
 import { cn } from '@/lib/utils';
 import { SllProgress } from './sll-progress';
 import { SllLessonVideo } from './sll-lesson-video';
@@ -579,11 +580,7 @@ function LessonBlocks({
                 className="max-h-[32rem] max-w-full self-start rounded-2xl border border-border object-contain forced-colors:border forced-colors:border-[CanvasText]"
                 height={720}
                 loading="lazy"
-                src={
-                  block.data.version
-                    ? `/api/sll/material/${block.id}?v=${encodeURIComponent(block.data.version)}`
-                    : `/api/sll/material/${block.id}`
-                }
+                src={versionedSrc(`/api/sll/material/${block.id}`, block.data.version)}
                 width={1280}
               />
               <figcaption className="inline-flex items-center gap-2 text-body text-muted-foreground">

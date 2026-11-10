@@ -22,7 +22,7 @@ export const patchNotes: readonly PatchNoteDay[] = [
         kind: 'Melhoria',
         title: 'Banco de dados mais leve',
         description:
-          'Após a atualização, as telas de anúncios, plano e comparação de categorias do SLL vão buscar menos dados. O perfil, a conta no admin e a loja anterior vão carregar as informações ao mesmo tempo. Sessões vencidas há mais de uma semana serão apagadas sozinhas. A lista de quem está online continua igual.',
+          'Após a atualização, as telas de anúncios, plano e comparação de categorias do SLL vão buscar menos dados. O perfil, a conta no admin e a loja anterior vão carregar as informações ao mesmo tempo. Sessões vencidas há mais de uma semana serão apagadas sozinhas. Na lista de online, a aluna aparece até 2 minutos depois do último aviso, em vez de 90 segundos.',
       },
       {
         kind: 'Melhoria',

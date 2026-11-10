@@ -100,7 +100,9 @@ describe('formatLastSeen e isOnline', () => {
 });
 
 test('pular gravações recentes não tira a aluna da lista de online', () => {
-  // Pior caso: gravou, pulou o aviso seguinte e o próximo chega um intervalo depois.
-  expect(PRESENCE_REFRESH_MS + HEARTBEAT_MS).toBeLessThan(ONLINE_WINDOW_MS);
+  // Só um aviso em dois é pulado: o seguinte já passa do prazo de regravar.
   expect(PRESENCE_REFRESH_MS).toBeGreaterThan(HEARTBEAT_MS);
+  expect(PRESENCE_REFRESH_MS).toBeLessThan(2 * HEARTBEAT_MS);
+  // Pior caso: gravou, pulou o próximo, perdeu os dois seguintes e o quarto chega na janela.
+  expect(4 * HEARTBEAT_MS).toBeLessThanOrEqual(ONLINE_WINDOW_MS);
 });
