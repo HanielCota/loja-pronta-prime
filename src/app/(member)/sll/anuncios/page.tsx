@@ -45,8 +45,14 @@ export default async function ListingsPage({
         )
       : Promise.resolve({ categories: [], attributes: [] })
     ).catch(() => ({ categories: [], attributes: [] })),
+    // Só o que a lista mostra: a foto antes da mudança e o resultado (jsonb) ficam no banco.
     db
-      .select()
+      .select({
+        id: storeAutomationJobs.id,
+        kind: storeAutomationJobs.kind,
+        status: storeAutomationJobs.status,
+        payload: storeAutomationJobs.payload,
+      })
       .from(storeAutomationJobs)
       .where(
         and(
