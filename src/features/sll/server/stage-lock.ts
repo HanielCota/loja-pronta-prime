@@ -51,15 +51,6 @@ export async function getTrackStageAccess(userId: string, trackId: string) {
   return { kind: track.kind, stages };
 }
 
-/** Reconfere a etapa no servidor para que um link direto não contorne o bloqueio. */
-export async function getStageLockMessage(userId: string, trackId: string, stageId: string) {
-  const track = await getTrackStageAccess(userId, trackId);
-  if (!track) return 'Esta aula não está disponível.';
-  const access = track.stages.find((stage) => stage.stageId === stageId);
-  if (track.kind !== 'method' || access?.isUnlocked) return null;
-  return access?.lockMessage ?? 'Conclua a etapa anterior para abrir esta aula.';
-}
-
 /** A exceção vem de uma ação publicada e aberta no banco, nunca de um parâmetro do navegador. */
 export async function getLessonLockMessage(
   userId: string,
