@@ -3,6 +3,15 @@
 Dates use the America/Sao_Paulo time zone. Operational verification and rollout limits are
 recorded separately from code integration.
 
+## 2026-11-10
+
+### Performance and cleanup
+
+- Cache versioned private images (SLL banners, course covers, lesson images) in the browser with
+  `private, max-age=31536000, immutable` when the `?v=` storage version matches; a stale or missing
+  version keeps the previous short or no-store answer. The profile photo is cached for one day
+  only, since it can stay on a shared device after sign-out.
+
 ## 2026-11-09
 
 ### Credential security and assisted delivery recovery

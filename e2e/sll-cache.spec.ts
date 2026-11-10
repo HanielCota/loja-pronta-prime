@@ -7,6 +7,7 @@ import { auth } from '@/server/auth/auth';
 import { expectNoA11yViolations, signIn } from './support/auth';
 import { assertTestDatabase } from './support/cleanup';
 import { closeDatabase, database, PASSWORD, studentEmail } from './support/students';
+import { VERSIONED_PRIVATE_IMAGE_CACHE } from '@/lib/storage-version';
 
 const trackId = randomUUID();
 const stageId = randomUUID();
@@ -95,7 +96,7 @@ test('cache comum é reutilizado, publicação invalida e acesso/progresso conti
 
     const cover = await first.request.get(`/api/sll/course-cover/${trackId}?v=cache-first.webp`);
     expect(cover.status()).toBe(200);
-    expect(cover.headers()['cache-control']).toBe('private, max-age=300');
+    expect(cover.headers()['cache-control']).toBe(VERSIONED_PRIVATE_IMAGE_CACHE);
     const unversioned = await first.request.get(`/api/sll/course-cover/${trackId}`);
     expect(unversioned.headers()['cache-control']).toBe('private, no-store');
 
@@ -111,7 +112,7 @@ test('cache comum é reutilizado, publicação invalida e acesso/progresso conti
       `/api/sll/course-cover/${trackId}?v=cache-second.webp`,
     );
     expect(nextCover.status()).toBe(200);
-    expect(nextCover.headers()['cache-control']).toBe('private, max-age=300');
+    expect(nextCover.headers()['cache-control']).toBe(VERSIONED_PRIVATE_IMAGE_CACHE);
     await database().query(
       'insert into learning_lesson_progress (user_id, lesson_id, completed_at) values ($1, $2, now())',
       [firstId, lessonId],
