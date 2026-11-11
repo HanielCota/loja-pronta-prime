@@ -15,13 +15,17 @@ import {
 } from '@/server/db/schema';
 import { shopeeApplicationId, type ShopeeConfiguration } from '@/features/shopee/authorization';
 import { shopeeItemListPageSchema } from '@/features/shopee/item-list';
-import { readShopeeAccess } from '@/features/shopee/server/connection';
+import {
+  guardShopeeWrites,
+  readShopeeAccess,
+  shopeeConnectionFor,
+} from '@/features/shopee/server/connection';
 import {
   addShopeeItem,
   readShopeeResource,
   writeShopeeResource,
 } from '@/features/shopee/server/resources';
-import { ShopeeApiError } from '@/features/shopee/server/client';
+import { getShopeeConfiguration, ShopeeApiError } from '@/features/shopee/server/client';
 import { prepareSupplierProduct } from '@/features/shopee/catalog';
 import { z } from 'zod';
 import { matchesSupplierOffer } from '../supplier-offer';
@@ -477,7 +481,7 @@ async function publishItem(job: Job, fetcher: typeof fetch) {
     const [connection] = await tx
       .select()
       .from(shopeeConnections)
-      .where(eq(shopeeConnections.userId, job.userId))
+      .where(shopeeConnectionFor(job.userId, shopeeApplicationId(config)))
       .for('share');
     if (!connection || connection.revokedAt || !connectionMatches(access, config, connection))
       throw new OperationBlocked('connection-changed');
@@ -511,7 +515,8 @@ async function publishItem(job: Job, fetcher: typeof fetch) {
     return changed;
   });
   if (!sending) throw new OperationBlocked('reconciliation');
-  let itemId: number;
+  const writeFetcher = guardShopeeWrites(job.userId, config, access, fetcher);
+  let itemId = item.itemId;
   try {
     const { variations, sourceImages: _sourceImages, ...basePayload } = payload;
     itemId =
@@ -521,7 +526,7 @@ async function publishItem(job: Job, fetcher: typeof fetch) {
           config,
           access,
           { ...basePayload, ...(variations ? { item_status: 'UNLIST' } : {}) },
-          fetcher,
+          writeFetcher,
         )
       ).item_id;
     if (variations) {
@@ -532,10 +537,11 @@ async function publishItem(job: Job, fetcher: typeof fetch) {
         .where(eq(assistantPublicationItems.id, item.id));
       await assertAssistantAccess(job.userId, 'loja-pronta');
       if (!(await renewLease(job))) throw new OperationBlocked('lease-lost');
-      await publishProductVariations(config, access, itemId, variations, fetcher);
+      await publishProductVariations(config, access, itemId, variations, writeFetcher);
     }
   } catch (error) {
-    const uncertain = !(error instanceof ShopeeApiError && error.reason === 'rejected');
+    const uncertain =
+      itemId !== null || !(error instanceof ShopeeApiError && error.reason === 'rejected');
     await db
       .update(assistantPublicationItems)
       .set({
@@ -578,7 +584,7 @@ export async function evaluatePublicationBatch(userId: string, batchId: string, 
   const [connection] = await db
     .select()
     .from(shopeeConnections)
-    .where(eq(shopeeConnections.userId, userId));
+    .where(shopeeConnectionFor(userId, batch.applicationId));
   if (
     !connection ||
     connection.revokedAt ||
@@ -899,17 +905,19 @@ export async function finishVariationPublication(
     '/api/v2/product/update_item',
     { item_id: item.itemId, item_status: 'NORMAL' },
     z.object({}),
-    fetcher,
+    guardShopeeWrites(userId, config, access, fetcher),
   );
   await confirmPublishedItem(item, item.itemId);
   return true;
 }
 
 export async function publicationOverview(userId: string) {
+  const config = getShopeeConfiguration();
+  if (!config) return { batches: [], items: [] };
   const [connection] = await db
     .select()
     .from(shopeeConnections)
-    .where(eq(shopeeConnections.userId, userId));
+    .where(shopeeConnectionFor(userId, shopeeApplicationId(config)));
   if (!connection || connection.revokedAt) return { batches: [], items: [] };
   const batches = await db
     .select()

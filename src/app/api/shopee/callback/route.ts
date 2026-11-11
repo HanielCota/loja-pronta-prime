@@ -24,33 +24,33 @@ async function authorizationResult(
   session: Awaited<ReturnType<typeof getActiveSession>>,
   config: ReturnType<typeof getShopeeConfiguration>,
   callback: ReturnType<typeof parseShopeeCallback>,
-  current: CallbackOutcome,
 ): Promise<CallbackOutcome> {
-  if (!config || config.SHOPEE_ENABLED !== 'true') return { ...current, result: 'unavailable' };
+  const result = config?.SHOPEE_ENABLED === 'true' ? 'expired' : 'unavailable';
+  if (!session || needsFirstPassword(session.user)) return { result, origin: 'loja-pronta' };
+  const userId = session.user.id;
+  const sessionId = session.session.id;
+  const [{ products }, savedOrigin] = await Promise.all([
+    getStudentProducts(userId),
+    callback ? getShopeeAuthorizationOrigin(userId, sessionId, callback.state) : null,
+  ]);
+  const origin =
+    savedOrigin ??
+    (products.includes('sll') && !products.includes('loja-pronta') ? 'sll' : 'loja-pronta');
   if (
-    !session ||
-    needsFirstPassword(session.user) ||
+    !config ||
     !callback ||
-    !canUseShopee(config, session.user.id, session.user.role)
+    !savedOrigin ||
+    !canUseShopee(config, userId, session.user.role) ||
+    !products.includes(shopeeEntryProduct(savedOrigin))
   )
-    return current;
-  const { products } = await getStudentProducts(session.user.id);
-  const savedOrigin = await getShopeeAuthorizationOrigin(
-    session.user.id,
-    session.session.id,
-    callback.state,
-  );
-  if (!savedOrigin) return current;
-  if (!products.includes(shopeeEntryProduct(savedOrigin)))
-    return { ...current, origin: savedOrigin };
+    return { result, origin };
   try {
-    const result = await finishShopeeAuthorization(
-      { ...callback, userId: session.user.id, sessionId: session.session.id },
-      config,
-    );
-    return { result, origin: savedOrigin };
+    return {
+      result: await finishShopeeAuthorization({ ...callback, userId, sessionId }, config),
+      origin,
+    };
   } catch {
-    return { result: 'failed', origin: savedOrigin };
+    return { result: 'failed', origin };
   }
 }
 
@@ -64,18 +64,10 @@ export async function GET(request: Request) {
       new URL(`${VISIT_BLOCKED_PATH}?acao=shopeeCallback`, request.url),
       303,
     );
-  let origin: ShopeeEntry = 'loja-pronta';
   const session = await getActiveSession();
   const config = getShopeeConfiguration();
   const callback = parseShopeeCallback(new URL(request.url).searchParams);
-  if (session && callback && !needsFirstPassword(session.user))
-    origin =
-      (await getShopeeAuthorizationOrigin(session.user.id, session.session.id, callback.state)) ??
-      origin;
-  const outcome = await authorizationResult(session, config, callback, {
-    result: 'expired',
-    origin,
-  });
+  const outcome = await authorizationResult(session, config, callback);
   // Nenhum código, estado, mensagem externa ou Host recebido é reaproveitado no destino.
   const response = NextResponse.redirect(
     new URL(

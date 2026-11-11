@@ -15,7 +15,7 @@ import {
   shopeeApplicationId,
   type ShopeeConfiguration,
 } from '@/features/shopee/authorization';
-import { readShopeeAccess } from '@/features/shopee/server/connection';
+import { readShopeeAccess, shopeeConnectionFor } from '@/features/shopee/server/connection';
 import { ShopeeApiError, getShopeeConfiguration } from '@/features/shopee/server/client';
 import { readShopeeResource } from '@/features/shopee/server/resources';
 import { shopeeItemListPageSchema } from '@/features/shopee/item-list';
@@ -172,16 +172,12 @@ export const readStoreObservations = cache(loadStoreObservations);
 
 async function loadStoreObservations(userId: string) {
   const config = getShopeeConfiguration();
+  if (!config) return { status: 'unavailable' as const, runs: [], items: [], windows: [] };
   const [connection] = await db
     .select()
     .from(shopeeConnections)
-    .where(eq(shopeeConnections.userId, userId));
-  if (
-    !connection ||
-    connection.revokedAt ||
-    !config ||
-    connection.applicationId !== shopeeApplicationId(config)
-  )
+    .where(shopeeConnectionFor(userId, shopeeApplicationId(config)));
+  if (!connection || connection.revokedAt)
     return { status: 'unavailable' as const, runs: [], items: [], windows: [] };
   const all = await db
     .select(runColumns)

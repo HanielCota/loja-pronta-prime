@@ -15,6 +15,8 @@ import {
   supplierPublicationMappings,
 } from '@/server/db/schema';
 import { supplierProductSchema } from '@/features/shopee/catalog';
+import { shopeeApplicationId } from '@/features/shopee/authorization';
+import { getShopeeConfiguration } from '@/features/shopee/server/client';
 import { publicationPayloadSchema } from '../model';
 import { matchesSupplierOffer } from '../supplier-offer';
 import { finishVariationPublication, reconcilePublicationItem } from './operations';
@@ -125,17 +127,21 @@ export async function importSupplierCatalog(form: FormData): Promise<void> {
   if (parsed.data.some((row) => Date.parse(row.product.updatedAt) > Date.now()))
     redirect('/admin/assistente?resultado=invalid');
   const hasMappings = parsed.data.some((row) => row.publication);
-  const [connection] = targetUserId
+  const config = getShopeeConfiguration();
+  const connections = targetUserId
     ? await db
         .select()
         .from(shopeeConnections)
         .where(
           and(
             eq(shopeeConnections.userId, targetUserId),
+            config ? eq(shopeeConnections.applicationId, shopeeApplicationId(config)) : undefined,
             sql`${shopeeConnections.revokedAt} is null`,
           ),
         )
+        .limit(2)
     : [];
+  const connection = connections.length === 1 ? connections[0] : undefined;
   if (hasMappings && (!connection || form.get('confirmed') !== 'true'))
     redirect('/admin/assistente?resultado=confirmation-required');
   for (const row of parsed.data)

@@ -10,6 +10,23 @@ type PatchNoteDay = {
 /** Curated daily notes, newest first. Dates follow America/Sao_Paulo. */
 export const patchNotes: readonly PatchNoteDay[] = [
   {
+    date: '2026-11-11',
+    changes: [
+      {
+        kind: 'Correção',
+        title: 'Conexão com a Shopee mais clara',
+        description:
+          'Após a atualização, a tela vai orientar a escolha de Brasil na Shopee. A confirmação só aparece quando há uma autorização salva. Lojas de teste terão um aviso próprio.',
+      },
+      {
+        kind: 'Correção',
+        title: 'Mais controle sobre a conexão com a Shopee',
+        description:
+          'Após a atualização, consultar a conexão deixa de tentar renovar o acesso. Desconectar impede novos envios de anúncios. Você poderá trocar de loja em Produtos recuperados, e uma tentativa vencida iniciada no SLL volta à tela do SLL. A loja de teste terá um vínculo separado da loja real.',
+      },
+    ],
+  },
+  {
     date: '2026-11-10',
     changes: [
       {

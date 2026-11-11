@@ -22,6 +22,7 @@ import {
   assistantPlaybooks,
 } from '@/server/db/schema';
 import { shopeeConfigurationSchema, shopeeTokenOwner } from '@/features/shopee/authorization';
+import { removeShopeeConnection } from '@/features/shopee/server/connection';
 import { encryptShopeeToken } from '@/lib/shopee-protocol';
 import {
   queueStoreChange,
@@ -573,79 +574,91 @@ test('experimento confirma o preço exibido, não reenvia após timeout e concil
   }
 });
 
-test('retoma somente a ativação de variações confirmadas sem criar outro anúncio ou modelo', async () => {
-  const id = await account();
-  const previousSetting = process.env.SHOPEE_DUPLICATION_ENABLED;
-  process.env.SHOPEE_DUPLICATION_ENABLED = 'true';
-  const variations = {
-    tier_variation: [{ name: 'Cor', option_list: [{ option: 'Azul' }] }],
-    model: [{ model_sku: 'new-blue', tier_index: [0], original_price: 20, normal_stock: 5 }],
-  };
-  const template = publicationPayloadSchema.parse({
-    item_name: 'Novo anúncio',
-    description: 'Descrição',
-    category_id: 20,
-    item_sku: `new-${id}`,
-    original_price: 20,
-    normal_stock: 5,
-    weight: 0.3,
-    condition: 'NEW',
-    item_status: 'NORMAL',
-    image: { image_id_list: ['image-id'] },
-    dimension: { package_length: 10, package_width: 10, package_height: 10 },
-    logistic_info: [{ logistic_id: 1, enabled: true, is_free: false }],
-    brand: { brand_id: 0, original_brand_name: '' },
-    variations,
-  });
-  try {
-    const jobId = await queueStoreChange(id, 'clone', {
-      item_id: 101,
-      sourceFingerprint: 'a'.repeat(64),
-      template,
+test.each(['connected', 'disconnected'])(
+  'clone activation rechecks the saved authorization (%s)',
+  async (link) => {
+    const id = await account();
+    const previousSetting = process.env.SHOPEE_DUPLICATION_ENABLED;
+    process.env.SHOPEE_DUPLICATION_ENABLED = 'true';
+    const variations = {
+      tier_variation: [{ name: 'Cor', option_list: [{ option: 'Azul' }] }],
+      model: [{ model_sku: 'new-blue', tier_index: [0], original_price: 20, normal_stock: 5 }],
+    };
+    const template = publicationPayloadSchema.parse({
+      item_name: 'Novo anúncio',
+      description: 'Descrição',
+      category_id: 20,
+      item_sku: `new-${id}`,
+      original_price: 20,
+      normal_stock: 5,
+      weight: 0.3,
+      condition: 'NEW',
+      item_status: 'NORMAL',
+      image: { image_id_list: ['image-id'] },
+      dimension: { package_length: 10, package_width: 10, package_height: 10 },
+      logistic_info: [{ logistic_id: 1, enabled: true, is_free: false }],
+      brand: { brand_id: 0, original_brand_name: '' },
+      variations,
     });
-    await db
-      .update(storeAutomationJobs)
-      .set({ status: 'unknown', result: { itemId: 303 } })
-      .where(eq(storeAutomationJobs.id, jobId));
-    let writes = 0;
-    const fetcher = transport((url, init) => {
-      if (init.method === 'POST') {
-        writes++;
-        expect(url.pathname).toBe('/api/v2/product/update_item');
-        expect(JSON.parse(String(init.body))).toEqual({ item_id: 303, item_status: 'NORMAL' });
-        return envelope({});
+    try {
+      const jobId = await queueStoreChange(id, 'clone', {
+        item_id: 101,
+        sourceFingerprint: 'a'.repeat(64),
+        template,
+      });
+      await db
+        .update(storeAutomationJobs)
+        .set({ status: 'unknown', result: { itemId: 303 } })
+        .where(eq(storeAutomationJobs.id, jobId));
+      let writes = 0;
+      const fetcher = transport(async (url, init) => {
+        if (init.method === 'POST') {
+          writes++;
+          expect(url.pathname).toBe('/api/v2/product/update_item');
+          expect(JSON.parse(String(init.body))).toEqual({ item_id: 303, item_status: 'NORMAL' });
+          return envelope({});
+        }
+        if (url.pathname.endsWith('get_item_list'))
+          return envelope({
+            item: url.searchParams.get('item_status') === 'UNLIST' ? [{ item_id: 303 }] : [],
+            has_next_page: false,
+          });
+        if (url.pathname.endsWith('get_item_base_info'))
+          return envelope({
+            item_list: [
+              { item_id: 303, item_sku: template.item_sku, item_name: template.item_name },
+            ],
+          });
+        if (url.pathname.endsWith('get_model_list')) {
+          if (link === 'disconnected') await removeShopeeConnection(id, config);
+          return envelope({
+            tier_variation: variations.tier_variation,
+            model: [
+              {
+                model_sku: 'new-blue',
+                tier_index: [0],
+                price_info: [{ original_price: 20 }],
+                stock_info_v2: { summary_info: { total_available_stock: 5 } },
+              },
+            ],
+          });
+        }
+        throw new Error('Consulta inesperada');
+      });
+      if (link === 'connected') {
+        expect(await finishClonedVariations(id, jobId, fetcher)).toBe(true);
+        expect(await finishClonedVariations(id, jobId, fetcher)).toBe(false);
+        expect(writes).toBe(1);
+      } else {
+        await rejection(finishClonedVariations(id, jobId, fetcher));
+        expect(writes).toBe(0);
       }
-      if (url.pathname.endsWith('get_item_list'))
-        return envelope({
-          item: url.searchParams.get('item_status') === 'UNLIST' ? [{ item_id: 303 }] : [],
-          has_next_page: false,
-        });
-      if (url.pathname.endsWith('get_item_base_info'))
-        return envelope({
-          item_list: [{ item_id: 303, item_sku: template.item_sku, item_name: template.item_name }],
-        });
-      if (url.pathname.endsWith('get_model_list'))
-        return envelope({
-          tier_variation: variations.tier_variation,
-          model: [
-            {
-              model_sku: 'new-blue',
-              tier_index: [0],
-              price_info: [{ original_price: 20 }],
-              stock_info_v2: { summary_info: { total_available_stock: 5 } },
-            },
-          ],
-        });
-      throw new Error('Consulta inesperada');
-    });
-    expect(await finishClonedVariations(id, jobId, fetcher)).toBe(true);
-    expect(await finishClonedVariations(id, jobId, fetcher)).toBe(false);
-    expect(writes).toBe(1);
-  } finally {
-    if (previousSetting === undefined) delete process.env.SHOPEE_DUPLICATION_ENABLED;
-    else process.env.SHOPEE_DUPLICATION_ENABLED = previousSetting;
-  }
-});
+    } finally {
+      if (previousSetting === undefined) delete process.env.SHOPEE_DUPLICATION_ENABLED;
+      else process.env.SHOPEE_DUPLICATION_ENABLED = previousSetting;
+    }
+  },
+);
 
 test('automatic brand publication is independent of product publication and confirms remote fields', async () => {
   const id = await account();

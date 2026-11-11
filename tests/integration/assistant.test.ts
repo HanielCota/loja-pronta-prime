@@ -31,6 +31,7 @@ import {
 import { shopeeConfigurationSchema, shopeeTokenOwner } from '@/features/shopee/authorization';
 import { encryptShopeeToken } from '@/lib/shopee-protocol';
 import { readShopeeResource } from '@/features/shopee/server/resources';
+import { removeShopeeConnection } from '@/features/shopee/server/connection';
 import {
   createAssistantPlan,
   publishAssistantPlaybook,
@@ -1188,6 +1189,87 @@ test('uma resposta perdida nas variações conserva o ID do pai e não cria outr
   expect((await reconcilePublicationItem(id, item!.id, resolved)).status).toBe('matched');
   expect(parents).toBe(1);
 });
+
+test.each(['initializing variations', 'activating the listing'])(
+  'disconnecting stops the worker before %s',
+  async (stage) => {
+    const id = await account();
+    const keys = await catalog(id);
+    const sku = keys[0]![1];
+    const [source] = await db.select().from(supplierCatalog).where(eq(supplierCatalog.sku, sku));
+    const product = {
+      ...source!.product,
+      variants: [
+        { sku: `${sku}-p`, options: { Tamanho: 'P' }, costCents: 1000, priceCents: 2000, stock: 2 },
+      ],
+    };
+    const mapped = { ...payload(sku), variations: buildProductVariations(product) };
+    const [connection] = await db
+      .select()
+      .from(shopeeConnections)
+      .where(eq(shopeeConnections.userId, id));
+    await db.update(supplierCatalog).set({ product }).where(eq(supplierCatalog.sku, sku));
+    await db
+      .update(supplierPublicationMappings)
+      .set({ payload: mapped })
+      .where(
+        and(eq(supplierPublicationMappings.userId, id), eq(supplierPublicationMappings.sku, sku)),
+      );
+    keys[0]![2] = publicationOfferFingerprint(mapped, {
+      userId: id,
+      shopId: connection!.shopId,
+      applicationId: connection!.applicationId,
+    });
+    await createPublicationBatch(id, keys, 'varied');
+    const [item] = await db
+      .select()
+      .from(assistantPublicationItems)
+      .where(and(eq(assistantPublicationItems.userId, id), eq(assistantPublicationItems.sku, sku)));
+    const [job] = await db
+      .update(assistantJobs)
+      .set({ status: 'running', attempts: 1, leaseUntil: new Date(Date.now() + 300_000) })
+      .where(eq(assistantJobs.deduplicationKey, `publish:${item!.id}`))
+      .returning();
+    const writes: string[] = [];
+    let modelReads = 0;
+    const fetcher = transport(async (url, init) => {
+      const path = url.pathname.split('/').at(-1)!;
+      if (init.method === 'POST') writes.push(path);
+      if (path === 'add_item') return envelope({ item_id: 99001 });
+      if (path === 'init_tier_variation' || path === 'update_item') return envelope({});
+      if (path === 'get_model_list') {
+        modelReads++;
+        if (modelReads === (stage === 'initializing variations' ? 1 : 2))
+          await removeShopeeConnection(id, config);
+        return envelope(
+          modelReads === 1
+            ? { tier_variation: [], model: [] }
+            : {
+                tier_variation: mapped.variations!.tier_variation,
+                model: [
+                  {
+                    model_sku: `${sku}-p`,
+                    tier_index: [0],
+                    price_info: [{ original_price: 20 }],
+                    stock_info_v2: { summary_info: { total_available_stock: 2 } },
+                  },
+                ],
+              },
+        );
+      }
+      return emptyReads(url);
+    });
+    expect(await processAssistantJob(job!, fetcher)).toBe('unknown');
+    expect(writes).toEqual(
+      stage === 'initializing variations' ? ['add_item'] : ['add_item', 'init_tier_variation'],
+    );
+    const [saved] = await db
+      .select()
+      .from(assistantPublicationItems)
+      .where(eq(assistantPublicationItems.id, item!.id));
+    expect(saved).toMatchObject({ status: 'unknown', itemId: 99001 });
+  },
+);
 
 test.each(['UNLIST', 'BANNED', 'NORMAL'])(
   'simple listing reconciliation requires a live item before advancing the batch (%s)',

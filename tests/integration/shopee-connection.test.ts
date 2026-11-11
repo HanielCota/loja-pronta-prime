@@ -17,6 +17,9 @@ import {
 import {
   beginShopeeAuthorization,
   finishShopeeAuthorization,
+  getShopeeAuthorizationOrigin,
+  getShopeeStatus,
+  guardShopeeWrites,
   hasShopeeConnection,
   readShopeeAccess,
   removeShopeeConnection,
@@ -146,7 +149,23 @@ test('consome só a última intenção, cifra tokens e avança apenas após cone
   expect(await readShopeeAccess(userId, config, accepted)).toEqual({
     shopId: 987123456,
     accessToken: 'test-access',
+    authorizationId: stored!.authorizationId,
   });
+});
+
+test('a superseded SLL attempt retains its return origin and cannot exchange its code', async () => {
+  const old = new URL(
+    await beginShopeeAuthorization(otherUser, 'session', config, 'https://example.invalid', 'sll'),
+  ).searchParams.get('state')!;
+  await state(otherUser);
+  expect(await getShopeeAuthorizationOrigin(otherUser, 'session', old)).toBe('sll');
+  expect(await getShopeeAuthorizationOrigin(otherUser, 'wrong-session', old)).toBeNull();
+  const fetcher = transport(() => {
+    throw new Error('A superseded attempt cannot exchange its code.');
+  });
+  expect(await finishShopeeAuthorization(callback(old, otherUser), config, fetcher)).toBe(
+    'expired',
+  );
 });
 
 test('a mesma loja não pode gerar tokens para outra aluna', async () => {
@@ -204,7 +223,22 @@ test('leitura da conexão não renova o token e só vale para o mesmo aplicativo
     .update(shopeeConnections)
     .set({ accessTokenExpiresAt: new Date(0) })
     .where(eq(shopeeConnections.userId, userId));
-  expect(await hasShopeeConnection(userId, config)).toBe(true);
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = transport(() => {
+    calls++;
+    return new Response(null, { status: 429 });
+  });
+  try {
+    expect(await getShopeeStatus(userId, config)).toEqual({
+      connected: true,
+      saved: true,
+      shopId: 987123456,
+    });
+    expect(calls).toBe(0);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
   const [stored] = await db
     .select()
     .from(shopeeConnections)
@@ -235,6 +269,7 @@ test('falha no refresh deixa bloqueio durável e não tenta o token antigo de no
       ?.revokedAt,
   ).toBeInstanceOf(Date);
   expect(await hasShopeeConnection(userId, config)).toBe(false);
+  expect(await getShopeeStatus(userId, config)).toEqual({ connected: false, saved: true });
 });
 
 test('sandbox não avança loja real e tokens não podem cruzar ambientes', async () => {
@@ -245,17 +280,71 @@ test('sandbox não avança loja real e tokens não podem cruzar ambientes', asyn
   await rejection(readShopeeAccess(otherUser, config, accepted));
 });
 
-test('desconexão remove somente os tokens e intenções da própria aluna', async () => {
-  await state();
-  await removeShopeeConnection(userId);
+test('sandbox authorization and disconnect preserve the production link and pending state', async () => {
+  const sandbox = { ...config, SHOPEE_ENVIRONMENT: 'sandbox' as const };
+  const liveState = await state(otherUser);
+  const live = { ...callback(liveState, otherUser), shopId: 987123457 };
+  expect(await finishShopeeAuthorization(live, config, accepted)).toBe('connected');
+  const liveAccess = await readShopeeAccess(otherUser, config, accepted);
+  const pendingLive = await state(otherUser);
+  const testShop = { ...callback(await state(otherUser, sandbox), otherUser), shopId: 987123457 };
+  expect(
+    await finishShopeeAuthorization(
+      testShop,
+      sandbox,
+      transport(() => tokens('sandbox')),
+    ),
+  ).toBe('sandbox');
+  expect(await readShopeeAccess(otherUser, config, accepted)).toEqual(liveAccess);
+  expect((await readShopeeAccess(otherUser, sandbox, accepted)).accessToken).toBe('sandbox');
+  await removeShopeeConnection(otherUser, sandbox);
+  expect(await getShopeeStatus(otherUser, sandbox)).toEqual({ connected: false, saved: false });
+  expect(await readShopeeAccess(otherUser, config, accepted)).toEqual(liveAccess);
+  expect(await finishShopeeAuthorization(callback(pendingLive, otherUser), config, accepted)).toBe(
+    'shop-used',
+  );
+});
+
+test('an in-flight write finishes before disconnect and stale authorization cannot write again', async () => {
+  const access = await readShopeeAccess(otherUser, config, accepted);
+  const started = Promise.withResolvers<void>();
+  const response = Promise.withResolvers<Response>();
+  let calls = 0;
+  const fetcher = guardShopeeWrites(
+    otherUser,
+    config,
+    access,
+    transport(() => {
+      calls++;
+      started.resolve();
+      return response.promise;
+    }),
+  );
+  const send = () =>
+    fetcher('https://partner.shopeemobile.com/api/v2/product/update_item', { method: 'POST' });
+  const first = send();
+  await started.promise;
+  const removing = removeShopeeConnection(otherUser, config);
+  try {
+    expect(await hasShopeeConnection(otherUser, config)).toBe(true);
+  } finally {
+    response.resolve(Response.json({ error: '' }));
+    await Promise.all([first, removing]);
+  }
+  await rejection(send());
+  const next = { ...callback(await state(otherUser), otherUser), shopId: access.shopId };
+  expect(await finishShopeeAuthorization(next, config, accepted)).toBe('connected');
+  await rejection(send());
+  expect(calls).toBe(1);
+});
+
+test('disconnect invalidates the current app authorization and keeps the return origin', async () => {
+  const pending = await state();
+  await removeShopeeConnection(userId, config);
+  expect(await getShopeeAuthorizationOrigin(userId, 'session', pending)).toBe('loja-pronta');
+  expect(await finishShopeeAuthorization(callback(pending), config, accepted)).toBe('expired');
   expect(
     await db.select().from(shopeeConnections).where(eq(shopeeConnections.userId, userId)),
-  ).toHaveLength(0);
-  expect(
-    await db
-      .select()
-      .from(shopeeAuthorizationStates)
-      .where(eq(shopeeAuthorizationStates.userId, userId)),
   ).toHaveLength(0);
   expect(
     await db.select().from(shopeeConnections).where(eq(shopeeConnections.userId, otherUser)),
@@ -302,11 +391,11 @@ test('retorno colado mantém sessão e uso único antes de persistir a conexão'
     ),
   ).toBe('expired');
   expect(calls).toBe(1);
-  expect(await readShopeeAccess(userId, manual, api)).toEqual({
+  expect(await readShopeeAccess(userId, manual, api)).toMatchObject({
     shopId: 987123459,
     accessToken: 'manual-access',
   });
-  await removeShopeeConnection(userId);
+  await removeShopeeConnection(userId, manual);
 });
 
 test('recovered products can connect before setup without advancing the setup phase', async () => {

@@ -154,7 +154,7 @@ export function parseManualShopeeCallback(value: string, config: ShopeeConfigura
   }
 }
 
-export const SHOPEE_RESULT_MESSAGES: Record<string, string> = {
+const SHOPEE_RESULT_MESSAGES: Record<string, string> = {
   connected: 'Sua loja foi conectada à Shopee. A publicação dos produtos ainda está em breve.',
   sandbox: 'A loja de teste foi conectada. Sua loja real ainda não foi conectada.',
   denied: 'Você não autorizou o acesso. Pode tentar de novo quando quiser.',
@@ -167,3 +167,15 @@ export const SHOPEE_RESULT_MESSAGES: Record<string, string> = {
   disconnected:
     'A conexão foi removida daqui. Você também pode revogar o Escala Shop na Central do Vendedor.',
 };
+
+export function getShopeeResultMessage(
+  result: string | undefined,
+  connected: boolean,
+  environment: ShopeeConfiguration['SHOPEE_ENVIRONMENT'] | undefined,
+) {
+  if (!result || !Object.hasOwn(SHOPEE_RESULT_MESSAGES, result)) return undefined;
+  if (result === 'connected' && (!connected || environment !== 'live')) return undefined;
+  if (result === 'sandbox' && (!connected || environment !== 'sandbox')) return undefined;
+  if (result === 'disconnected' && connected) return undefined;
+  return SHOPEE_RESULT_MESSAGES[result];
+}

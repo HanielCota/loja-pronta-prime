@@ -8,21 +8,17 @@ import {
 } from '@/server/db/schema';
 import { shopeeApplicationId } from '@/features/shopee/authorization';
 import { getShopeeConfiguration } from '@/features/shopee/server/client';
+import { shopeeConnectionFor } from '@/features/shopee/server/connection';
 import { compareCategories, observationSeries } from '../model';
 
 export async function readCategoryExperiments(userId: string) {
+  const config = getShopeeConfiguration();
+  if (!config) return [];
   const [connection] = await db
     .select()
     .from(shopeeConnections)
-    .where(eq(shopeeConnections.userId, userId));
-  const config = getShopeeConfiguration();
-  if (
-    !connection ||
-    connection.revokedAt ||
-    !config ||
-    connection.applicationId !== shopeeApplicationId(config)
-  )
-    return [];
+    .where(shopeeConnectionFor(userId, shopeeApplicationId(config)));
+  if (!connection || connection.revokedAt) return [];
   const experiments = await db
     .select()
     .from(assistantCategoryExperiments)

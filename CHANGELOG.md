@@ -3,6 +3,19 @@
 Dates use the America/Sao_Paulo time zone. Operational verification and rollout limits are
 recorded separately from code integration.
 
+## 2026-11-11
+
+### Shopee connection lifecycle
+
+- Connection status reads local state. Token refresh remains part of operations that use the API.
+- Assistant publication and listing-change requests recheck the exact authorization under the
+  same lock used for disconnection. A partially created listing requires reconciliation.
+- Recovered products provide a disconnect action before setup is complete. Superseded authorization
+  attempts retain their return destination while refusing another token exchange.
+- Migration `0080_shopee-connection-scope` preserves existing tokens and keys connections by
+  account and application. Each application ID includes the environment. A new authorization ID
+  distinguishes reconnecting from refreshing tokens within the same connection.
+
 ## 2026-11-10
 
 ### Assisted delivery member access

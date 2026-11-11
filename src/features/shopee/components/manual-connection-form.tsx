@@ -13,8 +13,10 @@ import {
 /** A autorização abre em outra aba; o endereço volta por POST, sem guardar o código na página. */
 export function ManualConnectionForm({
   origin = 'loja-pronta',
+  sandbox,
 }: {
   origin?: 'sll' | 'loja-pronta' | 'recovered';
+  sandbox: boolean;
 }) {
   const [start, startAction, starting] = useActionState(startManualShopeeAuthorization, undefined);
   const [result, completeAction, completing] = useActionState(
@@ -41,7 +43,10 @@ export function ManualConnectionForm({
   return (
     <div className="flex flex-col gap-4">
       <ol className="list-decimal space-y-2 pl-6 text-body text-pretty">
-        <li>Toque em “Autorizar na Shopee” e confirme o acesso à sua loja.</li>
+        <li>
+          Toque em “Autorizar na Shopee”, selecione Brasil (BR) e confirme o acesso à{' '}
+          {sandbox ? 'loja de teste' : 'sua loja'}.
+        </li>
         <li>
           Depois, pode aparecer uma imagem ou um aviso. Copie o endereço inteiro da barra do
           navegador.

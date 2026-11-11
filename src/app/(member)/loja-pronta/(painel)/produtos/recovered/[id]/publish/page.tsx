@@ -112,6 +112,11 @@ export default async function PublishRecoveredProductPage({
             </Button>
           </>
         ) : null}
+        {enabled && connected ? (
+          <Button asChild variant="soft">
+            <Link href="/loja-pronta/produtos/recovered/connect">Gerenciar conexão da Shopee</Link>
+          </Button>
+        ) : null}
         {enabled && connected && (!row || row.status === 'blocked') ? (
           <form action={startRecoveredPublication}>
             <input type="hidden" name="productId" value={id} />

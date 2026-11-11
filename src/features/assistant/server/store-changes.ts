@@ -11,7 +11,11 @@ import {
 } from '@/server/db/schema';
 import { shopeeApplicationId } from '@/features/shopee/authorization';
 import { shopeeItemListPageSchema } from '@/features/shopee/item-list';
-import { readShopeeAccess } from '@/features/shopee/server/connection';
+import {
+  guardShopeeWrites,
+  readShopeeAccess,
+  shopeeConnectionFor,
+} from '@/features/shopee/server/connection';
 import {
   addShopeeItem,
   readShopeeResource,
@@ -240,8 +244,15 @@ async function sendStoreChange(
     .update(storeAutomationJobs)
     .set({ result: { itemId: created.item_id } })
     .where(eq(storeAutomationJobs.id, job.id));
-  if (variations)
+  if (!variations) return;
+  try {
     await publishProductVariations(config, access, created.item_id, variations, fetcher);
+  } catch (error) {
+    // O anúncio oculto já existe e precisa de conferência mesmo se a próxima escrita for recusada.
+    if (error instanceof ShopeeApiError && error.reason === 'rejected')
+      throw new ShopeeApiError('response');
+    throw error;
+  }
 }
 
 // O anúncio como está agora na Shopee; vazio quando ele não aparece mais na loja.
@@ -331,7 +342,7 @@ export async function processStoreChange(fetcher: typeof fetch = fetch) {
       const [connection] = await tx
         .select()
         .from(shopeeConnections)
-        .where(eq(shopeeConnections.userId, job.userId))
+        .where(shopeeConnectionFor(job.userId, job.applicationId))
         .for('share');
       if (
         !connection ||
@@ -384,7 +395,13 @@ export async function processStoreChange(fetcher: typeof fetch = fetch) {
       return true;
     }
     sent = true;
-    await sendStoreChange(config, access, job, payload, fetcher);
+    await sendStoreChange(
+      config,
+      access,
+      job,
+      payload,
+      guardShopeeWrites(job.userId, config, access, fetcher),
+    );
     if (job.kind === 'brand') {
       brandWriteAcknowledged = true;
       const profile = await readShopeeResource(
@@ -591,7 +608,7 @@ export async function finishClonedVariations(
     '/api/v2/product/update_item',
     { item_id: matched.item_id, item_status: 'NORMAL' },
     z.object({}),
-    fetcher,
+    guardShopeeWrites(userId, config, access, fetcher),
   );
   await db
     .update(storeAutomationJobs)
