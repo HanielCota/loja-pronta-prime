@@ -6,9 +6,10 @@ import { SllFlashMessage } from '@/features/sll/components/sll-flash-message';
 import { SllPage } from '@/features/sll/sll-area-shell';
 import { requireProduct } from '@/features/products/server/access';
 import { SHOPEE_SELLER_URL } from '@/config/shopee';
-import { canUseShopee, SHOPEE_RESULT_MESSAGES } from '@/features/shopee/authorization';
+import { canUseShopee, getShopeeResultMessage } from '@/features/shopee/authorization';
+import { ShopeeAuthorizationForm } from '@/features/shopee/components/authorization-form';
 import { ManualConnectionForm } from '@/features/shopee/components/manual-connection-form';
-import { connectShopee, disconnectShopee } from '@/features/shopee/server/actions';
+import { disconnectShopee } from '@/features/shopee/server/actions';
 import { getShopeeConfiguration } from '@/features/shopee/server/client';
 import { getShopeeStatus } from '@/features/shopee/server/connection';
 import { getParam, type SearchParams } from '@/lib/search-params';
@@ -23,13 +24,14 @@ export default async function SllConnectPage({
   const { session, products } = await requireProduct('sll', '/sll/minhas-lojas/conectar');
   const config = getShopeeConfiguration();
   const enabled = canUseShopee(config, session.user.id, session.user.role);
-  const status =
-    enabled && config
-      ? await getShopeeStatus(session.user.id, config)
-      : { connected: false as const };
+  const status = config
+    ? await getShopeeStatus(session.user.id, config)
+    : { connected: false as const, saved: false };
+  const connected = enabled && status.connected;
   const result = getParam((await searchParams).resultado);
-  const message =
-    result && Object.hasOwn(SHOPEE_RESULT_MESSAGES, result) ? SHOPEE_RESULT_MESSAGES[result] : null;
+  const environment = config?.SHOPEE_ENVIRONMENT;
+  const sandbox = environment === 'sandbox';
+  const message = getShopeeResultMessage(result, connected, environment);
   return (
     <SllPage
       hasChoice={products.length > 1}
@@ -52,15 +54,19 @@ export default async function SllConnectPage({
       </section>
       <section className={panelCard} aria-labelledby="store-authorization">
         <h2 id="store-authorization" className="text-title font-semibold">
-          {status.connected
-            ? 'Loja conectada'
+          {connected
+            ? sandbox
+              ? 'Loja de teste conectada'
+              : 'Loja conectada'
             : enabled
               ? 'Autorize o acesso à sua loja'
               : 'Conexão em preparação'}
         </h2>
         <p className="text-body text-muted-foreground">
-          {status.connected
-            ? `A loja ${status.shopId} está autorizada${config?.SHOPEE_ENVIRONMENT === 'sandbox' ? ' numa loja de teste da Shopee, não na sua loja real' : ''}. Essa conexão é compartilhada com a Loja Pronta quando você tem os dois produtos.`
+          {connected
+            ? sandbox
+              ? `A loja de teste ${status.shopId} está autorizada na Shopee.`
+              : `A loja ${status.shopId} está autorizada. Essa conexão é compartilhada com a Loja Pronta quando você tem os dois produtos.`
             : 'A autorização acontece no site da Shopee. Sua senha fica com você. Você confere as permissões e pode revogar o acesso na Central do Vendedor.'}
         </p>
         {message && result ? (
@@ -69,17 +75,14 @@ export default async function SllConnectPage({
             failed={!['connected', 'sandbox', 'disconnected'].includes(result)}
           />
         ) : null}
-        {enabled && !status.connected ? (
+        {enabled && !connected ? (
           config?.SHOPEE_CALLBACK_MODE === 'manual' ? (
-            <ManualConnectionForm origin="sll" />
+            <ManualConnectionForm origin="sll" sandbox={sandbox} />
           ) : (
-            <form action={connectShopee}>
-              <input type="hidden" name="origin" value="sll" />
-              <Button>Autorizar na Shopee</Button>
-            </form>
+            <ShopeeAuthorizationForm origin="sll" sandbox={sandbox} />
           )
         ) : null}
-        {enabled && status.connected ? (
+        {status.saved ? (
           <form action={disconnectShopee}>
             <input type="hidden" name="origin" value="sll" />
             <p className="mb-3 text-body text-muted-foreground">

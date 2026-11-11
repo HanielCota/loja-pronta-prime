@@ -137,7 +137,9 @@ export async function disconnectShopee(formData: FormData): Promise<void> {
   return runAsStudent('disconnectShopee', async () => {
     const origin = shopeeEntry(formData.get('origin'));
     const { userId } = await requireProductAction(shopeeEntryProduct(origin));
-    await removeShopeeConnection(userId);
+    const config = getShopeeConfiguration();
+    if (!config) redirect(`${shopeeConnectionPath(origin)}?resultado=unavailable`);
+    await removeShopeeConnection(userId, config);
     redirect(`${shopeeConnectionPath(origin)}?resultado=disconnected`);
   });
 }

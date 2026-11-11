@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   buildShopeeAuthorizationUrl,
+  getShopeeResultMessage,
   parseShopeeCallback,
   shopeeApiOrigin,
   shopeeApplicationId,
@@ -16,6 +17,20 @@ const config = shopeeConfigurationSchema.parse({
 });
 const state = 'cd'.repeat(32);
 const params = () => new URLSearchParams({ state, code: 'test-code', shop_id: '456' });
+
+test('connection notices agree with the saved authorization and its environment', () => {
+  expect(getShopeeResultMessage('connected', false, 'live')).toBeUndefined();
+  expect(getShopeeResultMessage('connected', true, 'sandbox')).toBeUndefined();
+  expect(getShopeeResultMessage('sandbox', true, 'live')).toBeUndefined();
+  expect(getShopeeResultMessage('sandbox', false, 'sandbox')).toBeUndefined();
+  expect(getShopeeResultMessage('disconnected', true, 'live')).toBeUndefined();
+  expect(getShopeeResultMessage('connected', true, 'live')).toContain('foi conectada');
+  expect(getShopeeResultMessage('sandbox', true, 'sandbox')).toContain('loja de teste');
+  expect(getShopeeResultMessage('disconnected', false, 'live')).toContain('foi removida');
+  expect(getShopeeResultMessage('denied', false, 'live')).toContain('não autorizou');
+  expect(getShopeeResultMessage('expired', false, 'live')).toContain('venceu');
+  expect(getShopeeResultMessage('toString', false, undefined)).toBeUndefined();
+});
 
 describe('Shopee configuration with a broken redirect address', () => {
   test('an empty or malformed SHOPEE_REDIRECT_URI fails validation instead of throwing', () => {

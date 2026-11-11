@@ -9,6 +9,7 @@ import {
 } from '@/server/db/schema';
 import { prepareSupplierProduct } from '@/features/shopee/catalog';
 import { shopeeApplicationId } from '@/features/shopee/authorization';
+import { shopeeConnectionFor } from '@/features/shopee/server/connection';
 import { assertAssistantAccess } from './metrics';
 import { publicationPayloadSchema } from '../model';
 
@@ -27,13 +28,8 @@ export async function publicationCorrections(userId: string) {
   const [connection] = await db
     .select()
     .from(shopeeConnections)
-    .where(eq(shopeeConnections.userId, userId));
-  if (
-    !connection ||
-    connection.revokedAt ||
-    connection.applicationId !== shopeeApplicationId(config)
-  )
-    return [];
+    .where(shopeeConnectionFor(userId, shopeeApplicationId(config)));
+  if (!connection || connection.revokedAt) return [];
   const rows = await db
     .select({
       item: assistantPublicationItems,
@@ -130,7 +126,12 @@ export async function reauthorizePublicationItem(userId: string, itemId: string,
     const [connection] = await tx
       .select()
       .from(shopeeConnections)
-      .where(and(eq(shopeeConnections.userId, userId), sql`${shopeeConnections.revokedAt} is null`))
+      .where(
+        and(
+          shopeeConnectionFor(userId, shopeeApplicationId(config)),
+          sql`${shopeeConnections.revokedAt} is null`,
+        ),
+      )
       .for('update');
     if (
       !item ||

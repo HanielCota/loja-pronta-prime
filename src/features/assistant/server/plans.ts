@@ -9,6 +9,8 @@ import {
   sllPlanIntake,
 } from '@/server/db/schema';
 import { planContextSchema, playbookSchema, type Strategy } from '../model';
+import { shopeeApplicationId } from '@/features/shopee/authorization';
+import { getShopeeConfiguration } from '@/features/shopee/server/client';
 
 export async function getAssistantPlan(userId: string) {
   const [plan] = await db
@@ -45,12 +47,19 @@ export async function createAssistantPlan(userId: string, input: unknown) {
       .limit(1);
     if (!playbook) return null;
     const validated = playbookSchema.parse(playbook);
-    const [connection] = await tx
-      .select()
+    const config = getShopeeConfiguration();
+    const connections = await tx
+      .select({ shopId: shopeeConnections.shopId, applicationId: shopeeConnections.applicationId })
       .from(shopeeConnections)
       .where(
-        and(eq(shopeeConnections.userId, userId), sql`${shopeeConnections.revokedAt} is null`),
-      );
+        and(
+          eq(shopeeConnections.userId, userId),
+          config ? eq(shopeeConnections.applicationId, shopeeApplicationId(config)) : undefined,
+          sql`${shopeeConnections.revokedAt} is null`,
+        ),
+      )
+      .limit(2);
+    const connection = connections.length === 1 ? connections[0] : undefined;
     const [created] = await tx
       .insert(assistantPlans)
       .values({

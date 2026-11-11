@@ -9,6 +9,7 @@ import {
   text,
   timestamp,
   uniqueIndex,
+  uuid,
 } from 'drizzle-orm/pg-core';
 import type { SupplierProduct } from '../../../features/shopee/catalog';
 import { user } from './auth';
@@ -18,11 +19,12 @@ export const shopeeConnections = pgTable(
   'shopee_connections',
   {
     userId: text('user_id')
-      .primaryKey()
+      .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
     shopId: bigint('shop_id', { mode: 'number' }).notNull(),
     /** Registros antigos não podem ser usados por outro aplicativo ou ambiente. */
     applicationId: text('application_id').notNull().default('legacy'),
+    authorizationId: uuid('authorization_id').defaultRandom().notNull(),
     accessTokenEncrypted: text('access_token_encrypted').notNull(),
     refreshTokenEncrypted: text('refresh_token_encrypted').notNull(),
     accessTokenExpiresAt: timestamp('access_token_expires_at', { withTimezone: true }).notNull(),
@@ -33,7 +35,8 @@ export const shopeeConnections = pgTable(
       .$onUpdate(() => new Date()),
   },
   (table) => [
-    uniqueIndex('shopee_connections_shop_unique').on(table.shopId),
+    primaryKey({ columns: [table.userId, table.applicationId] }),
+    uniqueIndex('shopee_connections_application_shop_unique').on(table.applicationId, table.shopId),
     check(
       'shopee_connections_shop_check',
       sql`${table.shopId} > 0 and ${table.shopId} <= 9007199254740991`,

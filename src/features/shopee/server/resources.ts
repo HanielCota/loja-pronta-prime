@@ -56,7 +56,8 @@ export async function requestShopeeResource<T>(
       redirect: 'error',
       signal: AbortSignal.timeout(15000),
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof ShopeeApiError) throw error;
     throw new ShopeeApiError('unavailable');
   }
   if (!response.ok)

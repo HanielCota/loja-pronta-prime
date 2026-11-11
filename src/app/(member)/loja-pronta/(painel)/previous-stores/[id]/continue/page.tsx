@@ -113,9 +113,11 @@ export default async function ContinueStorePage({ params }: { params: Promise<{ 
               ? 'Autorize o aplicativo Escala Shop no site da Shopee. Sua senha fica com você. Antes de publicar, você confere qual loja vai receber os produtos.'
               : 'A conexão ainda não está disponível para esta conta. Seus dados continuam salvos. Volte a esta página para conferir a liberação.'}
         </p>
-        {enabled && !connected ? (
+        {enabled ? (
           <Button asChild variant="soft" className="w-fit">
-            <Link href="/loja-pronta/produtos/recovered/connect">Conectar minha loja</Link>
+            <Link href="/loja-pronta/produtos/recovered/connect">
+              {connected ? 'Gerenciar conexão da Shopee' : 'Conectar minha loja'}
+            </Link>
           </Button>
         ) : null}
       </section>

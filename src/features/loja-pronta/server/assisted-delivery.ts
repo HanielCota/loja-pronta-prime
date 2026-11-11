@@ -1,4 +1,4 @@
-import { and, asc, eq, gt, gte, isNull, or, sql } from 'drizzle-orm';
+import { and, asc, eq, gt, gte, isNull, ne, or, sql } from 'drizzle-orm';
 import { createHash, randomUUID } from 'node:crypto';
 import { db } from '@/server/db';
 import {
@@ -222,9 +222,14 @@ export async function requestAssistedDelivery(
       .select({ userId: shopeeConnections.userId })
       .from(shopeeConnections)
       .where(
-        and(eq(shopeeConnections.shopId, Number(shopId)), isNull(shopeeConnections.revokedAt)),
+        and(
+          eq(shopeeConnections.shopId, Number(shopId)),
+          ne(shopeeConnections.userId, userId),
+          sql`${shopeeConnections.applicationId} not like 'sandbox:%'`,
+          isNull(shopeeConnections.revokedAt),
+        ),
       );
-    if (connectedShop && connectedShop.userId !== userId) return false;
+    if (connectedShop) return false;
     const [batch] = await tx
       .select({ id: assistantPublicationBatches.id })
       .from(assistantPublicationBatches)

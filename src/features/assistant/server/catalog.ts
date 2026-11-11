@@ -9,6 +9,7 @@ import {
 import { prepareSupplierProduct } from '@/features/shopee/catalog';
 import { canUseShopee, shopeeApplicationId } from '@/features/shopee/authorization';
 import { getShopeeConfiguration } from '@/features/shopee/server/client';
+import { shopeeConnectionFor } from '@/features/shopee/server/connection';
 import { matchesSupplierOffer } from '../supplier-offer';
 import { publicationOfferFingerprint } from '../publication-selection';
 import { publicationPayloadSchema } from '../model';
@@ -16,18 +17,13 @@ import { publicationPayloadSchema } from '../model';
 /** Só oferece produtos reais, recentes e preparados para esta conta e este aplicativo. */
 export async function availableSupplierProducts(userId: string, role: string | null | undefined) {
   const config = getShopeeConfiguration();
+  if (!config || !canUseShopee(config, userId, role))
+    return { status: 'connection' as const, products: [] };
   const [connection] = await db
     .select()
     .from(shopeeConnections)
-    .where(eq(shopeeConnections.userId, userId));
-  if (
-    !config ||
-    !canUseShopee(config, userId, role) ||
-    !connection ||
-    connection.revokedAt ||
-    connection.applicationId !== shopeeApplicationId(config)
-  )
-    return { status: 'connection' as const, products: [] };
+    .where(shopeeConnectionFor(userId, shopeeApplicationId(config)));
+  if (!connection || connection.revokedAt) return { status: 'connection' as const, products: [] };
   if (process.env.SHOPEE_PUBLICATION_ENABLED !== 'true')
     return { status: 'preparing' as const, products: [] };
   const rows = await db

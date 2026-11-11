@@ -14,7 +14,7 @@ import {
 import { downloadPublicFile } from '@/features/shopee/server/remote-file';
 import { publicationPayloadSchema } from '../model';
 import { prepareShopeeProduct } from '@/features/shopee/server/preparation';
-import { readShopeeAccess } from '@/features/shopee/server/connection';
+import { readShopeeAccess, shopeeConnectionFor } from '@/features/shopee/server/connection';
 import { shopeeApplicationId } from '@/features/shopee/authorization';
 import { assertAssistantAccess } from './metrics';
 
@@ -170,7 +170,7 @@ export async function syncSupplierFeeds(
                 const [connection] = await tx
                   .select()
                   .from(shopeeConnections)
-                  .where(eq(shopeeConnections.userId, subscription.userId))
+                  .where(shopeeConnectionFor(subscription.userId, shopeeApplicationId(config)))
                   .for('share');
                 if (
                   !catalog ||
