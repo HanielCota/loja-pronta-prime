@@ -1,4 +1,13 @@
-import { bigint, boolean, index, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core';
+import {
+  bigint,
+  boolean,
+  index,
+  integer,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+} from 'drizzle-orm/pg-core';
 import { user } from './auth';
 import type { ExpertId } from '../../../config/experts';
 
@@ -46,6 +55,19 @@ export const hotmartPurchases = pgTable(
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [index('hotmart_purchases_user_idx').on(table.userId)],
+);
+
+export const hotmartFirstAccessEmails = pgTable(
+  'hotmart_first_access_emails',
+  {
+    userId: text('user_id')
+      .primaryKey()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    email: text('email').notNull(),
+    attempts: integer('attempts').notNull().default(0),
+    nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('hotmart_first_access_emails_next_attempt_idx').on(table.nextAttemptAt)],
 );
 
 export const salesHistoryImports = pgTable('sales_history_imports', {

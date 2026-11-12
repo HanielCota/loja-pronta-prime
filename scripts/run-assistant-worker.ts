@@ -1,5 +1,6 @@
 import { runSupportMaintenance } from '../src/features/support/server/maintenance';
 import { pruneExpiredAuthRows } from '../src/features/auth/server/maintenance';
+import { processHotmartFirstAccessEmail } from '../src/features/hotmart/server/first-access-email';
 import { setTimeout as delay } from 'node:timers/promises';
 import { db } from '../src/server/db';
 import { randomUUID } from 'node:crypto';
@@ -46,8 +47,23 @@ async function run() {
       .onConflictDoUpdate({ target: runtimeHeartbeats.id, set: { seenAt: new Date() } });
   };
   let timer: ReturnType<typeof setInterval> | undefined;
+  let firstAccessTimer: ReturnType<typeof setInterval> | undefined;
   let nextBrandScan = 0;
   let feedSync: Promise<void> | null = null;
+  let firstAccessEmail: Promise<void> | null = null;
+  const pollFirstAccessEmails = () => {
+    if (stopping || firstAccessEmail) {
+      return;
+    }
+
+    firstAccessEmail = processHotmartFirstAccessEmail()
+      .catch((error: unknown) => {
+        console.error(`[hotmart] First-access email queue unavailable (${describeError(error)}).`);
+      })
+      .finally(() => {
+        firstAccessEmail = null;
+      });
+  };
   try {
     await heartbeat();
     let heartbeatFailures = 0;
@@ -64,6 +80,11 @@ async function run() {
           process.exitCode = 1;
         });
     }, 15_000);
+    pollFirstAccessEmails();
+    if (!once) {
+      firstAccessTimer = setInterval(pollFirstAccessEmails, 5000);
+    }
+
     let nextSupportRun = 0;
     let nextAuthCleanup = 0;
     let failures = 0;
@@ -121,8 +142,9 @@ async function run() {
     }
   } finally {
     clearInterval(timer);
+    clearInterval(firstAccessTimer);
     try {
-      await feedSync;
+      await Promise.all([feedSync, firstAccessEmail]);
       await db.delete(runtimeHeartbeats).where(eq(runtimeHeartbeats.id, id));
     } finally {
       await db.$client.end();

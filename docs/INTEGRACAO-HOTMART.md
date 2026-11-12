@@ -1,11 +1,11 @@
 # Current student access policy
 
-New Hotmart accounts start without a password. Students use password recovery with their purchase email to create their first password. Subsequent purchases retain existing credentials. This policy supersedes the historical first-access notes below. See [student password maintenance](STUDENT-PASSWORD.md) for the shared password retirement.
+New Hotmart accounts start without a password. Once an approval creates the account and grants access, the worker sends a first-password link to the purchase email. The link expires after one hour. Students can request another link on the login page. Subsequent purchases retain existing credentials. This policy supersedes the historical first-access notes below. See [student password maintenance](STUDENT-PASSWORD.md) for the shared password retirement.
 
 # Integração com a Hotmart
 
 > **Status (T25):** recebimento de eventos v2, verificação do Hottok, mapeamento dos dois produtos, criação de conta, liberação e retirada de acessos e histórico básico implementados. Configure em `/admin/hotmart`.
-> **Ainda não está pronta para compras reais:** falta configurar os códigos e o token da conta Hotmart, contratar/configurar o envio de email e concluir o convite de primeiro acesso. O formulário atual não testa a conexão externa; não confundir salvar com validar a Hotmart.
+> Production requires configured Hotmart product codes and token, the authentication email sender, and the application worker. Saving settings does not verify the external connection.
 
 O webhook é `/api/hotmart/webhook`. Cadastre na Hotmart o endereço HTTPS público mostrado no painel. São tratados `PURCHASE_APPROVED`/`PURCHASE_COMPLETE` como liberação e `PURCHASE_REFUNDED`/`PURCHASE_CHARGEBACK` como retirada imediata da transação. Cancelamento de assinatura continua sem política definida e não remove acesso. Reembolsar uma transação não remove outra compra ativa do mesmo produto nem um acesso concedido manualmente. A transação é a chave da compra: se a compradora trocar o email na Hotmart, os avisos seguintes (inclusive o reembolso) continuam valendo para a conta ligada à compra, e o histórico registra a troca. Um aviso da mesma transação com outro produto fica no histórico sem mudar acesso. Um aviso de produto sem mapeamento aparece no histórico e responde com erro temporário para permitir nova entrega após corrigir o código. O histórico não armazena o corpo completo do evento.
 
@@ -20,7 +20,7 @@ A área de membros **não tem cadastro público**. Toda conta de aluna nasce de 
 A entrada automática de novas compradoras depende dessa integração e do envio do link para
 criar a senha. Contas já criadas ou liberadas manualmente podem entrar normalmente.
 
-The login page directs students to use their purchase email. First-time students request a password creation link there. Recovery requires the configured email service. Development accounts use `bun run dev:aluna`, with `--primeiro-acesso` for accounts testing the individual temporary password flow.
+The login page directs students to use their purchase email and can send a fresh password creation link. Both the automatic invitation and recovery use the configured email service. Development accounts use `bun run dev:aluna`, with `--primeiro-acesso` for accounts testing the individual temporary password flow.
 
 ---
 

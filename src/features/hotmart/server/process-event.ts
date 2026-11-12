@@ -1,10 +1,15 @@
+import { randomUUID } from 'node:crypto';
 import { revalidateAdminOverview } from '@/features/admin/server/overview-cache';
 import { and, eq, inArray, ne, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
-import { auth } from '@/server/auth/auth';
 import { purchaseExpiresAt } from '@/features/products/access-term';
-import { historicalSllPurchases } from '@/server/db/schema';
-import { hotmartEvents, hotmartProductMappings, hotmartPurchases, user } from '@/server/db/schema';
+import {
+  historicalSllPurchases,
+  hotmartEvents,
+  hotmartFirstAccessEmails,
+  hotmartPurchases,
+  user,
+} from '@/server/db/schema';
 import { reconcileProductAccess } from './product-access';
 import { productIdentityConflict, resolveProductIdentity } from './product-identity';
 import {
@@ -22,36 +27,39 @@ import {
 
 const missingDateResult = 'Compra sem data original; acesso não liberado.';
 
-async function findOrCreateBuyer(email: string, name: string) {
-  const existing = await db.query.user.findFirst({
-    columns: { id: true },
-    where: eq(user.email, email),
-  });
-  if (existing) return existing.id;
-  try {
-    const created = await auth.api.createUser({
-      body: {
-        email,
-        name,
-        role: 'user',
-        data: { emailVerified: true, mustChangePassword: false },
-      },
-    });
-    return created.user.id;
-  } catch (error) {
-    // Dois eventos simultâneos da mesma compradora podem disputar a criação da conta.
-    const concurrent = await db.query.user.findFirst({
-      columns: { id: true },
-      where: eq(user.email, email),
-    });
-    if (concurrent) return concurrent.id;
-    throw error;
-  }
-}
-
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type ProductIdentity = Awaited<ReturnType<typeof resolveProductIdentity>>;
 type PreviousPurchase = typeof hotmartPurchases.$inferSelect | undefined;
+
+async function findOrCreateBuyer(tx: Transaction, email: string, name: string) {
+  // A conta sem credencial e o convite só existem se a compra for gravada com sucesso.
+  const [created] = await tx
+    .insert(user)
+    .values({
+      id: randomUUID(),
+      email,
+      name,
+      role: 'user',
+      emailVerified: true,
+      mustChangePassword: false,
+    })
+    .onConflictDoNothing({ target: user.email })
+    .returning({ id: user.id });
+  if (created) {
+    await tx.insert(hotmartFirstAccessEmails).values({ userId: created.id, email });
+    return created.id;
+  }
+
+  const concurrent = await tx.query.user.findFirst({
+    columns: { id: true },
+    where: eq(user.email, email),
+  });
+  if (!concurrent) {
+    throw new Error('The buyer account changed during purchase processing.');
+  }
+
+  return concurrent.id;
+}
 
 /** O que o aviso trouxe, já normalizado, para as funções que decidem o resultado. */
 type EventContext = {
@@ -62,7 +70,6 @@ type EventContext = {
   transaction: HotmartPurchaseEvent['data']['purchase']['transaction'];
   createdAt: Date;
   orderDate: Date | null;
-  buyerId: string | null;
 };
 
 // Compra histórica: o aviso só desativa no reembolso e recalcula o acesso; a validade é a original.
@@ -143,37 +150,20 @@ async function applyPurchaseEvent(
   mapping: ProductIdentity['mapping'],
   initialPrevious: PreviousPurchase,
   mismatch: ReturnType<typeof transactionMismatch>,
-  { event, effect, email, productUcode, transaction, createdAt, orderDate, buyerId }: EventContext,
+  { event, effect, email, productUcode, transaction, createdAt, orderDate }: EventContext,
 ): Promise<string> {
   let previous = initialPrevious;
   const active = effect === 'grant';
   // Purchase ownership survives email changes in either the platform or Hotmart.
-  let linkedUserId =
-    mismatch === 'email'
-      ? (previous?.userId ?? buyerId)
-      : (previous?.userId ??
-        buyerId ??
-        (
-          await tx.query.user.findFirst({
-            columns: { id: true },
-            where: eq(user.email, email),
-          })
-        )?.id ??
-        null);
-  // Validate the product under the mapping lock before creating an account.
-  if (
-    !linkedUserId &&
-    active &&
-    previous?.active !== false &&
-    orderDate &&
-    orderDate <= new Date() &&
-    purchaseExpiresAt(orderDate) > new Date()
-  ) {
-    linkedUserId = await findOrCreateBuyer(
-      email,
-      event.data.buyer.name?.trim() || email.split('@')[0] || 'Aluna',
-    );
+  let linkedUserId = previous?.userId ?? null;
+  if (!linkedUserId && mismatch !== 'email') {
+    const existing = await tx.query.user.findFirst({
+      columns: { id: true },
+      where: eq(user.email, email),
+    });
+    linkedUserId = existing?.id ?? null;
   }
+
   if (linkedUserId) {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${linkedUserId}))`);
     // A admin pode ter revogado esta compra enquanto o aviso aguardava a trava.
@@ -182,6 +172,7 @@ async function applyPurchaseEvent(
       where: eq(hotmartPurchases.transaction, transaction),
     });
   }
+
   const applies =
     shouldApplyEvent(previous, { createdAt, active }) ||
     (active &&
@@ -196,6 +187,19 @@ async function applyPurchaseEvent(
       ? previous.purchasedAt
       : orderDate;
   const expiresAt = purchasedAt ? purchaseExpiresAt(purchasedAt) : null;
+  const now = new Date();
+  const accessGranted = Boolean(
+    active && purchasedAt && expiresAt && purchasedAt <= now && expiresAt > now,
+  );
+  if (!linkedUserId && accessGranted && orderDate && orderDate <= now) {
+    linkedUserId = await findOrCreateBuyer(
+      tx,
+      email,
+      event.data.buyer.name?.trim() || email.split('@')[0] || 'Aluna',
+    );
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${linkedUserId}))`);
+  }
+
   await tx
     .insert(hotmartPurchases)
     .values({
@@ -228,7 +232,7 @@ async function applyPurchaseEvent(
     }
   }
   return active
-    ? expiresAt && purchasedAt && purchasedAt <= new Date() && expiresAt > new Date()
+    ? accessGranted
       ? 'Compra aprovada; acesso liberado.'
       : !purchasedAt
         ? missingDateResult
@@ -252,53 +256,6 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
     where: eq(hotmartEvents.id, event.id),
   });
   if (received && !isRetryableHotmartResult(received.result)) return 'Aviso já recebido.';
-  // Resolve numeric identities before account creation without holding a pooled
-  // transaction connection while better-auth acquires its own connection.
-  const preliminaryMapping =
-    event.data.product.id === undefined
-      ? await db.query.hotmartProductMappings.findMany({
-          where: eq(hotmartProductMappings.productUcode, productUcode),
-        })
-      : await db.transaction(async (tx) => {
-          await tx.execute(
-            sql`select pg_advisory_xact_lock_shared(hashtext('hotmart-product-mappings'))`,
-          );
-          return (await resolveProductIdentity(tx, event.data.product)).mapping;
-        });
-
-  // Revalidate the mapping inside the purchase transaction before granting access.
-  const known = await db.query.hotmartPurchases.findFirst({
-    columns: { buyerEmail: true, productUcode: true, productId: true, userId: true, active: true },
-    where: eq(hotmartPurchases.transaction, transaction),
-  });
-  const knownMismatch = transactionMismatch(known, {
-    buyerEmail: email,
-    productUcode,
-    productId: event.data.product.id,
-  });
-  const knownHistorical = await db.query.historicalSllPurchases.findFirst({
-    columns: { transaction: true },
-    where: eq(historicalSllPurchases.transaction, transaction),
-  });
-  const keepsKnownAccount = knownMismatch === 'product' || Boolean(known?.userId);
-
-  let buyerId: string | null = null;
-  if (
-    effect === 'grant' &&
-    known?.active !== false &&
-    !knownHistorical &&
-    orderDate &&
-    orderDate <= new Date() &&
-    purchaseExpiresAt(orderDate) > new Date() &&
-    preliminaryMapping.length &&
-    !keepsKnownAccount
-  ) {
-    buyerId = await findOrCreateBuyer(
-      email,
-      event.data.buyer.name?.trim() || email.split('@')[0] || 'Aluna',
-    );
-  }
-
   const context: EventContext = {
     event,
     effect,
@@ -307,7 +264,6 @@ export async function processHotmartEvent(event: HotmartPurchaseEvent): Promise<
     transaction,
     createdAt,
     orderDate,
-    buyerId,
   };
   const processed = await db.transaction(async (tx) => {
     // Uma mudança de códigos espera os avisos em andamento antes de decidir se já há compras.

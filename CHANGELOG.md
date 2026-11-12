@@ -3,6 +3,15 @@
 Dates use the America/Sao_Paulo time zone. Operational verification and rollout limits are
 recorded separately from code integration.
 
+## 2026-11-12
+
+### Hotmart first access
+
+- Queue one password-creation email when an approved Hotmart purchase creates a new student account
+  and grants access. The existing worker delivers it through Resend with bounded retries.
+- Migration `0081_hotmart-first-access-email` adds the pending email table. No earlier purchases are
+  backfilled. The rollout requires the existing authentication email configuration and worker.
+
 ## 2026-11-11
 
 ### Shopee connection lifecycle

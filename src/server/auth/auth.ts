@@ -25,6 +25,7 @@ import {
 import { recordVisitStep } from '@/features/staff/server/visit-log';
 import { VISIT_SESSION_SECONDS } from '@/features/staff/visit-window';
 import { sendPasswordResetEmail, sendVerificationEmail } from './emails';
+import { revokeFirstPasswordLink } from './first-password-link';
 import { reportAuthError } from './report-error';
 import { isRetiredStudentPassword } from './student-password';
 
@@ -67,10 +68,13 @@ export const auth = betterAuth({
     // E abrir o link prova que a caixa de email é dela: o email fica confirmado (sem isso, o
     // login seguinte pediria mais uma confirmação por email).
     onPasswordReset: async ({ user }) => {
-      await db
-        .update(schema.user)
-        .set({ mustChangePassword: false, emailVerified: true, credentialVersion: randomUUID() })
-        .where(eq(schema.user.id, user.id));
+      await db.transaction(async (tx) => {
+        await tx
+          .update(schema.user)
+          .set({ mustChangePassword: false, emailVerified: true, credentialVersion: randomUUID() })
+          .where(eq(schema.user.id, user.id));
+        await revokeFirstPasswordLink(tx, user.id);
+      });
     },
     sendResetPassword: async ({ user, url }) => {
       // Sem await: o tempo de resposta não pode denunciar se o email existe.

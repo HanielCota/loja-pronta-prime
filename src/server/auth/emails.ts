@@ -13,8 +13,11 @@ const MAX_ATTEMPTS = 3;
 const TIMEOUT_MS = 10_000;
 
 /** O nome do erro ajuda no log sem expor email, token ou mensagem bruta do provedor. */
-class EmailDeliveryError extends Error {
-  constructor(code: string) {
+export class EmailDeliveryError extends Error {
+  constructor(
+    code: string,
+    readonly retryable = false,
+  ) {
     super('Não foi possível enviar o email de acesso.');
     this.name = `EmailDeliveryError:${code}`;
   }
@@ -61,7 +64,10 @@ async function deliver(kind: AuthEmailKind, { to, url }: AuthEmail): Promise<voi
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
     } catch {
-      if (attempt === MAX_ATTEMPTS - 1) throw new EmailDeliveryError('network_error');
+      if (attempt === MAX_ATTEMPTS - 1) {
+        throw new EmailDeliveryError('network_error', true);
+      }
+
       await setTimeout(1000 * 2 ** attempt);
       continue;
     }
@@ -76,13 +82,13 @@ async function deliver(kind: AuthEmailKind, { to, url }: AuthEmail): Promise<voi
         data.id
       )
         return;
-      throw new EmailDeliveryError('missing_id');
+      throw new EmailDeliveryError('missing_id', true);
     }
 
     await response.body?.cancel();
     const retryable = response.status === 429 || response.status >= 500;
     if (!retryable || attempt === MAX_ATTEMPTS - 1) {
-      throw new EmailDeliveryError(`http_${response.status}`);
+      throw new EmailDeliveryError(`http_${response.status}`, retryable);
     }
 
     // Falhas temporárias ganham tentativas limitadas; permissão e domínio exigem correção.
@@ -92,6 +98,10 @@ async function deliver(kind: AuthEmailKind, { to, url }: AuthEmail): Promise<voi
 
 export function sendPasswordResetEmail(email: AuthEmail): Promise<void> {
   return deliver('password-reset', email);
+}
+
+export function sendFirstPasswordEmail(email: AuthEmail): Promise<void> {
+  return deliver('first-password', email);
 }
 
 export function sendVerificationEmail(email: AuthEmail): Promise<void> {

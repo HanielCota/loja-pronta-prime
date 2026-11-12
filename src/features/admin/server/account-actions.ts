@@ -11,6 +11,7 @@ import { reportAuthError } from '@/server/auth/report-error';
 import { db } from '@/server/db';
 import { resetStudentForEmailRecovery } from '@/server/auth/reset-student-password';
 import { revokeAccountAccess } from '@/server/auth/credential-lifecycle';
+import { revokeFirstPasswordLink } from '@/server/auth/first-password-link';
 import { isRetiredStudentPassword } from '@/server/auth/student-password';
 import {
   manualProductGrants,
@@ -207,7 +208,12 @@ export async function saveAccount(
         mustChangePassword: edit.mustChangePassword,
       })
       .where(eq(user.id, id));
-    if (edit.admin !== wasAdmin) await revokeAccountAccess(tx, id, promoted, wasAdmin);
+    if (edit.admin !== wasAdmin) {
+      await revokeAccountAccess(tx, id, promoted, wasAdmin);
+    } else if (target.email !== edit.email) {
+      await revokeFirstPasswordLink(tx, id);
+    }
+
     return {
       message: promoted
         ? 'Função de admin salva. Para entrar, a pessoa precisa criar uma senha pelo link de recuperação no email dela.'

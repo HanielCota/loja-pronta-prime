@@ -6,6 +6,16 @@ const url =
   'https://app.example.invalid/api/auth/reset-password/token?callbackURL=%2Fredefinir-senha';
 
 describe('emails de acesso', () => {
+  test('a first-access invitation explains the approval and the link expiry', () => {
+    const email = authEmailMessage('first-password', url);
+    expect(email.subject).toContain('primeira senha');
+    expect(email.text).toContain('Sua compra foi aprovada');
+    expect(email.text).toContain('Criar minha senha');
+    expect(email.text).toContain(url);
+    expect(email.text).toContain(`vale por ${RESET_LINK_TTL_HOURS} hora`);
+    expect(email.text).toContain('peça outro na tela de entrada');
+  });
+
   test('recuperação também orienta quem está criando a primeira senha', () => {
     const email = authEmailMessage('password-reset', url);
     expect(email.subject).toContain('senha');
