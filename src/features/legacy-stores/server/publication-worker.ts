@@ -39,40 +39,73 @@ export async function executeRecoveredPublication(
 ) {
   let writing = false;
   try {
+    const authorizationId = row.authorization_id;
+    if (!authorizationId) {
+      throw new Error('authorization-changed');
+    }
+
     const {
       rows: [scope],
     } = await pool.query<{
       product_id: string;
       historical_shop: string | null;
       historical_item: string | null;
+      authorization_active: boolean;
     }>(
-      `SELECT i.product_id,s.record->>'shopee_shop_id' historical_shop,p.record->>'shopee_item_id' historical_item FROM legacy_catalog_imports i JOIN legacy_stores s ON s.id=i.store_id JOIN legacy_store_products p ON p.id=i.product_id WHERE i.id=$1 AND i.user_id=$2`,
-      [row.import_id, row.user_id],
+      `SELECT i.product_id,s.record->>'shopee_shop_id' historical_shop,p.record->>'shopee_item_id' historical_item,
+        EXISTS (SELECT 1 FROM shopee_connections c WHERE c.user_id=i.user_id AND c.application_id=$3
+          AND c.shop_id=$4 AND c.authorization_id=$5 AND c.revoked_at IS NULL) authorization_active
+      FROM legacy_catalog_imports i JOIN legacy_stores s ON s.id=i.store_id JOIN legacy_store_products p ON p.id=i.product_id
+      WHERE i.id=$1 AND i.user_id=$2`,
+      [row.import_id, row.user_id, row.application_id, row.shop_id, authorizationId],
     );
-    if (!scope || !row.intent || !row.expires_at || !row.confirmed_at) throw new Error('scope');
+    if (!scope || !row.intent || !row.expires_at || !row.confirmed_at) {
+      throw new Error('scope');
+    }
+
+    if (!scope.authorization_active) {
+      throw new Error('authorization-changed');
+    }
+
     const intent = row.intent;
     const expectedFingerprint = recoveredPublicationFingerprint({
       importId: row.import_id,
       applicationId: row.application_id,
       shopId: row.shop_id,
+      authorizationId,
       context: row.context,
       intent,
       expiresAt: row.expires_at,
     });
-    if (row.fingerprint !== expectedFingerprint) throw new Error('fingerprint');
+    if (row.fingerprint !== expectedFingerprint) {
+      throw new Error('fingerprint');
+    }
+
     const config = await deps.assertAccess(row.user_id);
+    if (
+      config.SHOPEE_ENVIRONMENT !== 'live' ||
+      shopeeApplicationId(config) !== row.application_id
+    ) {
+      throw new Error('authorization-changed');
+    }
+
     const access = await deps.readAccess(row.user_id, config);
+    if (access.authorizationId !== authorizationId || access.shopId !== row.shop_id) {
+      throw new Error('authorization-changed');
+    }
+
     const guard = async () => {
       const currentConfig = await deps.assertAccess(row.user_id);
       if (
         !deps.enabled() ||
         currentConfig.SHOPEE_ENVIRONMENT !== 'live' ||
         shopeeApplicationId(currentConfig) !== row.application_id ||
-        access.shopId !== row.shop_id ||
         row.expires_at! <= new Date() ||
         prepareSupplierProduct(intent.offer, new Date()).status !== 'prepared'
-      )
+      ) {
         throw new Error('expired');
+      }
+
       const imported = await importedProduct(pool, row.user_id, scope.product_id);
       if (
         !imported ||
@@ -85,7 +118,8 @@ export async function executeRecoveredPublication(
       const renewed = await pool.query(
         `UPDATE legacy_catalog_publications p SET lease_until=now()+interval '10 minutes',updated_at=now()
         WHERE p.id=$1 AND p.lease_id=$2 AND p.lease_until>now() AND p.status in ('preparing','sending') AND p.fingerprint=$3
-        AND EXISTS (SELECT 1 FROM shopee_connections c WHERE c.user_id=p.user_id AND c.shop_id=p.shop_id AND c.application_id=p.application_id AND c.revoked_at IS NULL) RETURNING p.id`,
+        AND EXISTS (SELECT 1 FROM shopee_connections c WHERE c.user_id=p.user_id AND c.shop_id=p.shop_id
+          AND c.application_id=p.application_id AND c.authorization_id=p.authorization_id AND c.revoked_at IS NULL) RETURNING p.id`,
         [row.id, row.lease_id, row.fingerprint],
       );
       if (renewed.rowCount !== 1) throw new Error('lease');
@@ -248,7 +282,8 @@ export async function executeRecoveredPublication(
     return 'published';
   } catch (error) {
     const reason =
-      error instanceof Error && ['duplicate', 'image', 'changed', 'expired'].includes(error.message)
+      error instanceof Error &&
+      ['duplicate', 'image', 'changed', 'expired', 'authorization-changed'].includes(error.message)
         ? error.message
         : 'preflight';
     const status = writing ? 'unknown' : 'blocked';

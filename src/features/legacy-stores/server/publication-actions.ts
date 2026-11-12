@@ -105,19 +105,17 @@ export async function reviewRecoveredPublicationAction(form: FormData): Promise<
     let saved = false;
     try {
       const { config, access } = await currentAccess(userId);
-      const row = await recoveredPublication(db.$client, userId, id);
-      if (
-        !row ||
-        row.application_id !== shopeeApplicationId(config) ||
-        row.shop_id !== access.shopId
-      )
-        throw new Error('destination');
       saved = await reviewRecoveredPublication(
         db.$client,
         userId,
         id,
         z.coerce.number().int().positive().parse(form.get('revision')),
         z.guid().parse(form.get('publicationId')),
+        {
+          applicationId: shopeeApplicationId(config),
+          shopId: access.shopId,
+          authorizationId: access.authorizationId,
+        },
         form,
       );
     } catch {
@@ -136,14 +134,11 @@ export async function confirmRecoveredPublicationAction(form: FormData): Promise
     try {
       const confirmation = recoveredConfirmationSchema.parse(Object.fromEntries(form));
       const { config, access } = await currentAccess(userId);
-      saved = await confirmRecoveredPublication(
-        db.$client,
-        userId,
-        id,
-        confirmation.fingerprint,
-        shopeeApplicationId(config),
-        access.shopId,
-      );
+      saved = await confirmRecoveredPublication(db.$client, userId, id, confirmation.fingerprint, {
+        applicationId: shopeeApplicationId(config),
+        shopId: access.shopId,
+        authorizationId: access.authorizationId,
+      });
     } catch {
       /* Confirmation failures cannot authorize a later automatic retry. */
     }

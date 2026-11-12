@@ -36,6 +36,12 @@ export const patchNotes: readonly PatchNoteDay[] = [
         description:
           'Após a atualização, se você desconectar a loja durante uma publicação, o sistema impedirá novos envios daquela publicação. Se algo já tiver sido enviado, confira a situação do anúncio na Shopee.',
       },
+      {
+        kind: 'Correção',
+        title: 'Nova confirmação ao reconectar a loja da Shopee',
+        description:
+          'Após a atualização, se você desconectar e reconectar a mesma loja, prepare e confirme novamente os anúncios recuperados que ainda aguardavam envio. A fila não usa a confirmação anterior.',
+      },
     ],
   },
   {

@@ -11,6 +11,7 @@ import {
   RECOVERED_REVIEW_TTL,
   type PublicationContext,
   type RecoveredListingPayload,
+  type RecoveredPublicationDestination,
   type RecoveredPublicationIntent,
   type RecoveredPublicationStatus,
 } from '../publication';
@@ -22,6 +23,7 @@ export type RecoveredPublication = {
   user_id: string;
   application_id: string;
   shop_id: number;
+  authorization_id: string | null;
   review_expired: boolean;
   status: RecoveredPublicationStatus;
   context: PublicationContext;
@@ -94,7 +96,7 @@ export async function saveRecoveredPublicationOptions(
       rows: [row],
     } = await client.query<RecoveredPublication>(
       `INSERT INTO legacy_catalog_publications(import_id,user_id,application_id,shop_id,context) VALUES($1,$2,$3,$4,$5)
-      ON CONFLICT(import_id) DO UPDATE SET application_id=excluded.application_id,shop_id=excluded.shop_id,context=excluded.context,status='editing',intent=null,fingerprint=null,expires_at=null,confirmed_at=null,payload=null,failure=null,lease_id=null,lease_until=null,updated_at=now()
+      ON CONFLICT(import_id) DO UPDATE SET application_id=excluded.application_id,shop_id=excluded.shop_id,context=excluded.context,status='editing',authorization_id=null,intent=null,fingerprint=null,expires_at=null,confirmed_at=null,payload=null,failure=null,lease_id=null,lease_until=null,updated_at=now()
       WHERE legacy_catalog_publications.status in ('editing','review','blocked') RETURNING *`,
       [imported.id, userId, applicationId, shopId, JSON.stringify(context)],
     );
@@ -108,6 +110,7 @@ export async function reviewRecoveredPublication(
   productId: string,
   expectedRevision: number,
   expectedPublicationId: string,
+  { applicationId, shopId, authorizationId }: RecoveredPublicationDestination,
   form: FormData,
   now = new Date(),
 ) {
@@ -117,10 +120,14 @@ export async function reviewRecoveredPublication(
       !row ||
       row.id !== expectedPublicationId ||
       row.status !== 'editing' ||
+      row.application_id !== applicationId ||
+      row.shop_id !== shopId ||
       form.get('optionsVersion') !== row.context.version ||
       imported.revision !== expectedRevision
-    )
+    ) {
       throw new Error('O produto mudou. Reabra a preparação e confira os dados.');
+    }
+
     let offer;
     try {
       offer = recoveredPublicationOffer(imported.product, row.context, form, now);
@@ -158,17 +165,21 @@ export async function reviewRecoveredPublication(
     const expiresAt = new Date(now.getTime() + RECOVERED_REVIEW_TTL);
     const fingerprint = recoveredPublicationFingerprint({
       importId: row.import_id,
-      applicationId: row.application_id,
-      shopId: row.shop_id,
+      applicationId,
+      shopId,
+      authorizationId,
       context: row.context,
       intent,
       expiresAt,
     });
-    await client.query(
-      "UPDATE legacy_catalog_publications SET status='review',intent=$2,fingerprint=$3,expires_at=$4,updated_at=now() WHERE id=$1",
-      [row.id, JSON.stringify(intent), fingerprint, expiresAt],
+    const saved = await client.query(
+      `UPDATE legacy_catalog_publications p SET status='review',intent=$2,fingerprint=$3,expires_at=$4,authorization_id=$5,updated_at=now()
+      WHERE p.id=$1 AND EXISTS (SELECT 1 FROM shopee_connections c
+        WHERE c.user_id=p.user_id AND c.application_id=p.application_id AND c.shop_id=p.shop_id
+        AND c.authorization_id=$5 AND c.revoked_at IS NULL) RETURNING p.id`,
+      [row.id, JSON.stringify(intent), fingerprint, expiresAt, authorizationId],
     );
-    return true;
+    return saved.rowCount === 1;
   });
 }
 
@@ -177,8 +188,7 @@ export async function confirmRecoveredPublication(
   userId: string,
   productId: string,
   fingerprint: string,
-  applicationId: string,
-  shopId: number,
+  { applicationId, shopId, authorizationId }: RecoveredPublicationDestination,
   now = new Date(),
 ) {
   return locked(pool, userId, productId, async (client, imported) => {
@@ -188,34 +198,47 @@ export async function confirmRecoveredPublication(
       row.fingerprint !== fingerprint ||
       row.application_id !== applicationId ||
       row.shop_id !== shopId ||
+      row.authorization_id !== authorizationId ||
       !row.intent ||
       !row.expires_at
-    )
+    ) {
       return false;
-    if (['pending', 'preparing', 'sending', 'published', 'unknown'].includes(row.status))
+    }
+
+    if (['pending', 'preparing', 'sending', 'published', 'unknown'].includes(row.status)) {
       return true;
+    }
+
     if (
       row.status !== 'review' ||
       row.expires_at <= now ||
       row.intent.revision !== imported.revision ||
       row.intent.sourceHash !== imported.source_hash ||
       row.intent.productHash !== legacyRecordHash(imported.product)
-    )
+    ) {
       return false;
+    }
+
     if (
       fingerprint !==
       recoveredPublicationFingerprint({
         importId: row.import_id,
         applicationId,
         shopId,
+        authorizationId,
         context: row.context,
         intent: row.intent,
         expiresAt: row.expires_at,
       })
-    )
+    ) {
       return false;
+    }
+
     const saved = await client.query(
-      "UPDATE legacy_catalog_publications SET status='pending',confirmed_at=$2,updated_at=now() WHERE id=$1 AND status='review' RETURNING id",
+      `UPDATE legacy_catalog_publications p SET status='pending',confirmed_at=$2,updated_at=now()
+      WHERE p.id=$1 AND p.status='review' AND EXISTS (SELECT 1 FROM shopee_connections c
+        WHERE c.user_id=p.user_id AND c.application_id=p.application_id AND c.shop_id=p.shop_id
+        AND c.authorization_id=p.authorization_id AND c.revoked_at IS NULL) RETURNING p.id`,
       [row.id, now],
     );
     return saved.rowCount === 1;

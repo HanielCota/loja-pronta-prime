@@ -17,7 +17,15 @@ import {
   claimRecoveredPublication,
 } from '../../src/features/legacy-stores/server/publication-data';
 import { executeRecoveredPublication } from '../../src/features/legacy-stores/server/publication-worker';
-import { shopeeConfigurationSchema } from '../../src/features/shopee/authorization';
+import {
+  shopeeConfigurationSchema,
+  shopeeTokenOwner,
+} from '../../src/features/shopee/authorization';
+import {
+  readShopeeAccess,
+  removeShopeeConnection,
+} from '../../src/features/shopee/server/connection';
+import { encryptShopeeToken } from '../../src/lib/shopee-protocol';
 import {
   loadRecoveredPublicationOptions,
   recoveredPublicationOptions,
@@ -30,6 +38,7 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const owner = randomUUID(),
   other = randomUUID();
 const authorizationId = randomUUID();
+const destination = { applicationId: 'live:1', shopId: 321, authorizationId };
 let fixture: Awaited<ReturnType<typeof seedRecoveredCatalog>>;
 const config = shopeeConfigurationSchema.parse({
   SHOPEE_PARTNER_ID: 1,
@@ -177,25 +186,35 @@ function api(
   }) as typeof fetch;
   return { calls, fetcher };
 }
-async function reviewed(index: number) {
+async function reviewed(index: number, target = destination) {
   const id = fixture.ids[index]!;
-  await saveRecoveredPublicationOptions(pool, owner, id, 'live:1', 321, context);
-  const publication = (await recoveredPublication(pool, owner, id))!;
-  const imported = (await importedProduct(pool, owner, id))!;
-  await reviewRecoveredPublication(
+  await saveRecoveredPublicationOptions(
     pool,
     owner,
     id,
-    imported.revision,
-    publication.id,
-    input(context.version),
+    target.applicationId,
+    target.shopId,
+    context,
   );
+  const publication = (await recoveredPublication(pool, owner, id))!;
+  const imported = (await importedProduct(pool, owner, id))!;
+  expect(
+    await reviewRecoveredPublication(
+      pool,
+      owner,
+      id,
+      imported.revision,
+      publication.id,
+      target,
+      input(context.version),
+    ),
+  ).toBe(true);
   return { id, imported, row: (await recoveredPublication(pool, owner, id))! };
 }
 async function confirmed(index: number) {
   const value = await reviewed(index);
   expect(
-    await confirmRecoveredPublication(pool, owner, value.id, value.row.fingerprint!, 'live:1', 321),
+    await confirmRecoveredPublication(pool, owner, value.id, value.row.fingerprint!, destination),
   ).toBe(true);
   return { ...value, job: (await claimRecoveredPublication(pool))! };
 }
@@ -214,7 +233,7 @@ test('recovered publication requires a current owned review and exact destinatio
       'INSERT INTO "user"(id,name,email,email_verified,must_change_password) VALUES($1,$1,$2,true,false)',
       [id, `${id}@example.invalid`],
     );
-  fixture = await seedRecoveredCatalog(pool, owner, 13);
+  fixture = await seedRecoveredCatalog(pool, owner, 16);
   await importRecoveredProducts(pool, owner, { storeId: fixture.storeId, productIds: fixture.ids });
   await pool.query(
     "INSERT INTO shopee_connections(user_id,shop_id,application_id,authorization_id,access_token_encrypted,refresh_token_encrypted,access_token_expires_at) VALUES($1,321,'live:1',$2,'test','test',now()+interval '1 hour')",
@@ -237,11 +256,14 @@ test('recovered publication requires a current owned review and exact destinatio
   const { id, row, imported } = await reviewed(0);
   expect(await claimRecoveredPublication(pool)).toBeNull();
   expect(await recoveredPublication(pool, other, id)).toBeNull();
-  await rejection(confirmRecoveredPublication(pool, other, id, row.fingerprint!, 'live:1', 321));
-  expect(await confirmRecoveredPublication(pool, owner, id, row.fingerprint!, 'live:1', 322)).toBe(
-    false,
-  );
-  expect(await confirmRecoveredPublication(pool, owner, id, 'b'.repeat(64), 'live:1', 321)).toBe(
+  await rejection(confirmRecoveredPublication(pool, other, id, row.fingerprint!, destination));
+  expect(
+    await confirmRecoveredPublication(pool, owner, id, row.fingerprint!, {
+      ...destination,
+      shopId: 322,
+    }),
+  ).toBe(false);
+  expect(await confirmRecoveredPublication(pool, owner, id, 'b'.repeat(64), destination)).toBe(
     false,
   );
   expect(
@@ -253,7 +275,7 @@ test('recovered publication requires a current owned review and exact destinatio
       price: '49,90',
     }),
   ).toBe(true);
-  expect(await confirmRecoveredPublication(pool, owner, id, row.fingerprint!, 'live:1', 321)).toBe(
+  expect(await confirmRecoveredPublication(pool, owner, id, row.fingerprint!, destination)).toBe(
     false,
   );
   const expired = await reviewed(1);
@@ -263,8 +285,7 @@ test('recovered publication requires a current owned review and exact destinatio
       owner,
       expired.id,
       expired.row.fingerprint!,
-      'live:1',
-      321,
+      destination,
       new Date(Date.now() + 16 * 60 * 1000),
     ),
   ).toBe(false);
@@ -272,8 +293,8 @@ test('recovered publication requires a current owned review and exact destinatio
 test('confirmed queue serializes retries, freezes edits and verifies variants before listing', async () => {
   const { id, row } = await reviewed(2);
   const results = await Promise.all([
-    confirmRecoveredPublication(pool, owner, id, row.fingerprint!, 'live:1', 321),
-    confirmRecoveredPublication(pool, owner, id, row.fingerprint!, 'live:1', 321),
+    confirmRecoveredPublication(pool, owner, id, row.fingerprint!, destination),
+    confirmRecoveredPublication(pool, owner, id, row.fingerprint!, destination),
   ]);
   expect(results).toEqual([true, true]);
   const jobs = await Promise.all([
@@ -429,6 +450,93 @@ test('reconnecting the same shop cannot authorize the remaining writes of an in-
       authorizationId,
     ]);
   }
+});
+
+test('a queued recovered listing without a recorded authorization requires a new confirmation', async () => {
+  const { id, row } = await reviewed(15);
+  expect(await confirmRecoveredPublication(pool, owner, id, row.fingerprint!, destination)).toBe(
+    true,
+  );
+  await pool.query('UPDATE legacy_catalog_publications SET authorization_id=NULL WHERE id=$1', [
+    row.id,
+  ]);
+
+  const job = (await claimRecoveredPublication(pool))!;
+  const fake = api();
+  expect(await executeRecoveredPublication(pool, job, deps(fake))).toBe('blocked');
+  expect(fake.calls).toHaveLength(0);
+  expect((await recoveredPublication(pool, owner, id))?.failure).toBe('authorization-changed');
+});
+
+test('reconnecting the same shop before the worker runs requires a new review and confirmation', async () => {
+  const unconfirmed = await reviewed(13);
+  const queued = await reviewed(14);
+  expect(
+    await confirmRecoveredPublication(pool, owner, queued.id, queued.row.fingerprint!, destination),
+  ).toBe(true);
+  expect((await recoveredPublication(pool, owner, queued.id))?.status).toBe('pending');
+
+  await removeShopeeConnection(owner, config);
+  const reconnected = { ...destination, authorizationId: randomUUID() };
+  const tokenOwner = shopeeTokenOwner(owner, reconnected.shopId, config);
+  const key = config.SHOPEE_TOKEN_ENCRYPTION_KEY;
+  await pool.query(
+    `INSERT INTO shopee_connections(user_id,shop_id,application_id,authorization_id,access_token_encrypted,refresh_token_encrypted,access_token_expires_at)
+    VALUES($1,$2,$3,$4,$5,$6,now()+interval '1 hour')`,
+    [
+      owner,
+      reconnected.shopId,
+      reconnected.applicationId,
+      reconnected.authorizationId,
+      encryptShopeeToken('new-access', key, tokenOwner),
+      encryptShopeeToken('new-refresh', key, tokenOwner),
+    ],
+  );
+
+  for (const target of [destination, reconnected]) {
+    expect(
+      await confirmRecoveredPublication(
+        pool,
+        owner,
+        unconfirmed.id,
+        unconfirmed.row.fingerprint!,
+        target,
+      ),
+    ).toBe(false);
+  }
+
+  const oldJob = (await claimRecoveredPublication(pool))!;
+  expect(oldJob.id).toBe(queued.row.id);
+  expect(oldJob.authorization_id).toBe(destination.authorizationId);
+  const fake = api();
+  let accessReads = 0;
+  const liveDeps = {
+    ...deps(fake),
+    readAccess: async () => {
+      accessReads++;
+      return readShopeeAccess(owner, config);
+    },
+  };
+  expect(await executeRecoveredPublication(pool, oldJob, liveDeps)).toBe('blocked');
+  expect(accessReads).toBe(0);
+  expect(fake.calls).toHaveLength(0);
+  expect((await recoveredPublication(pool, owner, queued.id))?.failure).toBe(
+    'authorization-changed',
+  );
+
+  const fresh = await reviewed(14, reconnected);
+  expect(fresh.row.fingerprint).not.toBe(queued.row.fingerprint);
+  expect(await claimRecoveredPublication(pool)).toBeNull();
+  expect(
+    await confirmRecoveredPublication(pool, owner, fresh.id, queued.row.fingerprint!, reconnected),
+  ).toBe(false);
+  expect(
+    await confirmRecoveredPublication(pool, owner, fresh.id, fresh.row.fingerprint!, reconnected),
+  ).toBe(true);
+  const newJob = (await claimRecoveredPublication(pool))!;
+  expect(newJob.authorization_id).toBe(reconnected.authorizationId);
+  expect(await executeRecoveredPublication(pool, newJob, liveDeps)).toBe('published');
+  expect(fake.calls.filter((call) => call.path.endsWith('/add_item'))).toHaveLength(1);
 });
 
 test('the preparation deadline stops brand pagination and cancels the active request', async () => {

@@ -170,14 +170,20 @@ export function recoveredPublicationOffer(
   return offer;
 }
 
-export function recoveredPublicationFingerprint(value: {
-  importId: string;
+export type RecoveredPublicationDestination = {
   applicationId: string;
   shopId: number;
-  context: PublicationContext;
-  intent: RecoveredPublicationIntent;
-  expiresAt: Date;
-}) {
+  authorizationId: string;
+};
+
+export function recoveredPublicationFingerprint(
+  value: RecoveredPublicationDestination & {
+    importId: string;
+    context: PublicationContext;
+    intent: RecoveredPublicationIntent;
+    expiresAt: Date;
+  },
+) {
   return legacyRecordHash({ ...value, expiresAt: value.expiresAt.toISOString() });
 }
 

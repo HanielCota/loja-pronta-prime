@@ -8,9 +8,9 @@ import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { SelectMenu } from '@/components/ui/select-menu';
 import { AreaPage, panelCard } from '@/features/member/components/area-shell';
 import { requireProduct } from '@/features/products/server/access';
-import { canUseShopee } from '@/features/shopee/authorization';
+import { canUseShopee, shopeeApplicationId } from '@/features/shopee/authorization';
 import { getShopeeConfiguration } from '@/features/shopee/server/client';
-import { hasShopeeConnection } from '@/features/shopee/server/connection';
+import { getActiveShopeeConnection } from '@/features/shopee/server/connection';
 import { importedProduct } from '@/features/legacy-stores/server/catalog-data';
 import { recoveredPublication } from '@/features/legacy-stores/server/publication-data';
 import { recoveredPublicationEnabled } from '@/features/legacy-stores/server/publication-runtime';
@@ -31,11 +31,13 @@ import { formatCentsBRL } from '@/lib/format-money';
 export const metadata: Metadata = { title: 'Publicar produto recuperado' };
 const money = (value: number) => (value / 100).toFixed(2).replace('.', ',');
 const checkboxLabel = 'flex min-h-11 cursor-pointer items-center gap-3 text-body';
+const reauthorizationMessage =
+  'A autorização da Shopee mudou. Prepare o produto e confirme a publicação novamente.';
 const resultMessages = {
   invalid:
     'Confira os campos. Informe o custo, o preço e o estoque de cada opção. O preço precisa ser maior que o custo, e as variações precisam ter todas as combinações. Confirme os dados atuais antes de continuar.',
   expired:
-    'A revisão venceu, o produto mudou ou a loja foi trocada. Prepare uma nova revisão antes de confirmar.',
+    'A revisão venceu ou os dados da publicação mudaram. Prepare uma nova revisão antes de confirmar.',
   timeout: 'A consulta à Shopee demorou mais que o esperado. Tente preparar a publicação de novo.',
   limited: 'Aguarde um minuto antes de tentar preparar a publicação de novo.',
   unavailable: 'Não foi possível consultar a Shopee. Confira a conexão da loja e tente novamente.',
@@ -59,7 +61,9 @@ export default async function PublishRecoveredProductPage({
     recoveredPublicationEnabled() &&
     config?.SHOPEE_ENVIRONMENT === 'live' &&
     canUseShopee(config, session.user.id, session.user.role);
-  const connected = enabled && config ? await hasShopeeConnection(session.user.id, config) : false;
+  const connection =
+    enabled && config ? await getActiveShopeeConnection(session.user.id, config) : null;
+  const connected = Boolean(connection);
   const result = (await searchParams).resultado;
   const resultMessage =
     result && Object.hasOwn(resultMessages, result)
@@ -67,8 +71,17 @@ export default async function PublishRecoveredProductPage({
       : undefined;
   const product = imported.product;
   const offer = row?.intent?.offer;
+  const authorizationChanged =
+    row?.status === 'review' &&
+    (!connection ||
+      row.authorization_id !== connection.authorizationId ||
+      row.shop_id !== connection.shopId ||
+      row.application_id !== (config && shopeeApplicationId(config)));
   const expired =
-    !row?.expires_at || row.review_expired || row.intent?.revision !== imported.revision;
+    authorizationChanged ||
+    !row?.expires_at ||
+    row.review_expired ||
+    row.intent?.revision !== imported.revision;
   const context = row?.context;
   const valueFor = (name: string) => context?.values?.[name]?.[0] ?? '';
   const reviewAttributes = context
@@ -92,7 +105,11 @@ export default async function PublishRecoveredProductPage({
           {row?.status === 'review' ? 'Revise o resumo do envio' : 'Situação da publicação'}
         </h2>
         <p className="text-body">
-          {row ? recoveredPublicationMessages[row.status] : 'Prepare seu produto para publicar.'}
+          {row?.status === 'blocked' && row.failure === 'authorization-changed'
+            ? reauthorizationMessage
+            : row
+              ? recoveredPublicationMessages[row.status]
+              : 'Prepare seu produto para publicar.'}
         </p>
         {row?.status === 'blocked' && row.failure === 'duplicate' ? (
           <p className="text-body">
@@ -470,7 +487,9 @@ export default async function PublishRecoveredProductPage({
           </p>
           {expired ? (
             <output className="text-body">
-              Esta revisão venceu ou o produto foi alterado. Prepare uma nova revisão.
+              {authorizationChanged
+                ? reauthorizationMessage
+                : 'Esta revisão venceu ou o produto foi alterado. Prepare uma nova revisão.'}
             </output>
           ) : (
             <p className="text-body">

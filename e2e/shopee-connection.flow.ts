@@ -1,7 +1,15 @@
+import { randomUUID } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
 import { auth } from '@/server/auth/auth';
-import { importRecoveredProducts } from '@/features/legacy-stores/server/catalog-data';
-import { seedRecoveredCatalog } from '../tests/support/recovered-catalog';
+import {
+  importedProduct,
+  importRecoveredProducts,
+} from '@/features/legacy-stores/server/catalog-data';
+import {
+  reviewRecoveredPublication,
+  saveRecoveredPublicationOptions,
+} from '@/features/legacy-stores/server/publication-data';
+import { fixtureImage, seedRecoveredCatalog } from '../tests/support/recovered-catalog';
 import { expectNoA11yViolations, signIn } from './support/auth';
 import { closeDatabase, database, PASSWORD } from './support/students';
 
@@ -132,6 +140,99 @@ test('an older authorization returns an SLL-only account to SLL with the expiry 
     (await database().query('select 1 from shopee_connections where user_id = $1', [userId]))
       .rowCount,
   ).toBe(0);
+});
+
+test('reconnecting the same shop removes the old confirmation button', async ({ page }, info) => {
+  test.setTimeout(65_000);
+  const shopId =
+    461000 + info.config.projects.findIndex((project) => project.name === info.project.name);
+  const userId = await signInWithProduct(
+    page,
+    `reauthorize-${info.project.name}`,
+    'loja-pronta',
+    recoveredPath,
+  );
+  await selectTheme(page, info.project.name);
+  await page.goto((await beginAuthorization(page, shopId)).toString());
+  await expect(page.getByRole('heading', { name: 'Loja conectada' })).toBeVisible();
+
+  const pool = database();
+  const { storeId, ids } = await seedRecoveredCatalog(pool, userId, 1);
+  const productId = ids[0]!;
+  await importRecoveredProducts(pool, userId, { storeId, productIds: ids });
+  const {
+    rows: [connection],
+  } = await pool.query<{ authorization_id: string }>(
+    'SELECT authorization_id FROM shopee_connections WHERE user_id=$1 AND application_id=$2',
+    [userId, 'live:123'],
+  );
+  const version = randomUUID();
+  const saved = await saveRecoveredPublicationOptions(pool, userId, productId, 'live:123', shopId, {
+    version,
+    shopName: 'Test shop',
+    categoryId: 10,
+    categories: [{ id: 10, name: 'Calçados' }],
+    channels: [{ id: 20, name: 'Entrega' }],
+    attributes: [],
+    brands: [{ id: 0, name: 'Sem marca' }],
+  });
+  const imported = await importedProduct(pool, userId, productId);
+  const form = new FormData();
+  for (const [field, value] of Object.entries({
+    optionsVersion: version,
+    currentData: 'confirmed',
+    'cost-0': '20,00',
+    'price-0': '49,90',
+    'stock-0': '3',
+    'cost-1': '21,00',
+    'price-1': '59,90',
+    'stock-1': '0',
+    weightGrams: '500',
+    length: '20',
+    width: '12',
+    height: '8',
+    brandId: '0',
+    channelId: '20',
+  })) {
+    form.set(field, value);
+  }
+
+  expect(
+    await reviewRecoveredPublication(
+      pool,
+      userId,
+      productId,
+      imported!.revision,
+      saved!.id,
+      {
+        applicationId: 'live:123',
+        shopId,
+        authorizationId: connection!.authorization_id,
+      },
+      form,
+    ),
+  ).toBe(true);
+
+  await page.route('**/produtos/recovered/*/images/*', (route) =>
+    route.fulfill({ body: fixtureImage, contentType: 'image/png' }),
+  );
+  const publishPath = `${catalogPath}/${productId}/publish`;
+  const confirmation = page.getByRole('button', { name: 'Confirmar e publicar na Shopee' });
+  await page.goto(publishPath);
+  await expect(confirmation).toBeVisible();
+  await page.getByRole('link', { name: 'Gerenciar conexão da Shopee' }).click();
+  await page.getByRole('button', { name: 'Desconectar desta plataforma' }).click();
+  await expect(page).toHaveURL(/resultado=disconnected$/);
+  await page.goto((await beginAuthorization(page, shopId)).toString());
+  await expect(page.getByText(`A loja ${shopId} está vinculada.`, { exact: false })).toBeVisible();
+
+  await page.goto(publishPath);
+  await expect(page.getByText('A autorização da Shopee mudou.', { exact: false })).toBeVisible();
+  await expect(confirmation).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Voltar aos dados e revisar novamente' }),
+  ).toBeVisible();
+  await expectNoA11yViolations(page);
 });
 
 test.describe('without JavaScript', () => {
