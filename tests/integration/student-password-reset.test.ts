@@ -3,7 +3,10 @@ import { randomUUID } from 'node:crypto';
 import { eq, inArray } from 'drizzle-orm';
 import { hashPassword } from 'better-auth/crypto';
 import { auth } from '@/server/auth/auth';
-import { resetStudentForEmailRecovery } from '@/server/auth/reset-student-password';
+import {
+  issueStudentTemporaryPassword,
+  resetStudentForEmailRecovery,
+} from '@/server/auth/reset-student-password';
 import { revokeRetiredPasswords } from '@/server/auth/revoke-retired-passwords';
 import { revokeAccountAccess } from '@/server/auth/credential-lifecycle';
 import { RETIRED_STUDENT_PASSWORD } from '@/server/auth/student-password';
@@ -89,6 +92,53 @@ test('a student without a credential stays eligible for email recovery', async (
   const id = await fixture({ withPassword: false });
   expect(await resetStudentForEmailRecovery(id)).toBe('reset');
   expect(await credential(id)).toBeUndefined();
+});
+
+test('temporary recovery replaces credentials and revokes sessions and links', async () => {
+  for (const withPassword of [true, false]) {
+    const id = await fixture({ withPassword });
+    const email = `${id}@example.invalid`;
+    const previous = await db.query.user.findFirst({ where: eq(user.id, id) });
+    const result = await issueStudentTemporaryPassword(id, previous!.credentialVersion);
+    expect(result.status).toBe('reset');
+    expect((await issueStudentTemporaryPassword(id, previous!.credentialVersion)).status).toBe(
+      'changed',
+    );
+    const saved = await db.query.user.findFirst({ where: eq(user.id, id) });
+    expect(saved?.credentialVersion).not.toBe(previous?.credentialVersion);
+    expect(saved?.mustChangePassword).toBe(true);
+    expect((await credential(id))?.password).not.toBe(result.password);
+    expect(await db.select().from(session).where(eq(session.userId, id))).toHaveLength(0);
+    expect(await db.select().from(verification).where(eq(verification.value, id))).toHaveLength(0);
+    await rejection(auth.api.signInEmail({ body: { email, password: personalPassword } }));
+    const signedIn = await auth.api.signInEmail({ body: { email, password: result.password! } });
+    expect(signedIn.user.id).toBe(id);
+    expect(signedIn.user.mustChangePassword).toBe(true);
+
+    const token = randomUUID();
+    await db.insert(verification).values({
+      id: token,
+      identifier: `reset-password:${token}`,
+      value: id,
+      expiresAt: new Date(Date.now() + 3600000),
+    });
+    const newPassword = 'My personal password after recovery!';
+    await auth.api.resetPassword({ body: { token, newPassword } });
+    const recovered = await auth.api.signInEmail({ body: { email, password: newPassword } });
+    expect(recovered.user.mustChangePassword).toBe(false);
+  }
+});
+
+test('temporary recovery requires an active student with a verified email', async () => {
+  const admin = await fixture({ role: 'admin', old: true });
+  const blocked = await fixture({ old: true });
+  const unverified = await fixture({ old: true });
+  await db.update(user).set({ banned: true }).where(eq(user.id, blocked));
+  await db.update(user).set({ emailVerified: false }).where(eq(user.id, unverified));
+
+  expect((await issueStudentTemporaryPassword(admin, null)).status).toBe('not_student');
+  expect((await issueStudentTemporaryPassword(blocked, null)).status).toBe('unavailable');
+  expect((await issueStudentTemporaryPassword(unverified, null)).status).toBe('unavailable');
 });
 
 test('conta de admin não muda', async () => {

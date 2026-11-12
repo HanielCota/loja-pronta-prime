@@ -5,6 +5,12 @@ recorded separately from code integration.
 
 ## 2026-11-12
 
+### Student account recovery
+
+- Let administrators generate an individual temporary password for active student accounts with
+  verified email addresses. Issuing it revokes previous credentials, sessions, and reset links.
+  The student must create a new password before entering the member area.
+
 ### Hotmart first access
 
 - Queue one password-creation email when an approved Hotmart purchase creates a new student account

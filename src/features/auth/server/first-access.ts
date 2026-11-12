@@ -2,7 +2,7 @@
 
 import { runAsStudent } from '@/features/staff/server/impersonation';
 import { parseWithZod } from '@conform-to/zod/v4';
-import { and, eq, ne } from 'drizzle-orm';
+import { and, eq, gt, ne } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { auth } from '@/server/auth/auth';
 import { randomUUID } from 'node:crypto';
@@ -96,7 +96,7 @@ export async function createFirstPassword(
 
     if (!needsFirstPassword(session.user)) return alreadyCreated();
 
-    let outcome: 'changed' | 'already-done' | 'same-password';
+    let outcome: 'changed' | 'already-done' | 'same-password' | 'expired';
     try {
       const context = await auth.$context;
       // As contas lentas (conferir e gerar a senha) ficam fora da transação: não seguram a linha
@@ -115,16 +115,50 @@ export async function createFirstPassword(
       // aba) não se atropelam, e senha e marca mudam juntas ou nenhuma muda.
       outcome = await db.transaction(async (tx) => {
         const [current] = await tx
-          .select({ mustChangePassword: user.mustChangePassword })
+          .select({ banned: user.banned, mustChangePassword: user.mustChangePassword })
           .from(user)
           .where(eq(user.id, userId))
           .for('update');
-        if (!current || !needsFirstPassword(current)) return 'already-done';
-        // Igual à guardada, e ela ainda é a temporária: precisa ser outra.
-        if (!newHash) return 'same-password';
+        if (!current || current.banned) {
+          return 'expired';
+        }
 
         const now = new Date();
-        await tx.update(account).set({ password: newHash, updatedAt: now }).where(credential);
+        const [active] = await tx
+          .select({ id: sessions.id })
+          .from(sessions)
+          .where(
+            and(
+              eq(sessions.userId, userId),
+              eq(sessions.token, session.session.token),
+              gt(sessions.expiresAt, now),
+            ),
+          )
+          .for('update');
+
+        if (!active) {
+          return 'expired';
+        }
+
+        if (!needsFirstPassword(current)) {
+          return 'already-done';
+        }
+
+        // Igual à guardada, e ela ainda é a temporária: precisa ser outra.
+        if (!newHash) {
+          return 'same-password';
+        }
+
+        const [changed] = await tx
+          .update(account)
+          .set({ password: newHash, updatedAt: now })
+          .where(and(credential, eq(account.password, stored.password!)))
+          .returning({ id: account.id });
+
+        if (!changed) {
+          return 'expired';
+        }
+
         await tx
           .update(user)
           .set({ mustChangePassword: false, updatedAt: now, credentialVersion: randomUUID() })
@@ -138,6 +172,10 @@ export async function createFirstPassword(
     } catch (error) {
       reportAuthError('criação da senha no primeiro acesso', error);
       return { submission: reject(submission, 'unknown') };
+    }
+
+    if (outcome === 'expired') {
+      return { submission: reject(submission, 'session_expired') };
     }
 
     if (outcome === 'same-password') return { submission: reject(submission, 'same_password') };

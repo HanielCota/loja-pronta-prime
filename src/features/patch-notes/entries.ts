@@ -18,6 +18,12 @@ export const patchNotes: readonly PatchNoteDay[] = [
         description:
           'Após a atualização, quando uma compra aprovada pela Hotmart liberar o acesso de uma nova aluna, ela receberá um link no email da compra para criar a própria senha. Se o link vencer, ela poderá pedir outro na tela de entrada.',
       },
+      {
+        kind: 'Novo',
+        title: 'Recuperação de acesso sem esperar pelo email',
+        description:
+          'Após a atualização, uma admin poderá gerar uma senha temporária para uma aluna com conta ativa e email confirmado. A aluna poderá entrar com essa senha e precisará criar a própria na hora.',
+      },
     ],
   },
   {

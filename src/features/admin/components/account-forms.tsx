@@ -7,12 +7,15 @@ import { Button } from '@/components/ui/button';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
 import { NAME_MAX_LENGTH } from '@/features/auth/schemas';
+import { ConfirmAction } from '@/features/staff/components/confirm-action';
 import {
   endAccountSessionsForm as endAccountSessions,
+  generateStudentTemporaryPasswordForm as generateStudentTemporaryPassword,
   resetStudentPasswordForm as resetStudentPassword,
   saveAccountForm as saveAccount,
   setAccountBlockedForm as setAccountBlocked,
   type AccountActionState,
+  type TemporaryPasswordState,
 } from '../server/actions';
 import { SelectMenu as Select } from '@/components/ui/select-menu';
 import { Textarea } from '@/components/ui/textarea';
@@ -45,6 +48,7 @@ type AccountDetailsProps = {
   email: string;
   admin: boolean;
   mustChangePassword: boolean;
+  credentialVersion: string | null;
 };
 
 export function AccountDetailsForm(account: AccountDetailsProps) {
@@ -52,10 +56,15 @@ export function AccountDetailsForm(account: AccountDetailsProps) {
   // A ação também volta normalmente quando há erro. Campos controlados preservam o que foi
   // digitado no reset automático do React, para corrigir só o campo que não serviu.
   const [fields, setFields] = useState(account);
+  const mustChangePassword =
+    fields.credentialVersion === account.credentialVersion
+      ? fields.mustChangePassword
+      : account.mustChangePassword;
 
   return (
     <form noValidate action={formAction} className="flex flex-col gap-4">
       <input name="id" type="hidden" value={account.id} />
+      <input name="credentialVersion" type="hidden" value={account.credentialVersion ?? ''} />
       <FloatingLabelInput
         value={fields.name}
         onChange={(event) => setFields((previous) => ({ ...previous, name: event.target.value }))}
@@ -104,10 +113,11 @@ export function AccountDetailsForm(account: AccountDetailsProps) {
       <div className="flex flex-col gap-2">
         <Label htmlFor="account-password">Senha no próximo acesso</Label>
         <Select
-          value={fields.mustChangePassword ? 'yes' : 'no'}
+          value={mustChangePassword ? 'yes' : 'no'}
           onChange={(event) =>
             setFields((previous) => ({
               ...previous,
+              credentialVersion: account.credentialVersion,
               mustChangePassword: event.target.value === 'yes',
             }))
           }
@@ -191,6 +201,47 @@ export function AccountPasswordResetForm({ id }: { id: string }) {
         Desativar senha para recuperação por email
       </Button>
       <Result state={state} />
+    </form>
+  );
+}
+
+export function AccountTemporaryPasswordForm({
+  id,
+  credentialVersion,
+}: {
+  id: string;
+  credentialVersion: string | null;
+}) {
+  const [state, formAction, pending] = useActionState<TemporaryPasswordState, FormData>(
+    generateStudentTemporaryPassword,
+    initialState,
+  );
+
+  return (
+    <form action={formAction} aria-label="Gerar senha temporária" className="flex flex-col gap-4">
+      <input name="id" type="hidden" value={id} />
+      <input name="credentialVersion" type="hidden" value={credentialVersion ?? ''} />
+      <ConfirmAction
+        label="Gerar senha temporária"
+        title="Gerar uma nova senha para esta aluna?"
+        description="A senha atual e os links anteriores deixam de funcionar. A aluna sai de todos os aparelhos e cria a própria senha ao entrar com a temporária."
+        variant="soft"
+      >
+        <Button disabled={pending} loading={pending} type="submit">
+          Confirmar e gerar senha
+        </Button>
+      </ConfirmAction>
+      <Result state={state} />
+      {state.password ? (
+        <div className="flex min-w-0 flex-col gap-2">
+          <p className="text-body text-muted-foreground">
+            Copie a senha agora e envie em particular para a aluna. Ela só aparece aqui.
+          </p>
+          <code className="text-body wrap-anywhere text-foreground select-all">
+            {state.password}
+          </code>
+        </div>
+      ) : null}
     </form>
   );
 }

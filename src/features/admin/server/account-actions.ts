@@ -9,7 +9,10 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/server/auth/auth';
 import { reportAuthError } from '@/server/auth/report-error';
 import { db } from '@/server/db';
-import { resetStudentForEmailRecovery } from '@/server/auth/reset-student-password';
+import {
+  issueStudentTemporaryPassword,
+  resetStudentForEmailRecovery,
+} from '@/server/auth/reset-student-password';
 import { revokeAccountAccess } from '@/server/auth/credential-lifecycle';
 import { revokeFirstPasswordLink } from '@/server/auth/first-password-link';
 import { isRetiredStudentPassword } from '@/server/auth/student-password';
@@ -26,6 +29,7 @@ import { hasAdminRole } from '../access';
 import { requireAdmin } from './access';
 
 export type AccountActionState = { message: string; saved: boolean };
+export type TemporaryPasswordState = AccountActionState & { password?: string };
 
 export type NewAccountState = {
   /** Cresce a cada resposta: o formulário recomeça com o que foi digitado. */
@@ -180,11 +184,28 @@ export async function saveAccount(
 
   const result = await db.transaction(async (tx) => {
     const [target] = await tx
-      .select({ role: user.role, email: user.email })
+      .select({
+        role: user.role,
+        email: user.email,
+        credentialVersion: user.credentialVersion,
+      })
       .from(user)
       .where(eq(user.id, id))
       .for('update');
-    if (!target) return { message: 'Essa conta não existe mais.', saved: false };
+    if (!target) {
+      return { message: 'Essa conta não existe mais.', saved: false };
+    }
+
+    if (
+      data.has('credentialVersion') &&
+      data.get('credentialVersion') !== (target.credentialVersion ?? '')
+    ) {
+      return {
+        message: 'O acesso desta conta mudou. Atualize a página antes de salvar.',
+        saved: false,
+      };
+    }
+
     const wasAdmin = hasAdminRole(target.role);
     if (id === admin.user.id && !edit.admin && wasAdmin)
       return { message: 'Você não pode tirar a sua própria função de admin.', saved: false };
@@ -303,4 +324,50 @@ export async function resetStudentPassword(
       'Senha anterior desativada. Oriente a aluna a usar “Redefinir minha senha” na tela de entrada.',
     saved: true,
   };
+}
+
+export async function generateStudentTemporaryPassword(
+  _previous: TemporaryPasswordState,
+  data: FormData,
+): Promise<TemporaryPasswordState> {
+  const id = accountId(data);
+  await requireAdmin(id ? `/admin/contas/${id}` : '/admin/contas');
+
+  if (!id) {
+    return { message: 'Conta não encontrada.', saved: false };
+  }
+
+  const version = data.get('credentialVersion');
+
+  if (typeof version !== 'string') {
+    return { message: 'Atualize a página e tente de novo.', saved: false };
+  }
+
+  const result = await issueStudentTemporaryPassword(id, version || null).catch(
+    (error: unknown) => {
+      reportAuthError('temporary student password generation', error);
+      return null;
+    },
+  );
+
+  if (!result) {
+    return { message: 'Não foi possível gerar a senha temporária. Tente de novo.', saved: false };
+  }
+
+  switch (result.status) {
+    case 'missing':
+      return { message: 'Essa conta não existe mais.', saved: false };
+    case 'not_student':
+      return { message: 'Só contas de aluna podem usar esta opção.', saved: false };
+    case 'unavailable':
+      return { message: 'A conta precisa estar ativa e com o email confirmado.', saved: false };
+    case 'changed':
+      return {
+        message: 'O acesso desta conta mudou. Atualize a página e tente de novo.',
+        saved: false,
+      };
+    case 'reset':
+      refresh(id);
+      return { message: 'Senha temporária gerada.', saved: true, password: result.password };
+  }
 }
