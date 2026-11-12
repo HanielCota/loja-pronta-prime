@@ -1,4 +1,7 @@
+import { randomUUID } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
 import type { NextConfig } from 'next';
+import { PHASE_PRODUCTION_BUILD, PHASE_PRODUCTION_SERVER } from 'next/constants';
 
 const contentPolicy = "frame-ancestors 'none'; object-src 'none'; base-uri 'self'";
 
@@ -87,26 +90,20 @@ const nextConfig: NextConfig = {
         source: '/api/auth/:path*',
         headers: [{ key: 'Cache-Control', value: 'no-store' }],
       },
-      // Sem JavaScript, o navegador segue o 303 do formulário. Autorize só os provedores usados
-      // nessas duas telas; form-action 'self' bloquearia a saída para a autorização oficial.
-      {
-        source: '/loja-pronta/shopee/conectar',
+      // Native form submissions follow the 303 to Shopee when JavaScript is unavailable.
+      ...[
+        '/loja-pronta/shopee/conectar',
+        '/loja-pronta/produtos/recovered/connect',
+        '/sll/minhas-lojas/conectar',
+      ].map((source) => ({
+        source,
         headers: [
           {
             key: 'Content-Security-Policy',
             value: `${contentPolicy}; form-action 'self' https://open.shopee.com https://open.sandbox.test-stable.shopee.com`,
           },
         ],
-      },
-      {
-        source: '/sll/minhas-lojas/conectar',
-        headers: [
-          {
-            key: 'Content-Security-Policy',
-            value: `${contentPolicy}; form-action 'self' https://open.shopee.com https://open.sandbox.test-stable.shopee.com`,
-          },
-        ],
-      },
+      })),
       {
         source: '/admin/bling',
         headers: [
@@ -120,4 +117,16 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default function configForPhase(phase: string): NextConfig {
+  if (phase === PHASE_PRODUCTION_BUILD) {
+    const deploymentId = process.env.NEXT_DEPLOYMENT_ID || randomUUID();
+    return { ...nextConfig, deploymentId, generateBuildId: async () => deploymentId };
+  }
+
+  // The standalone server embeds the build config. `next start` reads the same ID from disk.
+  if (phase === PHASE_PRODUCTION_SERVER && existsSync('.next/BUILD_ID')) {
+    return { ...nextConfig, deploymentId: readFileSync('.next/BUILD_ID', 'utf8').trim() };
+  }
+
+  return nextConfig;
+}

@@ -582,6 +582,10 @@ photos and variation photos use the existing rounded image treatment; variation 
 are disclosed with native details. The interface distinguishes an internal draft import from
 marketplace publication and keeps the current visual system unchanged.
 
+While publication details load, the existing submit button shows a spinner and the action in
+progress. Timeouts use the existing inline feedback. If navigation stalls, the panel restores the
+previous page and shows a status message and a `Button` link to open the destination directly.
+
 ### Assisted delivery access (November 10, 2026)
 
 On `/loja-pronta/entrega`, the approval card keeps its frame and adds the Shopee access steps

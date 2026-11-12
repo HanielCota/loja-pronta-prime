@@ -6,6 +6,7 @@ import { prepareSupplierProduct } from '@/features/shopee/catalog';
 import { shopeeApplicationId, type ShopeeConfiguration } from '@/features/shopee/authorization';
 import { setTimeout as delay } from 'node:timers/promises';
 import { prepareRecoveredShopeeProduct } from './publication-preparation';
+import { guardShopeeWrites } from '@/features/shopee/server/connection';
 import {
   addShopeeItem,
   readShopeeResource,
@@ -24,7 +25,7 @@ type Dependencies = {
   readAccess(
     userId: string,
     config: ShopeeConfiguration,
-  ): Promise<{ shopId: number; accessToken: string }>;
+  ): Promise<{ shopId: number; accessToken: string; authorizationId: string }>;
   readImage(key: string): Promise<Uint8Array | null>;
   fetcher?: typeof fetch;
   waitForItem?: () => Promise<void>;
@@ -90,10 +91,16 @@ export async function executeRecoveredPublication(
       if (renewed.rowCount !== 1) throw new Error('lease');
       return imported.product;
     };
+    const send = guardShopeeWrites(row.user_id, config, access, ((url, init) => {
+      if (new URL(String(url)).pathname === '/api/v2/product/add_item') {
+        writing = true;
+      }
+
+      return (deps.fetcher ?? fetch)(url, init);
+    }) as typeof fetch);
     const fetcher = (async (url, init) => {
       await guard();
-      if (new URL(String(url)).pathname === '/api/v2/product/add_item') writing = true;
-      return (deps.fetcher ?? fetch)(url, init);
+      return send(url, init);
     }) as typeof fetch;
     const product = await guard();
     if (

@@ -8,9 +8,10 @@ import { db } from '@/server/db';
 import { requireProductAction } from '@/features/products/server/access';
 import { assertAssistantAccess } from '@/features/assistant/server/metrics';
 import { shopeeApplicationId } from '@/features/shopee/authorization';
+import { ShopeeApiError } from '@/features/shopee/server/client';
 import { readShopeeAccess } from '@/features/shopee/server/connection';
 import { importedProduct } from './catalog-data';
-import { recoveredPublicationOptions, recoveredCategoryOptions } from './publication-options';
+import { loadRecoveredPublicationOptions } from './publication-options';
 import {
   recoveredPublication,
   saveRecoveredPublicationOptions,
@@ -24,6 +25,8 @@ import { publicationLocked, recoveredConfirmationSchema } from '../publication';
 const root = '/loja-pronta/produtos/recovered';
 const pathFor = (id: string) => `${root}/${id}/publish`;
 const productId = (form: FormData) => z.guid().parse(form.get('productId'));
+const METADATA_TIMEOUT_MS = 25_000;
+
 async function currentAccess(userId: string) {
   if (!recoveredPublicationEnabled()) throw new Error('disabled');
   const config = await assertAssistantAccess(userId, 'loja-pronta');
@@ -35,21 +38,36 @@ export async function startRecoveredPublication(form: FormData): Promise<void> {
   return runAsStudent('startRecoveredPublication', async () => {
     const { userId } = await requireProductAction('loja-pronta');
     const parsed = z.guid().safeParse(form.get('productId'));
-    if (!parsed.success) redirect(root);
+    if (!parsed.success) {
+      redirect(root);
+    }
+
     const id = parsed.data;
+    const startedAt = Date.now();
     let result = 'unavailable';
+    let stage = 'catalog';
+    let deadline: AbortSignal | undefined;
     try {
       const imported = await importedProduct(db.$client, userId, id);
-      if (!imported) throw new Error('scope');
+      if (!imported) {
+        throw new Error('scope');
+      }
+
       const existing = await recoveredPublication(db.$client, userId, id);
-      if (existing && publicationLocked(existing.status)) result = 'ready';
-      else {
-        if (!(await consumeAttempt('shopeePerUser', userId))) throw new Error('limited');
+      if (existing && publicationLocked(existing.status)) {
+        result = 'ready';
+      } else if (!(await consumeAttempt('shopeePerUser', userId))) {
+        result = 'limited';
+      } else {
+        stage = 'connection';
         const { config, access } = await currentAccess(userId);
-        let context = await recoveredPublicationOptions(config, access);
+
+        stage = 'metadata';
+        deadline = AbortSignal.timeout(METADATA_TIMEOUT_MS);
         const categoryId = Number(form.get('categoryId') || imported.product.categoryId);
-        if (context.categories.some((row) => row.id === categoryId))
-          context = await recoveredCategoryOptions(config, access, context, categoryId);
+        const context = await loadRecoveredPublicationOptions(config, access, categoryId, deadline);
+
+        stage = 'save';
         await saveRecoveredPublicationOptions(
           db.$client,
           userId,
@@ -60,9 +78,21 @@ export async function startRecoveredPublication(form: FormData): Promise<void> {
         );
         result = 'ready';
       }
-    } catch {
-      /* Marketplace details and credentials never enter redirects. */
+    } catch (error) {
+      const timedOut = stage === 'metadata' && deadline?.aborted;
+      const reason = timedOut
+        ? 'timeout'
+        : error instanceof ShopeeApiError
+          ? error.reason
+          : 'unexpected';
+      console.warn('[shopee] Recovered publication preparation failed.', {
+        stage,
+        reason,
+        elapsedMs: Date.now() - startedAt,
+      });
+      result = timedOut ? 'timeout' : 'unavailable';
     }
+
     revalidatePath(pathFor(id));
     redirect(`${pathFor(id)}?resultado=${result}`);
   });
