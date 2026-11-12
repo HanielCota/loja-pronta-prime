@@ -63,11 +63,13 @@ import { runSllCopyAction, saveSllCopy } from './copy-actions';
 import {
   createAccount,
   endAccountSessions,
+  generateStudentTemporaryPassword,
   resetStudentPassword,
   saveAccount,
   setAccountBlocked,
   type AccountActionState,
   type NewAccountState,
+  type TemporaryPasswordState,
 } from './account-actions';
 import type { BannerActionState, EditorActionState, ResourceActionState } from '../structure-types';
 
@@ -778,7 +780,7 @@ export async function restoreSllResourceForm(data: FormData): Promise<void> {
   await restoreSllResource(data);
 }
 
-export type { AccountActionState, NewAccountState } from './account-actions';
+export type { AccountActionState, NewAccountState, TemporaryPasswordState } from './account-actions';
 
 export async function createAccountForm(previous: NewAccountState, data: FormData) {
   return createAccount(previous, data);
@@ -798,6 +800,13 @@ export async function endAccountSessionsForm(previous: AccountActionState, data:
 
 export async function resetStudentPasswordForm(previous: AccountActionState, data: FormData) {
   return resetStudentPassword(previous, data);
+}
+
+export async function generateStudentTemporaryPasswordForm(
+  previous: TemporaryPasswordState,
+  data: FormData,
+) {
+  return generateStudentTemporaryPassword(previous, data);
 }
 
 /** Quantas pessoas estão online agora (o número ao lado de "Online agora" no menu). */

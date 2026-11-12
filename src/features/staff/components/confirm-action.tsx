@@ -18,7 +18,7 @@ export function ConfirmAction({
   label: string;
   title: string;
   description: string;
-  variant?: 'ghost' | 'destructive';
+  variant?: 'ghost' | 'soft' | 'destructive';
   children: ReactNode;
 }) {
   const box = useRef<HTMLDetailsElement>(null);

@@ -4,7 +4,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { nextCookies } from 'better-auth/next-js';
 import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { verifyPassword } from 'better-auth/crypto';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { admin } from 'better-auth/plugins';
 import {
   PASSWORD_MAX_LENGTH,
@@ -69,11 +69,24 @@ export const auth = betterAuth({
     // login seguinte pediria mais uma confirmação por email).
     onPasswordReset: async ({ user }) => {
       await db.transaction(async (tx) => {
-        await tx
+        const version = 'credentialVersion' in user ? user.credentialVersion : null;
+        // Preserve a required password change set by a newer administrative reset.
+        const [updated] = await tx
           .update(schema.user)
           .set({ mustChangePassword: false, emailVerified: true, credentialVersion: randomUUID() })
-          .where(eq(schema.user.id, user.id));
-        await revokeFirstPasswordLink(tx, user.id);
+          .where(
+            and(
+              eq(schema.user.id, user.id),
+              typeof version === 'string'
+                ? eq(schema.user.credentialVersion, version)
+                : isNull(schema.user.credentialVersion),
+            ),
+          )
+          .returning({ id: schema.user.id });
+
+        if (updated) {
+          await revokeFirstPasswordLink(tx, user.id);
+        }
       });
     },
     sendResetPassword: async ({ user, url }) => {

@@ -12,6 +12,12 @@ similarly requires a fresh recovery link, including when the previous password w
 email correction before promoting the account. Existing admins who keep their role keep their
 personal credentials.
 
+When a student with an active account and a verified email cannot receive the recovery email,
+an administrator can generate a random temporary password on the account page. Issuing it replaces
+the previous credential and revokes all sessions and outstanding password reset links. The
+administrator can copy it from the confirmation result and share it privately after confirming the
+student's identity. The student must choose a personal password before opening the member area.
+
 ## Rollout
 
 1. Verify that the authentication email sender is configured and that students receive recovery

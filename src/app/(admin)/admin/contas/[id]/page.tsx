@@ -13,6 +13,7 @@ import {
   AccountDetailsForm,
   AccountPasswordResetForm,
   AccountSessionsForm,
+  AccountTemporaryPasswordForm,
 } from '@/features/admin/components/account-forms';
 import { ProductAccessManager } from '@/features/admin/components/product-access-manager';
 import { hasAdminRole, isStudentRole } from '@/features/admin/access';
@@ -99,6 +100,7 @@ export default async function AdminAccountPage({
             </h2>
             <AccountDetailsForm
               admin={hasAdminRole(account.role)}
+              credentialVersion={account.credentialVersion}
               email={account.email}
               id={account.id}
               mustChangePassword={account.mustChangePassword ?? false}
@@ -208,14 +210,16 @@ export default async function AdminAccountPage({
                   Acesso à plataforma
                 </h2>
                 <p className="mt-2 text-body text-muted-foreground">
-                  {isStudentRole(account.role)
-                    ? 'Se ela não consegue entrar, desative a senha atual e oriente a recuperação por email. '
-                    : null}
                   Bloquear desconecta a conta e impede que ela entre de novo até ser desbloqueada.
                 </p>
               </div>
-              {/* Esta opção de recuperação vale apenas para contas de aluna. */}
               {isStudentRole(account.role) ? <AccountPasswordResetForm id={account.id} /> : null}
+              {isStudentRole(account.role) && !account.banned && account.emailVerified ? (
+                <AccountTemporaryPasswordForm
+                  id={account.id}
+                  credentialVersion={account.credentialVersion}
+                />
+              ) : null}
               <AccountSessionsForm id={account.id} />
               <AccountBlockForm blocked={account.banned ?? false} id={account.id} />
             </section>

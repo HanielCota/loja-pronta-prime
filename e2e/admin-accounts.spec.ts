@@ -169,6 +169,78 @@ test('o formulário da conta salva sem JavaScript', async ({ browser }) => {
 
 for (const mobile of [false, true]) {
   for (const dark of [false, true]) {
+    test(`temporary password: ${mobile ? 'mobile' : 'desktop'}, ${dark ? 'dark' : 'light'}`, async ({
+      page,
+    }) => {
+      const admin = await createAccount(`admin-recovery-${mobile}-${dark}`, true);
+      const target = await createAccount(`student-recovery-${mobile}-${dark}`);
+      await page.setViewportSize(
+        mobile ? { width: 390, height: 844 } : { width: 1440, height: 1000 },
+      );
+      await page.addInitScript(
+        (useDark) => localStorage.setItem('theme', useDark ? 'dark' : 'light'),
+        dark,
+      );
+      await signIn(page, admin.email, PASSWORD, `/admin/contas/${target.id}`);
+      const form = page.getByRole('form', { name: 'Gerar senha temporária' });
+      await form.getByText('Gerar senha temporária', { exact: true }).press('Enter');
+      await form.getByRole('button', { name: 'Confirmar e gerar senha' }).click();
+      await expect(form.getByText('Senha temporária gerada.')).toBeVisible();
+      await expect(form.locator('code')).toBeVisible();
+      await expect(page.getByRole('combobox', { name: 'Senha no próximo acesso' })).toHaveText(
+        'Precisa criar uma senha nova',
+      );
+      await expectNoA11yViolations(page);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      );
+    });
+  }
+}
+
+test('temporary password restores access without email or JavaScript', async ({ browser }) => {
+  const admin = await createAccount('admin-recovery-nojs', true);
+  const target = await createAccount('student-recovery-nojs');
+  const adminContext = await browser.newContext({ javaScriptEnabled: false });
+  const studentContext = await browser.newContext();
+  try {
+    const adminPage = await adminContext.newPage();
+    const studentPage = await studentContext.newPage();
+    const targetPath = `/admin/contas/${target.id}`;
+    await signIn(studentPage, target.email, PASSWORD, '/perfil');
+    await signIn(adminPage, admin.email, PASSWORD, targetPath);
+    const form = adminPage.getByRole('form', { name: 'Gerar senha temporária' });
+    await form.getByText('Gerar senha temporária', { exact: true }).click();
+    await form.getByRole('button', { name: 'Confirmar e gerar senha' }).click();
+    const password = await form.locator('code').innerText();
+    expect(password).toMatch(/^[a-f0-9]{24}$/);
+
+    await adminPage.goto(targetPath);
+    await expect(form.locator('code')).toHaveCount(0);
+    await expect(adminPage.getByLabel('Senha no próximo acesso')).toHaveValue('yes');
+    await studentPage.goto('/perfil');
+    await expect(studentPage).toHaveURL(/\/entrar\?/);
+    await signIn(studentPage, target.email, PASSWORD, '/perfil');
+    await expect(studentPage).toHaveURL(/\/entrar\?/);
+    await signIn(studentPage, target.email, password, '/perfil');
+    await expect(studentPage).toHaveURL(/\/primeiro-acesso/);
+    const newPassword = 'My new personal password!';
+    await studentPage.getByLabel('Senha nova').fill(newPassword);
+    await studentPage.getByRole('button', { name: 'Salvar e entrar' }).click();
+    await expect(studentPage).toHaveURL(/\/perfil$/);
+    await studentContext.clearCookies();
+    await signIn(studentPage, target.email, password, '/perfil');
+    await expect(studentPage).toHaveURL(/\/entrar\?/);
+    await signIn(studentPage, target.email, newPassword, '/perfil');
+    await expect(studentPage).toHaveURL(/\/perfil$/);
+  } finally {
+    await adminContext.close();
+    await studentContext.close();
+  }
+});
+
+for (const mobile of [false, true]) {
+  for (const dark of [false, true]) {
     test(`confirmação de arquivo: ${mobile ? 'celular' : 'computador'}, ${dark ? 'escuro' : 'claro'}`, async ({
       page,
     }) => {
