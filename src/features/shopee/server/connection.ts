@@ -347,9 +347,12 @@ export async function getShopeeStatus(userId: string, config: ShopeeConfiguratio
   }
 }
 
-export async function hasShopeeConnection(userId: string, config: ShopeeConfiguration) {
+export async function getActiveShopeeConnection(userId: string, config: ShopeeConfiguration) {
   const [stored] = await db
-    .select({ shopId: shopeeConnections.shopId })
+    .select({
+      shopId: shopeeConnections.shopId,
+      authorizationId: shopeeConnections.authorizationId,
+    })
     .from(shopeeConnections)
     .where(
       and(
@@ -357,7 +360,11 @@ export async function hasShopeeConnection(userId: string, config: ShopeeConfigur
         isNull(shopeeConnections.revokedAt),
       ),
     );
-  return Boolean(stored);
+  return stored ?? null;
+}
+
+export async function hasShopeeConnection(userId: string, config: ShopeeConfiguration) {
+  return Boolean(await getActiveShopeeConnection(userId, config));
 }
 
 /** A desconexão espera a escrita em andamento e impede o envio de qualquer escrita seguinte. */

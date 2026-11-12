@@ -137,6 +137,7 @@ export const legacyCatalogPublications = pgTable(
       .references(() => user.id, { onDelete: 'cascade' }),
     applicationId: text('application_id').notNull(),
     shopId: bigint('shop_id', { mode: 'number' }).notNull(),
+    authorizationId: uuid('authorization_id'),
     status: text('status').$type<RecoveredPublicationStatus>().notNull().default('editing'),
     context: jsonb('context').$type<PublicationContext>().notNull(),
     intent: jsonb('intent').$type<RecoveredPublicationIntent>(),

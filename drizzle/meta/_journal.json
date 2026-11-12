@@ -575,6 +575,13 @@
       "when": 1794496310344,
       "tag": "0081_hotmart-first-access-email",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1794519165377,
+      "tag": "0082_shopee-recovered-authorization",
+      "breakpoints": true
     }
   ]
 }

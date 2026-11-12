@@ -14,6 +14,9 @@ recorded separately from code integration.
   25 seconds. Show progress and retry messages, and log only the failed stage, reason, and timing.
 - Serialize recovered listing writes with disconnect and check the exact connection authorization
   before sending each write. A listing with an uncertain result still requires reconciliation.
+- Bind each recovered listing review and confirmation to the active Shopee authorization. The
+  worker rejects older approvals after reconnecting the same store. Migration
+  `0082_shopee-recovered-authorization` blocks pending and preparing rows without that binding.
 
 ### Student account recovery
 

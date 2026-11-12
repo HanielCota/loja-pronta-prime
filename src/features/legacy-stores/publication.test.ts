@@ -111,6 +111,7 @@ test('confirmation fingerprints cover destination, packaging, all offers and rev
     importId: randomUUID(),
     applicationId: 'live:1',
     shopId: 123,
+    authorizationId: randomUUID(),
     context,
     intent: { offer, productHash: 'a', sourceHash: 'b', revision: 1 },
     expiresAt: new Date(Date.now() + 1000),
@@ -119,10 +120,13 @@ test('confirmation fingerprints cover destination, packaging, all offers and rev
   for (const changed of [
     { ...snapshot, shopId: 124 },
     { ...snapshot, applicationId: 'sandbox:1' },
+    { ...snapshot, authorizationId: randomUUID() },
     { ...snapshot, intent: { ...snapshot.intent, revision: 2 } },
     { ...snapshot, intent: { ...snapshot.intent, offer: { ...offer, stock: 4 } } },
-  ])
+  ]) {
     expect(recoveredPublicationFingerprint(changed)).not.toBe(hash);
+  }
+
   expect(publicationLocked('review')).toBe(false);
   expect(publicationLocked('pending')).toBe(true);
   expect(publicationLocked('unknown')).toBe(true);
