@@ -10,6 +10,17 @@ type PatchNoteDay = {
 /** Curated daily notes, newest first. Dates follow America/Sao_Paulo. */
 export const patchNotes: readonly PatchNoteDay[] = [
   {
+    date: '2026-11-12',
+    changes: [
+      {
+        kind: 'Novo',
+        title: 'Email automático para criar a primeira senha',
+        description:
+          'Após a atualização, quando uma compra aprovada pela Hotmart liberar o acesso de uma nova aluna, ela receberá um link no email da compra para criar a própria senha. Se o link vencer, ela poderá pedir outro na tela de entrada.',
+      },
+    ],
+  },
+  {
     date: '2026-11-11',
     changes: [
       {

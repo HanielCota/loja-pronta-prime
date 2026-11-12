@@ -568,6 +568,13 @@
       "when": 1794400667143,
       "tag": "0080_shopee-connection-scope",
       "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1794496310344,
+      "tag": "0081_hotmart-first-access-email",
+      "breakpoints": true
     }
   ]
 }

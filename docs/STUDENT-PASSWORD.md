@@ -1,8 +1,10 @@
 # Student password and account recovery
 
-New Hotmart and historical import accounts start without a password. Students choose the recovery
-link on the login page and enter their purchase email. The one-time link lets them create a personal
-password. Repeated purchases preserve existing credentials and product access.
+New Hotmart and historical import accounts start without a password. When Hotmart approval creates
+an account and grants access, the worker sends a one-time link to the purchase email. The link is
+valid for one hour. Students can request another link from the login page with the purchase email.
+Historical imports use that self-service flow. Repeated purchases preserve existing credentials and
+product access.
 
 The administrative student recovery action disables the current password and revokes sessions and
 existing recovery links. Ask the student to request a fresh link from the login page. Admin promotion
@@ -13,7 +15,8 @@ personal credentials.
 ## Rollout
 
 1. Verify that the authentication email sender is configured and that students receive recovery
-   emails. Update purchase instructions to direct students to the login page's recovery link.
+   emails. After the first-access migration, verify that the worker sends the invitation for a new
+   test purchase. Point students to the login page's recovery link if their invitation expires.
 2. Stop old web and worker instances before switching traffic to the new release. Old versions can
    still accept or create the shared credential.
 3. Run the normal production startup. Migration `0077_credential-security-and-delivery-review`

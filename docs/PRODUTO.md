@@ -126,7 +126,7 @@ Os limites de nome (30) e descrição (500) estão em `src/config/brand.ts`. A c
   email ou senha incorretos oferecem “Redefinir minha senha”, que abre a recuperação existente.
 - A recuperação de senha permite criar a primeira senha ou trocar uma senha existente, por link enviado ao email pela Resend. Confirmação de email usa o mesmo provedor. O envio depende do domínio verificado e de `RESEND_API_KEY` e `EMAIL_FROM` configurados no servidor.
 - Contas marcadas com senha temporária precisam criar outra antes de acessar as áreas.
-- Hotmart purchase notifications verify the token, create an account without a password, and grant the mapped product. New students request a link using the purchase email to create their own password. Subsequent purchases keep existing credentials. See [student password maintenance](STUDENT-PASSWORD.md) for the retirement of the shared password.
+- Hotmart purchase notifications verify the token and grant the mapped product. When approval creates a new account, the worker sends a first-password link to the purchase email. Students can request a fresh link on the login page. Subsequent purchases keep existing credentials. See [student password maintenance](STUDENT-PASSWORD.md) for the retirement of the shared password.
 - Reembolso e contestação recalculam o acesso daquele produto, preservando outra compra ativa ou concessão manual. A política para cancelamento de assinatura continua pendente.
 
 Detalhes atuais e fluxo de convite planejado: `docs/INTEGRACAO-HOTMART.md`. Contas de desenvolvimento são criadas com `bun run dev:aluna`; não representam compras reais.
@@ -175,7 +175,7 @@ Também dá pra criar uma conta pelo painel (Contas → Criar conta), para quem 
 
 O painel abre numa visão geral com os números das contas e compras e com quem está online agora: as áreas das alunas avisam a página aberta a cada 30 segundos, só com a aba à vista, e conta como online quem teve um aviso gravado nos últimos 2 minutos (na mesma página, só um aviso em dois é gravado, pra poupar o banco). Guarda só a última página de cada conta, sem histórico, IP ou localização. Junto, guarda o aparelho daquele acesso: o user agent e o que o navegador conta (tela, janela, idioma, fuso horário, toque, tema, app instalado, tipo de conexão e, no Chrome, a versão do sistema e o modelo). O admin mostra se é celular, tablet ou computador, o sistema, o navegador e se o link foi aberto dentro de outro app, como o Instagram.
 
-O painel permite liberar ou remover um produto de uma conta existente com motivo e histórico, configurar dois códigos distintos de produtos Hotmart e o token, e consultar avisos de compras. Salvar a configuração não testa a conexão externa nem conclui o convite por email.
+The panel lets administrators grant or remove a product with a recorded reason, configure two Hotmart product codes and the token, and review purchase notifications. Saving the settings does not test the external connection.
 
 Um painel de todas as lojas, histórico de montagem por loja, métricas comerciais e contagem de compradoras que entraram continuam fora da entrega atual.
 
