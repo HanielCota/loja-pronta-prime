@@ -20,6 +20,7 @@ import {
   confirmRecoveredPublicationAction,
 } from '@/features/legacy-stores/server/publication-actions';
 import { RecoveredBarcodeFields } from '@/features/legacy-stores/components/recovered-barcode-fields';
+import { RecoveredPreparationButton } from '@/features/legacy-stores/components/recovered-preparation-button';
 import {
   recoveredPublicationMessages,
   activeRecoveredAttributes,
@@ -30,6 +31,15 @@ import { formatCentsBRL } from '@/lib/format-money';
 export const metadata: Metadata = { title: 'Publicar produto recuperado' };
 const money = (value: number) => (value / 100).toFixed(2).replace('.', ',');
 const checkboxLabel = 'flex min-h-11 cursor-pointer items-center gap-3 text-body';
+const resultMessages = {
+  invalid:
+    'Confira os campos. Informe o custo, o preço e o estoque de cada opção. O preço precisa ser maior que o custo, e as variações precisam ter todas as combinações. Confirme os dados atuais antes de continuar.',
+  expired:
+    'A revisão venceu, o produto mudou ou a loja foi trocada. Prepare uma nova revisão antes de confirmar.',
+  timeout: 'A consulta à Shopee demorou mais que o esperado. Tente preparar a publicação de novo.',
+  limited: 'Aguarde um minuto antes de tentar preparar a publicação de novo.',
+  unavailable: 'Não foi possível consultar a Shopee. Confira a conexão da loja e tente novamente.',
+} as const;
 
 export default async function PublishRecoveredProductPage({
   params,
@@ -51,6 +61,10 @@ export default async function PublishRecoveredProductPage({
     canUseShopee(config, session.user.id, session.user.role);
   const connected = enabled && config ? await hasShopeeConnection(session.user.id, config) : false;
   const result = (await searchParams).resultado;
+  const resultMessage =
+    result && Object.hasOwn(resultMessages, result)
+      ? resultMessages[result as keyof typeof resultMessages]
+      : undefined;
   const product = imported.product;
   const offer = row?.intent?.offer;
   const expired =
@@ -70,14 +84,8 @@ export default async function PublishRecoveredProductPage({
       <Button asChild variant="soft" size="inline" className="w-fit px-5">
         <Link href={path}>Voltar ao produto</Link>
       </Button>
-      {result && ['unavailable', 'invalid', 'expired'].includes(result) ? (
-        <output className="rounded-2xl bg-primary-soft p-5 text-body">
-          {result === 'invalid'
-            ? 'Confira os campos. Informe o custo, o preço e o estoque de cada opção. O preço precisa ser maior que o custo, e as variações precisam ter todas as combinações. Confirme os dados atuais antes de continuar.'
-            : result === 'expired'
-              ? 'A revisão venceu, o produto mudou ou a loja foi trocada. Prepare uma nova revisão antes de confirmar.'
-              : 'Não foi possível consultar a Shopee. Confira a conexão da loja e tente novamente.'}
-        </output>
+      {resultMessage ? (
+        <output className="rounded-2xl bg-primary-soft p-5 text-body">{resultMessage}</output>
       ) : null}
       <section className={`${panelCard} gap-5`} aria-labelledby="publication-status">
         <h2 id="publication-status" className="text-title font-semibold">
@@ -124,7 +132,7 @@ export default async function PublishRecoveredProductPage({
               Consulte as categorias e os fretes da sua loja. Depois, informe os dados atuais do
               fornecedor e confira o resumo.
             </p>
-            <Button>Preparar publicação</Button>
+            <RecoveredPreparationButton />
           </form>
         ) : null}
         {row && ['pending', 'preparing', 'sending', 'unknown', 'published'].includes(row.status) ? (
@@ -166,7 +174,7 @@ export default async function PublishRecoveredProductPage({
                   </option>
                 ))}
               </SelectMenu>
-              <Button variant="soft">Conferir categoria</Button>
+              <RecoveredPreparationButton category />
             </form>
           </section>
           {context.unsupported?.length ? (

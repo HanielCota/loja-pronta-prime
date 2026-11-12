@@ -1,6 +1,7 @@
 import { afterAll, expect, test } from 'bun:test';
 import { randomUUID } from 'node:crypto';
 import { Pool } from 'pg';
+import { db } from '../../src/server/db';
 import { seedRecoveredCatalog, fixtureImage } from '../support/recovered-catalog';
 import {
   importRecoveredProducts,
@@ -18,6 +19,7 @@ import {
 import { executeRecoveredPublication } from '../../src/features/legacy-stores/server/publication-worker';
 import { shopeeConfigurationSchema } from '../../src/features/shopee/authorization';
 import {
+  loadRecoveredPublicationOptions,
   recoveredPublicationOptions,
   recoveredCategoryOptions,
 } from '../../src/features/legacy-stores/server/publication-options';
@@ -27,6 +29,7 @@ import { rejection } from '../support/rejection';
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const owner = randomUUID(),
   other = randomUUID();
+const authorizationId = randomUUID();
 let fixture: Awaited<ReturnType<typeof seedRecoveredCatalog>>;
 const config = shopeeConfigurationSchema.parse({
   SHOPEE_PARTNER_ID: 1,
@@ -52,7 +55,7 @@ afterAll(async () => {
       await pool.query('DELETE FROM legacy_customers WHERE id=$1', [fixture.customerId]);
     }
   } finally {
-    await pool.end();
+    await Promise.all([pool.end(), db.$client.end()]);
   }
 });
 function input(version: string) {
@@ -199,7 +202,7 @@ async function confirmed(index: number) {
 const deps = (fake: ReturnType<typeof api>, enabled = () => true) => ({
   enabled,
   assertAccess: async () => config,
-  readAccess: async () => ({ shopId: 321, accessToken: 'test' }),
+  readAccess: async () => ({ shopId: 321, accessToken: 'test', authorizationId }),
   readImage: async () => fixtureImage,
   waitForItem: async () => {},
   fetcher: fake.fetcher,
@@ -211,11 +214,11 @@ test('recovered publication requires a current owned review and exact destinatio
       'INSERT INTO "user"(id,name,email,email_verified,must_change_password) VALUES($1,$1,$2,true,false)',
       [id, `${id}@example.invalid`],
     );
-  fixture = await seedRecoveredCatalog(pool, owner, 12);
+  fixture = await seedRecoveredCatalog(pool, owner, 13);
   await importRecoveredProducts(pool, owner, { storeId: fixture.storeId, productIds: fixture.ids });
   await pool.query(
-    "INSERT INTO shopee_connections(user_id,shop_id,application_id,access_token_encrypted,refresh_token_encrypted,access_token_expires_at) VALUES($1,321,'live:1','test','test',now()+interval '1 hour')",
-    [owner],
+    "INSERT INTO shopee_connections(user_id,shop_id,application_id,authorization_id,access_token_encrypted,refresh_token_encrypted,access_token_expires_at) VALUES($1,321,'live:1',$2,'test','test',now()+interval '1 hour')",
+    [owner, authorizationId],
   );
   const fake = api();
   const metadata = await recoveredPublicationOptions(
@@ -403,4 +406,64 @@ test('recovered publication rejects non-Brazilian or restricted shops before rea
     );
     expect(blocked.calls.map((call) => call.path)).toEqual(['/api/v2/shop/get_shop_info']);
   }
+});
+
+test('reconnecting the same shop cannot authorize the remaining writes of an in-flight listing', async () => {
+  const { job } = await confirmed(12);
+  const fake = api({
+    revoke: async () => {
+      await pool.query('UPDATE shopee_connections SET authorization_id=$2 WHERE user_id=$1', [
+        owner,
+        randomUUID(),
+      ]);
+    },
+  });
+
+  try {
+    expect(await executeRecoveredPublication(pool, job, deps(fake))).toBe('unknown');
+    expect(fake.calls.filter((call) => call.path.endsWith('/add_item'))).toHaveLength(1);
+    expect(fake.calls.filter((call) => call.path.endsWith('/update_item'))).toHaveLength(0);
+  } finally {
+    await pool.query('UPDATE shopee_connections SET authorization_id=$2 WHERE user_id=$1', [
+      owner,
+      authorizationId,
+    ]);
+  }
+});
+
+test('the preparation deadline stops brand pagination and cancels the active request', async () => {
+  const controller = new AbortController();
+  const fake = api();
+  const offsets: string[] = [];
+  let activeRequestAborted = false;
+  const fetcher = (async (request, init) => {
+    const url = new URL(String(request));
+    if (!url.pathname.endsWith('/get_brand_list')) {
+      return fake.fetcher(request, init);
+    }
+
+    const offset = url.searchParams.get('offset')!;
+    offsets.push(offset);
+    if (offset === '0') {
+      return Response.json({ error: '', response: { brand_list: [], has_next_page: true } });
+    }
+
+    controller.abort();
+    activeRequestAborted = init?.signal?.aborted ?? false;
+    init?.signal?.throwIfAborted();
+    throw new Error('The active request did not receive the preparation deadline.');
+  }) as typeof fetch;
+
+  const error = await rejection(
+    loadRecoveredPublicationOptions(
+      config,
+      { shopId: 321, accessToken: 'test' },
+      10,
+      controller.signal,
+      fetcher,
+    ),
+  );
+  expect(activeRequestAborted).toBe(true);
+  expect(offsets).toEqual(['0', '100']);
+  expect(error).toMatchObject({ name: 'ShopeeApiError', reason: 'unavailable' });
 });

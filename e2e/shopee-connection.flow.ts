@@ -1,9 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import { auth } from '@/server/auth/auth';
+import { importRecoveredProducts } from '@/features/legacy-stores/server/catalog-data';
+import { seedRecoveredCatalog } from '../tests/support/recovered-catalog';
 import { expectNoA11yViolations, signIn } from './support/auth';
 import { closeDatabase, database, PASSWORD } from './support/students';
 
-const recoveredPath = '/loja-pronta/produtos/recovered/connect';
+const catalogPath = '/loja-pronta/produtos/recovered';
+const recoveredPath = `${catalogPath}/connect`;
 const sllPath = '/sll/minhas-lojas/conectar';
 const authorize = (page: Page) => page.getByRole('button', { name: 'Autorizar na Shopee' });
 
@@ -129,4 +132,73 @@ test('an older authorization returns an SLL-only account to SLL with the expiry 
     (await database().query('select 1 from shopee_connections where user_id = $1', [userId]))
       .rowCount,
   ).toBe(0);
+});
+
+test.describe('without JavaScript', () => {
+  test.use({ javaScriptEnabled: false });
+
+  test('recovered catalog authorization follows the native form redirect to Shopee', async ({
+    page,
+  }, info) => {
+    const shopId =
+      459000 + info.config.projects.findIndex((project) => project.name === info.project.name);
+    await signInWithProduct(page, `native-${info.project.name}`, 'loja-pronta', recoveredPath);
+    const callback = await beginAuthorization(page, shopId);
+    await page.goto(callback.toString());
+    await expect(page.getByRole('heading', { name: 'Loja conectada' })).toBeVisible();
+  });
+});
+
+test('a stalled connection link can be retried with a new document request', async ({
+  page,
+}, info) => {
+  test.setTimeout(65_000);
+  const shopId =
+    460000 + info.config.projects.findIndex((project) => project.name === info.project.name);
+  const userId = await signInWithProduct(
+    page,
+    `retry-${info.project.name}`,
+    'loja-pronta',
+    recoveredPath,
+  );
+  await page.goto((await beginAuthorization(page, shopId)).toString());
+  await expect(page.getByRole('heading', { name: 'Loja conectada' })).toBeVisible();
+  const { storeId, ids } = await seedRecoveredCatalog(database(), userId, 1);
+  await importRecoveredProducts(database(), userId, { storeId, productIds: ids });
+
+  const stalled = Promise.withResolvers<void>();
+  await page.route(
+    (url) => url.pathname === recoveredPath,
+    async (route) => {
+      if (route.request().headers().rsc === '1') {
+        await stalled.promise;
+        await route.abort().catch(() => {});
+        return;
+      }
+
+      await route.continue();
+    },
+  );
+
+  try {
+    await page.goto(`${catalogPath}/${ids[0]}/publish`);
+    await selectTheme(page, info.project.name);
+    await page.clock.install();
+    await page.getByRole('link', { name: 'Gerenciar conexão da Shopee' }).click();
+    await expect(page.getByText('Carregando…', { exact: true })).toBeAttached();
+    await page.clock.fastForward(20_001);
+
+    const retry = page.getByRole('link', { name: 'Tentar abrir a página de novo' });
+    await expect(retry).toBeVisible();
+    await expect(page.getByRole('status').filter({ hasText: 'A página demorou' })).toBeVisible();
+    const documentRequest = page.waitForRequest(
+      (request) =>
+        new URL(request.url()).pathname === recoveredPath && request.isNavigationRequest(),
+    );
+    await retry.click();
+    await documentRequest;
+    await expect(page.getByRole('heading', { name: 'Loja conectada' })).toBeVisible();
+  } finally {
+    stalled.resolve();
+  }
 });

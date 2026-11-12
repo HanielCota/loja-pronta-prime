@@ -16,13 +16,18 @@ test('retornos OAuth não enviam código e estado no Referer de outra página', 
 });
 
 test('formulários OAuth permitem os provedores oficiais nas telas correspondentes', async () => {
-  const shopee = (await responseFor('/loja-pronta/shopee/conectar')).headers.get(
-    'Content-Security-Policy',
-  );
-  expect(shopee).toContain(
-    "form-action 'self' https://open.shopee.com https://open.sandbox.test-stable.shopee.com",
-  );
-  expect(shopee).not.toContain('bling.com.br');
+  for (const path of [
+    '/loja-pronta/shopee/conectar',
+    '/loja-pronta/produtos/recovered/connect',
+    '/sll/minhas-lojas/conectar',
+  ]) {
+    const shopee = (await responseFor(path)).headers.get('Content-Security-Policy');
+    expect(shopee).toContain(
+      "form-action 'self' https://open.shopee.com https://open.sandbox.test-stable.shopee.com",
+    );
+    expect(shopee).not.toContain('bling.com.br');
+  }
+
   const bling = (await responseFor('/admin/bling')).headers.get('Content-Security-Policy');
   expect(bling).toContain("form-action 'self' https://www.bling.com.br");
   expect(bling).not.toContain('shopee.com.br');

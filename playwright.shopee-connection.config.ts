@@ -25,6 +25,7 @@ export default defineConfig({
       SHOPEE_TOKEN_ENCRYPTION_KEY: 'ab'.repeat(32),
       SHOPEE_PILOT_USER_IDS: '',
       SHOPEE_ASSISTED_DELIVERY_ENABLED: 'false',
+      SHOPEE_RECOVERED_PUBLICATION_ENABLED: 'true',
       NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --require="${path.resolve('e2e/support/shopee-authorization-api.cjs').replaceAll('\\', '/')}"`,
     },
   },

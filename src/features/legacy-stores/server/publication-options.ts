@@ -11,6 +11,29 @@ const label = (
   fallback: string,
 ) => row.display_name || row.original_name || fallback;
 
+export async function loadRecoveredPublicationOptions(
+  config: ShopeeConfiguration,
+  access: Access,
+  categoryId: number,
+  signal: AbortSignal,
+  fetcher: typeof fetch = fetch,
+): Promise<PublicationContext> {
+  const boundedFetch = ((input, init) => {
+    signal.throwIfAborted();
+    return fetcher(input, {
+      ...init,
+      signal: init?.signal ? AbortSignal.any([signal, init.signal]) : signal,
+    });
+  }) as typeof fetch;
+
+  const context = await recoveredPublicationOptions(config, access, boundedFetch);
+  if (context.categories.some((category) => category.id === categoryId)) {
+    return recoveredCategoryOptions(config, access, context, categoryId, boundedFetch);
+  }
+
+  return context;
+}
+
 /** Read-only marketplace metadata. This step never uploads images or creates a listing. */
 export async function recoveredPublicationOptions(
   config: ShopeeConfiguration,
@@ -29,41 +52,43 @@ export async function recoveredPublicationOptions(
     {},
     fetcher,
   );
-  const categories = await readShopeeResource(
-    config,
-    access,
-    '/api/v2/product/get_category',
-    z.object({
-      category_list: z.array(
-        z.object({
-          category_id: id,
-          parent_category_id: z.number().optional(),
-          has_children: z.boolean(),
-          display_category_name: z.string().optional(),
-          original_category_name: z.string().optional(),
-        }),
-      ),
-    }),
-    { language: 'pt-BR' },
-    fetcher,
-  );
-  const channels = await readShopeeResource(
-    config,
-    access,
-    '/api/v2/logistics/get_channel_list',
-    z.object({
-      logistics_channel_list: z.array(
-        z.object({
-          logistics_channel_id: id,
-          enabled: z.boolean(),
-          logistics_channel_name: z.string().min(1),
-          fee_type: z.string().optional(),
-        }),
-      ),
-    }),
-    {},
-    fetcher,
-  );
+  const [categories, channels] = await Promise.all([
+    readShopeeResource(
+      config,
+      access,
+      '/api/v2/product/get_category',
+      z.object({
+        category_list: z.array(
+          z.object({
+            category_id: id,
+            parent_category_id: z.number().optional(),
+            has_children: z.boolean(),
+            display_category_name: z.string().optional(),
+            original_category_name: z.string().optional(),
+          }),
+        ),
+      }),
+      { language: 'pt-BR' },
+      fetcher,
+    ),
+    readShopeeResource(
+      config,
+      access,
+      '/api/v2/logistics/get_channel_list',
+      z.object({
+        logistics_channel_list: z.array(
+          z.object({
+            logistics_channel_id: id,
+            enabled: z.boolean(),
+            logistics_channel_name: z.string().min(1),
+            fee_type: z.string().optional(),
+          }),
+        ),
+      }),
+      {},
+      fetcher,
+    ),
+  ]);
   const names = new Map(categories.category_list.map((row) => [row.category_id, row]));
   return {
     version: randomUUID(),
@@ -141,38 +166,45 @@ export async function recoveredCategoryOptions(
 ): Promise<PublicationContext> {
   if (!context.categories.some((row) => row.id === categoryId))
     throw new Error('Categoria indisponível.');
-  const attributes = await readShopeeResource(
-    config,
-    access,
-    '/api/v2/product/get_attribute_tree',
-    z.object({
-      list: z.array(z.object({ category_id: id, attribute_tree: z.array(attributeSchema) })),
-    }),
-    { category_id_list: String(categoryId), language: 'pt-BR' },
-    fetcher,
-  );
-  const tree = attributes.list.find((row) => row.category_id === categoryId);
-  if (!tree) throw new Error('Categoria indisponível.');
   const range = z.object({
     min_limit: z.number().nonnegative(),
     max_limit: z.number().nonnegative(),
   });
-  const limits = await readShopeeResource(
-    config,
-    access,
-    '/api/v2/product/get_item_limit',
-    z.object({
-      price_limit: range,
-      stock_limit: range,
-      item_name_length_limit: range,
-      item_description_length_limit: range,
-      item_image_count_limit: range,
-      gtin_limit: z.object({ gtin_validation_rule: z.enum(['Mandatory', 'Flexible', 'Optional']) }),
-      size_chart_limit: z.object({ size_chart_mandatory: z.boolean() }).optional(),
-    }),
-    { category_id: String(categoryId) },
-    fetcher,
-  );
+  const [attributes, limits] = await Promise.all([
+    readShopeeResource(
+      config,
+      access,
+      '/api/v2/product/get_attribute_tree',
+      z.object({
+        list: z.array(z.object({ category_id: id, attribute_tree: z.array(attributeSchema) })),
+      }),
+      { category_id_list: String(categoryId), language: 'pt-BR' },
+      fetcher,
+    ),
+    readShopeeResource(
+      config,
+      access,
+      '/api/v2/product/get_item_limit',
+      z.object({
+        price_limit: range,
+        stock_limit: range,
+        item_name_length_limit: range,
+        item_description_length_limit: range,
+        item_image_count_limit: range,
+        gtin_limit: z.object({
+          gtin_validation_rule: z.enum(['Mandatory', 'Flexible', 'Optional']),
+        }),
+        size_chart_limit: z.object({ size_chart_mandatory: z.boolean() }).optional(),
+      }),
+      { category_id: String(categoryId) },
+      fetcher,
+    ),
+  ]);
+  const tree = attributes.list.find((row) => row.category_id === categoryId);
+  if (!tree) {
+    throw new Error('Category attributes are unavailable.');
+  }
+
   const unsupported: string[] = [];
   if (limits.size_chart_limit?.size_chart_mandatory)
     unsupported.push(

@@ -24,6 +24,18 @@ export const patchNotes: readonly PatchNoteDay[] = [
         description:
           'Após a atualização, uma admin poderá gerar uma senha temporária para uma aluna com conta ativa e email confirmado. A aluna poderá entrar com essa senha e precisará criar a própria na hora.',
       },
+      {
+        kind: 'Correção',
+        title: 'Mais clareza ao abrir páginas e preparar anúncios da Shopee',
+        description:
+          'Após a atualização, se uma página demorar para abrir, aparecerá um botão para tentar de novo. Em Produtos recuperados, a autorização funcionará mesmo sem JavaScript. A preparação do anúncio vai mostrar quando estiver consultando a Shopee e avisar se a consulta demorar demais.',
+      },
+      {
+        kind: 'Correção',
+        title: 'Desconexão durante a publicação de produtos recuperados',
+        description:
+          'Após a atualização, se você desconectar a loja durante uma publicação, o sistema impedirá novos envios daquela publicação. Se algo já tiver sido enviado, confira a situação do anúncio na Shopee.',
+      },
     ],
   },
   {

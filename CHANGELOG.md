@@ -5,6 +5,16 @@ recorded separately from code integration.
 
 ## 2026-11-12
 
+### Recovered Shopee connection and publication
+
+- Embed a unique deployment ID in each Next.js production build. A stalled in-app navigation
+  restores the previous page and offers a direct link to reload the destination.
+- Allow the recovered catalog's native authorization form to follow its redirect to Shopee.
+- Read independent marketplace metadata concurrently and cancel the interactive lookup after
+  25 seconds. Show progress and retry messages, and log only the failed stage, reason, and timing.
+- Serialize recovered listing writes with disconnect and check the exact connection authorization
+  before sending each write. A listing with an uncertain result still requires reconciliation.
+
 ### Student account recovery
 
 - Let administrators generate an individual temporary password for active student accounts with
