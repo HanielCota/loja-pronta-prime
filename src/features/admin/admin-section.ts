@@ -6,6 +6,7 @@ export type AdminSection =
   | 'welcome'
   | 'method'
   | 'courses'
+  | 'mentorship'
   | 'banners'
   | 'texts'
   | 'resources'
@@ -31,6 +32,7 @@ const SECTION_BY_SEGMENT: Readonly<Record<string, AdminSection>> = {
   hotmart: 'hotmart',
   bling: 'bling',
   experts: 'experts',
+  mentoria: 'mentorship',
   assistente: 'assistant',
   entregas: 'store-deliveries',
   chamados: 'tickets',

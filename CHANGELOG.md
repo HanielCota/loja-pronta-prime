@@ -3,6 +3,15 @@
 Dates use the America/Sao_Paulo time zone. Operational verification and rollout limits are
 recorded separately from code integration.
 
+## 2026-11-13
+
+### SLL mentorship
+
+- Add the SLL mentorship page and administrator editor for seven lesson slots, live dates in
+  Brasília time, and recording links. Unpublished lessons show a coming-soon state.
+- Migration `0083_sll-mentorship` creates the content tables. Existing course entitlements govern
+  access to the student page.
+
 ## 2026-11-12
 
 ### Recovered Shopee connection and publication

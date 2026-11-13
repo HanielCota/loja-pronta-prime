@@ -10,6 +10,17 @@ type PatchNoteDay = {
 /** Curated daily notes, newest first. Dates follow America/Sao_Paulo. */
 export const patchNotes: readonly PatchNoteDay[] = [
   {
+    date: '2026-11-13',
+    changes: [
+      {
+        kind: 'Novo',
+        title: 'Mentoria com Zé Mauro no SLL',
+        description:
+          'Após a atualização, abra Mentoria C/ Zé Mauro no menu do SLL para ver as aulas, o calendário e as gravações das lives. Os conteúdos aparecem conforme forem publicados.',
+      },
+    ],
+  },
+  {
     date: '2026-11-12',
     changes: [
       {

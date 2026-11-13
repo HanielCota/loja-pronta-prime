@@ -18,6 +18,7 @@ import {
   Rocket,
   Settings2,
   UsersRound,
+  Video,
   Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -137,6 +138,13 @@ const groups: readonly NavGroup[] = [
         label: 'Cursos',
         section: 'courses',
         Icon: LibraryBig,
+        requires: 'admin',
+      },
+      {
+        href: '/admin/mentoria',
+        label: 'Mentoria C/ Zé Mauro',
+        section: 'mentorship',
+        Icon: Video,
         requires: 'admin',
       },
       {

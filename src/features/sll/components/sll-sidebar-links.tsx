@@ -9,10 +9,12 @@ import {
   GraduationCap,
   LayoutDashboard,
   Store,
+  Video,
   Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SllCopy } from '../copy';
+import { MENTORSHIP_PATH, MENTORSHIP_TITLE } from '../mentorship';
 import { sllSidebarSection } from '../sidebar-section';
 
 type NavItem = { href: string; label: string; icon: typeof Store; exact?: boolean };
@@ -47,6 +49,7 @@ export function SllSidebarLinks({
     { href: '/sll/metodo', label: copy.sidebarMethod, icon: BookOpen },
     { href: '/sll/recursos', label: copy.sidebarResources, icon: Wrench },
     { href: '/sll/cursos', label: copy.sidebarCourses, icon: GraduationCap },
+    { href: MENTORSHIP_PATH, label: MENTORSHIP_TITLE, icon: Video },
   ];
   const section = sllSidebarSection(pathname, stages);
   // Fora do Método, a lista curta deixa os outros destinos à vista, como no site de referência.

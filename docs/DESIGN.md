@@ -506,6 +506,12 @@ o tema escuro e o alto contraste.
 
 ## Assistente e experts (17/10/2026)
 
+### SLL mentorship (November 13, 2026)
+
+The SLL navigation lists Mentorship after complementary courses. The member page uses the existing
+SLL page and panel cards for lessons, upcoming live sessions and recordings. The administrator page
+uses the existing form fields and buttons to edit the schedule and video links.
+
 ### Previous store records (October 21, 2026)
 
 Imported store history uses the existing `AreaPage` and `AdminPage`, `panelCard`, `Button`, brand tokens and typography. Members with previous stores and no current setup see their saved stores first. Administrators see the same history above the current setup in the existing account stage view. Store details show the recorded delivery, description, pending items and paginated products. Historical states are explicitly identified as saved records; external Shopee links use validated numeric identifiers. This adds no new visual system and does not change current setup progress.
