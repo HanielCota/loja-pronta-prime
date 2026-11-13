@@ -5,6 +5,14 @@ recorded separately from code integration.
 
 ## 2026-11-13
 
+### Hotmart second account
+
+- Accept two independently encrypted verification tokens on the existing webhook. Add the
+  second token in `/admin/hotmart` and leave the primary token field blank to preserve it.
+- Register numeric Hotmart products `8954689` (Loja Pronta) and `8954196` (SLL, Pri).
+  Authenticated notifications bind the numeric IDs to their provider ucodes. Search the admin
+  history by numeric ID and confirm original purchase notifications after activation.
+
 ### SLL mentorship
 
 - Add the SLL mentorship page and administrator editor for seven lesson slots, live dates in

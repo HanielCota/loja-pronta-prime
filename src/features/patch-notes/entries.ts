@@ -13,6 +13,12 @@ export const patchNotes: readonly PatchNoteDay[] = [
     date: '2026-11-13',
     changes: [
       {
+        kind: 'Melhoria',
+        title: 'Compras de duas contas da Hotmart',
+        description:
+          'Após a atualização, o painel poderá guardar um segundo token da Hotmart sem substituir o atual. Depois de configurado, os novos produtos da Loja Pronta e do SLL poderão liberar acesso junto com os produtos anteriores. O histórico aceita busca por ID da Hotmart.',
+      },
+      {
         kind: 'Novo',
         title: 'Mentoria com Zé Mauro no SLL',
         description:

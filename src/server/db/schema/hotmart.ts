@@ -15,6 +15,7 @@ import type { ExpertId } from '../../../config/experts';
 export const hotmartSettings = pgTable('hotmart_settings', {
   id: text('id').primaryKey(),
   encryptedHottok: text('encrypted_hottok').notNull(),
+  encryptedSecondaryHottok: text('encrypted_secondary_hottok'),
   updatedBy: text('updated_by').references(() => user.id, { onDelete: 'set null' }),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

@@ -10,32 +10,45 @@ export function HotmartSettingsForm({
   sll,
   store,
   configured,
+  secondaryConfigured,
 }: {
   sll: string;
   store: string;
   configured: boolean;
+  secondaryConfigured: boolean;
 }) {
   const [state, action, pending] = useActionState(saveHotmartSettings, {
     message: '',
     saved: false,
   });
   return (
-    <form action={action} className="flex flex-col gap-4">
-      <p className="text-body text-muted-foreground">
-        Copie o token de verificação e o código único de cada produto na Hotmart. O token já salvo
-        nunca aparece aqui.
+    <form action={action} aria-labelledby="hotmart-config" className="flex flex-col gap-4">
+      <p id="hotmart-token-help" className="text-body text-muted-foreground">
+        Use um token por conta da Hotmart. Deixe os campos de token vazios para manter os tokens
+        salvos.
       </p>
       <FloatingLabelInput
         id="hotmart-token"
-        label={
-          configured
-            ? 'Novo token de verificação (deixe vazio para manter)'
-            : 'Token de verificação da Hotmart'
-        }
+        label={configured ? 'Token principal (salvo)' : 'Token principal da Hotmart'}
         name="token"
         type="password"
-        autoComplete="off"
+        autoComplete="section-hotmart-primary new-password"
+        aria-describedby="hotmart-token-help"
+        maxLength={500}
         required={!configured}
+      />
+      <FloatingLabelInput
+        id="hotmart-secondary-token"
+        label={
+          secondaryConfigured || state.secondaryConfigured
+            ? 'Segundo token (salvo)'
+            : 'Segundo token (opcional)'
+        }
+        name="secondaryToken"
+        type="password"
+        autoComplete="section-hotmart-secondary new-password"
+        aria-describedby="hotmart-token-help"
+        maxLength={500}
       />
       <FloatingLabelInput
         id="hotmart-sll"

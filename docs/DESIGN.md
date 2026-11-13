@@ -335,6 +335,9 @@ o tema escuro e o alto contraste.
 
 ### Painel admin
 
+- The Hotmart settings form keeps both token fields masked and uses a shared instruction to
+  explain that leaving them blank preserves their saved values.
+
 - Hotmart recovery uses the existing `AdminShell`, `panelCard`, `FloatingLabelInput`,
   `Button` and disclosure patterns. Pending events appear before integration settings,
   with product identity, buyer email, written status, search and pagination. The overview

@@ -74,6 +74,85 @@ async function select(page: Page, name: string, label: string, value: string, no
   }
 }
 
+test('a second Hotmart token preserves legacy purchases and grants the two mapped products', async ({
+  page,
+  request,
+}) => {
+  const { adminEmail } = await seed(request);
+  const storeCode = randomUUID();
+  const sllCode = randomUUID();
+  const secondToken = randomUUID();
+  codes.push(storeCode, sllCode);
+  await db.$client.query(
+    "insert into hotmart_product_mappings (product_ucode, access) values ($1, 'loja-pronta'), ($2, 'sll')",
+    [storeCode, sllCode],
+  );
+
+  await signIn(page, adminEmail, password, '/admin/hotmart#hotmart-config');
+  const primary = page.getByLabel('Token principal (salvo)');
+  await expect(primary).toHaveValue('');
+  await page.getByLabel('Segundo token (opcional)').fill(secondToken);
+  await page.getByRole('button', { name: 'Salvar integração' }).click();
+  await expect(page.getByLabel('Segundo token (salvo)')).toHaveValue('');
+
+  const deliveries = [
+    { product: 'loja-pronta', id: 4072309, ucode: storeCode, token },
+    { product: 'loja-pronta', id: 8954689, ucode: randomUUID(), token: secondToken },
+    { product: 'sll', id: 8954196, ucode: randomUUID(), token: secondToken },
+  ];
+  const webhook = (hottok: string, data: object) =>
+    request.post('/api/hotmart/webhook', {
+      headers: { 'x-hotmart-hottok': hottok },
+      data,
+    });
+
+  for (const delivery of deliveries) {
+    const email = `${randomUUID()}@example.invalid`;
+    const transaction = randomUUID();
+    const now = Date.now();
+    emails.push(email);
+    codes.push(delivery.ucode);
+    const notification = {
+      id: randomUUID(),
+      event: 'PURCHASE_APPROVED',
+      version: '2.0.0',
+      creation_date: now,
+      data: {
+        buyer: { email },
+        product: { id: delivery.id, ucode: delivery.ucode },
+        purchase: { transaction, order_date: now - 1000 },
+      },
+    };
+    expect((await webhook(randomUUID(), notification)).status()).toBe(401);
+    expect((await webhook(delivery.token, notification)).status()).toBe(200);
+
+    const access = () =>
+      db.$client.query(
+        'select product from student_products join "user" on "user".id = student_products.user_id where email = $1',
+        [email],
+      );
+    expect((await access()).rows).toEqual([{ product: delivery.product }]);
+
+    await page.getByLabel('Produto, ID Hotmart ou transação').fill(String(delivery.id));
+    await page.getByRole('button', { name: 'Buscar no histórico' }).click();
+    await expect(page.getByText(`Transação ${transaction}`, { exact: true })).toBeVisible();
+    await expect(
+      page.getByText('Compra aprovada; acesso liberado.', { exact: true }),
+    ).toBeVisible();
+
+    if (delivery.token === token) {
+      const refund = await webhook(token, {
+        ...notification,
+        id: randomUUID(),
+        event: 'PURCHASE_REFUNDED',
+        creation_date: now + 1000,
+      });
+      expect(refund.status()).toBe(200);
+      expect((await access()).rows).toEqual([]);
+    }
+  }
+});
+
 test('Hotmart first access and admin promotion both require a fresh email recovery', async ({
   page,
   browser,
@@ -177,7 +256,9 @@ for (const mobile of [false, true])
       await page.getByRole('link', { name: 'Ver pendências de acesso' }).click();
       await page.getByLabel('Buscar email, produto ou transação').fill(fixture.email);
       await page.getByRole('button', { name: 'Buscar', exact: true }).click();
-      await expect(page.getByRole('heading', { name: 'Recovery product' })).toBeVisible();
+      const pending = page.getByRole('region', { name: /Pendências de acesso/ });
+      await expect(pending.getByRole('heading', { name: 'Recovery product' })).toBeVisible();
+      await expect(page.getByLabel('Segundo token (opcional)')).toBeVisible();
       await expect(page.getByText('ID Hotmart: 6102550')).toBeVisible();
       await expectNoA11yViolations(page);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(

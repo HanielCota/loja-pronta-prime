@@ -9,7 +9,12 @@ New Hotmart accounts start without a password. Once an approval creates the acco
 
 O webhook é `/api/hotmart/webhook`. Cadastre na Hotmart o endereço HTTPS público mostrado no painel. São tratados `PURCHASE_APPROVED`/`PURCHASE_COMPLETE` como liberação e `PURCHASE_REFUNDED`/`PURCHASE_CHARGEBACK` como retirada imediata da transação. Cancelamento de assinatura continua sem política definida e não remove acesso. Reembolsar uma transação não remove outra compra ativa do mesmo produto nem um acesso concedido manualmente. A transação é a chave da compra: se a compradora trocar o email na Hotmart, os avisos seguintes (inclusive o reembolso) continuam valendo para a conta ligada à compra, e o histórico registra a troca. Um aviso da mesma transação com outro produto fica no histórico sem mudar acesso. Um aviso de produto sem mapeamento aparece no histórico e responde com erro temporário para permitir nova entrega após corrigir o código. O histórico não armazena o corpo completo do evento.
 
-O token é criptografado no banco com chave derivada de `BETTER_AUTH_SECRET`; trocar esse segredo exige migrar a configuração antes, ou cadastrar o token de novo. Até isso, o webhook responde erro temporário (503) e registra no log do servidor que o token precisa ser salvo de novo, para a Hotmart reenviar os avisos depois. O painel não devolve o token ao navegador.
+The webhook accepts either configured verification token. Both tokens are encrypted in the database
+with a key derived from `BETTER_AUTH_SECRET`, and the browser receives only the saved status.
+When adding a second Hotmart account, enter its token in the second field in `/admin/hotmart`.
+Blank token fields preserve the values already saved. If a token cannot be decrypted after a secret
+change, the other valid token still works. Requests that cannot be verified receive a retryable
+503 until an administrator saves the affected token again.
 
 ---
 
