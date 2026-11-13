@@ -11,6 +11,8 @@ recorded separately from code integration.
   Brasília time, and recording links. Unpublished lessons show a coming-soon state.
 - Migration `0083_sll-mentorship` creates the content tables. Existing course entitlements govern
   access to the student page.
+- Recheck the initiating administrator session inside mentorship writes and report database
+  failures or a live session removed by another administrator.
 
 ## 2026-11-12
 

@@ -94,6 +94,8 @@ const errors: Record<string, string> = {
   aula: 'Confira o título e use um link de vídeo do YouTube ou do Panda.',
   live: 'Confira o título, a data e o horário de Brasília. Use links de vídeo do YouTube.',
   removida: 'Esta live já foi removida. Atualize a agenda e tente de novo.',
+  acesso: 'Seu acesso mudou. Entre novamente para continuar.',
+  erro: 'Não foi possível salvar a alteração. Tente novamente.',
 };
 
 export default async function AdminMentorshipPage({

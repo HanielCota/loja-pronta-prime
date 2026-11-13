@@ -18,6 +18,12 @@ export const patchNotes: readonly PatchNoteDay[] = [
         description:
           'Após a atualização, abra Mentoria C/ Zé Mauro no menu do SLL para ver as aulas, o calendário e as gravações das lives. Os conteúdos aparecem conforme forem publicados.',
       },
+      {
+        kind: 'Correção',
+        title: 'Salvamento da agenda da mentoria',
+        description:
+          'Após a atualização, o painel vai conferir o acesso antes de salvar uma alteração e informar quando uma live já tiver sido removida.',
+      },
     ],
   },
   {
