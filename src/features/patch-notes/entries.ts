@@ -16,7 +16,13 @@ export const patchNotes: readonly PatchNoteDay[] = [
         kind: 'Novo',
         title: 'Mentoria com Zé Mauro no SLL',
         description:
-          'Após a atualização, abra Mentoria C/ Zé Mauro no menu do SLL para ver as aulas, o calendário e as gravações das lives. Os conteúdos aparecem conforme forem publicados.',
+          'Após a atualização, a aba Mentoria C/ Zé Mauro aparece no menu do SLL. Aulas, lives e gravações ficam disponíveis para quem tem uma compra válida da mentoria, depois que o produto for configurado e os conteúdos forem publicados.',
+      },
+      {
+        kind: 'Melhoria',
+        title: 'Busca no histórico da Hotmart',
+        description:
+          'Após a atualização, será possível buscar avisos da Hotmart pelo nome ou código do produto ou pela transação. Isso ajuda a conferir compras que já chegaram à Escala Shop.',
       },
       {
         kind: 'Correção',

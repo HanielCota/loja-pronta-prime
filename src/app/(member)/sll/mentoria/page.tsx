@@ -1,8 +1,13 @@
 import type { Metadata } from 'next';
 import { ArrowUpRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { panelCard } from '@/features/member/components/area-shell';
-import { requireProduct } from '@/features/products/server/access';
+import { CenteredMemberPage, panelCard } from '@/features/member/components/area-shell';
+import {
+  readProductAccess,
+  requireProduct,
+  requireStudent,
+} from '@/features/products/server/access';
+import { hasMentorshipPurchase } from '@/features/hotmart/server/mentorship-purchase';
 import {
   MENTORSHIP_LESSONS,
   MENTORSHIP_PATH,
@@ -27,13 +32,32 @@ function VideoLink({ href, label, title }: { href: string; label: string; title:
 }
 
 export default async function MentorshipPage() {
-  const { products } = await requireProduct('sll', MENTORSHIP_PATH);
+  const { session, products } = await requireStudent(MENTORSHIP_PATH);
+  const [sllAccess, mentorshipAccess] = await Promise.all([
+    readProductAccess('sll'),
+    hasMentorshipPurchase(session.user.id),
+  ]);
+
+  if (!mentorshipAccess) {
+    await requireProduct('sll', MENTORSHIP_PATH);
+
+    return (
+      <SllPage hasChoice={products.length > 1} title={MENTORSHIP_TITLE}>
+        <div className={panelCard}>
+          <p className="text-body">
+            As aulas e as lives são exclusivas de quem comprou a mentoria.
+          </p>
+        </div>
+      </SllPage>
+    );
+  }
+
   const [lessons, { upcoming, recordings }] = await Promise.all([
     getMentorshipLessons(),
     getMentorshipSchedule(),
   ]);
 
-  return (
+  const content = (
     <SllPage hasChoice={products.length > 1} title={MENTORSHIP_TITLE}>
       <section className={panelCard} aria-labelledby="mentorship-lessons">
         <h2 id="mentorship-lessons" className="text-headline font-semibold">
@@ -119,5 +143,13 @@ export default async function MentorshipPage() {
         )}
       </section>
     </SllPage>
+  );
+
+  return sllAccess ? (
+    content
+  ) : (
+    <CenteredMemberPage account={session.user} wide>
+      {content}
+    </CenteredMemberPage>
   );
 }

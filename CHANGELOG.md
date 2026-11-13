@@ -9,8 +9,14 @@ recorded separately from code integration.
 
 - Add the SLL mentorship page and administrator editor for seven lesson slots, live dates in
   Brasília time, and recording links. Unpublished lessons show a coming-soon state.
-- Migration `0083_sll-mentorship` creates the content tables. Existing course entitlements govern
-  access to the student page.
+- Migration `0083_sll-mentorship` creates the content tables. An active purchase of the exact
+  configured mentorship product unlocks the content. Buyers can enter with their purchase email
+  even if they have no SLL course purchase.
+- Search authenticated Hotmart notices by product name, product ucode or transaction in
+  `/admin/hotmart`. Set `HOTMART_MENTORSHIP_PRODUCT_UCODE` to the ucode confirmed for a
+  standalone mentorship product, then use the pending purchase recovery action for notices
+  already received with complete original data. The configured code must be distinct from any
+  existing SLL or Loja Pronta product. An unset ucode keeps student content locked.
 - Recheck the initiating administrator session inside mentorship writes and report database
   failures or a live session removed by another administrator.
 

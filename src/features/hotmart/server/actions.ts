@@ -1,6 +1,6 @@
 'use server';
 
-import { eq, desc, sql } from 'drizzle-orm';
+import { eq, desc, ilike, or, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { db } from '@/server/db';
@@ -94,15 +94,26 @@ export async function retryHotmartPendingEvents(): Promise<void> {
   redirect(`/admin/hotmart?resultado=${result.failed ? 'retry-failed' : 'retried'}`);
 }
 
-export async function getHotmartAdminState() {
+export async function getHotmartAdminState(query = '') {
   await requireAdmin('/admin/hotmart');
+  const pattern = `%${query.replace(/[\\%_]/g, '\\$&')}%`;
   const [settings, mappings, events] = await Promise.all([
     db.query.hotmartSettings.findFirst({
       columns: { id: true, updatedAt: true },
       where: eq(hotmartSettings.id, 'main'),
     }),
     db.query.hotmartProductMappings.findMany(),
-    db.query.hotmartEvents.findMany({ orderBy: desc(hotmartEvents.receivedAt), limit: 20 }),
+    db.query.hotmartEvents.findMany({
+      where: query
+        ? or(
+            eq(hotmartEvents.transaction, query),
+            eq(hotmartEvents.productUcode, query),
+            ilike(hotmartEvents.productName, pattern),
+          )
+        : undefined,
+      orderBy: [desc(hotmartEvents.receivedAt), desc(hotmartEvents.id)],
+      limit: 20,
+    }),
   ]);
   return { configured: Boolean(settings), updatedAt: settings?.updatedAt, mappings, events };
 }

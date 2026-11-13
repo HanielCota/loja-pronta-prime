@@ -10,6 +10,7 @@ import {
   hotmartPurchases,
   user,
 } from '@/server/db/schema';
+import { mentorshipProductUcode } from './mentorship-purchase';
 import { reconcileProductAccess } from './product-access';
 import { productIdentityConflict, resolveProductIdentity } from './product-identity';
 import {
@@ -111,7 +112,11 @@ async function purchaseEventResult(
   context: EventContext,
 ): Promise<string> {
   if (conflict) return productIdentityConflict;
-  if (!mapping.length) return 'Produto sem acesso configurado.';
+  const mentorship = context.productUcode === mentorshipProductUcode;
+  if (!mapping.length && !mentorship) {
+    return 'Produto sem acesso configurado.';
+  }
+
   if (context.effect === 'ignore') return 'Aviso sem mudança de acesso.';
   // A retained refund must block approvals even across recovery batches or live redeliveries.
   if (context.effect === 'grant') {
@@ -231,13 +236,21 @@ async function applyPurchaseEvent(
       await reconcileProductAccess(tx, linkedUserId, access);
     }
   }
-  return active
-    ? accessGranted
-      ? 'Compra aprovada; acesso liberado.'
-      : !purchasedAt
-        ? missingDateResult
-        : 'Compra fora do prazo válido; acesso não liberado.'
-    : 'Reembolso recebido; acesso recalculado.';
+  if (!active) {
+    return 'Reembolso recebido; acesso recalculado.';
+  }
+
+  if (!purchasedAt) {
+    return missingDateResult;
+  }
+
+  if (!accessGranted) {
+    return 'Compra fora do prazo válido; acesso não liberado.';
+  }
+
+  return mapping.length
+    ? 'Compra aprovada; acesso liberado.'
+    : 'Compra aprovada; acesso à mentoria liberado.';
 }
 
 /** Processa uma transação por vez; reprocessamento do mesmo ID não concede acesso novamente. */

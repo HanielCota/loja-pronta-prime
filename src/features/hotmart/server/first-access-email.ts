@@ -1,4 +1,5 @@
-import { and, eq, exists, lte, notExists } from 'drizzle-orm';
+import { and, eq, exists, lte, notExists, or } from 'drizzle-orm';
+import { mentorshipPurchaseExists } from './mentorship-purchase';
 import { EmailDeliveryError, sendFirstPasswordEmail } from '@/server/auth/emails';
 import { getFirstPasswordLink } from '@/server/auth/first-password-link';
 import { db } from '@/server/db';
@@ -37,11 +38,14 @@ async function claimFirstAccessEmail() {
           eq(user.email, email),
           eq(user.role, 'user'),
           eq(user.banned, false),
-          exists(
-            tx
-              .select({ id: studentProducts.userId })
-              .from(studentProducts)
-              .where(eq(studentProducts.userId, userId)),
+          or(
+            exists(
+              tx
+                .select({ id: studentProducts.userId })
+                .from(studentProducts)
+                .where(eq(studentProducts.userId, userId)),
+            ),
+            mentorshipPurchaseExists(userId),
           ),
           notExists(
             tx

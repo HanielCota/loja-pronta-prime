@@ -510,7 +510,10 @@ o tema escuro e o alto contraste.
 
 The SLL navigation lists Mentorship after complementary courses. The member page uses the existing
 SLL page and panel cards for lessons, upcoming live sessions and recordings. The administrator page
-uses the existing form fields and buttons to edit the schedule and video links.
+uses the existing form fields and buttons to edit the schedule and video links. SLL students
+without the purchase see an informational card. Buyers without the SLL course use the existing
+member page frame at the same address. The Hotmart history uses the existing search field and
+button to look up product names, product codes or transactions.
 
 ### Previous store records (October 21, 2026)
 
