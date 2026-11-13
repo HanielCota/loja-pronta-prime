@@ -1,6 +1,7 @@
 import { sql, type SQLWrapper } from 'drizzle-orm';
 import { env } from '@/config/env';
 import { db } from '@/server/db';
+import { HOTMART_RETRYABLE_RESULTS } from '../recovery';
 
 export const mentorshipProductUcode = env.HOTMART_MENTORSHIP_PRODUCT_UCODE;
 
@@ -20,6 +21,16 @@ export function mentorshipPurchaseExists(userId: string | SQLWrapper) {
       and not exists (
         select 1 from hotmart_product_ids n
         where n.product_id = p.product_id or n.product_ucode = p.product_ucode
+      )
+      and not exists (
+        select 1 from hotmart_events e
+        where e.transaction = p.transaction and e.product_ucode = p.product_ucode
+          and (e.product_id is null or p.product_id is null or e.product_id = p.product_id)
+          and e.event in ('PURCHASE_REFUNDED', 'PURCHASE_CHARGEBACK')
+          and e.result in (${sql.join(
+            HOTMART_RETRYABLE_RESULTS.map((result) => sql`${result}`),
+            sql`, `,
+          )})
       )
   )`;
 }

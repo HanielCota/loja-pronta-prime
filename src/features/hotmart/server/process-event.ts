@@ -111,13 +111,23 @@ async function purchaseEventResult(
   conflict: ProductIdentity['conflict'],
   context: EventContext,
 ): Promise<string> {
-  if (conflict) return productIdentityConflict;
+  if (conflict) {
+    return productIdentityConflict;
+  }
+
+  const previous = await tx.query.hotmartPurchases.findFirst({
+    where: eq(hotmartPurchases.transaction, context.transaction),
+  });
   const mentorship = context.productUcode === mentorshipProductUcode;
-  if (!mapping.length && !mentorship) {
+  const recordedRevocation = context.effect === 'revoke' && previous;
+  if (!mapping.length && !mentorship && !recordedRevocation) {
     return 'Produto sem acesso configurado.';
   }
 
-  if (context.effect === 'ignore') return 'Aviso sem mudança de acesso.';
+  if (context.effect === 'ignore') {
+    return 'Aviso sem mudança de acesso.';
+  }
+
   // A retained refund must block approvals even across recovery batches or live redeliveries.
   if (context.effect === 'grant') {
     const refund = await tx.query.hotmartEvents.findFirst({
@@ -132,9 +142,6 @@ async function purchaseEventResult(
     });
     if (refund) return pendingRefundResult;
   }
-  const previous = await tx.query.hotmartPurchases.findFirst({
-    where: eq(hotmartPurchases.transaction, context.transaction),
-  });
   // Erro aqui faria a Hotmart reenviar para sempre e o reembolso nunca seria aplicado;
   // por isso a diferença fica registrada no histórico em vez de virar falha.
   const mismatch = transactionMismatch(previous, {

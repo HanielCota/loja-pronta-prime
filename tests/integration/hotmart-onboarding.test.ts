@@ -153,3 +153,32 @@ test('a refund before processing cancels the invitation when it removes all acce
     }),
   ).toBeUndefined();
 });
+
+test('a refund deactivates a recorded purchase while its product is unconfigured', async () => {
+  const approved = purchase();
+  const transaction = approved.data.purchase.transaction;
+  const purchasedAt = new Date(approved.creation_date - 1000);
+  await db.insert(hotmartPurchases).values({
+    transaction,
+    buyerEmail: approved.data.buyer.email,
+    productUcode: code,
+    active: true,
+    purchasedAt,
+    expiresAt: new Date(approved.creation_date + 86_400_000),
+    lastEventAt: new Date(approved.creation_date),
+  });
+
+  expect(
+    await processHotmartEvent({
+      ...approved,
+      id: randomUUID(),
+      event: 'PURCHASE_REFUNDED',
+      creation_date: approved.creation_date + 1000,
+    }),
+  ).toBe('Reembolso recebido; acesso recalculado.');
+  expect(
+    await db.query.hotmartPurchases.findFirst({
+      where: eq(hotmartPurchases.transaction, transaction),
+    }),
+  ).toMatchObject({ active: false, purchasedAt });
+});

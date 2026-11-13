@@ -187,7 +187,19 @@ test('the webhook unlocks the mentorship alone and a refund removes access', asy
   await page.goto('/sll/metodo');
   await expect(page).toHaveURL('/sll/mentoria');
 
-  const refunded = await notify('PURCHASE_REFUNDED', Date.now());
+  const refundedAt = Date.now();
+  await database().query(
+    `insert into hotmart_events
+      (id, event, transaction, buyer_email, product_ucode, event_version, event_created_at, result)
+      values ($1, 'PURCHASE_REFUNDED', $2, $3, $4, '2.0.0', $5, 'Produto sem acesso configurado.')`,
+    [randomUUID(), mentorshipPurchase, emails[4], product.ucode, new Date(refundedAt)],
+  );
+  await page.goto('/sll/mentoria');
+  await expect(
+    page.getByRole('heading', { name: 'Seu acesso ainda não foi liberado' }),
+  ).toBeVisible();
+
+  const refunded = await notify('PURCHASE_REFUNDED', refundedAt);
   expect(await refunded.json()).toEqual({ result: 'Reembolso recebido; acesso recalculado.' });
   await page.goto('/sll/mentoria');
   await expect(

@@ -10,6 +10,8 @@ export default defineConfig({
   ...local,
   testMatch: 'sll-mentorship.flow.ts',
   workers: 1,
+  // The serial flow shares fixtures and purchase state across its scenarios.
+  retries: 0,
   webServer: {
     ...webServer,
     env: { HOTMART_MENTORSHIP_PRODUCT_UCODE: 'mentorship-browser-fixture' },

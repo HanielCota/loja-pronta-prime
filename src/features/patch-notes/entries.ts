@@ -19,6 +19,12 @@ export const patchNotes: readonly PatchNoteDay[] = [
           'Após a atualização, a aba Mentoria C/ Zé Mauro aparece no menu do SLL. Aulas, lives e gravações ficam disponíveis para quem tem uma compra válida da mentoria, depois que o produto for configurado e os conteúdos forem publicados.',
       },
       {
+        kind: 'Correção',
+        title: 'Reembolsos da mentoria',
+        description:
+          'Após a atualização, a mentoria fica bloqueada assim que a Escala Shop registra um reembolso da compra, mesmo se o código do produto estiver temporariamente desativado.',
+      },
+      {
         kind: 'Melhoria',
         title: 'Busca no histórico da Hotmart',
         description:
