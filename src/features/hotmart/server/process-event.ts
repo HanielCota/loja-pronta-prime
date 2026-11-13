@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { revalidateAdminOverview } from '@/features/admin/server/overview-cache';
-import { and, eq, inArray, ne, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, ne, or, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { purchaseExpiresAt } from '@/features/products/access-term';
 import {
@@ -10,6 +10,7 @@ import {
   hotmartPurchases,
   user,
 } from '@/server/db/schema';
+import { mentorshipProductUcode } from './mentorship-purchase';
 import { reconcileProductAccess } from './product-access';
 import { productIdentityConflict, resolveProductIdentity } from './product-identity';
 import {
@@ -110,9 +111,33 @@ async function purchaseEventResult(
   conflict: ProductIdentity['conflict'],
   context: EventContext,
 ): Promise<string> {
-  if (conflict) return productIdentityConflict;
-  if (!mapping.length) return 'Produto sem acesso configurado.';
-  if (context.effect === 'ignore') return 'Aviso sem mudança de acesso.';
+  if (conflict) {
+    return productIdentityConflict;
+  }
+
+  const previous = await tx.query.hotmartPurchases.findFirst({
+    where: eq(hotmartPurchases.transaction, context.transaction),
+  });
+  const mentorship = context.productUcode === mentorshipProductUcode;
+  const recordedRevocation = context.effect === 'revoke' && previous;
+  if (!mapping.length && !mentorship && !recordedRevocation) {
+    return 'Produto sem acesso configurado.';
+  }
+
+  if (context.effect === 'ignore') {
+    return 'Aviso sem mudança de acesso.';
+  }
+
+  const productId = context.event.data.product.id ?? previous?.productId;
+  const mismatch = transactionMismatch(previous, {
+    buyerEmail: context.email,
+    productUcode: context.productUcode,
+    productId: context.event.data.product.id,
+  });
+  if (mismatch === 'product') {
+    return 'Transação já registrada com outro produto; acesso mantido.';
+  }
+
   // A retained refund must block approvals even across recovery batches or live redeliveries.
   if (context.effect === 'grant') {
     const refund = await tx.query.hotmartEvents.findFirst({
@@ -120,24 +145,19 @@ async function purchaseEventResult(
       where: and(
         eq(hotmartEvents.transaction, context.transaction),
         eq(hotmartEvents.productUcode, context.productUcode),
+        productId == null
+          ? undefined
+          : or(isNull(hotmartEvents.productId), eq(hotmartEvents.productId, productId)),
         ne(hotmartEvents.id, context.event.id),
         inArray(hotmartEvents.event, ['PURCHASE_REFUNDED', 'PURCHASE_CHARGEBACK']),
         inArray(hotmartEvents.result, [...HOTMART_RETRYABLE_RESULTS]),
       ),
     });
-    if (refund) return pendingRefundResult;
+    if (refund) {
+      return pendingRefundResult;
+    }
   }
-  const previous = await tx.query.hotmartPurchases.findFirst({
-    where: eq(hotmartPurchases.transaction, context.transaction),
-  });
-  // Erro aqui faria a Hotmart reenviar para sempre e o reembolso nunca seria aplicado;
-  // por isso a diferença fica registrada no histórico em vez de virar falha.
-  const mismatch = transactionMismatch(previous, {
-    buyerEmail: context.email,
-    productUcode: context.productUcode,
-    productId: context.event.data.product.id,
-  });
-  if (mismatch === 'product') return 'Transação já registrada com outro produto; acesso mantido.';
+
   const result = await applyPurchaseEvent(tx, mapping, previous, mismatch, context);
   if (mismatch === 'email')
     return result + ' O email mudou na Hotmart; a compra segue na mesma conta.';
@@ -188,6 +208,7 @@ async function applyPurchaseEvent(
       : orderDate;
   const expiresAt = purchasedAt ? purchaseExpiresAt(purchasedAt) : null;
   const now = new Date();
+  const productId = event.data.product.id ?? previous?.productId ?? null;
   const accessGranted = Boolean(
     active && purchasedAt && expiresAt && purchasedAt <= now && expiresAt > now,
   );
@@ -206,7 +227,7 @@ async function applyPurchaseEvent(
       transaction,
       buyerEmail: email,
       productUcode,
-      productId: event.data.product.id,
+      productId,
       expert: mapping.find((item) => item.access === 'sll')?.expert ?? mapping[0]?.expert ?? 'pri',
       userId: linkedUserId,
       active,
@@ -217,7 +238,7 @@ async function applyPurchaseEvent(
     .onConflictDoUpdate({
       target: hotmartPurchases.transaction,
       set: {
-        productId: event.data.product.id,
+        productId,
         userId: linkedUserId,
         active,
         purchasedAt,
@@ -231,13 +252,21 @@ async function applyPurchaseEvent(
       await reconcileProductAccess(tx, linkedUserId, access);
     }
   }
-  return active
-    ? accessGranted
-      ? 'Compra aprovada; acesso liberado.'
-      : !purchasedAt
-        ? missingDateResult
-        : 'Compra fora do prazo válido; acesso não liberado.'
-    : 'Reembolso recebido; acesso recalculado.';
+  if (!active) {
+    return 'Reembolso recebido; acesso recalculado.';
+  }
+
+  if (!purchasedAt) {
+    return missingDateResult;
+  }
+
+  if (!accessGranted) {
+    return 'Compra fora do prazo válido; acesso não liberado.';
+  }
+
+  return mapping.length
+    ? 'Compra aprovada; acesso liberado.'
+    : 'Compra aprovada; acesso à mentoria liberado.';
 }
 
 /** Processa uma transação por vez; reprocessamento do mesmo ID não concede acesso novamente. */

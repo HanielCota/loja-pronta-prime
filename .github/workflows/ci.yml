@@ -84,6 +84,7 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('bun.lock') }}
       - run: bunx playwright install --with-deps chromium
       - run: bun run test:e2e --config=playwright.support.config.ts
+      - run: bun run test:e2e --config=playwright.sll-mentorship.config.ts
 
   build:
     name: Production build

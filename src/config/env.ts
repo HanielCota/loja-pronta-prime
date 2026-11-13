@@ -35,6 +35,7 @@ const envSchema = z
     EMAIL_FROM: z.email().optional(),
     /** Opcional: use apenas uma caixa real, acompanhada pelo suporte. */
     EMAIL_REPLY_TO: z.email().optional(),
+    HOTMART_MENTORSHIP_PRODUCT_UCODE: z.string().trim().min(1).max(200).optional(),
     /**
      * Donos da plataforma: e-mails separados por vírgula. Só eles (com o e-mail verificado)
      * convidam, mudam o cargo ou bloqueiam pessoas da equipe. Vazio: ninguém mexe na equipe.

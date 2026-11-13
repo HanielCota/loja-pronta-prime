@@ -1,4 +1,7 @@
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
+import { hasMentorshipPurchase } from '@/features/hotmart/server/mentorship-purchase';
+import { MENTORSHIP_PATH, MENTORSHIP_TITLE } from '@/features/sll/mentorship';
 import { BrandCard } from '@/components/brand/brand-card';
 import { CardHeading } from '@/components/brand/card-heading';
 import { Logo } from '@/components/brand/logo';
@@ -29,7 +32,11 @@ type ProductLobbyProps = {
 /** Menu das áreas liberadas para a aluna; a marca da navbar sempre chega aqui. */
 export async function ProductLobby({ enterSingleProduct = false }: ProductLobbyProps) {
   const { session, products, lastArea } = await requireStudent(enterSingleProduct ? '/' : '/menu');
-  const experience = products.includes('sll') ? await getStudentExperience(session.user.id) : null;
+  const [experience, mentorshipAccess] = await Promise.all([
+    products.includes('sll') ? getStudentExperience(session.user.id) : null,
+    hasMentorshipPurchase(session.user.id),
+  ]);
+  const showMentorship = mentorshipAccess && experience?.expert !== 'pri';
   const course =
     experience?.expert === 'ze'
       ? {
@@ -40,14 +47,18 @@ export async function ProductLobby({ enterSingleProduct = false }: ProductLobbyP
         }
       : undefined;
   const [onlyProduct] = products;
-  if (enterSingleProduct && products.length === 1 && onlyProduct) {
+  if (enterSingleProduct && mentorshipAccess && !onlyProduct) {
+    redirect(MENTORSHIP_PATH);
+  }
+
+  if (enterSingleProduct && !showMentorship && products.length === 1 && onlyProduct) {
     redirect(onlyProduct === 'sll' && course ? course.path : PRODUCTS[onlyProduct].path);
   }
 
   const { user } = session;
   const name = greetingName(user);
 
-  if (products.length === 0) {
+  if (products.length === 0 && !showMentorship) {
     return (
       <>
         <StaffVisitBanner />
@@ -94,14 +105,21 @@ export async function ProductLobby({ enterSingleProduct = false }: ProductLobbyP
             description={course ? description.replace('do SLL', 'do Zé Mauro') : description}
           />
         </div>
-        <div className={products.length === 1 ? 'mx-auto w-full max-w-[512px]' : undefined}>
-          <ProductChooser
-            products={products}
-            lastArea={lastArea}
-            status={status}
-            primary={primary}
-            course={course}
-          />
+        <div className={products.length < 2 ? 'mx-auto w-full max-w-[512px]' : undefined}>
+          {products.length ? (
+            <ProductChooser
+              products={products}
+              lastArea={lastArea}
+              status={status}
+              primary={primary}
+              course={course}
+            />
+          ) : null}
+          {showMentorship ? (
+            <Button asChild className={products.length ? 'mt-4 w-full' : 'w-full'}>
+              <Link href={MENTORSHIP_PATH}>{MENTORSHIP_TITLE}</Link>
+            </Button>
+          ) : null}
         </div>
       </CenteredMemberPage>
     </>

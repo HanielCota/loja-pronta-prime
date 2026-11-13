@@ -24,3 +24,4 @@ export * from './support-tickets';
 
 export * from './legacy-catalog';
 export * from './assisted-deliveries';
+export * from './mentorship';

@@ -10,6 +10,35 @@ type PatchNoteDay = {
 /** Curated daily notes, newest first. Dates follow America/Sao_Paulo. */
 export const patchNotes: readonly PatchNoteDay[] = [
   {
+    date: '2026-11-13',
+    changes: [
+      {
+        kind: 'Novo',
+        title: 'Mentoria com Zé Mauro no SLL',
+        description:
+          'Após a atualização, a aba Mentoria C/ Zé Mauro aparece no menu do SLL. Aulas, lives e gravações ficam disponíveis para quem tem uma compra válida da mentoria, depois que o produto for configurado e os conteúdos forem publicados.',
+      },
+      {
+        kind: 'Correção',
+        title: 'Reembolsos da mentoria',
+        description:
+          'Após a atualização, a Escala Shop vai conferir o código e o ID do produto ao associar um reembolso à compra. Um reembolso da mesma compra bloqueia a mentoria mesmo se o produto estiver temporariamente sem configuração.',
+      },
+      {
+        kind: 'Melhoria',
+        title: 'Busca no histórico da Hotmart',
+        description:
+          'Após a atualização, será possível buscar avisos da Hotmart pelo nome ou código do produto ou pela transação. Isso ajuda a conferir compras que já chegaram à Escala Shop.',
+      },
+      {
+        kind: 'Correção',
+        title: 'Salvamento da agenda da mentoria',
+        description:
+          'Após a atualização, o painel vai conferir o acesso antes de salvar uma alteração e informar quando uma live já tiver sido removida.',
+      },
+    ],
+  },
+  {
     date: '2026-11-12',
     changes: [
       {

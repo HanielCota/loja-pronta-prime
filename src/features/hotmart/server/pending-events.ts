@@ -8,6 +8,7 @@ import {
   isRetryableHotmartResult,
 } from '../recovery';
 import { processHotmartEvent } from './process-event';
+import { mentorshipProductUcode } from './mentorship-purchase';
 
 export const HOTMART_PENDING_PAGE_SIZE = 25;
 export const pendingHotmartCondition = () =>
@@ -19,6 +20,7 @@ const configuredProduct = sql<boolean>`(
     where m.product_ucode = "hotmart_events"."product_ucode")
   or exists (select 1 from hotmart_product_ids n
     where n.product_id = "hotmart_events"."product_id")
+  or coalesce("hotmart_events"."product_ucode" = ${mentorshipProductUcode ?? null}, false)
 )`;
 
 /** Bounded recovery, using only authenticated provider data already stored by the webhook. */

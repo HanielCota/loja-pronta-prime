@@ -582,6 +582,13 @@
       "when": 1794519165377,
       "tag": "0082_shopee-recovered-authorization",
       "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1794586823958,
+      "tag": "0083_sll-mentorship",
+      "breakpoints": true
     }
   ]
 }
