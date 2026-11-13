@@ -18,7 +18,8 @@ recorded separately from code integration.
   already received with complete original data. The configured code must be distinct from any
   existing SLL or Loja Pronta product. An unset ucode keeps student content locked. Refunds
   still update existing purchases while a product is unconfigured, and pending refunds block
-  mentorship access until reconciliation.
+  mentorship access until reconciliation. Pending refunds for a conflicting product ID do not
+  block approvals, and events that omit the ID preserve the known purchase identity.
 - Recheck the initiating administrator session inside mentorship writes and report database
   failures or a live session removed by another administrator.
 

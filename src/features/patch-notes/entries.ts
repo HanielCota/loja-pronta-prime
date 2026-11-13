@@ -22,7 +22,7 @@ export const patchNotes: readonly PatchNoteDay[] = [
         kind: 'Correção',
         title: 'Reembolsos da mentoria',
         description:
-          'Após a atualização, a mentoria fica bloqueada assim que a Escala Shop registra um reembolso da compra, mesmo se o código do produto estiver temporariamente desativado.',
+          'Após a atualização, a Escala Shop vai conferir o código e o ID do produto ao associar um reembolso à compra. Um reembolso da mesma compra bloqueia a mentoria mesmo se o produto estiver temporariamente sem configuração.',
       },
       {
         kind: 'Melhoria',

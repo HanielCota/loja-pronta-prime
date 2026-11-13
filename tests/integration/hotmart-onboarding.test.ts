@@ -15,6 +15,7 @@ import {
   verification,
 } from '@/server/db/schema';
 import type { HotmartPurchaseEvent } from '@/features/hotmart/event';
+import { pendingRefundResult } from '@/features/hotmart/recovery';
 import { rejection } from '../support/rejection';
 
 const send = mock(async (_message: { to: string; url: string }) => {});
@@ -181,4 +182,43 @@ test('a refund deactivates a recorded purchase while its product is unconfigured
       where: eq(hotmartPurchases.transaction, transaction),
     }),
   ).toMatchObject({ active: false, purchasedAt });
+});
+
+test('purchase replay ignores a pending refund that identifies a different product', async () => {
+  await mapCourse();
+  const approved = purchase();
+  approved.data.product.id = 101;
+  await db.insert(hotmartEvents).values({
+    id: randomUUID(),
+    event: 'PURCHASE_REFUNDED',
+    transaction: approved.data.purchase.transaction,
+    buyerEmail: approved.data.buyer.email,
+    productUcode: code,
+    productId: 102,
+    result: 'Produto sem acesso configurado.',
+  });
+  expect(await processHotmartEvent(approved)).toBe('Compra aprovada; acesso liberado.');
+  await db
+    .update(hotmartEvents)
+    .set({ productId: 101 })
+    .where(eq(hotmartEvents.transaction, approved.data.purchase.transaction));
+  expect(await processHotmartEvent({ ...approved, id: randomUUID() })).toBe(pendingRefundResult);
+});
+
+test('a purchase event without a product ID preserves the known product identity', async () => {
+  await mapCourse();
+  const approved = purchase();
+  approved.data.product.id = 101;
+  await processHotmartEvent(approved);
+  await processHotmartEvent({
+    ...approved,
+    id: randomUUID(),
+    creation_date: approved.creation_date + 1000,
+    data: { ...approved.data, product: { ucode: code } },
+  });
+  expect(
+    await db.query.hotmartPurchases.findFirst({
+      where: eq(hotmartPurchases.transaction, approved.data.purchase.transaction),
+    }),
+  ).toMatchObject({ productId: 101, active: true });
 });
