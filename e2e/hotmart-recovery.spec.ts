@@ -258,7 +258,7 @@ for (const mobile of [false, true])
       await page.getByRole('button', { name: 'Buscar', exact: true }).click();
       const pending = page.getByRole('region', { name: /Pendências de acesso/ });
       await expect(pending.getByRole('heading', { name: 'Recovery product' })).toBeVisible();
-      await expect(page.getByLabel('Segundo token (opcional)')).toBeVisible();
+      await expect(page.getByLabel(/^Segundo token/)).toBeVisible();
       await expect(page.getByText('ID Hotmart: 6102550')).toBeVisible();
       await expectNoA11yViolations(page);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
