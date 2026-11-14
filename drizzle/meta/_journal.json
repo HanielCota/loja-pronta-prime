@@ -589,6 +589,13 @@
       "when": 1794586823958,
       "tag": "0083_sll-mentorship",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1794607681323,
+      "tag": "0084_hotmart-second-account",
+      "breakpoints": true
     }
   ]
 }

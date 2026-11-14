@@ -70,6 +70,7 @@ export default async function HotmartAdminPage({
         </p>
         <HotmartSettingsForm
           configured={state.configured}
+          secondaryConfigured={state.secondaryConfigured}
           sll={
             state.mappings.find((item) => item.access === 'sll' && item.primary)?.productUcode ?? ''
           }
@@ -92,7 +93,7 @@ export default async function HotmartAdminPage({
             <FloatingLabelInput
               id="hotmart-history-search"
               name="historico"
-              label="Nome ou código do produto, ou código da transação"
+              label="Produto, ID Hotmart ou transação"
               defaultValue={historyQuery}
               maxLength={200}
             />

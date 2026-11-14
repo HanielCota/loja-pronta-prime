@@ -24,10 +24,11 @@ same event ID after deployment; the original purchase date is still required,
 and retrying does not extend the access term. Ask Hotmart to resend the original
 notifications; do not invent missing product IDs or purchase dates.
 
-The existing verification token remains encrypted in the database. This change
-does not rotate it or store credentials in source files. Deployment must apply
-the migration before starting the updated webhook handler, as handled by the
-existing production startup script.
+Migration `0084_hotmart-second-account` adds `8954689` for Loja Pronta and `8954196` for SLL
+(Pri). It preserves all previous mappings and adds a nullable column for a second verification
+token. Both tokens are encrypted independently. Save the new token in the second field in
+`/admin/hotmart` and leave the primary token field blank. Keep using the same webhook URL.
+Search the history by numeric ID after the original notifications arrive.
 
 ## Pending purchase recovery
 

@@ -1,20 +1,27 @@
-import { cleanTypedText } from '@/lib/text';
+import { cleanTypedText, hasControlCharacters } from '@/lib/text';
 
-type SettingsInput = { token: string; sllCode: string; storeCode: string };
+type SettingsInput = { token: string; secondaryToken: string; sllCode: string; storeCode: string };
 type SettingsParseResult = { ok: true; value: SettingsInput } | { ok: false; message: string };
 
 /** Cada código libera um produto: dois códigos iguais deixariam um acesso sem configuração. */
 export function parseHotmartSettings(form: FormData): SettingsParseResult {
   const token = form.get('token');
+  const secondaryToken = form.get('secondaryToken') ?? '';
   const sllCode = form.get('sllCode');
   const storeCode = form.get('storeCode');
-  if (typeof token !== 'string' || typeof sllCode !== 'string' || typeof storeCode !== 'string') {
+  if (
+    typeof token !== 'string' ||
+    typeof secondaryToken !== 'string' ||
+    typeof sllCode !== 'string' ||
+    typeof storeCode !== 'string'
+  ) {
     return { ok: false, message: 'Confira os campos.' };
   }
   // Código colado da Hotmart pode trazer zero-width ou espaço inquebrável: guardado assim, nunca
   // casaria com o ucode do aviso e toda compra ficaria "Produto sem acesso configurado".
   const value = {
     token: token.trim(),
+    secondaryToken: secondaryToken.trim(),
     sllCode: cleanTypedText(sllCode),
     storeCode: cleanTypedText(storeCode),
   };
@@ -33,7 +40,13 @@ export function parseHotmartSettings(form: FormData): SettingsParseResult {
         'Use um código diferente para cada produto. Confira os códigos do SLL e da Loja Pronta na Hotmart.',
     };
   }
-  if (value.token && (value.token.length < 8 || value.token.length > 500)) {
+  if (
+    [value.token, value.secondaryToken].some(
+      (candidate) =>
+        candidate &&
+        (candidate.length < 8 || candidate.length > 500 || hasControlCharacters(candidate)),
+    )
+  ) {
     return { ok: false, message: 'O token precisa ter entre 8 e 500 caracteres.' };
   }
   return { ok: true, value };

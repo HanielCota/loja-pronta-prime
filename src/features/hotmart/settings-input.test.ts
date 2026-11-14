@@ -13,7 +13,7 @@ describe('configuração de produtos Hotmart', () => {
   test('pasted invisible characters are removed from product codes', () => {
     expect(parseHotmartSettings(form('\u200Bsll-code\u00A0', 'store-code\uFEFF'))).toEqual({
       ok: true,
-      value: { token: '', sllCode: 'sll-code', storeCode: 'store-code' },
+      value: { token: '', secondaryToken: '', sllCode: 'sll-code', storeCode: 'store-code' },
     });
     for (const blank of ['\u200B', '\u00A0 ', ''])
       expect(parseHotmartSettings(form(blank, 'store-code'))).toMatchObject({ ok: false });
@@ -26,7 +26,7 @@ describe('configuração de produtos Hotmart', () => {
   test('aceita códigos distintos e token vazio para manter o que já existe', () => {
     expect(parseHotmartSettings(form(' sll-code ', ' store-code ', '  '))).toEqual({
       ok: true,
-      value: { sllCode: 'sll-code', storeCode: 'store-code', token: '' },
+      value: { sllCode: 'sll-code', storeCode: 'store-code', token: '', secondaryToken: '' },
     });
   });
   test('confere os limites e rejeita arquivos no lugar de códigos', () => {
@@ -41,5 +41,20 @@ describe('configuração de produtos Hotmart', () => {
     const invalid = form();
     invalid.set('sllCode', new File(['x'], 'code.txt'));
     expect(parseHotmartSettings(invalid)).toMatchObject({ ok: false });
+  });
+
+  test('accepts a second token while leaving the primary token blank', () => {
+    const data = form();
+    data.set('secondaryToken', ' secondary-test-token ');
+    expect(parseHotmartSettings(data)).toMatchObject({
+      ok: true,
+      value: { token: '', secondaryToken: 'secondary-test-token' },
+    });
+
+    data.set('secondaryToken', 'short');
+    expect(parseHotmartSettings(data)).toMatchObject({ ok: false });
+
+    data.set('secondaryToken', new File(['x'], 'token.txt'));
+    expect(parseHotmartSettings(data)).toMatchObject({ ok: false });
   });
 });
