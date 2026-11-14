@@ -99,7 +99,7 @@ test('the history identifies a pending purchase and lets an administrator recove
   await signIn(page, emails[0]!, PASSWORD, '/admin/hotmart');
 
   const history = page.getByRole('region', { name: 'Histórico de avisos' });
-  await history.getByLabel('Nome ou código do produto, ou código da transação').fill(bothPurchase);
+  await history.getByLabel('Produto, ID Hotmart ou transação').fill(bothPurchase);
   await history.getByRole('button', { name: 'Buscar no histórico' }).click();
   await expect(history.getByRole('heading', { name: product.name })).toBeVisible();
   await expect(history.getByText('Produto sem acesso configurado.')).toBeVisible();
