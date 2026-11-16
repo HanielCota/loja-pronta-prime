@@ -10,6 +10,17 @@ type PatchNoteDay = {
 /** Curated daily notes, newest first. Dates follow America/Sao_Paulo. */
 export const patchNotes: readonly PatchNoteDay[] = [
   {
+    date: '2026-11-16',
+    changes: [
+      {
+        kind: 'Novo',
+        title: 'Suporte no menu do SLL',
+        description:
+          'Após a atualização, abra Suporte logo abaixo de Cursos complementares para ver os contatos de ajuda no WhatsApp.',
+      },
+    ],
+  },
+  {
     date: '2026-11-13',
     changes: [
       {

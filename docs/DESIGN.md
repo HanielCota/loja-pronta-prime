@@ -280,6 +280,8 @@ o tema escuro e o alto contraste.
   O conteúdo usa os tokens, a fonte, os cartões e os botões deste projeto.
 - O menu mostra Painel, Minhas Lojas, Comece aqui, Método, etapas publicadas, Recursos e Cursos
   complementares. A seção atual fica identificada; etapas em rascunho não viram links para alunas.
+- The SLL navigation places Support immediately after Complementary Courses in both layouts.
+  It links to the existing WhatsApp support section in the student profile.
 - No computador, o menu lateral fica parado enquanto o conteúdo rola. As etapas aparecem quando
   a aluna está no Método; se as seções não couberem na altura, só a lista do meio rola. Rótulos de 16px e alvos de 44px deixam os destinos à vista em telas comuns.
   No celular, o controle mostra a seção atual e volta fechado ao navegar, para deixar
