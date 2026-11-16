@@ -31,10 +31,15 @@ test('administrators configure support contacts and students see the saved depar
       data: { emailVerified: true, mustChangePassword: false },
     },
   });
-  await database().query('insert into student_products (user_id, product) values ($1, $2)', [
-    member.id,
-    'sll',
-  ]);
+  await database().query(
+    `with granted as (
+      insert into manual_product_grants (user_id, product, expires_at)
+      values ($1, 'sll', now() + interval '1 day')
+      returning user_id, product
+    )
+    insert into student_products (user_id, product) select user_id, product from granted`,
+    [member.id],
+  );
   await database().query(
     `insert into support_contacts (topic, phone) values
       ('lessons', '11999990002'), ('shipping', '11999990003')`,
@@ -112,6 +117,26 @@ test('administrators configure support contacts and students see the saved depar
             fullPage: true,
           });
         }
+
+        await student.goto('/sll/cursos');
+        await expect(student).toHaveURL(/\/sll\/cursos$/);
+
+        if (mobile) {
+          await student.locator('summary').filter({ hasText: 'Seções do SLL' }).click();
+        }
+
+        const navigation = student.getByRole('navigation', { name: 'Seções do SLL' });
+        const courses = navigation.getByRole('link', { name: 'Cursos complementares' });
+        const supportLink = navigation.getByRole('link', { name: 'Suporte', exact: true });
+        await expect(courses).toBeVisible();
+        await courses.focus();
+        await student.keyboard.press('Tab');
+        await expect(supportLink).toBeFocused();
+        await expect(supportLink).toHaveAttribute('href', '/perfil#suporte');
+        await expect(supportLink).not.toHaveAttribute('aria-current', /.+/);
+        await student.keyboard.press('Enter');
+        await expect(student).toHaveURL(/\/perfil#suporte$/);
+        await expect(support).toBeInViewport();
       }
     }
 

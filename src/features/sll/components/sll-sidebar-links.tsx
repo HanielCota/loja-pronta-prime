@@ -7,6 +7,7 @@ import {
   ChevronDown,
   CirclePlay,
   GraduationCap,
+  Headset,
   LayoutDashboard,
   Store,
   Video,
@@ -49,6 +50,7 @@ export function SllSidebarLinks({
     { href: '/sll/metodo', label: copy.sidebarMethod, icon: BookOpen },
     { href: '/sll/recursos', label: copy.sidebarResources, icon: Wrench },
     { href: '/sll/cursos', label: copy.sidebarCourses, icon: GraduationCap },
+    { href: '/perfil#suporte', label: 'Suporte', icon: Headset, exact: true },
     { href: MENTORSHIP_PATH, label: MENTORSHIP_TITLE, icon: Video },
   ];
   const section = sllSidebarSection(pathname, stages);
