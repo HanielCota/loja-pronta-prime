@@ -4,7 +4,7 @@
  */
 export const TEAM_WHATSAPP: string = '3192560307';
 
-export const ZE_COURSE_SUPPORT = { name: 'Michel', phone: '27999683343' } as const;
+export const ZE_COURSE_SUPPORT = { name: 'Michael', phone: '27999683343' } as const;
 
 /** The company responsible for student data and the Escala Shop platform. */
 export const DATA_CONTROLLER = {

@@ -64,7 +64,7 @@ test.beforeAll(async () => {
   priLessonId = rows.find((row) => row.expert === 'pri' && row.video_id)!.id;
 });
 
-test('Zé course support shows Michel and opens his WhatsApp on desktop and mobile', async ({
+test('Zé course support shows Michael and opens his WhatsApp on desktop and mobile', async ({
   page,
   context,
 }) => {
@@ -80,7 +80,7 @@ test('Zé course support shows Michel and opens his WhatsApp on desktop and mobi
   const whatsapp = support.getByRole('link', {
     name: 'WhatsApp (27) 99968-3343 (abre em outra aba)',
   });
-  const destination = /^https:\/\/wa\.me\/5527999683343\?text=/;
+  const destination = /^https:\/\/wa\.me\/5527999683343\?text=Oi%2C%20Michael!/;
   for (const viewport of [
     { width: 1440, height: 1000 },
     { width: 390, height: 844 },
@@ -98,7 +98,7 @@ test('Zé course support shows Michel and opens his WhatsApp on desktop and mobi
       await menuLink.press('Enter');
       await expect(page).toHaveURL('/ze-mauro#suporte');
       await expect(support).toBeInViewport();
-      await expect(support.getByText('Michel', { exact: true })).toBeVisible();
+      await expect(support.getByText('Michael', { exact: true })).toBeVisible();
       await expect(support).not.toContainText('@');
       await expect(support.getByRole('link')).toHaveCount(1);
       await expect(whatsapp).toHaveAttribute('href', destination);
