@@ -20,9 +20,9 @@ export const patchNotes: readonly PatchNoteDay[] = [
       },
       {
         kind: 'Melhoria',
-        title: 'Contato do Michel no curso do Zé Mauro',
+        title: 'Contato do Michael no curso do Zé Mauro',
         description:
-          'Após a atualização, abra Suporte no menu do curso do Zé Mauro para falar com Michel pelo WhatsApp.',
+          'Após a atualização, abra Suporte no menu do curso do Zé Mauro para falar com Michael pelo WhatsApp.',
       },
     ],
   },
