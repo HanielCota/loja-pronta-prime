@@ -4,6 +4,7 @@ import {
 } from '@/features/assistant/publication-selection';
 import { env } from '@/config/env';
 import { generateAssistantAdvice } from '@/features/assistant/server/advice';
+import { availableSupplierProducts } from '@/features/assistant/server/catalog';
 import { afterAll, beforeAll, expect, test } from 'bun:test';
 import { randomUUID } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
@@ -187,6 +188,99 @@ async function nextPublish(id: string) {
     .where(and(eq(assistantJobs.userId, id), eq(assistantJobs.kind, 'collect')));
   return claimAssistantJob();
 }
+
+test('the supplier pilot lists and publishes offers only for the exact account and shop', async () => {
+  const pilot = await account();
+  const other = await account();
+  const pilotKeys = await catalog(pilot);
+  const otherKeys = await catalog(other);
+  const [connection] = await db
+    .select({ shopId: shopeeConnections.shopId })
+    .from(shopeeConnections)
+    .where(eq(shopeeConnections.userId, pilot));
+  const [otherConnection] = await db
+    .select({ shopId: shopeeConnections.shopId })
+    .from(shopeeConnections)
+    .where(eq(shopeeConnections.userId, other));
+  const previousPilot = process.env.SHOPEE_SUPPLIER_PUBLICATION_PILOT;
+  const previousPublication = process.env.SHOPEE_PUBLICATION_ENABLED;
+
+  await createPublicationBatch(other, otherKeys, 'varied');
+  const pendingOutsidePilot = await nextPublish(other);
+  expect(pendingOutsidePilot?.userId).toBe(other);
+
+  try {
+    process.env.SHOPEE_SUPPLIER_PUBLICATION_PILOT = '{}';
+    expect((await availableSupplierProducts(pilot, 'user')).status).toBe('preparing');
+
+    process.env.SHOPEE_SUPPLIER_PUBLICATION_PILOT = JSON.stringify({
+      userId: pilot,
+      shopId: otherConnection!.shopId,
+    });
+    expect((await availableSupplierProducts(pilot, 'user')).status).toBe('preparing');
+    expect(await rejectionMessage(createPublicationBatch(pilot, pilotKeys, 'varied'))).toContain(
+      'publication-disabled',
+    );
+
+    process.env.SHOPEE_SUPPLIER_PUBLICATION_PILOT = JSON.stringify({
+      userId: pilot,
+      shopId: connection!.shopId,
+    });
+    expect((await availableSupplierProducts(other, 'admin')).status).toBe('preparing');
+    expect(await rejectionMessage(createPublicationBatch(other, otherKeys, 'varied'))).toContain(
+      'publication-disabled',
+    );
+
+    let callsOutsidePilot = 0;
+    const fetcherOutsidePilot = transport(() => {
+      callsOutsidePilot++;
+      throw new Error('Unexpected Shopee request outside the pilot');
+    });
+    expect(await processAssistantJob(pendingOutsidePilot!, fetcherOutsidePilot)).toBe('blocked');
+    expect(callsOutsidePilot).toBe(0);
+    await db
+      .update(assistantJobs)
+      .set({ status: 'blocked' })
+      .where(eq(assistantJobs.userId, other));
+
+    process.env.SHOPEE_PUBLICATION_ENABLED = 'false';
+    expect((await availableSupplierProducts(pilot, 'user')).products).toHaveLength(5);
+    const batchId = await createPublicationBatch(pilot, pilotKeys, 'varied');
+    let writes = 0;
+    const fetcher = transport((url) => {
+      expect(url.searchParams.get('shop_id')).toBe(String(connection!.shopId));
+      return url.pathname.endsWith('add_item')
+        ? envelope({ item_id: 9100 + ++writes })
+        : emptyReads(url);
+    });
+    for (let i = 0; i < 5; i++) {
+      const job = await nextPublish(pilot);
+      expect(job?.userId).toBe(pilot);
+      expect(await processAssistantJob(job!, fetcher)).toBe('completed');
+    }
+
+    const [batch] = await db
+      .select({ status: assistantPublicationBatches.status })
+      .from(assistantPublicationBatches)
+      .where(eq(assistantPublicationBatches.id, batchId));
+    expect(batch?.status).toBe('observing');
+    expect(writes).toBe(5);
+  } finally {
+    if (previousPilot === undefined) {
+      delete process.env.SHOPEE_SUPPLIER_PUBLICATION_PILOT;
+    } else {
+      process.env.SHOPEE_SUPPLIER_PUBLICATION_PILOT = previousPilot;
+    }
+
+    process.env.SHOPEE_PUBLICATION_ENABLED = previousPublication;
+    for (const id of [pilot, other]) {
+      await db
+        .update(assistantJobs)
+        .set({ status: 'completed' })
+        .where(eq(assistantJobs.userId, id));
+    }
+  }
+});
 
 test('planos são versionados, idempotentes e o progresso só pertence à dona', async () => {
   const id = await account('sll');
@@ -843,7 +937,6 @@ test('preço alterado exige nova confirmação da dona e nunca reautoriza result
 });
 
 test('a seleção inicial exige a oferta exibida, mesmo se o fornecedor e o mapeamento já mudaram juntos', async () => {
-  const { availableSupplierProducts } = await import('@/features/assistant/server/catalog');
   const id = await account();
   const keys = await catalog(id);
   const sku = keys[0]![1];

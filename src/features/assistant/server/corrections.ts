@@ -15,6 +15,7 @@ import { publicationPayloadSchema } from '../model';
 
 import { matchesSupplierOffer } from '../supplier-offer';
 import { publicationOfferFingerprint } from '../publication-selection';
+import { canPublishSupplierOffers } from './supplier-publication-policy';
 
 /** Nova confirmação usa dados recentes do mesmo SKU, loja e aplicativo. Nunca cria um sexto item. */
 export async function publicationCorrections(userId: string) {
@@ -24,12 +25,15 @@ export async function publicationCorrections(userId: string) {
   } catch {
     return [];
   }
-  if (process.env.SHOPEE_PUBLICATION_ENABLED !== 'true') return [];
   const [connection] = await db
     .select()
     .from(shopeeConnections)
     .where(shopeeConnectionFor(userId, shopeeApplicationId(config)));
   if (!connection || connection.revokedAt) return [];
+  if (!canPublishSupplierOffers(userId, connection.shopId)) {
+    return [];
+  }
+
   const rows = await db
     .select({
       item: assistantPublicationItems,
@@ -98,7 +102,10 @@ export async function publicationCorrections(userId: string) {
 
 export async function reauthorizePublicationItem(userId: string, itemId: string, expected: string) {
   const config = await assertAssistantAccess(userId, 'loja-pronta');
-  if (process.env.SHOPEE_PUBLICATION_ENABLED !== 'true') return false;
+  if (!canPublishSupplierOffers(userId)) {
+    return false;
+  }
+
   return db.transaction(async (tx) => {
     const [job] = await tx
       .select()
@@ -136,11 +143,14 @@ export async function reauthorizePublicationItem(userId: string, itemId: string,
     if (
       !item ||
       !connection ||
+      !canPublishSupplierOffers(userId, connection.shopId) ||
       connection.shopId !== item.shopId ||
       connection.applicationId !== item.applicationId ||
       item.applicationId !== shopeeApplicationId(config)
-    )
+    ) {
       return false;
+    }
+
     const [catalog] = await tx
       .select()
       .from(supplierCatalog)

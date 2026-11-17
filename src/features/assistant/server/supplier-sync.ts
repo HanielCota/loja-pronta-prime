@@ -17,6 +17,7 @@ import { prepareShopeeProduct } from '@/features/shopee/server/preparation';
 import { readShopeeAccess, shopeeConnectionFor } from '@/features/shopee/server/connection';
 import { shopeeApplicationId } from '@/features/shopee/authorization';
 import { assertAssistantAccess } from './metrics';
+import { canPrepareSupplierFeed, supplierPublicationPilot } from './supplier-publication-policy';
 
 const nextAssistedCatalogSync = new Map<string, number>();
 
@@ -29,26 +30,31 @@ export async function syncSupplierFeeds(
 ) {
   const download = dependencies.download ?? downloadPublicFile;
   const prepare = dependencies.prepare ?? prepareShopeeProduct;
+  const pilot = supplierPublicationPilot();
   for (const source of configuredSupplierSources()) {
     const refreshAssistedCatalog =
       source.id === process.env.SHOPEE_ASSISTED_SUPPLIER_ID &&
       Date.now() >= (nextAssistedCatalogSync.get(source.id) ?? 0);
-    const due = await db
-      .select()
-      .from(supplierFeedSubscriptions)
-      .where(
-        and(
-          eq(supplierFeedSubscriptions.supplierId, source.id),
-          or(
-            isNull(supplierFeedSubscriptions.updatedAt),
-            lt(
-              supplierFeedSubscriptions.updatedAt,
-              new Date(Date.now() - source.intervalSeconds * 1000),
-            ),
-          ),
-        ),
-      )
-      .limit(20);
+    const due =
+      pilot === null
+        ? []
+        : await db
+            .select()
+            .from(supplierFeedSubscriptions)
+            .where(
+              and(
+                eq(supplierFeedSubscriptions.supplierId, source.id),
+                pilot ? eq(supplierFeedSubscriptions.userId, pilot.userId) : undefined,
+                or(
+                  isNull(supplierFeedSubscriptions.updatedAt),
+                  lt(
+                    supplierFeedSubscriptions.updatedAt,
+                    new Date(Date.now() - source.intervalSeconds * 1000),
+                  ),
+                ),
+              ),
+            )
+            .limit(20);
     if (!due.length && !refreshAssistedCatalog) continue;
     const client = await db.$client.connect();
     const key = `supplier-feed:${source.id}`;
@@ -122,6 +128,10 @@ export async function syncSupplierFeeds(
         try {
           const config = await assertAssistantAccess(subscription.userId, 'loja-pronta');
           const access = await readShopeeAccess(subscription.userId, config);
+          if (!canPrepareSupplierFeed(subscription.userId, access.shopId)) {
+            throw new Error('Store outside the supplier publication pilot.');
+          }
+
           const mappings = await db
             .select()
             .from(supplierPublicationMappings)

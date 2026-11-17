@@ -8,6 +8,7 @@ import {
 import { getShopeeConfiguration } from '../src/features/shopee/server/client';
 import { configuredSupplierSources } from '../src/features/shopee/supplier-feed';
 import { hasHealthyAssistantWorker } from '../src/server/runtime-health';
+import { supplierPublicationPilot } from '../src/features/assistant/server/supplier-publication-policy';
 
 // Somente presença e contagens; nunca imprime URLs, chaves ou dados de compradoras.
 async function check() {
@@ -15,6 +16,7 @@ async function check() {
     const worker = await hasHealthyAssistantWorker();
     const config = getShopeeConfiguration();
     const sources = configuredSupplierSources();
+    const pilot = supplierPublicationPilot();
     const books = await db
       .select({ strategy: assistantPlaybooks.strategy })
       .from(assistantPlaybooks)
@@ -40,6 +42,8 @@ async function check() {
           shopeeConfigured: Boolean(config),
           shopeeEnabled: config?.SHOPEE_ENABLED === 'true',
           publicationEnabled: process.env.SHOPEE_PUBLICATION_ENABLED === 'true',
+          supplierPublicationPilot:
+            pilot === undefined ? 'off' : pilot === null ? 'invalid' : 'configured',
           supplierSources: sources.length,
           supplierCredentialsPresent: sources.every(
             (source) => !source.tokenEnv || Boolean(process.env[source.tokenEnv]),

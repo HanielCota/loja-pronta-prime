@@ -14,6 +14,7 @@ import {
 import { batchObservationState } from '@/features/assistant/model';
 import { configuredSupplierSources } from '@/features/shopee/supplier-feed';
 import { subscribeSupplierFeed } from '@/features/assistant/server/supplier-actions';
+import { supplierPublicationPilot } from '@/features/assistant/server/supplier-publication-policy';
 import { storeOperationOverview } from '@/features/assistant/server/store-operation-overview';
 import {
   checkBrandChange,
@@ -54,6 +55,11 @@ export default async function StoreProductsPage({
   const initial = overview.batches.find((batch) => batch.kind === 'initial');
   const maySelect = !initial || initial.status === 'evaluated';
   const result = getParam(params.resultado);
+  const supplierSources =
+    supplierPublicationPilot() === undefined || catalog.status === 'ready'
+      ? configuredSupplierSources()
+      : [];
+
   return (
     <AreaPage
       hasChoice={products.length > 1}
@@ -134,7 +140,7 @@ export default async function StoreProductsPage({
             : 'Não foi possível preparar o envio da marca. Confira se ela está confirmada e se a conexão está disponível.'}
         </output>
       ) : null}
-      {configuredSupplierSources().length ? (
+      {supplierSources.length ? (
         <section className={panelCard} aria-labelledby="supplier-sync">
           <h2 id="supplier-sync" className="text-title font-semibold">
             Catálogo atualizado
@@ -144,7 +150,7 @@ export default async function StoreProductsPage({
               Fornecedor
             </label>
             <SelectMenu id="supplier-feed" name="supplierId">
-              {configuredSupplierSources().map((source) => (
+              {supplierSources.map((source) => (
                 <option key={source.id} value={source.id}>
                   {source.name}
                 </option>
@@ -154,7 +160,7 @@ export default async function StoreProductsPage({
           </form>
           {operations.feeds.map((feed) => (
             <p key={feed.supplierId} className="text-body text-muted-foreground">
-              {configuredSupplierSources().find((source) => source.id === feed.supplierId)?.name ??
+              {supplierSources.find((source) => source.id === feed.supplierId)?.name ??
                 'Fornecedor'}
               :{' '}
               {feed.failure

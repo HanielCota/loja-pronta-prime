@@ -96,6 +96,25 @@ estoque do fornecedor. Variações precisam das mesmas opções, combinações c
 
 O caminho automático usa `SUPPLIER_FEEDS`, com leitura HTTPS limitada, destinos permitidos e preparação com a API Shopee. O importador manual continua disponível. O contrato e a ativação estão detalhados em [AUTOMACAO-SLL-ENTREGA-2026-10-17.md](AUTOMACAO-SLL-ENTREGA-2026-10-17.md).
 
+### Supplier publication pilot
+
+1. Confirm the supplier API contract and configure `SUPPLIER_FEEDS` and its optional token in the
+   production runtime. Confirm the pilot account has Loja Pronta access and is connected to the
+   authorized Brazilian shop.
+2. Keep `SHOPEE_PUBLICATION_ENABLED=false` and set `SHOPEE_SUPPLIER_PUBLICATION_PILOT` to a JSON
+   object containing `userId` (the exact Escala Shop account ID) and `shopId` (the numeric Shopee
+   shop ID). The pilot takes precedence over the broad publication flag for supplier offers.
+   An invalid value disables supplier publication and feed preparation. The existing Shopee
+   connection settings continue to govern access to the integration.
+3. Verify the pilot mode with `automation-check.cjs`. In the pilot account, activate updates for
+   the supplier and review five current offers, including their price, stock and shipping. Confirm
+   the selection and verify all five active listings in the Shopee Seller Centre before expanding
+   access. Any other account stays outside the supplier pilot, including administrators.
+4. To pause a deployment configured only for this pilot, remove `SHOPEE_SUPPLIER_PUBLICATION_PILOT`
+   and `SUPPLIER_FEEDS` together, keep `SHOPEE_PUBLICATION_ENABLED=false`, then redeploy. Verify any
+   in-progress publication before resuming. Removing the pilot with the broad flag enabled opens
+   the usual publication flow.
+
 ## Worker, relógio e recuperação
 
 As migrações aditivas são `0049` a `0053`. Use o migrador normal, preservando o histórico.

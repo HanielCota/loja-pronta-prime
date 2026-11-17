@@ -13,6 +13,7 @@ import { shopeeConnectionFor } from '@/features/shopee/server/connection';
 import { matchesSupplierOffer } from '../supplier-offer';
 import { publicationOfferFingerprint } from '../publication-selection';
 import { publicationPayloadSchema } from '../model';
+import { canPublishSupplierOffers } from './supplier-publication-policy';
 
 /** Só oferece produtos reais, recentes e preparados para esta conta e este aplicativo. */
 export async function availableSupplierProducts(userId: string, role: string | null | undefined) {
@@ -24,8 +25,10 @@ export async function availableSupplierProducts(userId: string, role: string | n
     .from(shopeeConnections)
     .where(shopeeConnectionFor(userId, shopeeApplicationId(config)));
   if (!connection || connection.revokedAt) return { status: 'connection' as const, products: [] };
-  if (process.env.SHOPEE_PUBLICATION_ENABLED !== 'true')
+  if (!canPublishSupplierOffers(userId, connection.shopId)) {
     return { status: 'preparing' as const, products: [] };
+  }
+
   const rows = await db
     .select({ catalog: supplierCatalog, mapping: supplierPublicationMappings })
     .from(supplierPublicationMappings)
