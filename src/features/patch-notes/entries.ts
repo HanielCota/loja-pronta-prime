@@ -18,6 +18,12 @@ export const patchNotes: readonly PatchNoteDay[] = [
         description:
           'Após a atualização, abra Suporte logo abaixo de Cursos complementares para ver os contatos de ajuda no WhatsApp.',
       },
+      {
+        kind: 'Novo',
+        title: 'Suporte no WhatsApp do curso do Zé Mauro',
+        description:
+          'Após a atualização, o menu do curso do Zé Mauro terá um atalho para falar diretamente com o suporte dele no WhatsApp. O contato da Pri continua separado.',
+      },
     ],
   },
   {

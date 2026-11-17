@@ -64,6 +64,51 @@ test.beforeAll(async () => {
   priLessonId = rows.find((row) => row.expert === 'pri' && row.video_id)!.id;
 });
 
+test('Zé course navigation opens its dedicated WhatsApp on desktop and mobile', async ({
+  page,
+  context,
+}) => {
+  await context.route('https://wa.me/**', (route) => route.fulfill({ body: 'WhatsApp' }));
+  await signIn(page, emails[0]!, PASSWORD);
+  await page.setExtraHTTPHeaders({});
+  await expect(page).toHaveURL('/ze-mauro');
+
+  const support = page
+    .getByRole('navigation', { name: 'Seções do curso do Zé Mauro' })
+    .getByRole('link', { name: 'Suporte no WhatsApp (abre em outra aba)' });
+  const destination = /^https:\/\/wa\.me\/5527997394676\?text=/;
+  for (const viewport of [
+    { width: 1440, height: 1000 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    for (const theme of ['light', 'dark']) {
+      await page.evaluate((value) => localStorage.setItem('theme', value), theme);
+      await page.goto('/ze-mauro');
+      await expect(page.locator('html')).toHaveClass(new RegExp(theme));
+
+      if (viewport.width === 390) {
+        await page.getByText('Seções do curso', { exact: true }).click();
+      }
+
+      await expect(support).toBeVisible();
+      await expect(support).toHaveAttribute('href', destination);
+      await expectNoA11yViolations(page);
+
+      if (viewport.width === 1440 && theme === 'light') {
+        const [popup] = await Promise.all([page.waitForEvent('popup'), support.press('Enter')]);
+        await expect(popup).toHaveURL(destination);
+        await popup.close();
+        await expect(page).toHaveURL('/ze-mauro');
+      }
+    }
+  }
+
+  await page.goto(`/ze-mauro/aula/${pendingId}`);
+  await page.getByText('Seções do curso', { exact: true }).click();
+  await expect(support).toHaveAttribute('href', destination);
+});
+
 test('administrators can preview the entire course without buying it or saving progress', async ({
   page,
 }, testInfo) => {

@@ -28,6 +28,8 @@ The independent Zé Mauro course at `/ze-mauro` reuses `SllAreaFrame`, `SllPage`
 `Button`, the Panda lesson player and the existing progress component. Its sidebar lists its
 own modules. Mobile navigation uses the existing disclosure pattern. Colors, typography,
 spacing, themes and card shapes follow the current design; course access is separate from Pri's SLL.
+The course menu includes a “Suporte no WhatsApp” link to Zé Mauro's own support number in the
+desktop sidebar and the mobile disclosure. It opens in a new tab so the lesson stays open.
 
 On October 26, 2026, the owner requested the platform name **Escala Shop** and the member address
 `membros.escalashop.com.br`. This changes brand text only; the existing mascot, colors, typography,

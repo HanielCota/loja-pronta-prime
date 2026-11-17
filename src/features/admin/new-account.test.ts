@@ -9,15 +9,18 @@ function form(values: Record<string, string | string[]>) {
   return data;
 }
 
+// The previous UTC day cannot be a future purchase date in Brasília.
+const purchaseDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
 const valid = {
   name: '  Maria Souza ',
   email: ' Maria@Email.com ',
   role: 'student',
   access: 'email',
   'termMode-sll': 'purchase',
-  'termDate-sll': new Date().toISOString().slice(0, 10),
+  'termDate-sll': purchaseDate,
   'termMode-loja-pronta': 'purchase',
-  'termDate-loja-pronta': new Date().toISOString().slice(0, 10),
+  'termDate-loja-pronta': purchaseDate,
 };
 
 describe('parseNewAccount', () => {

@@ -4,6 +4,8 @@
  */
 export const TEAM_WHATSAPP: string = '3192560307';
 
+export const ZE_COURSE_SUPPORT_WHATSAPP = '27997394676';
+
 /** The company responsible for student data and the Escala Shop platform. */
 export const DATA_CONTROLLER = {
   name: 'Mentalidade Sem Limite Ltda (MSL)',
