@@ -47,6 +47,7 @@ import {
 import { publicationOfferFingerprint, type PublicationSelection } from '../publication-selection';
 import { startReadyCloneExperiments } from './clone-observation';
 import { publicationObservationStart } from '../publication-observation';
+import { canPublishSupplierOffers } from './supplier-publication-policy';
 
 type Job = typeof assistantJobs.$inferSelect;
 const COLLECTION_INTERVAL_MS = 6 * 60 * 60 * 1000;
@@ -116,9 +117,15 @@ export async function createPublicationBatch(
   )
     throw new OperationBlocked('selection');
   const config = await assertAssistantAccess(userId, 'loja-pronta');
-  if (process.env.SHOPEE_PUBLICATION_ENABLED !== 'true')
+  if (!canPublishSupplierOffers(userId)) {
     throw new OperationBlocked('publication-disabled');
+  }
+
   const shop = await readShopeeAccess(userId, config);
+  if (!canPublishSupplierOffers(userId, shop.shopId)) {
+    throw new OperationBlocked('publication-disabled');
+  }
+
   const appId = shopeeApplicationId(config);
   return db.transaction(async (tx) => {
     await tx.execute(
@@ -435,8 +442,6 @@ export async function findSku(
 
 async function publishItem(job: Job, fetcher: typeof fetch) {
   const config = await assertAssistantAccess(job.userId, 'loja-pronta');
-  if (process.env.SHOPEE_PUBLICATION_ENABLED !== 'true')
-    throw new OperationBlocked('publication-disabled');
   // Sem item, '' comparado a uma coluna uuid viraria erro do Postgres (22P02) em vez de bloqueio.
   const publicationItemId = job.payload.itemId;
   if (!publicationItemId) throw new OperationBlocked('item');
@@ -450,6 +455,10 @@ async function publishItem(job: Job, fetcher: typeof fetch) {
       ),
     );
   if (!item) throw new OperationBlocked('item');
+  if (!canPublishSupplierOffers(job.userId, item.shopId)) {
+    throw new OperationBlocked('publication-disabled');
+  }
+
   if (item.status === 'published') return;
   if (item.status !== 'pending' && item.status !== 'failed')
     throw new OperationBlocked('reconciliation');
@@ -485,8 +494,10 @@ async function publishItem(job: Job, fetcher: typeof fetch) {
       .for('share');
     if (!connection || connection.revokedAt || !connectionMatches(access, config, connection))
       throw new OperationBlocked('connection-changed');
-    if (process.env.SHOPEE_PUBLICATION_ENABLED !== 'true')
+    if (!canPublishSupplierOffers(job.userId, connection.shopId)) {
       throw new OperationBlocked('publication-disabled');
+    }
+
     // A busca de SKU pode ser longa. Reconfere o estoque imediatamente antes do envio.
     const [catalogNow] = await tx
       .select()
@@ -870,8 +881,15 @@ export async function finishVariationPublication(
   fetcher: typeof fetch = fetch,
 ) {
   const config = await assertAssistantAccess(userId, 'loja-pronta');
-  if (process.env.SHOPEE_PUBLICATION_ENABLED !== 'true') return false;
+  if (!canPublishSupplierOffers(userId)) {
+    return false;
+  }
+
   const access = await readShopeeAccess(userId, config, fetcher);
+  if (!canPublishSupplierOffers(userId, access.shopId)) {
+    return false;
+  }
+
   const [item] = await db
     .select()
     .from(assistantPublicationItems)

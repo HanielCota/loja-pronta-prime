@@ -10,6 +10,17 @@ type PatchNoteDay = {
 /** Curated daily notes, newest first. Dates follow America/Sao_Paulo. */
 export const patchNotes: readonly PatchNoteDay[] = [
   {
+    date: '2026-11-17',
+    changes: [
+      {
+        kind: 'Melhoria',
+        title: 'Teste de publicação de produtos em uma loja',
+        description:
+          'Após a atualização, será possível testar o catálogo do fornecedor e a publicação em uma única loja, sem interromper a conexão das demais com a Shopee. O teste depende do catálogo e da loja piloto configurados.',
+      },
+    ],
+  },
+  {
     date: '2026-11-16',
     changes: [
       {

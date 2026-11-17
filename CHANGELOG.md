@@ -3,6 +3,11 @@
 Dates use the America/Sao_Paulo time zone. Operational verification and rollout limits are
 recorded separately from code integration.
 
+## 2026-11-17
+
+- Add an optional supplier catalog and publication pilot scoped to one Escala Shop account and
+  one Shopee shop. See `docs/ASSISTENTE-SLL-OPERACAO.md` for setup and rollout verification.
+
 ## 2026-11-16
 
 - Add a direct WhatsApp support link to Zé Mauro's course navigation on desktop and mobile.
