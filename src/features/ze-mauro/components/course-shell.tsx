@@ -1,6 +1,8 @@
 import type { ComponentProps } from 'react';
 import Link from 'next/link';
-import { BookOpen, ChevronDown, GraduationCap } from 'lucide-react';
+import { BookOpen, ChevronDown, GraduationCap, Headset } from 'lucide-react';
+import { ZE_COURSE_SUPPORT_WHATSAPP } from '@/config/support';
+import { whatsappLink } from '@/features/loja-pronta/whatsapp';
 import { SllAreaFrame, SllPage } from '@/features/sll/sll-area-shell';
 import { panelCard } from '@/features/member/components/area-shell';
 import { Button } from '@/components/ui/button';
@@ -8,6 +10,9 @@ import type { NavbarAccount } from '@/features/member/components/member-navbar';
 import { cn } from '@/lib/utils';
 
 type Section = { slug: string; title: string };
+
+const courseLinkClass =
+  'flex min-h-11 items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
 
 function CourseNavigation({
   stages,
@@ -24,12 +29,25 @@ function CourseNavigation({
         <Link
           key={stage.slug}
           href={`/ze-mauro${stage.slug ? `#${stage.slug}` : ''}`}
-          className="flex min-h-11 items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          className={courseLinkClass}
         >
           <BookOpen aria-hidden="true" className="size-5 shrink-0 text-link" />
           {stage.title}
         </Link>
       ))}
+      <a
+        href={whatsappLink(
+          ZE_COURSE_SUPPORT_WHATSAPP,
+          'Oi! Preciso de ajuda com o curso do Zé Mauro.',
+        )}
+        className={courseLinkClass}
+        target="_blank"
+        rel="noreferrer"
+      >
+        <Headset aria-hidden="true" className="size-5 shrink-0 text-link" />
+        Suporte no WhatsApp
+        <span className="sr-only"> (abre em outra aba)</span>
+      </a>
       {hasPri ? (
         <Link
           href="/sll"

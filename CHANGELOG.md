@@ -3,6 +3,12 @@
 Dates use the America/Sao_Paulo time zone. Operational verification and rollout limits are
 recorded separately from code integration.
 
+## 2026-11-16
+
+- Add a direct WhatsApp support link to Zé Mauro's course navigation on desktop and mobile.
+  The course-specific number is configured in `src/config/support.ts` and is separate from Pri's
+  existing profile contacts.
+
 ## 2026-11-13
 
 ### Hotmart second account
