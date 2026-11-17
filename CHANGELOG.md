@@ -7,6 +7,7 @@ recorded separately from code integration.
 
 - Add an optional supplier catalog and publication pilot scoped to one Escala Shop account and
   one Shopee shop. See `docs/ASSISTENTE-SLL-OPERACAO.md` for setup and rollout verification.
+- Show Michel and the updated WhatsApp number in the Zé Mauro course support card.
 
 ## 2026-11-16
 

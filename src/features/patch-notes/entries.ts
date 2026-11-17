@@ -18,6 +18,12 @@ export const patchNotes: readonly PatchNoteDay[] = [
         description:
           'Após a atualização, será possível testar o catálogo do fornecedor e a publicação em uma única loja, sem interromper a conexão das demais com a Shopee. O teste depende do catálogo e da loja piloto configurados.',
       },
+      {
+        kind: 'Melhoria',
+        title: 'Contato do Michel no curso do Zé Mauro',
+        description:
+          'Após a atualização, abra Suporte no menu do curso do Zé Mauro para falar com Michel pelo WhatsApp.',
+      },
     ],
   },
   {
