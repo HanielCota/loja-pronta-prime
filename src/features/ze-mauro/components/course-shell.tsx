@@ -1,8 +1,6 @@
 import type { ComponentProps } from 'react';
 import Link from 'next/link';
 import { BookOpen, ChevronDown, GraduationCap, Headset } from 'lucide-react';
-import { ZE_COURSE_SUPPORT_WHATSAPP } from '@/config/support';
-import { whatsappLink } from '@/features/loja-pronta/whatsapp';
 import { SllAreaFrame, SllPage } from '@/features/sll/sll-area-shell';
 import { panelCard } from '@/features/member/components/area-shell';
 import { Button } from '@/components/ui/button';
@@ -35,19 +33,10 @@ function CourseNavigation({
           {stage.title}
         </Link>
       ))}
-      <a
-        href={whatsappLink(
-          ZE_COURSE_SUPPORT_WHATSAPP,
-          'Oi! Preciso de ajuda com o curso do Zé Mauro.',
-        )}
-        className={courseLinkClass}
-        target="_blank"
-        rel="noreferrer"
-      >
+      <Link href="/ze-mauro#suporte" className={courseLinkClass}>
         <Headset aria-hidden="true" className="size-5 shrink-0 text-link" />
-        Suporte no WhatsApp
-        <span className="sr-only"> (abre em outra aba)</span>
-      </a>
+        Suporte
+      </Link>
       {hasPri ? (
         <Link
           href="/sll"

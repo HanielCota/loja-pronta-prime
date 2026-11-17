@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { ZE_COURSE_SUPPORT } from '@/config/support';
+import { formatWhatsapp, whatsappLink } from '@/features/loja-pronta/whatsapp';
 import { panelCard } from '@/features/member/components/area-shell';
 import { SllProgress } from '@/features/sll/components/sll-progress';
 import { ZeCourseShell } from '@/features/ze-mauro/components/course-shell';
@@ -96,6 +98,25 @@ export default async function ZeCoursePage() {
           </p>
         </section>
       )}
+      <section id="suporte" className={`${panelCard} scroll-mt-6`} aria-labelledby="support-title">
+        <h2 id="support-title" className="text-title font-semibold">
+          Suporte do curso
+        </h2>
+        <p className="text-body font-medium">{ZE_COURSE_SUPPORT.name}</p>
+        <Button asChild className="sm:w-fit">
+          <a
+            href={whatsappLink(
+              ZE_COURSE_SUPPORT.phone,
+              `Oi, ${ZE_COURSE_SUPPORT.name}! Preciso de ajuda com o curso do Zé Mauro.`,
+            )}
+            target="_blank"
+            rel="noreferrer"
+          >
+            WhatsApp {formatWhatsapp(ZE_COURSE_SUPPORT.phone)}
+            <span className="sr-only"> (abre em outra aba)</span>
+          </a>
+        </Button>
+      </section>
     </ZeCourseShell>
   );
 }

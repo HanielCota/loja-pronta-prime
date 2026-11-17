@@ -64,7 +64,7 @@ test.beforeAll(async () => {
   priLessonId = rows.find((row) => row.expert === 'pri' && row.video_id)!.id;
 });
 
-test('Zé course navigation opens its dedicated WhatsApp on desktop and mobile', async ({
+test('Zé course support shows Michel and opens his WhatsApp on desktop and mobile', async ({
   page,
   context,
 }) => {
@@ -73,10 +73,14 @@ test('Zé course navigation opens its dedicated WhatsApp on desktop and mobile',
   await page.setExtraHTTPHeaders({});
   await expect(page).toHaveURL('/ze-mauro');
 
-  const support = page
+  const menuLink = page
     .getByRole('navigation', { name: 'Seções do curso do Zé Mauro' })
-    .getByRole('link', { name: 'Suporte no WhatsApp (abre em outra aba)' });
-  const destination = /^https:\/\/wa\.me\/5527997394676\?text=/;
+    .getByRole('link', { name: 'Suporte', exact: true });
+  const support = page.getByRole('region', { name: 'Suporte do curso' });
+  const whatsapp = support.getByRole('link', {
+    name: 'WhatsApp (27) 99968-3343 (abre em outra aba)',
+  });
+  const destination = /^https:\/\/wa\.me\/5527999683343\?text=/;
   for (const viewport of [
     { width: 1440, height: 1000 },
     { width: 390, height: 844 },
@@ -91,22 +95,29 @@ test('Zé course navigation opens its dedicated WhatsApp on desktop and mobile',
         await page.getByText('Seções do curso', { exact: true }).click();
       }
 
-      await expect(support).toBeVisible();
-      await expect(support).toHaveAttribute('href', destination);
+      await menuLink.press('Enter');
+      await expect(page).toHaveURL('/ze-mauro#suporte');
+      await expect(support).toBeInViewport();
+      await expect(support.getByText('Michel', { exact: true })).toBeVisible();
+      await expect(support).not.toContainText('@');
+      await expect(support.getByRole('link')).toHaveCount(1);
+      await expect(whatsapp).toHaveAttribute('href', destination);
       await expectNoA11yViolations(page);
 
       if (viewport.width === 1440 && theme === 'light') {
-        const [popup] = await Promise.all([page.waitForEvent('popup'), support.press('Enter')]);
+        const [popup] = await Promise.all([page.waitForEvent('popup'), whatsapp.press('Enter')]);
         await expect(popup).toHaveURL(destination);
         await popup.close();
-        await expect(page).toHaveURL('/ze-mauro');
+        await expect(page).toHaveURL('/ze-mauro#suporte');
       }
     }
   }
 
   await page.goto(`/ze-mauro/aula/${pendingId}`);
   await page.getByText('Seções do curso', { exact: true }).click();
-  await expect(support).toHaveAttribute('href', destination);
+  await menuLink.press('Enter');
+  await expect(page).toHaveURL('/ze-mauro#suporte');
+  await expect(support).toBeInViewport();
 });
 
 test('administrators can preview the entire course without buying it or saving progress', async ({
